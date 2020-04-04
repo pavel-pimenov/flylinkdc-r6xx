@@ -50,7 +50,7 @@ string Players::getItunesSpam(HWND playerWnd /*= NULL*/)
 		// Others
 		StringMap params;
 		
-		// note - CLSID_iTunesApp and IID_IiTunes are defined in iTunesCOMInterface_i.c
+		// note - CLSID_iTunesApp and IID_IiTunes are defined in iTunesCOMInterface.c
 		//Create an instance of the top-level object.  iITunes is an interface pointer to IiTunes.  (weird capitalization, but that's how Apple did it)
 		if (SUCCEEDED(::CoCreateInstance(CLSID_iTunesApp, NULL, CLSCTX_LOCAL_SERVER, IID_IiTunes, (PVOID *)&iITunes)))
 		{
