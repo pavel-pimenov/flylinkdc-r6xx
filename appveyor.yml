@@ -1,0 +1,20 @@
+version: r504-master-{build}
+
+branches:
+  only:
+    - master
+
+image: Visual Studio 2017
+
+clone_depth: 1
+
+
+platform:
+  - x64
+
+configuration:
+  - Release
+
+build:
+  project: FlylinkDC_2017.sln
+  verbosity: minimal
