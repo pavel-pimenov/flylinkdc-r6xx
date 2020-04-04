@@ -83,3 +83,4 @@ merge-vendors.bat
 /x64
 /lua/x64/Release
 /compiled/Settings/GeoIPCountryWhois.csv
+/GdiOle/dlldata.c
