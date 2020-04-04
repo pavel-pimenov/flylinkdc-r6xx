@@ -5,26 +5,6 @@
 /GdiOle/GdiOle_p.c
 /GdiOle/dlldata.c
 
-vc17
-
-/ipch
-/compiled/FlylinkDC*.exe
-/compiled/Settings/FlylinkDCShutdownMarker.txt
-/compiled/Settings/ADLSearch.xml
-/compiled/Settings/DCPlusPlus.xml
-/compiled/Settings/Favorites.xml
-/compiled/Settings/Logs
-/compiled/Settings/tth-history.leveldb
-/compiled/Settings/IPTrust.ini
-/compiled/Settings/common/P2PGuard.ini
-/compiled/Settings/P2PGuard.ini
-/compiled/Settings/common/CustomLocations.bmp
-/compiled/Settings/common/CustomLocations.ini
-/compiled/update
-/client/StringDefs.cpp
-/compiled/UpdateTools/FlyUpdate/FlyUpdate.exe
-/compiled/UpdateTools/FlyUpdate/commit_update.bat
-
 client.crt
 client.key
 *.sqlite
@@ -52,4 +32,8 @@ client.key
 *.db-wal
 *.suo
 merge-vendors.bat
+
+/client/StringDefs.cpp
+
+vc17/*
 
