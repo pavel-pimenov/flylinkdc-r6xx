@@ -578,9 +578,9 @@ class CFlyServerJSON
 		                        DWORD p_time_out = 0,
 		                        const CServerItem* p_server = nullptr);
 	private:
-		static CriticalSection g_cs_error_report;
-		static CriticalSection g_cs_download_counter;
-		static CriticalSection g_cs_antivirus_counter;
+		static ::CriticalSection g_cs_error_report;
+		static ::CriticalSection g_cs_download_counter;
+		static ::CriticalSection g_cs_antivirus_counter;
 		static FastCriticalSection g_cs_test_port;
 		static string g_last_error_string;
 		static int g_count_dup_error_string;
