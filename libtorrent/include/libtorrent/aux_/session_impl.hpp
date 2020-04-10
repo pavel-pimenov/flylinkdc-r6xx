@@ -63,10 +63,10 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "libtorrent/session_status.hpp"
 #include "libtorrent/add_torrent_params.hpp"
 #include "libtorrent/stat.hpp"
-#include "libtorrent/bandwidth_manager.hpp"
+#include "libtorrent/aux_/bandwidth_manager.hpp"
 #include "libtorrent/udp_socket.hpp"
 #include "libtorrent/assert.hpp"
-#include "libtorrent/alert_manager.hpp" // for alert_manager
+#include "libtorrent/aux_/alert_manager.hpp" // for alert_manager
 #include "libtorrent/deadline_timer.hpp"
 #include "libtorrent/socket_io.hpp" // for print_address
 #include "libtorrent/address.hpp"
@@ -77,7 +77,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "libtorrent/kademlia/dht_observer.hpp"
 #include "libtorrent/kademlia/dht_state.hpp"
 #include "libtorrent/kademlia/announce_flags.hpp"
-#include "libtorrent/resolver.hpp"
+#include "libtorrent/aux_/resolver.hpp"
 #include "libtorrent/aux_/invariant_check.hpp"
 #include "libtorrent/extensions.hpp"
 #include "libtorrent/aux_/portmap.hpp"
@@ -633,7 +633,7 @@ namespace aux {
 			TORRENT_DEPRECATED int max_uploads() const;
 #endif
 
-			bandwidth_manager* get_bandwidth_manager(int channel) override;
+			aux::bandwidth_manager* get_bandwidth_manager(int channel) override;
 
 			int upload_rate_limit(peer_class_t c) const;
 			int download_rate_limit(peer_class_t c) const;
@@ -841,11 +841,11 @@ namespace aux {
 
 			void update_socket_buffer_size();
 			void update_dht_announce_interval();
-			void update_anonymous_mode();
 			void update_download_rate();
 			void update_upload_rate();
 			void update_connections_limit();
 			void update_alert_mask();
+			void update_validate_https();
 
 			void trigger_auto_manage() override;
 
@@ -889,9 +889,16 @@ namespace aux {
 			io_context& m_io_context;
 
 #ifdef TORRENT_USE_OPENSSL
-			// this is a generic SSL context used when talking to
-			// unauthenticated HTTPS servers
+			// this is a generic SSL context used when talking to HTTPS servers
 			ssl::context m_ssl_ctx;
+#endif
+
+#ifdef TORRENT_SSL_PEERS
+			// this is the SSL context used for SSL listen sockets. It doesn't
+			// verify peers, but it has the servername callback set on it. Once it
+			// knows which torrent a peer is connecting to, it will switch the
+			// socket over to the torrent specific context, which does verify peers
+			ssl::context m_peer_ssl_ctx;
 #endif
 
 			// handles delayed alerts

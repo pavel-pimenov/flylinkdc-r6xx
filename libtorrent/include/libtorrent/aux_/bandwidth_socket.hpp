@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2010, 2014-2019, Arvid Norberg
-Copyright (c) 2017, Alden Torres
+Copyright (c) 2009, 2015, 2017-2019, Arvid Norberg
+Copyright (c) 2016, Alden Torres
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -31,47 +31,21 @@ POSSIBILITY OF SUCH DAMAGE.
 
 */
 
-#ifndef TORRENT_RESOLVER_INTERFACE_HPP_INCLUDE
-#define TORRENT_RESOLVER_INTERFACE_HPP_INCLUDE
+#ifndef TORRENT_BANDWIDTH_SOCKET_HPP_INCLUDED
+#define TORRENT_BANDWIDTH_SOCKET_HPP_INCLUDED
 
-#include <vector>
-#include <functional>
-
-#include "libtorrent/error_code.hpp"
-#include "libtorrent/address.hpp"
-#include "libtorrent/time.hpp"
-#include "libtorrent/flags.hpp"
+#include "libtorrent/aux_/export.hpp"
 
 namespace libtorrent {
+namespace aux {
 
-// hidden
-using resolver_flags = flags::bitfield_flag<std::uint8_t, struct resolver_flag_tag>;
-
-struct TORRENT_EXTRA_EXPORT resolver_interface
-{
-	using callback_t = std::function<void(error_code const&, std::vector<address> const&)>;
-
-	// this flag will make async_resolve() only use the cache and fail if we
-	// don't have a cache entry, regardless of how old it is. This is usefull
-	// when completing the lookup quickly is more important than accuracy,
-	// like on shutdown
-	static constexpr resolver_flags cache_only = 0_bit;
-
-	// set this flag for lookups that are not critical during shutdown. i.e.
-	// for looking up tracker names _except_ when stopping a tracker.
-	static constexpr resolver_flags abort_on_shutdown = 1_bit;
-
-	virtual void async_resolve(std::string const& host, resolver_flags flags
-		, callback_t const& h) = 0;
-
-	virtual void abort() = 0;
-
-	virtual void set_cache_timeout(seconds timeout) = 0;
-
-protected:
-	~resolver_interface() {}
-};
-
+	struct TORRENT_EXTRA_EXPORT bandwidth_socket
+	{
+		virtual void assign_bandwidth(int channel, int amount) = 0;
+		virtual bool is_disconnecting() const = 0;
+		virtual ~bandwidth_socket() {}
+	};
+}
 }
 
-#endif
+#endif // TORRENT_BANDWIDTH_SOCKET_HPP_INCLUDED

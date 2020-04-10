@@ -234,22 +234,32 @@ namespace aux {
 			// used instead
 			handshake_client_version,
 
-			// sets the network interface this session will use when it opens
-			// outgoing connections. An empty string binds outgoing connections to
-			// INADDR_ANY and port 0 (i.e. let the OS decide). The parameter must
-			// be a string containing one or more, comma separated, adapter names.
-			// Adapter names on Unix systems are of the form "eth0", "eth1",
-			// "tun0", etc. When specifying multiple interfaces, they will be
-			// assigned in round-robin order. This may be useful for clients that
-			// are multi-homed. Binding an outgoing connection to a local IP does
-			// not necessarily make the connection via the associated NIC/Adapter.
-			// Setting this to an empty string will disable binding of outgoing
-			// connections.
+			// This controls which IP address outgoing TCP connections are bound
+			// to, in addition to controlling whether such connections are also
+			// bound to a specific network interface/adapter (*bind-to-device*).
+			// This string is a comma-separated list of IP addresses and
+			// interface names. An empty string will not bind TCP sockets to a
+			// device, and let the network stack assign the local address. A
+			// list of names will be used to bind outgoing TCP sockets in a
+			// round-robin fashion. An IP address will simply be used to `bind()`
+			// the socket. An interface name will attempt to bind the socket to
+			// that interface. If that fails, or is unsupported, one of the IP
+			// addresses configured for that interface is used to `bind()` the
+			// socket to. If the interface or adapter doesn't exist, the
+			// outgoing connection will failed with an error message suggesting
+			// the device cannot be found. Adapter names on Unix systems are of
+			// the form "eth0", "eth1", "tun0", etc. This may be useful for
+			// clients that are multi-homed. Binding an outgoing connection to a
+			// local IP does not necessarily make the connection via the
+			// associated NIC/Adapter.
 			outgoing_interfaces,
 
 			// a comma-separated list of (IP or device name, port) pairs. These are
 			// the listen ports that will be opened for accepting incoming uTP and
-			// TCP connections. It is possible to listen on multiple interfaces and
+			// TCP connections. These are also used for *outgoing* uTP and UDP
+			// tracker connections and DHT nodes.
+			//
+			// It is possible to listen on multiple interfaces and
 			// multiple ports. Binding to port 0 will make the operating system
 			// pick the port.
 			//
@@ -261,17 +271,29 @@ namespace aux {
 			//    you use and hand that port out to other peers trying to connect
 			//    to you, as well as trying to connect to you themselves.
 			//
-			// a port that has an "s" suffix will accept SSL connections. (note
+			// A port that has an "s" suffix will accept SSL connections. (note
 			// that SSL sockets are not enabled by default).
 			//
-			// a port that has an "l" suffix will be considered a local network.
+			// A port that has an "l" suffix will be considered a local network.
 			// i.e. it's assumed to only be able to reach hosts in the same local
 			// network as the IP address (based on the netmask associated with the
 			// IP, queried from the operating system).
 			//
-			// if binding fails, the listen_failed_alert is posted. If or once a
-			// socket binding succeeds, the listen_succeeded_alert is posted. There
-			// may be multiple failures before a success.
+			// if binding fails, the listen_failed_alert is posted. Once a
+			// socket binding succeeds (if it does), the listen_succeeded_alert
+			// is posted. There may be multiple failures before a success.
+			//
+			// If a device name that does not exist is configured, no listen
+			// socket will be opened for that interface. If this is the only
+			// interface configured, it will be as if no listen ports are
+			// configured.
+			//
+			// If no listen ports are configured (e.g. listen_interfaces is an
+			// empty string), networking will be disabled. No DHT will start, no
+			// outgoing uTP or tracker connections will be made. No incoming TCP
+			// or uTP connections will be accepted. (outgoing TCP connections
+			// will still be possible, depending on
+			// settings_pack::outgoing_interfaces).
 			//
 			// For example:
 			// ``[::1]:8888`` - will only accept connections on the IPv6 loopback
@@ -291,7 +313,7 @@ namespace aux {
 			// not announced to trackers, unless the tracker is also on the same
 			// local network.
 			//
-			// Windows OS network adapter device name can be specified with GUID.
+			// Windows OS network adapter device name must be specified with GUID.
 			// It can be obtained from "netsh lan show interfaces" command output.
 			// GUID must be uppercased string embraced in curly brackets.
 			// ``{E4F0B674-0DFC-48BB-98A5-2AA730BDB6D6}::7777`` - will accept
@@ -470,10 +492,14 @@ namespace aux {
 			// preference of one protocol over another.
 			prefer_udp_trackers,
 
+#if TORRENT_ABI_VERSION == 1
 			// ``strict_super_seeding`` when this is set to true, a piece has to
 			// have been forwarded to a third peer before another one is handed
 			// out. This is the traditional definition of super seeding.
-			strict_super_seeding,
+			strict_super_seeding TORRENT_DEPRECATED_ENUM,
+#else
+			deprecated_strict_super_seeding,
+#endif
 
 #if TORRENT_ABI_VERSION == 1
 			// if this is set to true, the memory allocated for the disk cache
@@ -840,9 +866,8 @@ namespace aux {
 			// changes are taken in consideration.
 			enable_ip_notifier,
 
-			// when this is true, nodes whose IDs are derived from their source IP
-			// according to BEP 42 (https://www.bittorrent.org/beps/bep_0042.html) are
-			// preferred in the routing table.
+			// when this is true, nodes whose IDs are derived from their source
+			// IP according to `BEP 42`_ are preferred in the routing table.
 			dht_prefer_verified_node_ids,
 
 			// determines if the routing table entries should restrict entries to one
@@ -901,6 +926,12 @@ namespace aux {
 			// throughput by downloading larger extents of bytes, for torrents with
 			// small piece sizes
 			piece_extent_affinity,
+
+			// when set to true, the certificate of HTTPS trackers will be
+			// validated against the system's certificate store (as defined by
+			// OpenSSL). If the system does not have one, enabling this may cause
+			// HTTPS trackers to fail.
+			validate_https_trackers,
 
 			max_bool_setting_internal
 		};
@@ -990,7 +1021,7 @@ namespace aux {
 
 			// number of seconds until a new retry of a url-seed takes place.
 			// Default retry value for http-seeds that don't provide
-                        // a valid ``retry-after`` header.
+			// a valid ``retry-after`` header.
 			urlseed_wait_retry,
 
 			// sets the upper limit on the total number of files this session will
@@ -1002,12 +1033,12 @@ namespace aux {
 			// of file descriptors a process may have open.
 			file_pool_size,
 
-                        // ``max_failcount`` is the maximum times we try to
-                        // connect to a peer before stop connecting again. If a
-                        // peer succeeds, the failure counter is reset. If a
-                        // peer is retrieved from a peer source (other than DHT)
-                        // the failcount is decremented by one, allowing another
-                        // try.
+			// ``max_failcount`` is the maximum times we try to
+			// connect to a peer before stop connecting again. If a
+			// peer succeeds, the failure counter is reset. If a
+			// peer is retrieved from a peer source (other than DHT)
+			// the failcount is decremented by one, allowing another
+			// try.
 			max_failcount,
 
 			// the number of seconds to wait to reconnect to a peer. this time is
@@ -1743,7 +1774,7 @@ namespace aux {
 			// retry a failed port bind
 			max_retry_port_bind,
 
-			// a bitmask combining flags from alert::category_t defining which
+			// a bitmask combining flags from alert_category_t defining which
 			// kinds of alerts to receive
 			alert_mask,
 
@@ -1849,6 +1880,13 @@ namespace aux {
 			// corresponds to the, Linux-specific, ``TCP_NOTSENT_LOWAT`` TCP socket
 			// option.
 			send_not_sent_low_watermark,
+
+			// The expiration time of UPnP port-mappings, specified in seconds. 0
+			// means permanent lease. Some routers do not support expiration times
+			// on port-maps (nor correctly returning an error indicating lack of
+			// support). In those cases, set this to 0. Otherwise, don't set it any
+			// lower than 5 minutes.
+			upnp_lease_duration,
 
 			// the maximum number of peers to send in a reply to ``get_peers``
 			dht_max_peers_reply,

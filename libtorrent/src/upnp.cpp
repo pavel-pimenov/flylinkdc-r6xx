@@ -57,6 +57,9 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "libtorrent/aux_/disable_warnings_push.hpp"
 #include <boost/asio/ip/host_name.hpp>
 #include <boost/asio/ip/multicast.hpp>
+#ifdef TORRENT_USE_OPENSSL
+#include <boost/asio/ssl/context.hpp>
+#endif
 #include "libtorrent/aux_/disable_warnings_pop.hpp"
 
 #include <cstdlib>
@@ -85,13 +88,16 @@ namespace upnp_errors
 static error_code ignore_error;
 
 upnp::rootdevice::rootdevice() = default;
+
+#if TORRENT_USE_ASSERTS
 upnp::rootdevice::~rootdevice()
 {
 	TORRENT_ASSERT(magic == 1337);
-#if TORRENT_USE_ASSERTS
 	magic = 0;
-#endif
 }
+#else
+upnp::rootdevice::~rootdevice() = default;
+#endif
 
 upnp::rootdevice::rootdevice(rootdevice const&) = default;
 upnp::rootdevice& upnp::rootdevice::operator=(rootdevice const&) & = default;
@@ -99,13 +105,13 @@ upnp::rootdevice::rootdevice(rootdevice&&) noexcept = default;
 upnp::rootdevice& upnp::rootdevice::operator=(rootdevice&&) & = default;
 
 upnp::upnp(io_context& ios
-	, std::string user_agent
+	, aux::session_settings const& settings
 	, aux::portmap_callback& cb
 	, address_v4 const& listen_address
 	, address_v4 const& netmask
 	, std::string listen_device
 	, listen_socket_handle ls)
-	: m_user_agent(std::move(user_agent))
+	: m_settings(settings)
 	, m_callback(cb)
 	, m_io_service(ios)
 	, m_resolver(ios)
@@ -117,8 +123,14 @@ upnp::upnp(io_context& ios
 	, m_listen_address(listen_address)
 	, m_netmask(netmask)
 	, m_device(std::move(listen_device))
+#ifdef TORRENT_USE_OPENSSL
+	, m_ssl_ctx(ssl::context::sslv23_client)
+#endif
 	, m_listen_handle(std::move(ls))
 {
+#ifdef TORRENT_USE_OPENSSL
+	m_ssl_ctx.set_verify_mode(ssl::context::verify_none);
+#endif
 }
 
 void upnp::start()
@@ -310,6 +322,7 @@ port_mapping_t upnp::add_mapping(portmap_protocol const p, int const external_po
 	{
 		auto& d = const_cast<rootdevice&>(dev);
 		TORRENT_ASSERT(d.magic == 1337);
+		if (d.disabled) continue;
 
 		if (d.mapping.end_index() <= mapping_index)
 			d.mapping.resize(static_cast<int>(mapping_index) + 1);
@@ -349,6 +362,7 @@ void upnp::delete_mapping(port_mapping_t const mapping)
 	{
 		auto& d = const_cast<rootdevice&>(dev);
 		TORRENT_ASSERT(d.magic == 1337);
+		if (d.disabled) continue;
 
 		TORRENT_ASSERT(mapping < d.mapping.end_index());
 		d.mapping[mapping].act = portmap_action::del;
@@ -423,7 +437,13 @@ void upnp::connect(rootdevice& d)
 		d.upnp_connection = std::make_shared<http_connection>(m_io_service
 			, m_resolver
 			, std::bind(&upnp::on_upnp_xml, self(), _1, _2
-				, std::ref(d), _4));
+				, std::ref(d), _4), true, default_max_bottled_buffer_size
+			, http_connect_handler()
+			, http_filter_handler()
+#ifdef TORRENT_USE_OPENSSL
+			, &m_ssl_ctx
+#endif
+			);
 		d.upnp_connection->get(d.url, seconds(30), 1);
 	}
 	TORRENT_CATCH (std::exception const& exc)
@@ -562,6 +582,7 @@ void upnp::on_reply(udp::socket& s, error_code const& ec)
 
 	rootdevice d;
 	d.url = url;
+	d.lease_duration = m_settings.get_int(settings_pack::upnp_lease_duration);
 
 	auto i = m_devices.find(d);
 
@@ -689,6 +710,7 @@ void upnp::post(upnp::rootdevice const& d, string_view const soap
 	TORRENT_ASSERT(is_single_thread());
 	TORRENT_ASSERT(d.magic == 1337);
 	TORRENT_ASSERT(d.upnp_connection);
+	TORRENT_ASSERT(!d.disabled);
 
 	char header[2048];
 	std::snprintf(header, sizeof(header), "POST %s HTTP/1.1\r\n"
@@ -779,7 +801,8 @@ void upnp::create_port_mapping(http_connection& c, rootdevice& d
 		, to_string(d.mapping[i].protocol)
 		, unsigned(d.mapping[i].local_ep.port())
 		, local_endpoint.c_str()
-		, m_user_agent.c_str()
+		, m_settings.get_bool(settings_pack::anonymous_mode)
+			? "" : m_settings.get_str(settings_pack::user_agent).c_str()
 		, d.lease_duration);
 
 	auto const soap = create_soap(soap_action, d.service_namespace, soap_body);
@@ -790,6 +813,7 @@ void upnp::create_port_mapping(http_connection& c, rootdevice& d
 void upnp::next(rootdevice& d, port_mapping_t const i)
 {
 	TORRENT_ASSERT(is_single_thread());
+	TORRENT_ASSERT(!d.disabled);
 	if (i < prev(m_mappings.end_index()))
 	{
 		update_map(d, lt::next(i));
@@ -810,6 +834,7 @@ void upnp::update_map(rootdevice& d, port_mapping_t const i)
 	TORRENT_ASSERT(d.magic == 1337);
 	TORRENT_ASSERT(i < d.mapping.end_index());
 	TORRENT_ASSERT(d.mapping.size() == m_mappings.size());
+	TORRENT_ASSERT(!d.disabled);
 
 	if (d.upnp_connection) return;
 
@@ -852,7 +877,12 @@ void upnp::update_map(rootdevice& d, port_mapping_t const i)
 			, m_resolver
 			, std::bind(&upnp::on_upnp_map_response, self(), _1, _2
 				, std::ref(d), i, _4), true, default_max_bottled_buffer_size
-			, std::bind(&upnp::create_port_mapping, self(), _1, std::ref(d), i));
+			, std::bind(&upnp::create_port_mapping, self(), _1, std::ref(d), i)
+			, http_filter_handler()
+#ifdef TORRENT_USE_OPENSSL
+			, &m_ssl_ctx
+#endif
+			);
 
 		d.upnp_connection->start(d.hostname, d.port
 			, seconds(10), 1, nullptr, false, 5, m.local_ep.address());
@@ -864,12 +894,18 @@ void upnp::update_map(rootdevice& d, port_mapping_t const i)
 			, m_resolver
 			, std::bind(&upnp::on_upnp_unmap_response, self(), _1, _2
 				, std::ref(d), i, _4), true, default_max_bottled_buffer_size
-			, std::bind(&upnp::delete_port_mapping, self(), std::ref(d), i));
+			, std::bind(&upnp::delete_port_mapping, self(), std::ref(d), i)
+			, http_filter_handler()
+#ifdef TORRENT_USE_OPENSSL
+			, &m_ssl_ctx
+#endif
+			);
 		d.upnp_connection->start(d.hostname, d.port
 			, seconds(10), 1, nullptr, false, 5, m.local_ep.address());
 	}
 
 	m.act = portmap_action::none;
+	m.expires = aux::time_now() + seconds(30);
 }
 
 void upnp::delete_port_mapping(rootdevice& d, port_mapping_t const i)
@@ -1072,7 +1108,12 @@ void upnp::on_upnp_xml(error_code const& e
 		, m_resolver
 		, std::bind(&upnp::on_upnp_get_ip_address_response, self(), _1, _2
 			, std::ref(d), _4), true, default_max_bottled_buffer_size
-		, std::bind(&upnp::get_ip_address, self(), std::ref(d)));
+		, std::bind(&upnp::get_ip_address, self(), std::ref(d))
+		, http_filter_handler()
+#ifdef TORRENT_USE_OPENSSL
+		, &m_ssl_ctx
+#endif
+		);
 	d.upnp_connection->start(d.hostname, d.port
 		, seconds(10), 1);
 }
@@ -1445,11 +1486,11 @@ void upnp::on_upnp_map_response(error_code const& e
 			, portmap_transport::upnp, m_listen_handle);
 		if (d.lease_duration > 0)
 		{
-			m.expires = aux::time_now()
+			time_point const now = aux::time_now();
+			m.expires = now
 				+ seconds(int(d.lease_duration * 3 / 4));
 			time_point next_expire = m_refresh_timer.expiry();
-			if (next_expire < aux::time_now()
-				|| next_expire > m.expires)
+			if (next_expire < now || next_expire > m.expires)
 			{
 				ADD_OUTSTANDING_ASYNC("upnp::on_expire");
 				m_refresh_timer.expires_at(m.expires);
@@ -1559,7 +1600,7 @@ void upnp::on_upnp_unmap_response(error_code const& e
 
 	// free the slot in global mappings
 	auto pred = [mapping](rootdevice const& rd)
-		{ return rd.mapping[mapping].protocol == portmap_protocol::none; };
+		{ return rd.mapping.end_index() <= mapping || rd.mapping[mapping].protocol == portmap_protocol::none; };
 	if (std::all_of(m_devices.begin(), m_devices.end(), pred))
 	{
 		m_mappings[mapping].protocol = portmap_protocol::none;
@@ -1583,17 +1624,18 @@ void upnp::on_expire(error_code const& ec)
 	{
 		auto& d = const_cast<rootdevice&>(dev);
 		TORRENT_ASSERT(d.magic == 1337);
+		if (d.disabled) continue;
 		for (port_mapping_t m{0}; m < m_mappings.end_index(); ++m)
 		{
-			if (d.mapping[m].expires != max_time())
+			if (d.mapping[m].expires == max_time())
 				continue;
 
-			if (d.mapping[m].expires < now)
+			if (d.mapping[m].expires <= now)
 			{
-				d.mapping[m].expires = max_time();
+				d.mapping[m].act = portmap_action::add;
 				update_map(d, m);
 			}
-			else if (d.mapping[m].expires < next_expire)
+			if (d.mapping[m].expires < next_expire)
 			{
 				next_expire = d.mapping[m].expires;
 			}
@@ -1623,7 +1665,7 @@ void upnp::close()
 	{
 		auto& d = const_cast<rootdevice&>(dev);
 		TORRENT_ASSERT(d.magic == 1337);
-		if (d.control_url.empty()) continue;
+		if (d.disabled || d.control_url.empty()) continue;
 		for (auto& m : d.mapping)
 		{
 			if (m.protocol == portmap_protocol::none) continue;

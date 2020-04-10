@@ -43,7 +43,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "libtorrent/parse_url.hpp"
 #include "libtorrent/socket.hpp"
 #include "libtorrent/aux_/socket_type.hpp" // for async_shutdown
-#include "libtorrent/resolver_interface.hpp"
+#include "libtorrent/aux_/resolver_interface.hpp"
 #include "libtorrent/settings_pack.hpp"
 #include "libtorrent/aux_/time.hpp"
 #include "libtorrent/random.hpp"
@@ -69,7 +69,7 @@ using namespace std::placeholders;
 namespace libtorrent {
 
 http_connection::http_connection(io_context& ios
-	, resolver_interface& resolver
+	, aux::resolver_interface& resolver
 	, http_handler handler
 	, bool bottled
 	, int max_bottled_buffer_size
@@ -83,7 +83,6 @@ http_connection::http_connection(io_context& ios
 	, m_next_ep(0)
 #ifdef TORRENT_USE_OPENSSL
 	, m_ssl_ctx(ssl_ctx)
-	, m_own_ssl_context(false)
 #endif
 #if TORRENT_USE_I2P
 	, m_i2p_conn(nullptr)
@@ -116,16 +115,11 @@ http_connection::http_connection(io_context& ios
 	TORRENT_ASSERT(m_handler);
 }
 
-http_connection::~http_connection()
-{
-#ifdef TORRENT_USE_OPENSSL
-	if (m_own_ssl_context) delete m_ssl_ctx;
-#endif
-}
+http_connection::~http_connection() = default;
 
 void http_connection::get(std::string const& url, time_duration timeout, int prio
 	, aux::proxy_settings const* ps, int handle_redirects, std::string const& user_agent
-	, boost::optional<address> const& bind_addr, resolver_flags const resolve_flags, std::string const& auth_
+	, boost::optional<address> const& bind_addr, aux::resolver_flags const resolve_flags, std::string const& auth_
 #if TORRENT_USE_I2P
 	, i2p_connection* i2p_conn
 #endif
@@ -234,7 +228,7 @@ void http_connection::start(std::string const& hostname, int port
 	, time_duration timeout, int prio, aux::proxy_settings const* ps, bool ssl
 	, int handle_redirects
 	, boost::optional<address> const& bind_addr
-	, resolver_flags const resolve_flags
+	, aux::resolver_flags const resolve_flags
 #if TORRENT_USE_I2P
 	, i2p_connection* i2p_conn
 #endif
@@ -262,6 +256,10 @@ void http_connection::start(std::string const& hostname, int port
 	m_recvbuffer.clear();
 	m_read_pos = 0;
 	m_priority = prio;
+
+#ifdef TORRENT_USE_OPENSSL
+	TORRENT_ASSERT(!ssl || m_ssl_ctx != nullptr);
+#endif
 
 	if (m_sock && m_sock->is_open() && m_hostname == hostname && m_port == port
 		&& m_ssl == ssl && m_bind_addr == bind_addr)
@@ -323,22 +321,7 @@ void http_connection::start(std::string const& hostname, int port
 #ifdef TORRENT_USE_OPENSSL
 		if (m_ssl)
 		{
-			if (m_ssl_ctx == nullptr)
-			{
-				m_ssl_ctx = new (std::nothrow) ssl::context(ssl::context::sslv23_client);
-				if (m_ssl_ctx)
-				{
-					m_own_ssl_context = true;
-					error_code ec;
-					m_ssl_ctx->set_verify_mode(ssl::context::verify_none, ec);
-					if (ec)
-					{
-						post(m_ios, std::bind(&http_connection::callback
-							, me, ec, span<char>{}));
-						return;
-					}
-				}
-			}
+			TORRENT_ASSERT(m_ssl_ctx != nullptr);
 			userdata = m_ssl_ctx;
 		}
 #endif
@@ -456,6 +439,32 @@ void http_connection::on_timeout(std::weak_ptr<http_connection> p
 	c->m_timer.async_wait(std::bind(&http_connection::on_timeout, p, _1));
 }
 
+struct close_visitor
+{
+	explicit close_visitor(std::shared_ptr<http_connection> s) : self(std::move(s)) {}
+	template <typename T>
+	void operator()(T&)
+	{
+		error_code ec;
+		self->m_sock->close(ec);
+		self->m_timer.cancel();
+	}
+#ifdef TORRENT_USE_OPENSSL
+	template <typename T>
+	void operator()(ssl_stream<T>& s)
+	{
+		ADD_OUTSTANDING_ASYNC("on_close_socket");
+		s.async_shutdown([=](error_code const&) {
+			COMPLETE_ASYNC("on_close_socket");
+			error_code e;
+			self->m_timer.cancel();
+			self->m_sock->close(e);
+		});
+	}
+#endif
+	std::shared_ptr<http_connection> self;
+};
+
 void http_connection::close(bool force)
 {
 	if (m_abort) return;
@@ -464,12 +473,24 @@ void http_connection::close(bool force)
 	{
 		error_code ec;
 		if (force)
+		{
 			m_sock->close(ec);
+			m_timer.cancel();
+		}
 		else
-			async_shutdown(*m_sock, shared_from_this());
+		{
+#ifdef TORRENT_USE_OPENSSL
+			auto self = shared_from_this();
+			boost::apply_visitor(close_visitor{self}, *m_sock);
+#else
+			m_sock->close(ec);
+			m_timer.cancel();
+#endif // TORRENT_USE_OPENSSL
+		}
 	}
+	else
+		m_timer.cancel();
 
-	m_timer.cancel();
 	m_limiter_timer.cancel();
 
 	m_hostname.clear();

@@ -59,13 +59,15 @@ namespace ssl {
 #include "libtorrent/i2p_stream.hpp"
 #include "libtorrent/aux_/socket_type.hpp"
 #include "libtorrent/aux_/vector.hpp"
-#include "libtorrent/resolver_interface.hpp"
+#include "libtorrent/aux_/resolver_interface.hpp"
 #include "libtorrent/optional.hpp"
 
 namespace libtorrent {
 
 struct http_connection;
-struct resolver_interface;
+namespace aux { struct resolver_interface; }
+
+struct close_visitor;
 
 // internal
 constexpr int default_max_bottled_buffer_size = 2 * 1024 * 1024;
@@ -82,15 +84,17 @@ using http_filter_handler = std::function<void(http_connection&, std::vector<tcp
 struct TORRENT_EXTRA_EXPORT http_connection
 	: std::enable_shared_from_this<http_connection>
 {
+	friend struct close_visitor;
+
 	http_connection(io_context& ios
-		, resolver_interface& resolver
+		, aux::resolver_interface& resolver
 		, http_handler handler
-		, bool bottled = true
-		, int max_bottled_buffer_size = default_max_bottled_buffer_size
-		, http_connect_handler ch = http_connect_handler()
-		, http_filter_handler fh = http_filter_handler()
+		, bool bottled
+		, int max_bottled_buffer_size
+		, http_connect_handler ch
+		, http_filter_handler fh
 #ifdef TORRENT_USE_OPENSSL
-		, ssl::context* ssl_ctx = nullptr
+		, ssl::context* ssl_ctx
 #endif
 		);
 
@@ -111,7 +115,7 @@ struct TORRENT_EXTRA_EXPORT http_connection
 		, int prio = 0, aux::proxy_settings const* ps = nullptr, int handle_redirects = 5
 		, std::string const& user_agent = std::string()
 		, boost::optional<address> const& bind_addr = boost::optional<address>()
-		, resolver_flags resolve_flags = resolver_flags{}, std::string const& auth_ = std::string()
+		, aux::resolver_flags resolve_flags = aux::resolver_flags{}, std::string const& auth_ = std::string()
 #if TORRENT_USE_I2P
 		, i2p_connection* i2p_conn = nullptr
 #endif
@@ -121,7 +125,7 @@ struct TORRENT_EXTRA_EXPORT http_connection
 		, time_duration timeout, int prio = 0, aux::proxy_settings const* ps = nullptr
 		, bool ssl = false, int handle_redirect = 5
 		, boost::optional<address> const& bind_addr = boost::optional<address>()
-		, resolver_flags resolve_flags = resolver_flags{}
+		, aux::resolver_flags resolve_flags = aux::resolver_flags{}
 #if TORRENT_USE_I2P
 		, i2p_connection* i2p_conn = nullptr
 #endif
@@ -169,13 +173,12 @@ private:
 
 #ifdef TORRENT_USE_OPENSSL
 	ssl::context* m_ssl_ctx;
-	bool m_own_ssl_context;
 #endif
 
 #if TORRENT_USE_I2P
 	i2p_connection* m_i2p_conn;
 #endif
-	resolver_interface& m_resolver;
+	aux::resolver_interface& m_resolver;
 
 	http_parser m_parser;
 	http_handler m_handler;
@@ -224,7 +227,7 @@ private:
 	int m_priority;
 
 	// used for DNS lookups
-	resolver_flags m_resolve_flags;
+	aux::resolver_flags m_resolve_flags;
 
 	std::uint16_t m_port;
 

@@ -15,3 +15,4 @@ client.key
 .vs
 /libtorrent/merge-vendors.bat
 /mediainfolib/merge-vendors.bat
+*.lastbuildstate

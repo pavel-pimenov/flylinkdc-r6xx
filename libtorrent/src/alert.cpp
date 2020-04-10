@@ -79,7 +79,9 @@ namespace libtorrent {
 	constexpr alert_category_t alert::ip_block_notification;
 	constexpr alert_category_t alert::performance_warning;
 	constexpr alert_category_t alert::dht_notification;
+#if TORRENT_ABI_VERSION <= 2
 	constexpr alert_category_t alert::stats_notification;
+#endif
 	constexpr alert_category_t alert::session_log_notification;
 	constexpr alert_category_t alert::torrent_log_notification;
 	constexpr alert_category_t alert::peer_log_notification;
@@ -306,7 +308,7 @@ namespace libtorrent {
 			"download limit too low (upload rate will suffer)",
 			"send buffer watermark too low (upload rate will suffer)",
 			"too many optimistic unchoke slots",
-			"using bittyrant unchoker with no upload rate limit set",
+			"",
 			"the disk queue limit is too high compared to the cache size. The disk queue eats into the cache size",
 			"outstanding AIO operations limit reached",
 			"too few ports allowed for outgoing connections",
@@ -612,7 +614,7 @@ namespace libtorrent {
 	{
 		char ret[200];
 		std::snprintf(ret, sizeof(ret), "%s peer dropped block ( piece: %d block: %d)"
-			, torrent_alert::message().c_str(), static_cast<int>(piece_index), block_index);
+			, peer_alert::message().c_str(), static_cast<int>(piece_index), block_index);
 		return ret;
 	}
 
@@ -631,7 +633,7 @@ namespace libtorrent {
 	{
 		char ret[200];
 		std::snprintf(ret, sizeof(ret), "%s peer timed out request ( piece: %d block: %d)"
-			, torrent_alert::message().c_str(), static_cast<int>(piece_index), block_index);
+			, peer_alert::message().c_str(), static_cast<int>(piece_index), block_index);
 		return ret;
 	}
 
@@ -649,7 +651,7 @@ namespace libtorrent {
 	{
 		char ret[200];
 		std::snprintf(ret, sizeof(ret), "%s block finished downloading (piece: %d block: %d)"
-			, torrent_alert::message().c_str(), static_cast<int>(piece_index), block_index);
+			, peer_alert::message().c_str(), static_cast<int>(piece_index), block_index);
 		return ret;
 	}
 
@@ -670,7 +672,7 @@ namespace libtorrent {
 	{
 		char ret[200];
 		std::snprintf(ret, sizeof(ret), "%s requested block (piece: %d block: %d)"
-			, torrent_alert::message().c_str(), static_cast<int>(piece_index), block_index);
+			, peer_alert::message().c_str(), static_cast<int>(piece_index), block_index);
 		return ret;
 	}
 
@@ -688,7 +690,7 @@ namespace libtorrent {
 	{
 		char ret[200];
 		std::snprintf(ret, sizeof(ret), "%s received block not in download queue (piece: %d block: %d)"
-			, torrent_alert::message().c_str(), static_cast<int>(piece_index), block_index);
+			, peer_alert::message().c_str(), static_cast<int>(piece_index), block_index);
 		return ret;
 	}
 #endif // #ifndef TORRENT_NO_BLOCK_ALERTS
@@ -1159,7 +1161,7 @@ namespace {
 
 	std::string portmap_log_alert::message() const
 	{
-		char ret[600];
+		char ret[1024];
 		std::snprintf(ret, sizeof(ret), "%s [%s]: %s"
 			, nat_type_str[static_cast<int>(map_transport)]
 			, local_address.to_string().c_str()
@@ -1250,6 +1252,7 @@ namespace {
 		return msg;
 	}
 
+#if TORRENT_ABI_VERSION <= 2
 namespace {
 
 		std::array<int, stats_alert::num_channels> stat_to_array(stat const& s)
@@ -1309,6 +1312,7 @@ namespace {
 			);
 		return msg;
 	}
+#endif // TORRENT_ABI_VERSION
 
 	cache_flushed_alert::cache_flushed_alert(aux::stack_allocator& alloc
 		, torrent_handle const& h)
@@ -1866,7 +1870,7 @@ namespace {
 	{
 		static char const* const mode[] =
 		{ "<==", "==>", "<<<", ">>>", "***" };
-		return torrent_alert::message() + " [" + print_endpoint(endpoint) + "] "
+		return peer_alert::message() + " [" + print_endpoint(endpoint) + "] "
 			+ mode[direction] + " " + event_type + " [ " + log_message() + " ]";
 	}
 
@@ -2290,8 +2294,8 @@ namespace {
 			"reverse_sequential ",
 			"backup1 ",
 			"backup2 ",
-			"end_game "
-			"extent_affinity "
+			"end_game ",
+			"extent_affinity ",
 		};
 
 		std::string ret = peer_alert::message();
@@ -2535,7 +2539,7 @@ namespace {
 	{
 		char ret[200];
 		snprintf(ret, sizeof(ret), "%s block uploaded to a peer (piece: %d block: %d)"
-			, torrent_alert::message().c_str(), static_cast<int>(piece_index), block_index);
+			, peer_alert::message().c_str(), static_cast<int>(piece_index), block_index);
 		return ret;
 	}
 
@@ -2691,7 +2695,9 @@ namespace {
 	constexpr alert_category_t peer_blocked_alert::static_category;
 	constexpr alert_category_t dht_announce_alert::static_category;
 	constexpr alert_category_t dht_get_peers_alert::static_category;
+#if TORRENT_ABI_VERSION <= 2
 	constexpr alert_category_t stats_alert::static_category;
+#endif
 	constexpr alert_category_t cache_flushed_alert::static_category;
 	constexpr alert_category_t lsd_peer_alert::static_category;
 	constexpr alert_category_t trackerid_alert::static_category;

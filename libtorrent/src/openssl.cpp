@@ -1,7 +1,6 @@
 /*
 
-Copyright (c) 2007, 2009, 2012, 2014-2015, 2019, Arvid Norberg
-Copyright (c) 2016, 2018, Alden Torres
+Copyright (c) 2020, Arvid Norberg
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -31,45 +30,53 @@ POSSIBILITY OF SUCH DAMAGE.
 
 */
 
-#ifndef TORRENT_BANDWIDTH_QUEUE_ENTRY_HPP_INCLUDED
-#define TORRENT_BANDWIDTH_QUEUE_ENTRY_HPP_INCLUDED
-
-#include <memory>
-
-#include "libtorrent/bandwidth_limit.hpp"
-#include "libtorrent/bandwidth_socket.hpp"
-#include "libtorrent/aux_/array.hpp"
+#include "libtorrent/config.hpp"
+#include "libtorrent/aux_/openssl.hpp"
+#include "libtorrent/settings_pack.hpp"
 
 namespace libtorrent {
+namespace aux {
 
-struct TORRENT_EXTRA_EXPORT bw_request
+#ifdef TORRENT_USE_OPENSSL
+
+// all of OpenSSL causes warnings, so we just have to disable them
+#include "libtorrent/aux_/disable_warnings_push.hpp"
+
+void openssl_set_tlsext_hostname(SSL* s, char const* name)
 {
-	bw_request(std::shared_ptr<bandwidth_socket> pe
-		, int blk, int prio);
-
-	std::shared_ptr<bandwidth_socket> peer;
-	// 1 is normal prio
-	int priority;
-	// the number of bytes assigned to this request so far
-	int assigned;
-	// once assigned reaches this, we dispatch the request function
-	int request_size;
-
-	// the max number of rounds for this request to survive
-	// this ensures that requests gets responses at very low
-	// rate limits, when the requested size would take a long
-	// time to satisfy
-	int ttl;
-
-	// loops over the bandwidth channels and assigns bandwidth
-	// from the most limiting one
-	int assign_bandwidth();
-
-	static constexpr int max_bandwidth_channels = 10;
-	// we don't actually support more than 10 channels per peer
-	aux::array<bandwidth_channel*, max_bandwidth_channels> channel{};
-};
-
+#if OPENSSL_VERSION_NUMBER >= 0x90812f
+	SSL_set_tlsext_host_name(s, name);
+#endif
 }
 
-#endif
+#if OPENSSL_VERSION_NUMBER >= 0x90812f
+
+void openssl_set_tlsext_servername_callback(SSL_CTX* ctx
+	, int (*servername_callback)(SSL*, int*, void*))
+{
+	SSL_CTX_set_tlsext_servername_callback(ctx, servername_callback);
+}
+
+void openssl_set_tlsext_servername_arg(SSL_CTX* ctx, void* userdata)
+{
+	SSL_CTX_set_tlsext_servername_arg(ctx, userdata);
+}
+
+int openssl_num_general_names(GENERAL_NAMES* gens)
+{
+	return sk_GENERAL_NAME_num(gens);
+}
+
+GENERAL_NAME* openssl_general_name_value(GENERAL_NAMES* gens, int i)
+{
+	return sk_GENERAL_NAME_value(gens, i);
+}
+
+#include "libtorrent/aux_/disable_warnings_pop.hpp"
+
+#endif // OPENSSL_VERSION_NUMBER
+
+#endif // TORRENT_USE_OPENSSL
+
+}
+}

@@ -67,8 +67,8 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "libtorrent/piece_picker.hpp"
 #include "libtorrent/hash_picker.hpp"
 #include "libtorrent/config.hpp"
-#include "libtorrent/bandwidth_limit.hpp"
-#include "libtorrent/bandwidth_queue_entry.hpp"
+#include "libtorrent/aux_/bandwidth_limit.hpp"
+#include "libtorrent/aux_/bandwidth_queue_entry.hpp"
 #include "libtorrent/storage_defs.hpp"
 #include "libtorrent/assert.hpp"
 #include "libtorrent/aux_/session_interface.hpp"
@@ -302,8 +302,10 @@ namespace libtorrent {
 		// effectively paused as well.
 		bool m_session_paused:1;
 
+#ifndef TORRENT_DISABLE_SHARE_MODE
 		// this is set when the torrent is in share-mode
 		bool m_share_mode:1;
+#endif
 
 		// this is true if we have all pieces. If it's false,
 		// it means we either don't have any pieces, or, if
@@ -419,11 +421,13 @@ namespace libtorrent {
 		void start_announcing();
 		void stop_announcing();
 
-		void send_share_mode();
 		void send_upload_only();
 
+#ifndef TORRENT_DISABLE_SHARE_MODE
+		void send_share_mode();
 		void set_share_mode(bool s);
 		bool share_mode() const { return m_share_mode; }
+#endif
 
 		// TODO: make graceful pause also finish all sending blocks
 		// before disconnecting
@@ -784,8 +788,11 @@ namespace libtorrent {
 // --------------------------------------------
 		// PIECE MANAGEMENT
 
+#ifndef TORRENT_DISABLE_SHARE_MODE
 		void recalc_share_mode();
+#endif
 
+#ifndef TORRENT_DISABLE_SUPERSEEDING
 		bool super_seeding() const
 		{
 			// we're not super seeding if we're not a seed
@@ -794,6 +801,7 @@ namespace libtorrent {
 
 		void set_super_seeding(bool on);
 		piece_index_t get_piece_to_super_seed(typed_bitfield<piece_index_t> const&);
+#endif
 
 		// returns true if we have downloaded the given piece
 		bool have_piece(piece_index_t index) const
@@ -821,6 +829,7 @@ namespace libtorrent {
 			return m_picker->has_piece_passed(index);
 		}
 
+#ifndef TORRENT_DISABLE_PREDICTIVE_PIECES
 		// a predictive piece is a piece that we might
 		// not have yet, but still announced to peers, anticipating that
 		// we'll have it very soon
@@ -828,6 +837,7 @@ namespace libtorrent {
 		{
 			return std::binary_search(m_predictive_pieces.begin(), m_predictive_pieces.end(), index);
 		}
+#endif // TORRENT_DISABLE_PREDICTIVE_PIECES
 
 	private:
 
@@ -984,7 +994,7 @@ namespace libtorrent {
 		bool is_inactive() const;
 
 		std::string save_path() const;
-		alert_manager& alerts() const;
+		aux::alert_manager& alerts() const;
 		piece_picker& picker()
 		{
 			TORRENT_ASSERT(m_picker.get());
@@ -1136,12 +1146,14 @@ namespace libtorrent {
 		void set_apply_ip_filter(bool b);
 		bool apply_ip_filter() const { return m_apply_ip_filter; }
 
+#ifndef TORRENT_DISABLE_PREDICTIVE_PIECES
 		std::vector<piece_index_t> const& predictive_pieces() const
 		{ return m_predictive_pieces; }
 
 		// this is called whenever we predict to have this piece
 		// within one second
 		void predicted_have_piece(piece_index_t index, int milliseconds);
+#endif
 
 		void clear_in_state_update()
 		{
@@ -1274,7 +1286,7 @@ namespace libtorrent {
 		storage_holder m_storage;
 
 #ifdef TORRENT_SSL_PEERS
-		std::shared_ptr<boost::asio::ssl::context> m_ssl_ctx;
+		std::unique_ptr<boost::asio::ssl::context> m_ssl_ctx;
 
 		bool verify_peer_cert(bool preverified, boost::asio::ssl::verify_context& ctx);
 
@@ -1342,6 +1354,7 @@ namespace libtorrent {
 
 		std::string m_save_path;
 
+#ifndef TORRENT_DISABLE_PREDICTIVE_PIECES
 		// this is a list of all pieces that we have announced
 		// as having, without actually having yet. If we receive
 		// a request for a piece in this list, we need to hold off
@@ -1353,6 +1366,7 @@ namespace libtorrent {
 		// TODO: 3 factor out predictive pieces and all operations on it into a
 		// separate class (to use as memeber here instead)
 		std::vector<piece_index_t> m_predictive_pieces;
+#endif
 
 		// the performance counters of this session
 		counters& m_stats_counters;
@@ -1567,9 +1581,11 @@ namespace libtorrent {
 		// haven't
 		bool m_seed_mode:1;
 
+#ifndef TORRENT_DISABLE_SUPERSEEDING
 		// if this is true, we're currently super seeding this
 		// torrent.
 		bool m_super_seeding:1;
+#endif
 
 		// if this is set, whenever transitioning into a downloading/seeding state
 		// from a non-downloading/seeding state, the torrent is paused.

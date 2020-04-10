@@ -60,37 +60,42 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <openssl/ssl.h>
 #include <openssl/x509v3.h> // for GENERAL_NAME
 
-namespace libtorrent { namespace aux {
-inline void openssl_set_tlsext_hostname(SSL* s, char const* name)
-{
-	SSL_set_tlsext_host_name(s, name);
-}
-
-inline void openssl_set_tlsext_servername_callback(SSL_CTX* ctx
-	, int (*servername_callback)(SSL*, int*, void*))
-{
-	SSL_CTX_set_tlsext_servername_callback(ctx, servername_callback);
-}
-
-inline void openssl_set_tlsext_servername_arg(SSL_CTX* ctx, void* userdata)
-{
-	SSL_CTX_set_tlsext_servername_arg(ctx, userdata);
-}
-
-inline int openssl_num_general_names(GENERAL_NAMES* gens)
-{
-	return sk_GENERAL_NAME_num(gens);
-}
-
-inline GENERAL_NAME* openssl_general_name_value(GENERAL_NAMES* gens, int i)
-{
-	return sk_GENERAL_NAME_value(gens, i);
-}
-
-}
-}
+#include <boost/asio/ssl.hpp>
+#if defined TORRENT_BUILD_SIMULATOR
+#include "simulator/simulator.hpp"
+#endif
 
 #include "libtorrent/aux_/disable_warnings_pop.hpp"
+
+namespace libtorrent {
+namespace ssl {
+
+#if defined TORRENT_BUILD_SIMULATOR
+	using sim::asio::ssl::context;
+	using sim::asio::ssl::stream_base;
+	using sim::asio::ssl::stream;
+#else
+	using boost::asio::ssl::context;
+	using boost::asio::ssl::stream_base;
+	using boost::asio::ssl::stream;
+#endif
+} // ssl
+
+namespace aux {
+
+TORRENT_EXTRA_EXPORT void openssl_set_tlsext_hostname(SSL* s, char const* name);
+
+TORRENT_EXTRA_EXPORT void openssl_set_tlsext_servername_callback(SSL_CTX* ctx
+	, int (*servername_callback)(SSL*, int*, void*));
+
+TORRENT_EXTRA_EXPORT void openssl_set_tlsext_servername_arg(SSL_CTX* ctx, void* userdata);
+
+TORRENT_EXTRA_EXPORT int openssl_num_general_names(GENERAL_NAMES* gens);
+
+TORRENT_EXTRA_EXPORT GENERAL_NAME* openssl_general_name_value(GENERAL_NAMES* gens, int i);
+
+} // aux
+} // libtorrent
 
 #endif // TORRENT_USE_OPENSSL
 

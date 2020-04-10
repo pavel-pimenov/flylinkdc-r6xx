@@ -335,7 +335,12 @@ namespace libtorrent {
 	{ async_call(&torrent::set_upload_mode, b); }
 
 	void torrent_handle::set_share_mode(bool b) const
-	{ async_call(&torrent::set_share_mode, b); }
+	{
+		TORRENT_UNUSED(b);
+#ifndef TORRENT_DISABLE_SHARE_MODE
+		async_call(&torrent::set_share_mode, b);
+#endif
+	}
 
 	void torrent_handle::apply_ip_filter(bool b) const
 	{ async_call(&torrent::set_apply_ip_filter, b); }
@@ -623,7 +628,13 @@ namespace libtorrent {
 	{ return sync_call_ret<bool>(false, &torrent::valid_metadata); }
 
 	bool torrent_handle::super_seeding() const
-	{ return sync_call_ret<bool>(false, &torrent::super_seeding); }
+	{
+#ifndef TORRENT_DISABLE_SUPERSEEDING
+		return sync_call_ret<bool>(false, &torrent::super_seeding);
+#else
+		return false;
+#endif
+	}
 
 // ============ end deprecation ===============
 #endif
@@ -801,7 +812,10 @@ namespace libtorrent {
 #if TORRENT_ABI_VERSION == 1
 	void torrent_handle::super_seeding(bool on) const
 	{
+		TORRENT_UNUSED(on);
+#ifndef TORRENT_DISABLE_SUPERSEEDING
 		async_call(&torrent::set_super_seeding, on);
+#endif
 	}
 
 	void torrent_handle::get_full_peer_list(std::vector<peer_list_entry>& v) const

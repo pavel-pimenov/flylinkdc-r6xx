@@ -67,7 +67,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "libtorrent/aux_/socket_type.hpp"
 #include "libtorrent/aux_/merkle.hpp"
 #include "libtorrent/performance_counters.hpp" // for counters
-#include "libtorrent/alert_manager.hpp" // for alert_manager
+#include "libtorrent/aux_/alert_manager.hpp" // for alert_manager
 #include "libtorrent/string_util.hpp" // for search
 #include "libtorrent/aux_/generate_peer_id.hpp"
 
@@ -305,9 +305,15 @@ namespace {
 		// will send their bitfield when the handshake
 		// is done
 		std::shared_ptr<torrent> t = associated_torrent().lock();
+#ifndef TORRENT_DISABLE_SHARE_MODE
 		if (!t->share_mode())
+#endif
 		{
-			bool const upload_only_enabled = t->is_upload_only() && !t->super_seeding();
+			bool const upload_only_enabled = t->is_upload_only()
+#ifndef TORRENT_DISABLE_SUPERSEEDING
+				&& !t->super_seeding()
+#endif
+				;
 			send_upload_only(upload_only_enabled);
 		}
 
@@ -1886,6 +1892,7 @@ namespace {
 			return;
 		}
 
+#ifndef TORRENT_DISABLE_SHARE_MODE
 		if (extended_id == share_mode_msg)
 		{
 			if (!m_recv_buffer.packet_finished()) return;
@@ -1905,6 +1912,7 @@ namespace {
 			set_share_mode(sm);
 			return;
 		}
+#endif // TORRENT_DISABLE_SHARE_MODE
 
 		if (extended_id == holepunch_msg)
 		{
@@ -2029,9 +2037,11 @@ namespace {
 		if (root.dict_find_int_value("upload_only", 0))
 			set_upload_only(true);
 
+#ifndef TORRENT_DISABLE_SHARE_MODE
 		if (m_settings.get_bool(settings_pack::support_share_mode)
 			&& root.dict_find_int_value("share_mode", 0))
 			set_share_mode(true);
+#endif
 
 		auto const myip = root.dict_find_string_value("yourip");
 		if (!myip.empty())
@@ -2064,7 +2074,10 @@ namespace {
 		// disconnect it
 		if (t->is_finished() && upload_only()
 			&& m_settings.get_bool(settings_pack::close_redundant_connections)
-			&& !t->share_mode())
+#ifndef TORRENT_DISABLE_SHARE_MODE
+			&& !t->share_mode()
+#endif
+			)
 			disconnect(errors::upload_upload_connection, operation_t::bittorrent);
 
 		stats_counters().inc_stats_counter(counters::num_incoming_ext_handshake);
@@ -2166,7 +2179,7 @@ namespace {
 	{
 		INVARIANT_CHECK;
 
-#if TORRENT_USE_ASSERTS
+#if TORRENT_USE_ASSERTS && !defined TORRENT_DISABLE_SHARE_MODE
 		std::shared_ptr<torrent> t = associated_torrent().lock();
 		TORRENT_ASSERT(!t->share_mode());
 #endif
@@ -2187,6 +2200,7 @@ namespace {
 		stats_counters().inc_stats_counter(counters::num_outgoing_extended);
 	}
 
+#ifndef TORRENT_DISABLE_SHARE_MODE
 	void bt_peer_connection::write_share_mode()
 	{
 		INVARIANT_CHECK;
@@ -2202,6 +2216,7 @@ namespace {
 
 		stats_counters().inc_stats_counter(counters::num_outgoing_extended);
 	}
+#endif
 
 	void bt_peer_connection::write_keepalive()
 	{
@@ -2258,6 +2273,7 @@ namespace {
 		TORRENT_ASSERT(m_sent_handshake);
 		TORRENT_ASSERT(t->valid_metadata());
 
+#ifndef TORRENT_DISABLE_SUPERSEEDING
 		if (t->super_seeding())
 		{
 #ifndef TORRENT_DISABLE_LOGGING
@@ -2276,7 +2292,9 @@ namespace {
 			if (piece >= piece_index_t(0)) superseed_piece(piece_index_t(-1), piece);
 			return;
 		}
-		else if (m_supports_fast && t->is_seed())
+		else
+#endif
+			if (m_supports_fast && t->is_seed())
 		{
 			write_have_all();
 			return;
@@ -2335,10 +2353,12 @@ namespace {
 			}
 		}
 
+#ifndef TORRENT_DISABLE_PREDICTIVE_PIECES
 		// add predictive pieces to the bitfield as well, since we won't
 		// announce them again
 		for (piece_index_t const p : t->predictive_pieces())
 			msg[5 + static_cast<int>(p) / CHAR_BIT] |= (char_top_bit >> (static_cast<int>(p) & char_bit_mask));
+#endif
 
 #ifndef TORRENT_DISABLE_LOGGING
 		if (should_log(peer_log_alert::outgoing_message))
@@ -2406,8 +2426,10 @@ namespace {
 
 		m["upload_only"] = upload_only_msg;
 		m["ut_holepunch"] = holepunch_msg;
+#ifndef TORRENT_DISABLE_SHARE_MODE
 		if (m_settings.get_bool(settings_pack::support_share_mode))
 			m["share_mode"] = share_mode_msg;
+#endif
 		m["lt_donthave"] = dont_have_msg;
 
 		int complete_ago = -1;
@@ -2424,16 +2446,23 @@ namespace {
 		// upload-only. If we do, we may be disconnected before we receive the
 		// metadata.
 		if (t->is_upload_only()
+#ifndef TORRENT_DISABLE_SHARE_MODE
 			&& !t->share_mode()
+#endif
 			&& t->valid_metadata()
-			&& !t->super_seeding())
+#ifndef TORRENT_DISABLE_SUPERSEEDING
+			&& !t->super_seeding()
+#endif
+			)
 		{
 			handshake["upload_only"] = 1;
 		}
 
+#ifndef TORRENT_DISABLE_SHARE_MODE
 		if (m_settings.get_bool(settings_pack::support_share_mode)
 			&& t->share_mode())
 			handshake["share_mode"] = 1;
+#endif
 
 #ifndef TORRENT_DISABLE_EXTENSIONS
 		// loop backwards, to make the first extension be the last

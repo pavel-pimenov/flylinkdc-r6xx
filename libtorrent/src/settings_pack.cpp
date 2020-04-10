@@ -148,7 +148,7 @@ namespace libtorrent {
 		SET(announce_to_all_trackers, false, nullptr),
 		SET(announce_to_all_tiers, false, nullptr),
 		SET(prefer_udp_trackers, true, nullptr),
-		SET(strict_super_seeding, false, nullptr),
+		DEPRECATED_SET(strict_super_seeding, false, nullptr),
 		DEPRECATED_SET(lock_disk_cache, false, nullptr),
 		SET(disable_hash_checks, false, nullptr),
 		SET(allow_i2p_mixed, false, nullptr),
@@ -166,7 +166,7 @@ namespace libtorrent {
 		SET(enable_incoming_tcp, true, nullptr),
 		SET(ignore_resume_timestamps, false, nullptr),
 		SET(no_recheck_incomplete_resume, false, nullptr),
-		SET(anonymous_mode, false, &session_impl::update_anonymous_mode),
+		SET(anonymous_mode, false, nullptr),
 		SET(report_web_seed_downloads, true, &session_impl::update_report_web_seed_downloads),
 		DEPRECATED_SET(rate_limit_utp, true, &session_impl::update_rate_limit_utp),
 		DEPRECATED_SET(announce_double_nat, false, nullptr),
@@ -207,6 +207,7 @@ namespace libtorrent {
 		SET(dht_ignore_dark_internet, true, nullptr),
 		SET(dht_read_only, false, nullptr),
 		SET(piece_extent_affinity, false, nullptr),
+		SET(validate_https_trackers, false, &session_impl::update_validate_https),
 	}});
 
 	aux::array<int_setting_entry_t, settings_pack::num_int_settings> const int_settings
@@ -329,7 +330,7 @@ namespace libtorrent {
 		SET(connect_seed_every_n_download, 10, nullptr),
 		SET(max_http_recv_buffer_size, 4*1024*204, nullptr),
 		SET(max_retry_port_bind, 10, nullptr),
-		SET(alert_mask, int(static_cast<std::uint32_t>(alert::error_notification)), &session_impl::update_alert_mask),
+		SET(alert_mask, int(static_cast<std::uint32_t>(alert_category::error)), &session_impl::update_alert_mask),
 		SET(out_enc_policy, settings_pack::pe_enabled, nullptr),
 		SET(in_enc_policy, settings_pack::pe_enabled, nullptr),
 		SET(allowed_enc_level, settings_pack::pe_both, nullptr),
@@ -346,6 +347,7 @@ namespace libtorrent {
 		SET(max_web_seed_connections, 3, nullptr),
 		SET(resolver_cache_timeout, 1200, &session_impl::update_resolver_cache_timeout),
 		SET(send_not_sent_low_watermark, 16384, nullptr),
+		SET(upnp_lease_duration, 3600, nullptr),
 		SET(dht_max_peers_reply, 100, nullptr),
 		SET(dht_search_branching, 5, nullptr),
 		SET(dht_max_fail_count, 20, nullptr),

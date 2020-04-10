@@ -44,7 +44,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "libtorrent/deadline_timer.hpp"
 #include "libtorrent/aux_/numeric_cast.hpp"
 #include "libtorrent/aux_/ip_helpers.hpp" // for is_v4
-#include "libtorrent/alert_manager.hpp"
+#include "libtorrent/aux_/alert_manager.hpp"
 #include "libtorrent/socks5_stream.hpp" // for socks_error
 #include "libtorrent/aux_/keepalive.hpp"
 
@@ -80,7 +80,7 @@ std::size_t const max_header_size = 255;
 struct socks5 : std::enable_shared_from_this<socks5>
 {
 	explicit socks5(io_context& ios, aux::listen_socket_handle ls
-		, alert_manager& alerts)
+		, aux::alert_manager& alerts)
 		: m_socks5_sock(ios)
 		, m_resolver(ios)
 		, m_timer(ios)
@@ -116,7 +116,7 @@ private:
 	tcp::resolver m_resolver;
 	deadline_timer m_timer;
 	deadline_timer m_retry_timer;
-	alert_manager& m_alerts;
+	aux::alert_manager& m_alerts;
 	aux::listen_socket_handle m_listen_socket;
 	std::array<char, tmp_buffer_size> m_tmp_buf;
 
@@ -218,7 +218,7 @@ int udp_socket::read(span<packet> pkts, error_code& ec)
 			p.data = {m_buf->data(), len};
 
 			// support packets coming from the SOCKS5 proxy
-			if (m_socks5_connection && m_socks5_connection->active())
+			if (active_socks5())
 			{
 				// if the source IP doesn't match the proxy's, ignore the packet
 				if (p.from != m_socks5_connection->target()) continue;
@@ -252,6 +252,11 @@ int udp_socket::read(span<packet> pkts, error_code& ec)
 	return ret;
 }
 
+bool udp_socket::active_socks5() const
+{
+	return (m_socks5_connection && m_socks5_connection->active());
+}
+
 void udp_socket::send_hostname(char const* hostname, int const port
 	, span<char const> p, error_code& ec, udp_send_flags_t const flags)
 {
@@ -272,7 +277,7 @@ void udp_socket::send_hostname(char const* hostname, int const port
 
 	if (use_proxy && m_proxy_settings.type != settings_pack::none)
 	{
-		if (m_socks5_connection && m_socks5_connection->active())
+		if (active_socks5())
 		{
 			// send udp packets through SOCKS5 server
 			wrap(hostname, port, p, ec, flags);
@@ -310,7 +315,7 @@ void udp_socket::send(udp::endpoint const& ep, span<char const> p
 
 	if (use_proxy && m_proxy_settings.type != settings_pack::none)
 	{
-		if (m_socks5_connection && m_socks5_connection->active())
+		if (active_socks5())
 		{
 			// send udp packets through SOCKS5 server
 			wrap(ep, p, ec, flags);
@@ -490,7 +495,7 @@ void udp_socket::bind(udp::endpoint const& ep, error_code& ec)
 }
 
 void udp_socket::set_proxy_settings(aux::proxy_settings const& ps
-	, alert_manager& alerts)
+	, aux::alert_manager& alerts)
 {
 	TORRENT_ASSERT(is_single_thread());
 

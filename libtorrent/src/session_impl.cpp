@@ -497,10 +497,11 @@ void apply_deprecated_dht_settings(settings_pack& sett, bdecode_node const& s)
 		, disk_io_constructor_type disk_io_constructor)
 		: m_settings(pack)
 		, m_io_context(ioc)
-#if defined TORRENT_SSL_PEERS
-		, m_ssl_ctx(boost::asio::ssl::context::sslv23)
-#elif defined TORRENT_USE_OPENSSL
-		, m_ssl_ctx(boost::asio::ssl::context::sslv23_client)
+#ifdef TORRENT_USE_OPENSSL
+		, m_ssl_ctx(ssl::context::tls_client)
+#endif
+#ifdef TORRENT_SSL_PEERS
+		, m_peer_ssl_ctx(ssl::context::tls)
 #endif
 		, m_alerts(m_settings.get_int(settings_pack::alert_queue_size)
 			, alert_category_t{static_cast<unsigned int>(m_settings.get_int(settings_pack::alert_mask))})
@@ -542,7 +543,7 @@ void apply_deprecated_dht_settings(settings_pack& sett, bdecode_node const& s)
 			, std::bind(&session_impl::on_incoming_utp_ssl, this, _1)
 			, m_io_context
 			, m_settings, m_stats_counters
-			, &m_ssl_ctx)
+			, &m_peer_ssl_ctx)
 #endif
 		, m_timer(m_io_context)
 		, m_lsd_announce_timer(m_io_context)
@@ -583,13 +584,14 @@ void apply_deprecated_dht_settings(settings_pack& sett, bdecode_node const& s)
 
 #ifdef TORRENT_USE_OPENSSL
 		error_code ec;
-		m_ssl_ctx.set_verify_mode(boost::asio::ssl::context::verify_none, ec);
+		m_ssl_ctx.set_default_verify_paths(ec);
 #endif
 #ifdef TORRENT_SSL_PEERS
-		aux::openssl_set_tlsext_servername_callback(m_ssl_ctx.native_handle()
+		m_peer_ssl_ctx.set_verify_mode(boost::asio::ssl::context::verify_none, ec);
+		aux::openssl_set_tlsext_servername_callback(m_peer_ssl_ctx.native_handle()
 			, servername_callback);
-		aux::openssl_set_tlsext_servername_arg(m_ssl_ctx.native_handle(), this);
-#endif
+		aux::openssl_set_tlsext_servername_arg(m_peer_ssl_ctx.native_handle(), this);
+#endif // TORRENT_SSL_PEERS
 
 #ifndef TORRENT_DISABLE_DHT
 		m_next_dht_torrent = 0;
@@ -1278,7 +1280,7 @@ namespace {
 
 		using sock_t = peer_class_type_filter::socket_type_t;
 		// assign peer class based on socket type
-		static aux::array<sock_t, 9, socket_type_t> const mapping{{
+		static aux::array<sock_t, 9, socket_type_t> const mapping{{{
 			sock_t::tcp_socket
 			, sock_t::tcp_socket
 			, sock_t::tcp_socket
@@ -1288,7 +1290,7 @@ namespace {
 			, sock_t::ssl_tcp_socket
 			, sock_t::ssl_tcp_socket
 			, sock_t::ssl_utp_socket
-		}};
+		}}};
 		sock_t const socket_type = mapping[st];
 		// filter peer classes based on type
 		peer_class_mask = m_peer_class_type_filter.apply(socket_type, peer_class_mask);
@@ -1564,7 +1566,7 @@ namespace {
 				// we have an actual device we're interested in listening on, if we
 				// have SO_BINDTODEVICE functionality, use it now.
 #if TORRENT_HAS_BINDTODEVICE
-				ret->sock->set_option(bind_to_device(lep.device.c_str()), ec);
+				bind_device(*ret->sock, lep.device.c_str(), ec);
 #ifndef TORRENT_DISABLE_LOGGING
 				if (ec && should_log())
 				{
@@ -1573,7 +1575,7 @@ namespace {
 				}
 #endif // TORRENT_DISABLE_LOGGING
 				ec.clear();
-#endif
+#endif // TORRENT_HAS_BINDTODEVICE
 			}
 
 			ret->sock->bind(bind_ep, ec);
@@ -1706,7 +1708,7 @@ namespace {
 #if TORRENT_HAS_BINDTODEVICE
 		if (!lep.device.empty())
 		{
-			ret->udp_sock->sock.set_option(bind_to_device(lep.device.c_str()), ec);
+			bind_device(ret->udp_sock->sock, lep.device.c_str(), ec);
 #ifndef TORRENT_DISABLE_LOGGING
 			if (ec && should_log())
 			{
@@ -1951,14 +1953,11 @@ namespace {
 			interface_to_endpoints(iface, flags, ifs, eps);
 		}
 
-		// if no listen interfaces are specified, create sockets to use
-		// any interface
 		if (eps.empty())
 		{
-			eps.emplace_back(address_v4(), 0, "", transport::plaintext
-				, listen_socket_flags_t{});
-			eps.emplace_back(address_v6(), 0, "", transport::plaintext
-				, listen_socket_flags_t{});
+#ifndef TORRENT_DISABLE_LOGGING
+			session_log("no listen sockets");
+#endif
 		}
 
 		expand_unspecified_address(ifs, routes, eps);
@@ -2656,11 +2655,11 @@ namespace {
 #ifdef TORRENT_SSL_PEERS
 			if (ssl == transport::ssl)
 			{
-				// accept connections initializing the SSL connection to
-				// use the generic m_ssl_ctx context. However, since it has
-				// the servername callback set on it, we will switch away from
-				// this context into a specific torrent once we start handshaking
-				return socket_type(ssl_stream<tcp::socket>(tcp::socket(std::move(s)), m_ssl_ctx));
+				// accept connections initializing the SSL connection to use the peer
+				// ssl context. Since it has the servername callback set on it, we will
+				// switch away from this context into a specific torrent once we start
+				// handshaking
+				return socket_type(ssl_stream<tcp::socket>(tcp::socket(std::move(s)), m_peer_ssl_ctx));
 			}
 			else
 #endif
@@ -4268,27 +4267,7 @@ namespace {
 			peers.push_back(p.get());
 		}
 
-#if TORRENT_ABI_VERSION == 1
-		// the unchoker wants an estimate of our upload rate capacity
-		// (used by bittyrant)
-		int max_upload_rate = upload_rate_limit(m_global_class);
-		if (m_settings.get_int(settings_pack::choking_algorithm)
-			== settings_pack::bittyrant_choker
-			&& max_upload_rate == 0)
-		{
-			// we don't know at what rate we can upload. If we have a
-			// measurement of the peak, use that + 10kB/s, otherwise
-			// assume 20 kB/s
-			max_upload_rate = std::max(20000, m_peak_up_rate + 10000);
-			if (m_alerts.should_post<performance_alert>())
-				m_alerts.emplace_alert<performance_alert>(torrent_handle()
-					, performance_alert::bittyrant_with_no_uplimit);
-		}
-#else
-		int const max_upload_rate = 0;
-#endif
-
-		int const allowed_upload_slots = unchoke_sort(peers, max_upload_rate
+		int const allowed_upload_slots = unchoke_sort(peers
 			, unchoke_interval, m_settings);
 
 		m_stats_counters.set_value(counters::num_unchoke_slots
@@ -4299,11 +4278,9 @@ namespace {
 		{
 			session_log("RECALCULATE UNCHOKE SLOTS: [ peers: %d "
 				"eligible-peers: %d"
-				" max_upload_rate: %d"
 				" allowed-slots: %d ]"
 				, int(m_connections.size())
 				, int(peers.size())
-				, max_upload_rate
 				, allowed_upload_slots);
 		}
 #endif
@@ -4976,12 +4953,9 @@ namespace {
 			if (m_interface_index >= m_outgoing_interfaces.size()) m_interface_index = 0;
 			std::string const& ifname = m_outgoing_interfaces[m_interface_index++];
 
-			if (ec) return bind_ep;
-
 			bind_ep.address(bind_socket_to_device(m_io_context, s
 				, remote_address.is_v4() ? tcp::v4() : tcp::v6()
 				, ifname.c_str(), bind_ep.port(), ec));
-			s.bind(bind_ep, ec);
 			return bind_ep;
 		}
 
@@ -5929,13 +5903,13 @@ namespace {
 
 	namespace {
 
-		void on_dht_put_immutable_item(alert_manager& alerts, sha1_hash target, int num)
+		void on_dht_put_immutable_item(aux::alert_manager& alerts, sha1_hash target, int num)
 		{
 			if (alerts.should_post<dht_put_alert>())
 				alerts.emplace_alert<dht_put_alert>(target, num);
 		}
 
-		void on_dht_put_mutable_item(alert_manager& alerts, dht::item const& i, int num)
+		void on_dht_put_mutable_item(aux::alert_manager& alerts, dht::item const& i, int num)
 		{
 			if (alerts.should_post<dht_put_alert>())
 			{
@@ -5961,13 +5935,13 @@ namespace {
 			i.assign(std::move(value), salt, seq, pk, sig);
 		}
 
-		void on_dht_get_peers(alert_manager& alerts, sha1_hash info_hash, std::vector<tcp::endpoint> const& peers)
+		void on_dht_get_peers(aux::alert_manager& alerts, sha1_hash info_hash, std::vector<tcp::endpoint> const& peers)
 		{
 			if (alerts.should_post<dht_get_peers_reply_alert>())
 				alerts.emplace_alert<dht_get_peers_reply_alert>(info_hash, peers);
 		}
 
-		void on_direct_response(alert_manager& alerts, client_data_t userdata, dht::msg const& msg)
+		void on_direct_response(aux::alert_manager& alerts, client_data_t userdata, dht::msg const& msg)
 		{
 			if (msg.message.type() == bdecode_node::none_t)
 				alerts.emplace_alert<dht_direct_response_alert>(userdata, msg.addr);
@@ -6246,7 +6220,7 @@ namespace {
 
 		if (allowed_upload_slots == std::numeric_limits<int>::max())
 		{
-			// this means we're not aplpying upload slot limits, unchoke
+			// this means we're not applying upload slot limits, unchoke
 			// everyone
 			for (auto const& p : m_connections)
 			{
@@ -6400,25 +6374,6 @@ namespace {
 #endif
 	}
 
-	void session_impl::update_anonymous_mode()
-	{
-		if (!m_settings.get_bool(settings_pack::anonymous_mode))
-		{
-			for (auto& s : m_listen_sockets)
-			{
-				if (!s->upnp_mapper) continue;
-				s->upnp_mapper->set_user_agent(m_settings.get_str(settings_pack::user_agent));
-			}
-			return;
-		}
-
-		for (auto& s : m_listen_sockets)
-		{
-			if (!s->upnp_mapper) continue;
-			s->upnp_mapper->set_user_agent("");
-		}
-	}
-
 #if TORRENT_ABI_VERSION == 1
 	void session_impl::update_local_download_rate()
 	{
@@ -6521,6 +6476,20 @@ namespace {
 	{
 		m_alerts.set_alert_mask(alert_category_t(
 			static_cast<std::uint32_t>(m_settings.get_int(settings_pack::alert_mask))));
+	}
+
+	void session_impl::update_validate_https()
+	{
+#ifdef TORRENT_USE_OPENSSL
+		using boost::asio::ssl::context;
+		auto const flags = m_settings.get_bool(settings_pack::validate_https_trackers)
+			? context::verify_peer
+				| context::verify_fail_if_no_peer_cert
+				| context::verify_client_once
+			: context::verify_none;
+		error_code ec;
+		m_ssl_ctx.set_verify_mode(flags, ec);
+#endif
 	}
 
 	void session_impl::pop_alerts(std::vector<alert*>* alerts)
@@ -6669,9 +6638,7 @@ namespace {
 		{
 			// the upnp constructor may fail and call the callbacks
 			// into the session_impl.
-			s->upnp_mapper = std::make_shared<upnp>(m_io_context
-				, m_settings.get_bool(settings_pack::anonymous_mode)
-				? "" : m_settings.get_str(settings_pack::user_agent)
+			s->upnp_mapper = std::make_shared<upnp>(m_io_context, m_settings
 				, *this, s->local_endpoint.address().to_v4(), s->netmask.to_v4(), s->device
 				, listen_socket_handle(s));
 			s->upnp_mapper->start();

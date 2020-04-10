@@ -40,13 +40,15 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "libtorrent/error_code.hpp"
 #include "libtorrent/deadline_timer.hpp"
 #include "libtorrent/enum_net.hpp"
-#include "libtorrent/resolver.hpp"
+#include "libtorrent/aux_/resolver.hpp"
 #include "libtorrent/debug.hpp"
 #include "libtorrent/string_util.hpp"
 #include "libtorrent/aux_/portmap.hpp"
 #include "libtorrent/aux_/vector.hpp"
 #include "libtorrent/aux_/listen_socket_handle.hpp"
 #include "libtorrent/aux_/noexcept_movable.hpp"
+#include "libtorrent/aux_/session_settings.hpp"
+#include "libtorrent/aux_/openssl.hpp" // for ssl::context
 
 #include <memory>
 #include <functional>
@@ -151,15 +153,13 @@ struct TORRENT_EXTRA_EXPORT upnp final
 	, single_threaded
 {
 	upnp(io_context& ios
-		, std::string user_agent
+		, aux::session_settings const& settings
 		, aux::portmap_callback& cb
 		, address_v4 const& listen_address
 		, address_v4 const& netmask
 		, std::string listen_device
 		, aux::listen_socket_handle ls);
 	~upnp();
-
-	void set_user_agent(std::string const& v) { m_user_agent = v; }
 
 	void start();
 
@@ -295,11 +295,8 @@ private:
 		std::string path;
 		aux::noexcept_movable<address> external_ip;
 
-		// there are routers that's don't support timed
-		// port maps, without returning error 725. It seems
-		// safer to always assume that we have to ask for
-		// permanent leases
-		int lease_duration = 0;
+		// default lease duration for a port map.
+		int lease_duration = 3600;
 
 		// true if the device supports specifying a
 		// specific external port, false if it doesn't
@@ -325,7 +322,7 @@ private:
 
 	aux::vector<global_mapping_t, port_mapping_t> m_mappings;
 
-	std::string m_user_agent;
+	aux::session_settings const& m_settings;
 
 	// the set of devices we've found
 	std::set<rootdevice> m_devices;
@@ -337,7 +334,7 @@ private:
 
 	io_context& m_io_service;
 
-	resolver m_resolver;
+	aux::resolver m_resolver;
 
 	// the udp socket used to send and receive
 	// multicast messages on the network
@@ -368,6 +365,10 @@ private:
 	address_v4 m_listen_address;
 	address_v4 m_netmask;
 	std::string m_device;
+
+#ifdef TORRENT_USE_OPENSSL
+	ssl::context m_ssl_ctx;
+#endif
 
 	aux::listen_socket_handle m_listen_handle;
 };

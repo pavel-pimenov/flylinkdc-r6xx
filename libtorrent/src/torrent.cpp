@@ -98,12 +98,12 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "libtorrent/ip_filter.hpp"
 #include "libtorrent/request_blocks.hpp"
 #include "libtorrent/performance_counters.hpp" // for counters
-#include "libtorrent/resolver_interface.hpp"
+#include "libtorrent/aux_/resolver_interface.hpp"
 #include "libtorrent/aux_/alloca.hpp"
 #include "libtorrent/resolve_links.hpp"
 #include "libtorrent/aux_/file_progress.hpp"
 #include "libtorrent/aux_/has_block.hpp"
-#include "libtorrent/alert_manager.hpp"
+#include "libtorrent/aux_/alert_manager.hpp"
 #include "libtorrent/disk_interface.hpp"
 #include "libtorrent/aux_/ip_helpers.hpp" // for is_ip_address
 #include "libtorrent/download_priority.hpp"
@@ -173,7 +173,9 @@ bool is_downloading_state(int const st)
 		, m_abort(false)
 		, m_paused(p.flags & torrent_flags::paused)
 		, m_session_paused(session_paused)
+#ifndef TORRENT_DISABLE_SHARE_MODE
 		, m_share_mode(p.flags & torrent_flags::share_mode)
+#endif
 		, m_have_all(false)
 		, m_graceful_pause_mode(false)
 		, m_state_subscription(p.flags & torrent_flags::update_subscribe)
@@ -209,7 +211,9 @@ bool is_downloading_state(int const st)
 		, m_sequential_download(p.flags & torrent_flags::sequential_download)
 		, m_auto_sequential(false)
 		, m_seed_mode(false)
+#ifndef TORRENT_DISABLE_SUPERSEEDING
 		, m_super_seeding(p.flags & torrent_flags::super_seeding)
+#endif
 		, m_stop_when_ready(p.flags & torrent_flags::stop_when_ready)
 		, m_need_save_resume_data(p.flags & torrent_flags::need_save_resume)
 		, m_enable_dht(!bool(p.flags & torrent_flags::disable_dht))
@@ -574,12 +578,20 @@ bool is_downloading_state(int const st)
 				, download_limit()
 				, m_seed_mode ? "seed-mode " : ""
 				, m_upload_mode ? "upload-mode " : ""
+#ifndef TORRENT_DISABLE_SHARE_MODE
 				, m_share_mode ? "share-mode " : ""
+#else
+				, ""
+#endif
 				, m_apply_ip_filter ? "apply-ip-filter " : ""
 				, m_paused ? "paused " : ""
 				, m_auto_managed ? "auto-managed " : ""
 				, m_state_subscription ? "update-subscribe " : ""
+#ifndef TORRENT_DISABLE_SUPERSEEDING
 				, m_super_seeding ? "super-seeding " : ""
+#else
+				, ""
+#endif
 				, m_sequential_download ? "sequential-download " : ""
 				, (m_add_torrent_params && m_add_torrent_params->flags & torrent_flags::override_trackers)
 					? "override-trackers "  : ""
@@ -756,6 +768,7 @@ bool is_downloading_state(int const st)
 		m_ses.disk_thread().submit_jobs();
 	}
 
+#ifndef TORRENT_DISABLE_SHARE_MODE
 	void torrent::send_share_mode()
 	{
 #ifndef TORRENT_DISABLE_EXTENSIONS
@@ -768,12 +781,18 @@ bool is_downloading_state(int const st)
 		}
 #endif
 	}
+#endif // TORRENT_DISABLE_SHARE_MODE
 
 	void torrent::send_upload_only()
 	{
 #ifndef TORRENT_DISABLE_EXTENSIONS
+
+#ifndef TORRENT_DISABLE_SHARE_MODE
 		if (share_mode()) return;
+#endif
+#ifndef TORRENT_DISABLE_SUPERSEEDING
 		if (super_seeding()) return;
+#endif
 
 		// if we send upload-only, the other end is very likely to disconnect
 		// us, at least if it's a seed. If we don't want to close redundant
@@ -785,7 +804,11 @@ bool is_downloading_state(int const st)
 		// only, since they might disconnect immediately when
 		// they have downloaded a single piece, although we'll
 		// make another piece available
-		bool const upload_only_enabled = is_upload_only() && !super_seeding();
+		bool const upload_only_enabled = is_upload_only()
+#ifndef TORRENT_DISABLE_SUPERSEEDING
+			&& !super_seeding()
+#endif
+			;
 
 		for (auto p : m_connections)
 		{
@@ -794,7 +817,7 @@ bool is_downloading_state(int const st)
 			p->send_not_interested();
 			p->send_upload_only(upload_only_enabled);
 		}
-#endif
+#endif // TORRENT_DISABLE_EXTENSIONS
 	}
 
 	torrent_flags_t torrent::flags() const
@@ -804,16 +827,20 @@ bool is_downloading_state(int const st)
 			ret |= torrent_flags::seed_mode;
 		if (m_upload_mode)
 			ret |= torrent_flags::upload_mode;
+#ifndef TORRENT_DISABLE_SHARE_MODE
 		if (m_share_mode)
 			ret |= torrent_flags::share_mode;
+#endif
 		if (m_apply_ip_filter)
 			ret |= torrent_flags::apply_ip_filter;
 		if (is_torrent_paused())
 			ret |= torrent_flags::paused;
 		if (m_auto_managed)
 			ret |= torrent_flags::auto_managed;
+#ifndef TORRENT_DISABLE_SUPERSEEDING
 		if (m_super_seeding)
 			ret |= torrent_flags::super_seeding;
+#endif
 		if (m_sequential_download)
 			ret |= torrent_flags::sequential_download;
 		if (m_stop_when_ready)
@@ -837,8 +864,10 @@ bool is_downloading_state(int const st)
 		}
 		if (mask & torrent_flags::upload_mode)
 			set_upload_mode(bool(flags & torrent_flags::upload_mode));
+#ifndef TORRENT_DISABLE_SHARE_MODE
 		if (mask & torrent_flags::share_mode)
 			set_share_mode(bool(flags & torrent_flags::share_mode));
+#endif
 		if (mask & torrent_flags::apply_ip_filter)
 			set_apply_ip_filter(bool(flags & torrent_flags::apply_ip_filter));
 		if (mask & torrent_flags::paused)
@@ -850,8 +879,10 @@ bool is_downloading_state(int const st)
 		}
 		if (mask & torrent_flags::auto_managed)
 			auto_managed(bool(flags & torrent_flags::auto_managed));
+#ifndef TORRENT_DISABLE_SUPERSEEDING
 		if (mask & torrent_flags::super_seeding)
 			set_super_seeding(bool(flags & torrent_flags::super_seeding));
+#endif
 		if (mask & torrent_flags::sequential_download)
 			set_sequential_download(bool(flags & torrent_flags::sequential_download));
 		if (mask & torrent_flags::stop_when_ready)
@@ -864,6 +895,7 @@ bool is_downloading_state(int const st)
 			m_enable_pex = !bool(flags & torrent_flags::disable_pex);
 	}
 
+#ifndef TORRENT_DISABLE_SHARE_MODE
 	void torrent::set_share_mode(bool s)
 	{
 		if (s == m_share_mode) return;
@@ -882,6 +914,7 @@ bool is_downloading_state(int const st)
 			prioritize_files(aux::vector<download_priority_t, file_index_t>(num_files, dont_download));
 		}
 	}
+#endif // TORRENT_DISABLE_SHARE_MODE
 
 	void torrent::set_upload_mode(bool b)
 	{
@@ -1460,7 +1493,7 @@ bool is_downloading_state(int const st)
 		// create the SSL context for this torrent. We need to
 		// inject the root certificate, and no other, to
 		// verify other peers against
-		std::shared_ptr<context> ctx = std::make_shared<context>(context::sslv23);
+		std::unique_ptr<context> ctx(std::make_unique<context>(context::tls));
 
 		if (!ctx)
 		{
@@ -1546,7 +1579,7 @@ bool is_downloading_state(int const st)
 		ctx->load_verify_file(filename);
 #endif
 		// if all went well, set the torrent ssl context to this one
-		m_ssl_ctx = ctx;
+		m_ssl_ctx = std::move(ctx);
 		// tell the client we need a cert for this torrent
 		alerts().emplace_alert<torrent_need_cert_alert>(get_handle());
 	}
@@ -1649,12 +1682,14 @@ bool is_downloading_state(int const st)
 
 		construct_storage();
 
+#ifndef TORRENT_DISABLE_SHARE_MODE
 		if (m_share_mode && valid_metadata())
 		{
 			// in share mode, all pieces have their priorities initialized to 0
 			m_file_priority.clear();
 			m_file_priority.resize(m_torrent_file->num_files(), dont_download);
 		}
+#endif
 
 		// it's important to initialize the peers early, because this is what will
 		// fix up their have-bitmasks to have the correct size
@@ -1703,6 +1738,7 @@ bool is_downloading_state(int const st)
 			m_have_all = true;
 			update_gauge();
 			update_state_list();
+			update_want_tick();
 		}
 		else
 		{
@@ -1825,6 +1861,7 @@ bool is_downloading_state(int const st)
 #endif
 
 		update_want_peers();
+		update_want_tick();
 
 		// this will remove the piece picker, if we're done with it
 		maybe_done_flushing();
@@ -3316,7 +3353,7 @@ namespace {
 #endif
 			{
 				ADD_OUTSTANDING_ASYNC("torrent::on_peer_name_lookup");
-				m_ses.get_resolver().async_resolve(i.hostname, resolver_interface::abort_on_shutdown
+				m_ses.get_resolver().async_resolve(i.hostname, aux::resolver_interface::abort_on_shutdown
 					, std::bind(&torrent::on_peer_name_lookup, shared_from_this(), _1, _2, i.port, v));
 			}
 		}
@@ -3865,6 +3902,7 @@ namespace {
 		// (unless it has already been announced through predictive_piece_announce
 		// feature).
 		bool announce_piece = true;
+#ifndef TORRENT_DISABLE_PREDICTIVE_PIECES
 		auto const it = std::lower_bound(m_predictive_pieces.begin()
 			, m_predictive_pieces.end(), index);
 		if (it != m_predictive_pieces.end() && *it == index)
@@ -3873,6 +3911,7 @@ namespace {
 			announce_piece = false;
 			m_predictive_pieces.erase(it);
 		}
+#endif
 
 		// make a copy of the peer list since peers
 		// may disconnect while looping
@@ -3958,8 +3997,10 @@ namespace {
 
 			m_last_download = aux::time_now32();
 
+#ifndef TORRENT_DISABLE_SHARE_MODE
 			if (m_share_mode)
 				recalc_share_mode();
+#endif
 		}
 	}
 
@@ -4106,8 +4147,10 @@ namespace {
 		m_picker->piece_passed(index);
 		update_gauge();
 		we_have(index);
+		update_want_tick();
 	}
 
+#ifndef TORRENT_DISABLE_PREDICTIVE_PIECES
 	// we believe we will complete this piece very soon
 	// announce it to peers ahead of time to eliminate the
 	// round-trip times involved in announcing it, requesting it
@@ -4133,6 +4176,7 @@ namespace {
 
 		m_predictive_pieces.insert(i, index);
 	}
+#endif
 
 	// blocks may contain the block indices of the blocks that failed (if this is
 	// a v2 torrent).
@@ -4153,6 +4197,7 @@ namespace {
 
 		inc_stats_counter(counters::num_piece_failed);
 
+#ifndef TORRENT_DISABLE_PREDICTIVE_PIECES
 		auto const it = std::lower_bound(m_predictive_pieces.begin()
 			, m_predictive_pieces.end(), index);
 		if (it != m_predictive_pieces.end() && *it == index)
@@ -4169,6 +4214,7 @@ namespace {
 			}
 			m_predictive_pieces.erase(it);
 		}
+#endif
 
 		if (!torrent_file().info_hash().has_v1() && blocks.empty())
 		{
@@ -4584,6 +4630,7 @@ namespace {
 		m_num_connecting_seeds = 0;
 	}
 
+#ifndef TORRENT_DISABLE_SUPERSEEDING
 	void torrent::set_super_seeding(bool const on)
 	{
 		if (on == m_super_seeding) return;
@@ -4645,6 +4692,7 @@ namespace {
 		if (avail_vec.empty()) return piece_index_t{-1};
 		return avail_vec[random(std::uint32_t(avail_vec.size() - 1))];
 	}
+#endif
 
 	void torrent::on_files_deleted(storage_error const& error) try
 	{
@@ -5153,8 +5201,10 @@ namespace {
 		if (m_file_priority != prios)
 		{
 			m_file_priority = std::move(prios);
+#ifndef TORRENT_DISABLE_SHARE_MODE
 			if (m_share_mode)
 				recalc_share_mode();
+#endif
 		}
 
 		if (err)
@@ -6016,7 +6066,7 @@ namespace {
 
 			// use proxy
 			web->resolving = true;
-			m_ses.get_resolver().async_resolve(ps.hostname, resolver_interface::abort_on_shutdown
+			m_ses.get_resolver().async_resolve(ps.hostname, aux::resolver_interface::abort_on_shutdown
 				, [self = shared_from_this(), web, proxy_port](error_code const& e, std::vector<address> const& addrs)
 				{ self->wrap(&torrent::on_proxy_name_lookup, e, addrs, web, proxy_port); });
 		}
@@ -6036,7 +6086,7 @@ namespace {
 			auto self = shared_from_this();
 			web->resolving = true;
 
-			m_ses.get_resolver().async_resolve(hostname, resolver_interface::abort_on_shutdown
+			m_ses.get_resolver().async_resolve(hostname, aux::resolver_interface::abort_on_shutdown
 				, [self, web, port](error_code const& e, std::vector<address> const& addrs)
 				{
 					self->wrap(&torrent::on_name_lookup, e, addrs, port, web);
@@ -6121,7 +6171,7 @@ namespace {
 
 		auto self = shared_from_this();
 		web->resolving = true;
-		m_ses.get_resolver().async_resolve(hostname, resolver_interface::abort_on_shutdown
+		m_ses.get_resolver().async_resolve(hostname, aux::resolver_interface::abort_on_shutdown
 			, [self, web, port](error_code const& err, std::vector<address> const& addr)
 			{
 				self->wrap(&torrent::on_name_lookup, err, addr, port, web);
@@ -6536,7 +6586,9 @@ namespace {
 		ret.flags = torrent_flags_t{};
 		if (m_sequential_download) ret.flags |= torrent_flags::sequential_download;
 		if (m_seed_mode ) ret.flags |= torrent_flags::seed_mode;
+#ifndef TORRENT_DISABLE_SUPERSEEDING
 		if (m_super_seeding ) ret.flags |= torrent_flags::super_seeding;
+#endif
 		if (is_torrent_paused()) ret.flags |= torrent_flags::paused;
 		if (m_auto_managed ) ret.flags |= torrent_flags::auto_managed;
 		if (m_stop_when_ready) ret.flags |= torrent_flags::stop_when_ready;
@@ -7115,8 +7167,10 @@ namespace {
 			return false;
 		}
 
+#ifndef TORRENT_DISABLE_SHARE_MODE
 		if (m_share_mode)
 			recalc_share_mode();
+#endif
 
 		return peerinfo->connection != nullptr;
 	}
@@ -7206,6 +7260,7 @@ namespace {
 		m_ses.update_torrent_info_hash(shared_from_this(), old_ih);
 
 		update_gauge();
+		update_want_tick();
 
 		if (m_ses.alerts().should_post<metadata_received_alert>())
 		{
@@ -7475,8 +7530,10 @@ namespace {
 		if (m_peer_list) m_peer_list->check_invariant();
 #endif
 
+#ifndef TORRENT_DISABLE_SHARE_MODE
 		if (m_share_mode)
 			recalc_share_mode();
+#endif
 
 		// once we add the peer to our m_connections list, we can't throw an
 		// exception. That will end up violating an invariant between the session,
@@ -7519,7 +7576,7 @@ namespace {
 	{
 		if (m_abort) return false;
 
-		if (num_peers() > 0) return true;
+		if (!m_connections.empty()) return true;
 
 		// we might want to connect web seeds
 		if (!is_finished() && !m_web_seeds.empty() && m_files_checked)
@@ -7954,6 +8011,7 @@ namespace {
 
 		if (!is_seed())
 		{
+#ifndef TORRENT_DISABLE_SUPERSEEDING
 			// turn off super seeding if we're not a seed
 			if (m_super_seeding)
 			{
@@ -7961,6 +8019,7 @@ namespace {
 				set_need_save_resume();
 				state_updated();
 			}
+#endif
 
 			if (m_state != torrent_status::finished && is_finished())
 				finished();
@@ -8047,7 +8106,7 @@ namespace {
 		maybe_connect_web_seeds();
 	}
 
-	alert_manager& torrent::alerts() const
+	aux::alert_manager& torrent::alerts() const
 	{
 		TORRENT_ASSERT(is_single_thread());
 		return m_ses.alerts();
@@ -9064,6 +9123,7 @@ namespace {
 		if (it != m_web_seeds.end()) return &*it;
 		m_web_seeds.push_back(ent);
 		set_need_save_resume();
+		update_want_tick();
 		return &m_web_seeds.back();
 	}
 
@@ -9575,8 +9635,10 @@ namespace {
 			// resource requests
 			p->second_tick(tick_interval_ms);
 		}
+#if TORRENT_ABI_VERSION <= 2
 		if (m_ses.alerts().should_post<stats_alert>())
 			m_ses.alerts().emplace_alert<stats_alert>(get_handle(), tick_interval_ms, m_stat);
+#endif
 
 		m_total_uploaded += m_stat.last_payload_uploaded();
 		m_total_downloaded += m_stat.last_payload_downloaded();
@@ -9688,6 +9750,7 @@ namespace {
 		}
 	}
 
+#ifndef TORRENT_DISABLE_SHARE_MODE
 	void torrent::recalc_share_mode()
 	{
 		TORRENT_ASSERT(share_mode());
@@ -9824,6 +9887,7 @@ namespace {
 		update_peer_interest(was_finished);
 		update_want_peers();
 	}
+#endif // TORRENT_DISABLE_SHARE_MODE
 
 	void torrent::sent_bytes(int const bytes_payload, int const bytes_protocol)
 	{
@@ -10990,6 +11054,7 @@ namespace {
 
 		update_gauge();
 		update_want_peers();
+		update_want_tick();
 		update_state_list();
 
 		state_updated();
@@ -11094,7 +11159,11 @@ namespace {
 #endif
 
 #if TORRENT_ABI_VERSION == 1
+#ifndef TORRENT_DISABLE_SHARE_MODE
 		st->share_mode = m_share_mode;
+#else
+		st->share_mode = false;
+#endif
 		st->upload_mode = m_upload_mode;
 #endif
 		st->up_bandwidth_queue = 0;
@@ -11147,7 +11216,9 @@ namespace {
 		st->is_seeding = is_seed();
 		st->is_finished = is_finished();
 #if TORRENT_ABI_VERSION == 1
+#ifndef TORRENT_DISABLE_SUPERSEEDING
 		st->super_seeding = m_super_seeding;
+#endif
 #endif
 		st->has_metadata = valid_metadata();
 		bytes_done(*st, flags);
@@ -11461,13 +11532,9 @@ namespace {
 					protocol_version const hash_version = r.info_hash == m_info_hash.v1
 						? protocol_version::V1 : protocol_version::V2;
 					auto& a = aep->info_hashes[hash_version];
-					// if we can't find the hostname, the tracker is probably
-					// out of service. Wait a while before trying it again
-					seconds32 const extra_delay = (ec == boost::asio::error::host_not_found)
-						? hours(6) : hours(0);
 					local_endpoint = aep->local_endpoint;
 					a.failed(settings().get_int(settings_pack::tracker_backoff)
-						, std::max(retry_interval, extra_delay));
+						, retry_interval);
 					a.last_error = ec;
 					a.message = msg;
 					fails = a.fails;
