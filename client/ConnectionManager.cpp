@@ -1068,7 +1068,7 @@ bool ConnectionManager::checkIpFlood(const string& aIPServer, uint16_t aPort, co
 			l_debug_key = " Time: " + Util::getShortTimeString() + " Hub info = " + p_HubInfo; // https://drdump.com/Problem.aspx?ClientID=guest&ProblemID=92733
 			if (!p_userInfo.empty())
 			{
-				l_debug_key + " UserInfo = [" + p_userInfo + "]";
+				l_debug_key + " UserInfo = [" + p_userInfo + ']';
 			}
 			l_cur_value.m_original_query_for_debug[l_debug_key]++;
 		}
