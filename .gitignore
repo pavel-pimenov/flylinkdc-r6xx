@@ -16,3 +16,5 @@ client.key
 /libtorrent/merge-vendors.bat
 /mediainfolib/merge-vendors.bat
 *.lastbuildstate
+*.vcxproj.FileListAbsolute.txt
+unsuccessfulbuild
