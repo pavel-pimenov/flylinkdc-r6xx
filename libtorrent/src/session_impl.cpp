@@ -2000,46 +2000,45 @@ namespace {
 		// open new sockets on any endpoints that didn't match with
 		// an existing socket
 		for (auto const& ep : eps)
-		{
 #ifndef BOOST_NO_EXCEPTIONS
 			try
 #endif
-			{
-				std::shared_ptr<listen_socket_t> s = setup_listener(ep, ec);
+		{
+			std::shared_ptr<listen_socket_t> s = setup_listener(ep, ec);
 
-				if (!ec && (s->sock || s->udp_sock))
-				{
-					m_listen_sockets.emplace_back(s);
+			if (!ec && (s->sock || s->udp_sock))
+			{
+				m_listen_sockets.emplace_back(s);
 
 #ifndef TORRENT_DISABLE_DHT
-					if (m_dht
-						&& s->ssl != transport::ssl
-						&& !(s->flags & listen_socket_t::local_network))
-					{
-						m_dht->new_socket(m_listen_sockets.back());
-					}
+				if (m_dht
+					&& s->ssl != transport::ssl
+					&& !(s->flags & listen_socket_t::local_network))
+				{
+					m_dht->new_socket(m_listen_sockets.back());
+				}
 #endif
 
-					TORRENT_ASSERT(bool(s->flags & listen_socket_t::accept_incoming) == bool(s->sock));
-					if (s->sock) async_accept(s->sock, s->ssl);
-				}
+				TORRENT_ASSERT(bool(s->flags & listen_socket_t::accept_incoming) == bool(s->sock));
+				if (s->sock) async_accept(s->sock, s->ssl);
 			}
-#ifndef BOOST_NO_EXCEPTIONS
-			catch (std::exception const& e)
-			{
-				TORRENT_UNUSED(e);
-#ifndef TORRENT_DISABLE_LOGGING
-				if (should_log())
-				{
-					session_log("setup_listener(%s) device: %s failed: %s"
-						, print_endpoint(ep.addr, ep.port).c_str()
-						, ep.device.c_str()
-						, e.what());
-				}
-#endif // TORRENT_DISABLE_LOGGING
-			}
-#endif // BOOST_NO_EXCEPTIONS
 		}
+#ifndef BOOST_NO_EXCEPTIONS
+		catch (std::exception const& e)
+		{
+			TORRENT_UNUSED(e);
+#ifndef TORRENT_DISABLE_LOGGING
+			if (should_log())
+			{
+				session_log("setup_listener(%s) device: %s failed: %s"
+					, print_endpoint(ep.addr, ep.port).c_str()
+					, ep.device.c_str()
+					, e.what());
+			}
+#endif // TORRENT_DISABLE_LOGGING
+		}
+#endif // BOOST_NO_EXCEPTIONS
+
 		if (m_listen_sockets.empty())
 		{
 #ifndef TORRENT_DISABLE_LOGGING

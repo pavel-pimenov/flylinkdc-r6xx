@@ -800,14 +800,6 @@ int _System __libsocket_sysctl(int* mib, u_int namelen, void *oldp, size_t *oldl
 		auto const it = std::find_if(routes.begin(), routes.end()
 			, [&](ip_route const& r) -> bool
 			{
-/*
-                OutputDebugStringA("\r\n");
-                OutputDebugStringA("r.name = ");
-                OutputDebugStringA(r.name);
-                OutputDebugStringA("   ");
-                OutputDebugStringA("iface.name = ");
-                OutputDebugStringA(iface.name);
-*/
 				return r.destination.is_unspecified()
 					&& r.destination.is_v4() == iface.interface_address.is_v4()
 					&& !r.gateway.is_unspecified()
