@@ -2,7 +2,7 @@
 // impl/write.hpp
 // ~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2019 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2020 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -422,7 +422,7 @@ namespace detail
   class initiate_async_write_buffer_sequence
   {
   public:
-      typedef typename AsyncWriteStream::executor_type executor_type;
+    typedef typename AsyncWriteStream::executor_type executor_type;
 
     explicit initiate_async_write_buffer_sequence(AsyncWriteStream& stream)
       : stream_(stream)

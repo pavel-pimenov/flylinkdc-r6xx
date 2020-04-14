@@ -5,57 +5,61 @@ Copyright 2019 Glen Joseph Fernandes
 Distributed under the Boost Software License, Version 1.0.
 (http://www.boost.org/LICENSE_1_0.txt)
 */
-#ifndef BOOST_UTILITY_OSTREAM_STRING_HPP
-#define BOOST_UTILITY_OSTREAM_STRING_HPP
+#ifndef BOOST_IO_OSTREAM_PUT_HPP
+#define BOOST_IO_OSTREAM_PUT_HPP
 
 #include <boost/config.hpp>
 #include <iosfwd>
 #include <cstddef>
 
 namespace boost {
+namespace io {
 namespace detail {
 
 template<class charT, class traits>
 inline std::size_t
-oss_put(std::basic_ostream<charT, traits>& os, const charT* data,
+osp_put(std::basic_streambuf<charT, traits>& out, const charT* data,
     std::size_t size)
 {
-    return static_cast<std::size_t>(os.rdbuf()->sputn(data, size));
+    return static_cast<std::size_t>(out.sputn(data, size));
 }
 
 template<class charT, class traits>
 inline bool
-oss_fill(std::basic_ostream<charT, traits>& os, std::size_t size)
+osp_fill(std::basic_streambuf<charT, traits>& out, charT c, std::size_t size)
 {
-    charT c = os.fill();
     charT fill[] = { c, c, c, c, c, c, c, c };
     enum {
         chunk = sizeof fill / sizeof(charT)
     };
     for (; size > chunk; size -= chunk) {
-        if (boost::detail::oss_put(os, fill, chunk) != chunk) {
+        if (boost::io::detail::osp_put(out, fill, chunk) != chunk) {
             return false;
         }
     }
-    return boost::detail::oss_put(os, fill, size) == size;
+    return boost::io::detail::osp_put(out, fill, size) == size;
 }
 
 template<class charT, class traits>
-class oss_guard {
+class osp_guard {
 public:
-    explicit oss_guard(std::basic_ostream<charT, traits>& os) BOOST_NOEXCEPT
+    explicit osp_guard(std::basic_ostream<charT, traits>& os) BOOST_NOEXCEPT
         : os_(&os) { }
-    ~oss_guard() BOOST_NOEXCEPT_IF(false) {
+
+    ~osp_guard() BOOST_NOEXCEPT_IF(false) {
         if (os_) {
             os_->setstate(std::basic_ostream<charT, traits>::badbit);
         }
     }
+
     void release() BOOST_NOEXCEPT {
         os_ = 0;
     }
+
 private:
-    oss_guard(const oss_guard&);
-    oss_guard& operator=(const oss_guard&);
+    osp_guard(const osp_guard&);
+    osp_guard& operator=(const osp_guard&);
+
     std::basic_ostream<charT, traits>* os_;
 };
 
@@ -63,25 +67,26 @@ private:
 
 template<class charT, class traits>
 inline std::basic_ostream<charT, traits>&
-ostream_string(std::basic_ostream<charT, traits>& os, const charT* data,
+ostream_put(std::basic_ostream<charT, traits>& os, const charT* data,
     std::size_t size)
 {
     typedef std::basic_ostream<charT, traits> stream;
-    detail::oss_guard<charT, traits> guard(os);
+    detail::osp_guard<charT, traits> guard(os);
     typename stream::sentry entry(os);
     if (entry) {
+        std::basic_streambuf<charT, traits>& out = *os.rdbuf();
         std::size_t width = static_cast<std::size_t>(os.width());
         if (width <= size) {
-            if (detail::oss_put(os, data, size) != size) {
+            if (detail::osp_put(out, data, size) != size) {
                 return os;
             }
         } else if ((os.flags() & stream::adjustfield) == stream::left) {
-            if (detail::oss_put(os, data, size) != size ||
-                !detail::oss_fill(os, width - size)) {
+            if (detail::osp_put(out, data, size) != size ||
+                !detail::osp_fill(out, os.fill(), width - size)) {
                 return os;
             }
-        } else if (!detail::oss_fill(os, width - size) ||
-            detail::oss_put(os, data, size) != size) {
+        } else if (!detail::osp_fill(out, os.fill(), width - size) ||
+            detail::osp_put(out, data, size) != size) {
             return os;
         }
         os.width(0);
@@ -90,6 +95,7 @@ ostream_string(std::basic_ostream<charT, traits>& os, const charT* data,
     return os;
 }
 
+} /* io */
 } /* boost */
 
 #endif
