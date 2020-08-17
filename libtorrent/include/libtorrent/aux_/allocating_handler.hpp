@@ -55,6 +55,8 @@ namespace libtorrent { namespace aux {
 #endif
 
 #if defined _MSC_VER || defined __MINGW64__
+
+	// windows
 #ifndef NDEBUG
 	constexpr std::size_t debug_read_iter = 24 * sizeof(void*);
 	constexpr std::size_t debug_write_iter = 24 * sizeof(void*);
@@ -62,7 +64,7 @@ namespace libtorrent { namespace aux {
 	constexpr std::size_t debug_read_iter = 0;
 	constexpr std::size_t debug_write_iter = 0;
 #endif
-#ifdef TORRENT_USE_OPENSSL
+#if TORRENT_USE_SSL
 	constexpr std::size_t openssl_read_cost = 94;
 	constexpr std::size_t openssl_write_cost = 94;
 #else
@@ -76,8 +78,12 @@ namespace libtorrent { namespace aux {
 	constexpr std::size_t utp_handler_max_size = tracking + 184;
 	constexpr std::size_t tick_handler_max_size = tracking + 112;
 	constexpr std::size_t abort_handler_max_size = tracking + 104;
+	constexpr std::size_t submit_handler_max_size = tracking + 104;
 	constexpr std::size_t deferred_handler_max_size = tracking + 112;
 #else
+
+	// non-windows
+
 #ifdef _GLIBCXX_DEBUG
 #if defined __clang__
 	constexpr std::size_t debug_read_iter = 12 * sizeof(void*);
@@ -91,7 +97,7 @@ namespace libtorrent { namespace aux {
 	constexpr std::size_t debug_write_iter = 0;
 #endif
 
-#ifdef TORRENT_USE_OPENSSL
+#if TORRENT_USE_SSL
 #ifdef __APPLE__
 	constexpr std::size_t openssl_read_cost = 264;
 	constexpr std::size_t openssl_write_cost = 216;
@@ -103,18 +109,27 @@ namespace libtorrent { namespace aux {
 	constexpr std::size_t openssl_read_cost = 0;
 	constexpr std::size_t openssl_write_cost = 0;
 #endif
-	constexpr std::size_t write_handler_max_size = tracking + debug_write_iter + openssl_write_cost + 152;
-	constexpr std::size_t read_handler_max_size = tracking + debug_read_iter + openssl_read_cost + 152;
+
+#ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+	constexpr std::size_t fuzzer_write_cost = 32;
+	constexpr std::size_t fuzzer_read_cost = 80;
+#else
+	constexpr std::size_t fuzzer_write_cost = 0;
+	constexpr std::size_t fuzzer_read_cost = 0;
+#endif
+	constexpr std::size_t write_handler_max_size = tracking + debug_write_iter + openssl_write_cost + fuzzer_write_cost + 152;
+	constexpr std::size_t read_handler_max_size = tracking + debug_read_iter + openssl_read_cost + fuzzer_read_cost + 152;
 	constexpr std::size_t utp_handler_max_size = tracking + 136;
 	constexpr std::size_t udp_handler_max_size = tracking + 112;
 	constexpr std::size_t abort_handler_max_size = tracking + 72;
+	constexpr std::size_t submit_handler_max_size = tracking + 72;
 	constexpr std::size_t deferred_handler_max_size = tracking + 80;
 	constexpr std::size_t tick_handler_max_size = tracking + 80;
 #endif
 
 	enum HandlerName
 	{
-		write_handler, read_handler, udp_handler, tick_handler, abort_handler, defer_handler, utp_handler
+		write_handler, read_handler, udp_handler, tick_handler, abort_handler, defer_handler, utp_handler, submit_handler
 	};
 
 	// this is meant to provide the actual storage for the handler allocator.

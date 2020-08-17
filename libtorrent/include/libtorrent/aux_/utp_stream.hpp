@@ -34,7 +34,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #define TORRENT_UTP_STREAM_HPP_INCLUDED
 
 #include "libtorrent/udp_socket.hpp"
-#include "libtorrent/io.hpp"
+#include "libtorrent/aux_/io_bytes.hpp"
 #include "libtorrent/aux_/packet_buffer.hpp"
 #include "libtorrent/error_code.hpp"
 #include "libtorrent/time.hpp"
@@ -250,6 +250,7 @@ struct TORRENT_EXTRA_EXPORT utp_stream
 	void add_write_buffer(void const* buf, std::size_t len);
 	void issue_write();
 	std::size_t read_some(bool clear_buffers);
+	std::size_t write_some(bool clear_buffers);
 
 	int send_delay() const;
 	int recv_delay() const;
@@ -365,11 +366,31 @@ struct TORRENT_EXTRA_EXPORT utp_stream
 	}
 
 	template <class Const_Buffers>
-	std::size_t write_some(Const_Buffers const& /* buffers */, error_code& /* ec */)
+	std::size_t write_some(Const_Buffers const& buffers, error_code& ec)
 	{
-		TORRENT_ASSERT(false && "not implemented!");
-		// TODO: implement blocking write. Low priority since it's not used (yet)
-		return 0;
+		TORRENT_ASSERT(!m_write_handler);
+		if (m_impl == nullptr)
+		{
+			ec = boost::asio::error::not_connected;
+			return 0;
+		}
+
+		size_t buf_size = 0;
+
+		for (auto i = buffer_sequence_begin(buffers)
+			, end(buffer_sequence_end(buffers)); i != end; ++i)
+		{
+			add_write_buffer(i->data(), i->size());
+			buf_size += i->size();
+		}
+		std::size_t ret = write_some(true);
+		TORRENT_ASSERT(ret <= buf_size);
+		if(ret == 0 && buf_size > 0)
+		{
+			ec = boost::asio::error::would_block;
+			return 0;
+		}
+		return ret;
 	}
 
 #ifndef BOOST_NO_EXCEPTIONS
@@ -430,6 +451,33 @@ struct TORRENT_EXTRA_EXPORT utp_stream
 		m_write_handler = std::move(handler);
 		issue_write();
 	}
+
+#if BOOST_VERSION >= 106600
+	// Compatiblity with the async_wait method introduced in boost 1.66
+
+	enum wait_type { wait_read, wait_write, wait_error };
+
+	template <class Handler>
+	void async_wait(wait_type type, Handler handler) {
+		switch(type)
+		{
+		case wait_read:
+			async_read_some(boost::asio::null_buffers()
+					, [handler](error_code ec, size_t) { handler(std::move(ec)); });
+			break;
+
+		case wait_write:
+			async_write_some(boost::asio::null_buffers()
+					, [handler](error_code ec, size_t) { handler(std::move(ec)); });
+			break;
+
+		case wait_error:
+			post(m_io_service, std::bind<void>(std::move(handler)
+					, boost::asio::error::operation_not_supported));
+            break;
+		}
+	}
+#endif
 
 private:
 
@@ -582,6 +630,7 @@ struct utp_socket_impl
 	void do_connect(tcp::endpoint const& ep);
 
 	std::size_t read_some(bool const clear_buffers);
+	std::size_t write_some(bool const clear_buffers); // Warning: non-blocking
 	int receive_buffer_size() const { return m_receive_buffer_size; }
 
 	bool null_buffers() const { return m_null_buffers; }

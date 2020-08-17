@@ -40,6 +40,11 @@ POSSIBILITY OF SUCH DAMAGE.
 #define TORRENT_CONFIG_HPP_INCLUDED
 
 // [+]FlylinkDC++
+
+#ifndef TORRENT_USE_OPENSSL
+#define TORRENT_USE_OPENSSL
+#endif
+
 #ifndef TORRENT_NO_BLOCK_ALERTS
 #define TORRENT_NO_BLOCK_ALERTS
 #endif
@@ -67,6 +72,8 @@ POSSIBILITY OF SUCH DAMAGE.
 // #define TORRENT_DISABLE_EXTENSIONS
 #endif
 // [~]FlylinkDC++
+
+#include <cstddef>
 
 #include "libtorrent/aux_/disable_warnings_push.hpp"
 
@@ -123,6 +130,7 @@ POSSIBILITY OF SUCH DAMAGE.
 // (disables some float-dependent APIs)
 #define TORRENT_NO_FPU 1
 #define TORRENT_USE_I2P 0
+#define TORRENT_USE_RTC 0
 #ifndef TORRENT_USE_ICONV
 #define TORRENT_USE_ICONV 0
 #endif
@@ -199,10 +207,10 @@ POSSIBILITY OF SUCH DAMAGE.
 #define TORRENT_USE_ICONV 0
 #else // ANDROID
 
-// posix_fallocate() is available under this condition
-#if _XOPEN_SOURCE >= 600 || _POSIX_C_SOURCE >= 200112L
-#define TORRENT_HAS_FALLOCATE 1
-#else
+// posix_fallocate() is not available in glibc under these condition
+#if defined _XOPEN_SOURCE && _XOPEN_SOURCE < 600
+#define TORRENT_HAS_FALLOCATE 0
+#elif defined _POSIX_C_SOURCE && _POSIX_C_SOURCE < 200112L
 #define TORRENT_HAS_FALLOCATE 0
 #endif
 
@@ -503,6 +511,10 @@ POSSIBILITY OF SUCH DAMAGE.
 #define TORRENT_USE_I2P 1
 #endif
 
+#ifndef TORRENT_USE_RTC
+#define TORRENT_USE_RTC 1
+#endif
+
 #ifndef TORRENT_HAS_SYMLINK
 #define TORRENT_HAS_SYMLINK 0
 #endif
@@ -603,8 +615,18 @@ POSSIBILITY OF SUCH DAMAGE.
 #endif
 #endif // TORRENT_HAS_ARM_CRC32
 
-#if defined TORRENT_SSL_PEERS && !defined TORRENT_USE_OPENSSL
-#error compiling with TORRENT_SSL_PEERS requires TORRENT_USE_OPENSSL
+#if defined TORRENT_USE_OPENSSL || defined TORRENT_USE_GNUTLS
+#define TORRENT_USE_SSL 1
+#else
+#define TORRENT_USE_SSL 0
+#endif
+
+#if defined TORRENT_SSL_PEERS && !TORRENT_USE_SSL
+#error compiling with TORRENT_SSL_PEERS requires TORRENT_USE_OPENSSL or TORRENT_USE_GNUTLS
+#endif
+
+#if TORRENT_USE_RTC && !TORRENT_USE_SSL
+#error compiling with TORRENT_USE_RTC requires TORRENT_USE_OPENSSL or TORRENT_USE_GNUTLS
 #endif
 
 #include "libtorrent/aux_/export.hpp"

@@ -81,7 +81,6 @@ POSSIBILITY OF SUCH DAMAGE.
 namespace libtorrent {
 
 #if TORRENT_ABI_VERSION == 1
-	struct lazy_entry;
 	// backwards compatibility
 	using type_error = system_error;
 #endif
@@ -122,6 +121,11 @@ namespace libtorrent {
 		// newly constructed entry
 		entry(dictionary_type); // NOLINT
 		entry(span<char const>); // NOLINT
+		entry(list_type); // NOLINT
+		entry(integer_type); // NOLINT
+		entry(preformatted_type); // NOLINT
+
+		// hidden
 		template <typename U, typename Cond = typename std::enable_if<
 			std::is_same<U, entry::string_type>::value
 			|| std::is_same<U, string_view>::value
@@ -135,9 +139,6 @@ namespace libtorrent {
 			new(&data) string_type(std::move(v));
 			m_type = string_t;
 		}
-		entry(list_type); // NOLINT
-		entry(integer_type); // NOLINT
-		entry(preformatted_type); // NOLINT
 
 		// construct an empty entry of the specified type.
 		// see data_type enum.
@@ -158,16 +159,19 @@ namespace libtorrent {
 
 		// copies the structure of the right hand side into this
 		// entry.
-#if TORRENT_ABI_VERSION == 1
-		entry& operator=(lazy_entry const&) &;
-#endif
 		entry& operator=(bdecode_node const&) &;
 		entry& operator=(entry const&) &;
 		entry& operator=(entry&&) & noexcept;
 		entry& operator=(dictionary_type) &;
 		entry& operator=(span<char const>) &;
+		entry& operator=(list_type) &;
+		entry& operator=(integer_type) &;
+		entry& operator=(preformatted_type) &;
+
+		// hidden
 		template <typename U, typename Cond = typename std::enable_if<
 			std::is_same<U, entry::string_type>::value
+			|| std::is_same<U, string_view>::value
 			|| std::is_same<U, char const*>::value>::type>
 		entry& operator=(U v) &
 		{
@@ -179,9 +183,6 @@ namespace libtorrent {
 #endif
 			return *this;
 		}
-		entry& operator=(list_type) &;
-		entry& operator=(integer_type) &;
-		entry& operator=(preformatted_type) &;
 
 		// The ``integer()``, ``string()``, ``list()`` and ``dict()`` functions
 		// are accessors that return the respective type. If the ``entry`` object
@@ -231,15 +232,15 @@ namespace libtorrent {
 		// To make it easier to extract information from a torrent file, the
 		// class torrent_info exists.
 		integer_type& integer();
-		const integer_type& integer() const;
+		integer_type const& integer() const;
 		string_type& string();
-		const string_type& string() const;
+		string_type const& string() const;
 		list_type& list();
-		const list_type& list() const;
+		list_type const& list() const;
 		dictionary_type& dict();
-		const dictionary_type& dict() const;
+		dictionary_type const& dict() const;
 		preformatted_type& preformatted();
-		const preformatted_type& preformatted() const;
+		preformatted_type const& preformatted() const;
 
 		// swaps the content of *this* with ``e``.
 		void swap(entry& e);
@@ -256,7 +257,7 @@ namespace libtorrent {
 		// existing element at the given key. If the key is not found, it will
 		// throw ``system_error``.
 		entry& operator[](string_view key);
-		const entry& operator[](string_view key) const;
+		entry const& operator[](string_view key) const;
 
 		// These functions requires the entry to be a dictionary, if it isn't
 		// they will throw ``system_error``.
@@ -301,6 +302,7 @@ namespace libtorrent {
 		std::uint8_t m_type:7;
 
 	public:
+		// hidden
 		// in debug mode this is set to false by bdecode to indicate that the
 		// program has not yet queried the type of this entry, and should not
 		// assume that it has a certain type. This is asserted in the accessor

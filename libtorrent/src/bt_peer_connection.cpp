@@ -48,14 +48,14 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "libtorrent/hex.hpp" // to_hex
 #endif
 
-#include "libtorrent/bt_peer_connection.hpp"
+#include "libtorrent/aux_/bt_peer_connection.hpp"
 #include "libtorrent/session.hpp"
 #include "libtorrent/identify_client.hpp"
 #include "libtorrent/entry.hpp"
 #include "libtorrent/bencode.hpp"
 #include "libtorrent/alert_types.hpp"
 #include "libtorrent/aux_/invariant_check.hpp"
-#include "libtorrent/io.hpp"
+#include "libtorrent/aux_/io_bytes.hpp"
 #include "libtorrent/aux_/io.hpp"
 #include "libtorrent/socket_io.hpp"
 #include "libtorrent/extensions.hpp"
@@ -76,7 +76,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "libtorrent/hasher.hpp"
 #endif
 
-namespace libtorrent {
+namespace libtorrent::aux {
 
 #if !defined TORRENT_DISABLE_ENCRYPTION
 namespace {
@@ -196,7 +196,7 @@ namespace {
 	{
 		if (is_disconnecting()) return;
 
-		std::shared_ptr<torrent> t = associated_torrent().lock();
+		auto t = associated_torrent().lock();
 		TORRENT_ASSERT(t);
 
 		if (t->graceful_pause())
@@ -304,7 +304,7 @@ namespace {
 		// connections that are still in the handshake
 		// will send their bitfield when the handshake
 		// is done
-		std::shared_ptr<torrent> t = associated_torrent().lock();
+		auto t = associated_torrent().lock();
 #ifndef TORRENT_DISABLE_SHARE_MODE
 		if (!t->share_mode())
 #endif
@@ -445,7 +445,7 @@ namespace {
 		if (!m_supports_fast) return;
 
 #if TORRENT_USE_ASSERTS
-		std::shared_ptr<torrent> t = associated_torrent().lock();
+		auto t = associated_torrent().lock();
 		TORRENT_ASSERT(t);
 		TORRENT_ASSERT(t->valid_metadata());
 #endif
@@ -454,7 +454,7 @@ namespace {
 		if (should_log(peer_log_alert::outgoing_message))
 		{
 #if !TORRENT_USE_ASSERTS
-			std::shared_ptr<torrent> t = associated_torrent().lock();
+			auto t = associated_torrent().lock();
 #endif
 			peer_log(peer_log_alert::outgoing_message, "SUGGEST"
 				, "piece: %d num_peers: %d", static_cast<int>(piece)
@@ -505,7 +505,9 @@ namespace {
 
 	bool bt_peer_connection::in_handshake() const
 	{
-		return !m_sent_handshake;
+		// this returns true until we have received a handshake
+		// and until we have send our handshake
+		return !m_sent_handshake || m_state < state_t::read_packet_size;
 	}
 
 #if !defined TORRENT_DISABLE_ENCRYPTION
@@ -714,7 +716,7 @@ namespace {
 		TORRENT_ASSERT(!m_sent_handshake);
 		m_sent_handshake = true;
 
-		std::shared_ptr<torrent> t = associated_torrent().lock();
+		auto t = associated_torrent().lock();
 		TORRENT_ASSERT(t);
 
 		// add handshake to the send buffer
@@ -744,7 +746,7 @@ namespace {
 
 		// this is a v1 peer in a hybrid torrent
 		// indicate that we support upgrading to v2
-		if (!peer_info_struct()->protocol_v2 && t->torrent_file().info_hash().has_v2())
+		if (!peer_info_struct()->protocol_v2 && t->torrent_file().info_hashes().has_v2())
 		{
 			*(ptr + 7) |= 0x10;
 		}
@@ -794,7 +796,7 @@ namespace {
 
 	piece_block_progress bt_peer_connection::downloading_piece_progress() const
 	{
-		std::shared_ptr<torrent> t = associated_torrent().lock();
+		auto t = associated_torrent().lock();
 		TORRENT_ASSERT(t);
 
 		span<char const> recv_buffer = m_recv_buffer.get();
@@ -851,7 +853,7 @@ namespace {
 			// assume that the choke message implies that all
 			// of our requests are rejected. Go through them and
 			// pretend that we received reject request messages
-			std::shared_ptr<torrent> t = associated_torrent().lock();
+			auto t = associated_torrent().lock();
 			TORRENT_ASSERT(t);
 			auto const dlq = download_queue();
 			for (pending_block const& pb : dlq)
@@ -980,7 +982,7 @@ namespace {
 
 		TORRENT_ASSERT(received >= 0);
 
-		std::shared_ptr<torrent> t = associated_torrent().lock();
+		auto t = associated_torrent().lock();
 		TORRENT_ASSERT(t);
 
 		received_bytes(0, received);
@@ -1045,7 +1047,7 @@ namespace {
 		span<char const> recv_buffer = m_recv_buffer.get();
 		int const recv_pos = m_recv_buffer.pos();
 
-		std::shared_ptr<torrent> t = associated_torrent().lock();
+		auto t = associated_torrent().lock();
 		TORRENT_ASSERT(t);
 		if (recv_pos == 1)
 		{
@@ -1170,7 +1172,7 @@ namespace {
 		}
 		if (!m_recv_buffer.packet_finished()) return;
 
-		std::shared_ptr<torrent> t = associated_torrent().lock();
+		auto t = associated_torrent().lock();
 		TORRENT_ASSERT(t);
 
 		auto const& files = t->torrent_file().files();
@@ -1197,7 +1199,7 @@ namespace {
 
 		if (!validate_hash_request(hr, files))
 		{
-			write_hash_reject(hr);
+			write_hash_reject(hr, file_root);
 			return;
 		}
 
@@ -1205,7 +1207,7 @@ namespace {
 
 		if (hashes.empty())
 		{
-			write_hash_reject(hr);
+			write_hash_reject(hr, file_root);
 			return;
 		}
 
@@ -1225,7 +1227,7 @@ namespace {
 			return;
 		}
 
-		std::shared_ptr<torrent> t = associated_torrent().lock();
+		auto t = associated_torrent().lock();
 		TORRENT_ASSERT(t);
 
 		auto const& files = t->torrent_file().files();
@@ -1325,7 +1327,7 @@ namespace {
 		}
 		if (!m_recv_buffer.packet_finished()) return;
 
-		std::shared_ptr<torrent> t = associated_torrent().lock();
+		auto t = associated_torrent().lock();
 		TORRENT_ASSERT(t);
 
 		span<char const> recv_buffer = m_recv_buffer.get();
@@ -1386,7 +1388,7 @@ namespace {
 			m_supports_dht_port = true;
 			// if we're done with the handshake, respond right away, otherwise
 			// we'll send the DHT port later
-			if (m_sent_handshake)
+			if (m_sent_bitfield)
 				write_dht_port();
 		}
 	}
@@ -1557,7 +1559,7 @@ namespace {
 		}
 #endif
 
-		std::shared_ptr<torrent> t = associated_torrent().lock();
+		auto t = associated_torrent().lock();
 		if (!t) return;
 
 		switch (msg_type)
@@ -1786,7 +1788,7 @@ namespace {
 		send_buffer(buf);
 	}
 
-	void bt_peer_connection::write_hash_reject(hash_request const& req)
+	void bt_peer_connection::write_hash_reject(hash_request const& req, sha256_hash const& root)
 	{
 		INVARIANT_CHECK;
 
@@ -1797,10 +1799,6 @@ namespace {
 
 		auto t = associated_torrent().lock();
 		if (!t) return;
-		auto const& ti = t->torrent_file();
-		auto const& fs = ti.files();
-		auto root = fs.root(req.file);
-
 		ptr = std::copy(root.begin(), root.end(), ptr);
 
 		aux::write_uint32(req.base, ptr);
@@ -1826,7 +1824,7 @@ namespace {
 		if (is_disconnecting() || m_hash_requests.size() > 1) return;
 		if (!peer_info_struct()->protocol_v2) return;
 
-		std::shared_ptr<torrent> t = associated_torrent().lock();
+		auto t = associated_torrent().lock();
 		TORRENT_ASSERT(t);
 
 		if (!t->valid_metadata()) return;
@@ -1962,7 +1960,7 @@ namespace {
 	{
 		if (!m_recv_buffer.packet_finished()) return;
 
-		std::shared_ptr<torrent> t = associated_torrent().lock();
+		auto t = associated_torrent().lock();
 		TORRENT_ASSERT(t);
 
 		span<char const> recv_buffer = m_recv_buffer.get();
@@ -2029,7 +2027,12 @@ namespace {
 		if (last_seen_complete >= 0) set_last_seen_complete(last_seen_complete);
 
 		auto const client_info = root.dict_find_string_value("v");
-		if (!client_info.empty()) m_client_version = client_info.to_string();
+		if (!client_info.empty())
+		{
+			m_client_version = std::string(client_info);
+			// the client name is supposed to be UTF-8
+			aux::verify_encoding(m_client_version);
+		}
 
 		int const reqq = int(root.dict_find_int_value("reqq"));
 		if (reqq > 0) max_out_request_queue(reqq);
@@ -2180,7 +2183,7 @@ namespace {
 		INVARIANT_CHECK;
 
 #if TORRENT_USE_ASSERTS && !defined TORRENT_DISABLE_SHARE_MODE
-		std::shared_ptr<torrent> t = associated_torrent().lock();
+		auto t = associated_torrent().lock();
 		TORRENT_ASSERT(!t->share_mode());
 #endif
 
@@ -2205,7 +2208,7 @@ namespace {
 	{
 		INVARIANT_CHECK;
 
-		std::shared_ptr<torrent> t = associated_torrent().lock();
+		auto t = associated_torrent().lock();
 		if (m_share_mode_id == 0) return;
 
 		char msg[7] = {0, 0, 0, 3, msg_extended};
@@ -2268,7 +2271,7 @@ namespace {
 		// know whether to send a have-all or have-none?
 		TORRENT_ASSERT(m_state >= state_t::read_peer_id);
 
-		std::shared_ptr<torrent> t = associated_torrent().lock();
+		auto t = associated_torrent().lock();
 		TORRENT_ASSERT(t);
 		TORRENT_ASSERT(m_sent_handshake);
 		TORRENT_ASSERT(t->valid_metadata());
@@ -2392,7 +2395,7 @@ namespace {
 		entry handshake;
 		entry::dictionary_type& m = handshake["m"].dict();
 
-		std::shared_ptr<torrent> t = associated_torrent().lock();
+		auto t = associated_torrent().lock();
 		TORRENT_ASSERT(t);
 
 		// if we're using a proxy, our listen port won't be useful
@@ -2604,7 +2607,7 @@ namespace {
 		TORRENT_ASSERT(m_sent_handshake);
 		TORRENT_ASSERT(m_sent_bitfield);
 
-		std::shared_ptr<torrent> t = associated_torrent().lock();
+		auto t = associated_torrent().lock();
 		TORRENT_ASSERT(t);
 
 	// the hash piece looks like this:
@@ -2722,7 +2725,7 @@ namespace {
 
 	void bt_peer_connection::on_receive_impl(std::size_t bytes_transferred)
 	{
-		std::shared_ptr<torrent> t = associated_torrent().lock();
+		auto t = associated_torrent().lock();
 
 		span<char const> recv_buffer = m_recv_buffer.get();
 
@@ -2816,7 +2819,7 @@ namespace {
 				std::array<char, dh_key_len> const buffer = export_key(m_dh_key_exchange->get_secret());
 				hasher h(req1);
 				h.update(buffer);
-				m_sync_hash.reset(new sha1_hash(h.final()));
+				m_sync_hash = std::make_unique<sha1_hash>(h.final());
 
 #ifndef TORRENT_DISABLE_LOGGING
 				if (should_log(peer_log_alert::info))
@@ -2892,13 +2895,13 @@ namespace {
 			TORRENT_ASSERT(!is_disconnecting());
 
 			sha1_hash ih(recv_buffer.data());
-			torrent const* ti = m_ses.find_encrypted_torrent(ih, m_dh_key_exchange->get_hash_xor_mask());
+			aux::torrent const* ti = m_ses.find_encrypted_torrent(ih, m_dh_key_exchange->get_hash_xor_mask());
 
 			if (ti)
 			{
 				if (!t)
 				{
-					attach_to_torrent(ti->torrent_file().info_hash());
+					attach_to_torrent(ti->torrent_file().info_hashes());
 					if (is_disconnecting()) return;
 					TORRENT_ASSERT(!is_disconnecting());
 
@@ -3427,8 +3430,8 @@ namespace {
 				// the client isn't attempting to use a protocol version the torrent
 				// doesn't support
 				if (std::equal(recv_buffer.begin() + 8, recv_buffer.begin() + 28
-					, t->torrent_file().info_hash().get(protocol_version::V2).data())
-					&& t->torrent_file().info_hash().has_v2())
+					, t->torrent_file().info_hashes().get(protocol_version::V2).data())
+					&& t->torrent_file().info_hashes().has_v2())
 				{
 					peer_info_struct()->protocol_v2 = true;
 				}
@@ -3591,6 +3594,14 @@ namespace {
 					// in case it's interested.
 					maybe_unchoke_this_peer();
 				}
+#if TORRENT_USE_RTC
+				// WebTorrent JavaScript implementation might not send interested message at connection
+				if(pid[0] == '-' && pid[1] == 'W' && (pid[2] == 'W' || pid[2] == 'D'))
+				{
+					// This is WebTorrent or WebTorrent Desktop, simulate INTERESTED message
+					incoming_interested();
+				}
+#endif
 			}
 
 			m_state = state_t::read_packet_size;
@@ -3757,7 +3768,7 @@ namespace {
 
 		if (amount_payload > 0)
 		{
-			std::shared_ptr<torrent> t = associated_torrent().lock();
+			auto t = associated_torrent().lock();
 			TORRENT_ASSERT(t);
 			if (t) t->update_last_upload();
 		}
@@ -3766,7 +3777,7 @@ namespace {
 #if TORRENT_USE_INVARIANT_CHECKS
 	void bt_peer_connection::check_invariant() const
 	{
-		std::shared_ptr<torrent> t = associated_torrent().lock();
+		auto t = associated_torrent().lock();
 
 #if !defined TORRENT_DISABLE_ENCRYPTION
 		TORRENT_ASSERT( (bool(m_state != state_t::read_pe_dhkey) || m_dh_key_exchange.get())

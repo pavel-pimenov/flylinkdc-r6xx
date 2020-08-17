@@ -40,7 +40,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "libtorrent/lsd.hpp"
 #include "libtorrent/time.hpp"
 #include "libtorrent/random.hpp"
-#include "libtorrent/http_parser.hpp"
+#include "libtorrent/aux_/http_parser.hpp"
 #include "libtorrent/socket_io.hpp" // for print_address
 #include "libtorrent/debug.hpp"
 #include "libtorrent/hex.hpp" // to_hex, from_hex
@@ -72,7 +72,7 @@ int render_lsd_packet(char* dst, int const len, int const listen_port
 } // anonymous namespace
 
 lsd::lsd(io_context& ios, aux::lsd_callback& cb
-	, address const& listen_address, address const& netmask)
+	, address const listen_address, address const netmask)
 	: m_callback(cb)
 	, m_listen_address(listen_address)
 	, m_netmask(netmask)
@@ -136,7 +136,7 @@ void lsd::start(error_code& ec)
 	}
 
 	ADD_OUTSTANDING_ASYNC("lsd::on_announce");
-	m_socket.async_receive(boost::asio::null_buffers{}
+	m_socket.async_wait(udp::socket::wait_read
 		, std::bind(&lsd::on_announce, self(), _1));
 }
 
@@ -219,7 +219,7 @@ void lsd::on_announce(error_code const& ec)
 		boost::asio::buffer(buffer), from, {}, err));
 
 	ADD_OUTSTANDING_ASYNC("lsd::on_announce");
-	m_socket.async_receive(boost::asio::null_buffers{}
+	m_socket.async_wait(udp::socket::wait_read
 		, std::bind(&lsd::on_announce, self(), _1));
 
 	if (!match_addr_mask(from.address(), m_listen_address, m_netmask))
@@ -240,7 +240,7 @@ void lsd::on_announce(error_code const& ec)
 		return;
 	}
 
-	http_parser p;
+	aux::http_parser p;
 
 	bool error = false;
 	p.incoming(span<char const>{buffer.data(), len}, error);

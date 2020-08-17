@@ -83,13 +83,13 @@ namespace {
 			m_buffer_pool.set_settings(m_settings);
 		}
 
-		storage_holder new_torrent(storage_params params
+		storage_holder new_torrent(storage_params const& params
 			, std::shared_ptr<void> const&) override
 		{
 			storage_index_t const idx = m_free_slots.empty()
 				? m_torrents.end_index()
 				: pop(m_free_slots);
-			auto storage = std::make_unique<posix_storage>(std::move(params));
+			auto storage = std::make_unique<posix_storage>(params);
 			if (idx == m_torrents.end_index()) m_torrents.emplace_back(std::move(storage));
 			else m_torrents[idx] = std::move(storage);
 			return storage_holder(idx, *this);
@@ -196,7 +196,8 @@ namespace {
 			TORRENT_ASSERT(!v2 || int(block_hashes.size()) >= blocks_in_piece2);
 
 			int offset = 0;
-			for (int i = 0; i < std::max(blocks_in_piece, blocks_in_piece2); ++i)
+			int const blocks_to_read = std::max(blocks_in_piece, blocks_in_piece2);
+			for (int i = 0; i < blocks_to_read; ++i)
 			{
 				bool const v2_block = i < blocks_in_piece2;
 
@@ -220,7 +221,7 @@ namespace {
 				std::int64_t const read_time = total_microseconds(clock_type::now() - start_time);
 
 				m_stats_counters.inc_stats_counter(counters::num_read_back);
-				m_stats_counters.inc_stats_counter(counters::num_blocks_read);
+				m_stats_counters.inc_stats_counter(counters::num_blocks_read, blocks_to_read);
 				m_stats_counters.inc_stats_counter(counters::num_read_ops);
 				m_stats_counters.inc_stats_counter(counters::disk_hash_time, read_time);
 				m_stats_counters.inc_stats_counter(counters::disk_job_time, read_time);
@@ -312,28 +313,31 @@ namespace {
 			add_torrent_params const* rd = resume_data ? resume_data : &tmp;
 
 			storage_error error;
-			status_t ret = status_t::no_error;
-
-			storage_error se;
-			if ((rd->have_pieces.empty()
-					|| !st->verify_resume_data(*rd, std::move(links), error))
-				&& !m_settings.get_bool(settings_pack::no_recheck_incomplete_resume))
+			status_t const ret = [&]
 			{
-				bool const has_files = st->has_any_file(se);
+				st->initialize(m_settings, error);
+				if (error) return status_t::fatal_disk_error;
 
-				if (has_files && !se)
+				bool const verify_success = st->verify_resume_data(*rd
+					, std::move(links), error);
+
+				if (m_settings.get_bool(settings_pack::no_recheck_incomplete_resume))
+					return status_t::no_error;
+
+				if (!aux::contains_resume_data(*rd))
 				{
-					ret = status_t::need_full_check;
+					// if we don't have any resume data, we still may need to trigger a
+					// full re-check, if there are *any* files.
+					storage_error ignore;
+					return (st->has_any_file(ignore))
+						? status_t::need_full_check
+						: status_t::no_error;
 				}
-			}
 
-			if (!se) st->initialize(m_settings, se);
-
-			if (se)
-			{
-				error = se;
-				ret = status_t::fatal_disk_error;
-			}
+				return verify_success
+					? status_t::no_error
+					: status_t::need_full_check;
+			}();
 
 			post(m_ios, [error, ret, h = std::move(handler)]{ h(ret, error); });
 		}

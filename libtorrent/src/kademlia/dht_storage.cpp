@@ -48,7 +48,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <libtorrent/socket_io.hpp>
 #include <libtorrent/aux_/time.hpp>
 #include <libtorrent/config.hpp>
-#include <libtorrent/bloom_filter.hpp>
+#include <libtorrent/aux_/bloom_filter.hpp>
 #include <libtorrent/random.hpp>
 #include <libtorrent/aux_/vector.hpp>
 #include <libtorrent/aux_/numeric_cast.hpp>
@@ -65,7 +65,7 @@ namespace {
 	{
 		time_point added;
 		tcp::endpoint addr;
-		bool seed = 0;
+		bool seed = false;
 	};
 
 	// internal
@@ -94,7 +94,7 @@ namespace {
 		// this counts the number of IPs we have seen
 		// announcing this item, this is used to determine
 		// popularity if we reach the limit of items to store
-		bloom_filter<128> ips;
+		aux::bloom_filter<128> ips;
 		// the last time we heard about this item
 		// the correct interpretation of this field
 		// requires a time reference
@@ -144,6 +144,9 @@ namespace {
 		explicit immutable_item_comparator(std::vector<node_id> const& node_ids) : m_node_ids(node_ids) {}
 		immutable_item_comparator(immutable_item_comparator const&) = default;
 
+		// explicitly disallow assignment, to silence msvc warning
+		immutable_item_comparator& operator=(immutable_item_comparator const&) = delete;
+
 		template <typename Item>
 		bool operator()(std::pair<node_id const, Item> const& lhs
 			, std::pair<node_id const, Item> const& rhs) const
@@ -161,9 +164,6 @@ namespace {
 		}
 
 	private:
-
-		// explicitly disallow assignment, to silence msvc warning
-		immutable_item_comparator& operator=(immutable_item_comparator const&) = delete;
 
 		std::vector<node_id> const& m_node_ids;
 	};
@@ -234,8 +234,8 @@ namespace {
 
 			if (scrape)
 			{
-				bloom_filter<256> downloaders;
-				bloom_filter<256> seeds;
+				aux::bloom_filter<256> downloaders;
+				aux::bloom_filter<256> seeds;
 
 				for (auto const& p : peersv)
 				{
@@ -329,7 +329,7 @@ namespace {
 			// for this torrent. Store it.
 			if (!name.empty() && v->name.empty())
 			{
-				v->name = name.substr(0, 100).to_string();
+				v->name = name.substr(0, 100);
 			}
 
 			auto& peersv = aux::is_v4(endp) ? v->peers4 : v->peers6;

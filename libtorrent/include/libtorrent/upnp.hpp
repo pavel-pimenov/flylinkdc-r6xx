@@ -48,15 +48,18 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "libtorrent/aux_/listen_socket_handle.hpp"
 #include "libtorrent/aux_/noexcept_movable.hpp"
 #include "libtorrent/aux_/session_settings.hpp"
-#include "libtorrent/aux_/openssl.hpp" // for ssl::context
+#include "libtorrent/ssl.hpp"
 
 #include <memory>
 #include <functional>
 #include <set>
 
 namespace libtorrent {
-	struct http_connection;
-	class http_parser;
+
+	namespace aux {
+		struct http_connection;
+		class http_parser;
+	}
 
 namespace upnp_errors {
 	// error codes for the upnp_error_category. They hold error codes
@@ -155,8 +158,8 @@ struct TORRENT_EXTRA_EXPORT upnp final
 	upnp(io_context& ios
 		, aux::session_settings const& settings
 		, aux::portmap_callback& cb
-		, address_v4 const& listen_address
-		, address_v4 const& netmask
+		, address_v4 listen_address
+		, address_v4 netmask
 		, std::string listen_device
 		, aux::listen_socket_handle ls);
 	~upnp();
@@ -217,20 +220,22 @@ private:
 	void next(rootdevice& d, port_mapping_t i);
 	void update_map(rootdevice& d, port_mapping_t i);
 
+	int lease_duration(rootdevice const& d) const;
+
 	void connect(rootdevice& d);
 
 	void on_upnp_xml(error_code const& e
-		, libtorrent::http_parser const& p, rootdevice& d
-		, http_connection& c);
+		, aux::http_parser const& p, rootdevice& d
+		, aux::http_connection& c);
 	void on_upnp_get_ip_address_response(error_code const& e
-		, libtorrent::http_parser const& p, rootdevice& d
-		, http_connection& c);
+		, aux::http_parser const& p, rootdevice& d
+		, aux::http_connection& c);
 	void on_upnp_map_response(error_code const& e
-		, libtorrent::http_parser const& p, rootdevice& d
-		, port_mapping_t mapping, http_connection& c);
+		, aux::http_parser const& p, rootdevice& d
+		, port_mapping_t mapping, aux::http_connection& c);
 	void on_upnp_unmap_response(error_code const& e
-		, libtorrent::http_parser const& p, rootdevice& d
-		, port_mapping_t mapping, http_connection& c);
+		, aux::http_parser const& p, rootdevice& d
+		, port_mapping_t mapping, aux::http_connection& c);
 	void on_expire(error_code const& e);
 
 	void disable(error_code const& ec);
@@ -242,11 +247,9 @@ private:
 
 	void get_ip_address(rootdevice& d);
 	void delete_port_mapping(rootdevice& d, port_mapping_t i);
-	void create_port_mapping(http_connection& c, rootdevice& d, port_mapping_t i);
-	void post(upnp::rootdevice const& d, string_view const soap
-		, string_view const soap_action);
-	std::string create_soap(string_view const soap_action
-		, string_view const service_namespace, string_view const part);
+	void create_port_mapping(aux::http_connection& c, rootdevice& d, port_mapping_t i);
+	void post(upnp::rootdevice const& d, char const* soap
+		, char const* soap_action);
 
 	int num_mappings() const { return int(m_mappings.size()); }
 
@@ -285,7 +288,7 @@ private:
 		// either the WANIP namespace or the WANPPP namespace
 		std::string service_namespace;
 
-		aux::noexcept_movable<aux::vector<mapping_t, port_mapping_t>> mapping;
+		aux::vector<mapping_t, port_mapping_t> mapping;
 
 		// this is the hostname, port and path
 		// component of the url or the control_url
@@ -295,8 +298,8 @@ private:
 		std::string path;
 		aux::noexcept_movable<address> external_ip;
 
-		// default lease duration for a port map.
-		int lease_duration = 3600;
+		// set to false if the router doesn't support lease durations
+		bool use_lease_duration = true;
 
 		// true if the device supports specifying a
 		// specific external port, false if it doesn't
@@ -304,7 +307,7 @@ private:
 
 		bool disabled = false;
 
-		mutable std::shared_ptr<http_connection> upnp_connection;
+		mutable std::shared_ptr<aux::http_connection> upnp_connection;
 
 #if TORRENT_USE_ASSERTS
 		int magic = 1337;
@@ -366,7 +369,7 @@ private:
 	address_v4 m_netmask;
 	std::string m_device;
 
-#ifdef TORRENT_USE_OPENSSL
+#if TORRENT_USE_SSL
 	ssl::context m_ssl_ctx;
 #endif
 

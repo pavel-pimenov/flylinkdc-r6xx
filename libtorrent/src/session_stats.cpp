@@ -41,11 +41,6 @@ POSSIBILITY OF SUCH DAMAGE.
 
 namespace libtorrent {
 
-#if TORRENT_ABI_VERSION == 1
-	constexpr metric_type_t stats_metric::type_counter;
-	constexpr metric_type_t stats_metric::type_gauge;
-#endif
-
 namespace {
 
 	struct stats_metric_impl
@@ -131,7 +126,8 @@ namespace {
 		METRIC(peer, incoming_connections)
 
 		// the number of peer connections for each kind of socket.
-		// these counts include half-open (connecting) peers.
+		// ``num_peers_half_open`` counts half-open (connecting) peers, no other
+		// count includes those peers.
 		// ``num_peers_up_unchoked_all`` is the total number of unchoked peers,
 		// whereas ``num_peers_up_unchoked`` only are unchoked peers that count
 		// against the limit (i.e. excluding peers that are unchoked because the
@@ -243,13 +239,6 @@ namespace {
 
 		METRIC(ses, num_have_pieces)
 		METRIC(ses, num_total_pieces_added)
-
-#if TORRENT_ABI_VERSION == 1
-		// this counts the number of times a torrent has been
-		// evicted (only applies when dynamic-loading-of-torrent-files
-		// is enabled, which is deprecated).
-		METRIC(ses, torrent_evicted_counter)
-#endif
 
 		// the number of allowed unchoked peers
 		METRIC(ses, num_unchoke_slots)
@@ -367,10 +356,6 @@ namespace {
 
 		// the total number of blocks run through SHA-1 hashing
 		METRIC(disk, num_blocks_hashed)
-
-		// the number of blocks read from the disk cache
-		// Deprecates ``cache_info::blocks_read_hit``.
-		METRIC(disk, num_blocks_cache_hits)
 
 		// the number of disk I/O operation for reads and writes. One disk
 		// operation may transfer more then one block.
@@ -545,6 +530,11 @@ namespace {
 		METRIC(sock_bufs, socket_recv_size19)
 		METRIC(sock_bufs, socket_recv_size20)
 
+		// if the outstanding tracker announce limit is reached, tracker
+		// announces are queued, to be issued when an announce slot opens up.
+		// this measure the number of tracker announces currently in the
+		// queue
+		METRIC(tracker, num_queued_tracker_announces)
 		// ... more
 	}});
 #undef METRIC

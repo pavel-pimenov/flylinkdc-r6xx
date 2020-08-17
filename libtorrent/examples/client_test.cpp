@@ -500,6 +500,7 @@ int poll_interval = 5;
 int max_connections_per_torrent = 50;
 bool seed_mode = false;
 bool stats_enabled = false;
+bool exit_on_finish = false;
 
 bool share_mode = false;
 
@@ -558,7 +559,7 @@ void assign_setting(lt::settings_pack& settings, std::string const& key, char co
 			}
 			break;
 		case settings_pack::int_type_base:
-			using namespace libtorrent::literals;
+			using namespace lt::literals;
 			static std::map<lt::string_view, int> const enums = {
 				{"no_piece_suggestions"_sv, settings_pack::no_piece_suggestions},
 				{"suggest_read_cache"_sv, settings_pack::suggest_read_cache},
@@ -666,12 +667,12 @@ void set_torrent_params(lt::add_torrent_params& p)
 void add_magnet(lt::session& ses, lt::string_view uri)
 {
 	lt::error_code ec;
-	lt::add_torrent_params p = lt::parse_magnet_uri(uri.to_string(), ec);
+	lt::add_torrent_params p = lt::parse_magnet_uri(uri, ec);
 
 	if (ec)
 	{
 		std::printf("invalid magnet link \"%s\": %s\n"
-			, uri.to_string().c_str(), ec.message().c_str());
+			, std::string(uri).c_str(), ec.message().c_str());
 		return;
 	}
 
@@ -684,12 +685,12 @@ void add_magnet(lt::session& ses, lt::string_view uri)
 
 	set_torrent_params(p);
 
-	std::printf("adding magnet: %s\n", uri.to_string().c_str());
+	std::printf("adding magnet: %s\n", std::string(uri).c_str());
 	ses.async_add_torrent(std::move(p));
 }
 
 // return false on failure
-bool add_torrent(lt::session& ses, std::string torrent)
+bool add_torrent(lt::session& ses, std::string const torrent)
 {
 	using lt::add_torrent_params;
 	using lt::storage_mode_t;
@@ -710,7 +711,7 @@ bool add_torrent(lt::session& ses, std::string torrent)
 	add_torrent_params p;
 
 	std::vector<char> resume_data;
-	if (load_file(resume_file(ti->info_hash()), resume_data))
+	if (load_file(resume_file(ti->info_hashes()), resume_data))
 	{
 		p = lt::read_resume_data(resume_data, ec);
 		if (ec) std::printf("  failed to load resume data: %s\n", ec.message().c_str());
@@ -743,9 +744,9 @@ std::vector<std::string> list_dir(std::string path
 
 	do
 	{
-		lt::string_view p = fd.cFileName;
+		lt::string_view const p = fd.cFileName;
 		if (filter_fun(p))
-			ret.push_back(p.to_string());
+			ret.emplace_back(p);
 
 	} while (FindNextFileA(handle, &fd));
 	FindClose(handle);
@@ -764,9 +765,9 @@ std::vector<std::string> list_dir(std::string path
 	struct dirent* de;
 	while ((de = readdir(handle)))
 	{
-		lt::string_view p(de->d_name);
+		lt::string_view const p(de->d_name);
 		if (filter_fun(p))
-			ret.push_back(p.to_string());
+			ret.emplace_back(p);
 	}
 	closedir(handle);
 #endif
@@ -830,8 +831,12 @@ void print_alert(lt::alert const* a, std::string& str)
 	str += a->message();
 	str += esc("0");
 
+	static auto const first_ts = a->timestamp();
+
 	if (g_log_file)
-		std::fprintf(g_log_file, "[%s] %s\n", timestamp(),  a->message().c_str());
+		std::fprintf(g_log_file, "[%" PRId64 "] %s\n"
+			, duration_cast<std::chrono::milliseconds>(a->timestamp() - first_ts).count()
+			,  a->message().c_str());
 }
 
 int save_file(std::string const& filename, std::vector<char> const& v)
@@ -868,7 +873,7 @@ bool handle_alert(torrent_view& view, session_view& ses_view
 	if (torrent_need_cert_alert* p = alert_cast<torrent_need_cert_alert>(a))
 	{
 		torrent_handle h = p->handle;
-		std::string base_name = path_append("certificates", to_hex(h.info_hash().get_best()));
+		std::string base_name = path_append("certificates", to_hex(h.info_hash()));
 		std::string cert = base_name + ".pem";
 		std::string priv = base_name + "_key.pem";
 
@@ -979,6 +984,7 @@ bool handle_alert(torrent_view& view, session_view& ses_view
 		torrent_handle h = p->handle;
 		h.save_resume_data(torrent_handle::save_info_dict);
 		++num_outstanding_resume_data;
+		if (exit_on_finish) quit = true;
 	}
 	else if (save_resume_data_alert* p = alert_cast<save_resume_data_alert>(a))
 	{
@@ -1136,7 +1142,8 @@ CLIENT OPTIONS
                         are present and check hashes on-demand)
   -e <loops>            exit client after the specified number of iterations
                         through the main loop
-  -O                    print session stats counters to the log)"
+  -O                    print session stats counters to the log
+  -1                    exit on first torrent completing (useful for benchmarks))"
 #ifdef TORRENT_UTP_LOG_ENABLE
 R"(
   -q                    Enable uTP transport-level verbose logging
@@ -1283,6 +1290,7 @@ examples:
 			case 'G': seed_mode = true; --i; break;
 			case 's': save_path = make_absolute_path(arg); break;
 			case 'O': stats_enabled = true; --i; break;
+			case '1': exit_on_finish = true; --i; break;
 #ifdef TORRENT_UTP_LOG_ENABLE
 			case 'q':
 				lt::set_utp_stream_logging(true);
@@ -1373,7 +1381,7 @@ examples:
 	for (auto const& i : torrents)
 	{
 		if (i.substr(0, 7) == "magnet:") add_magnet(ses, i);
-		else add_torrent(ses, i.to_string());
+		else add_torrent(ses, std::string(i));
 	}
 
 	std::thread resume_data_loader([&ses]
@@ -1952,8 +1960,7 @@ done:
 
 			if (print_file_progress && s.has_metadata)
 			{
-				std::vector<std::int64_t> file_progress;
-				h.file_progress(file_progress);
+				std::vector<std::int64_t> const file_progress = h.file_progress();
 				std::vector<lt::open_file_state> file_status = h.file_status();
 				std::vector<lt::download_priority_t> file_prio = h.get_file_priorities();
 				auto f = file_status.begin();
@@ -1974,7 +1981,7 @@ done:
 
 					bool const complete = file_progress[idx] == ti->files().file_size(i);
 
-					std::string title = ti->files().file_name(i).to_string();
+					std::string title{ti->files().file_name(i)};
 					if (!complete)
 					{
 						std::snprintf(str, sizeof(str), " (%.1f%%)", progress / 10.f);

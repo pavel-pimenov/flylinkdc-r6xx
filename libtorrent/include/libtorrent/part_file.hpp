@@ -82,11 +82,14 @@ namespace libtorrent {
 
 	private:
 
-		void open_file(aux::open_mode_t mode, error_code& ec);
+		file open_file(aux::open_mode_t mode, error_code& ec);
 		void flush_metadata_impl(error_code& ec);
 
 		std::int64_t slot_offset(slot_index_t const slot) const
-		{ return m_header_size + static_cast<int>(slot) * m_piece_size; }
+		{
+			return static_cast<int>(slot) * static_cast<std::int64_t>(m_piece_size)
+				+ m_header_size;
+		}
 
 		template <typename Hasher>
 		int do_hashv(Hasher& ph, std::ptrdiff_t len, piece_index_t piece, int offset, error_code& ec);
@@ -128,11 +131,6 @@ namespace libtorrent {
 
 		// maps a piece index to the part-file slot it is stored in
 		std::unordered_map<piece_index_t, slot_index_t> m_piece_map;
-
-		// this is the file handle to the part file
-		// it's allocated on the heap and reference counted, to allow it to be
-		// closed and re-opened while other threads are still using it
-		std::shared_ptr<file> m_file;
 	};
 }
 

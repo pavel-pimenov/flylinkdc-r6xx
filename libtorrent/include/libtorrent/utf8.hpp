@@ -38,8 +38,10 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <cstdint>
 #include <string>
 #include <cwchar>
+#include <string_view>
 
 #include "libtorrent/string_view.hpp"
+#include "libtorrent/span.hpp"
 #include "libtorrent/error_code.hpp"
 
 namespace libtorrent {
@@ -75,6 +77,19 @@ namespace utf8_errors {
 	TORRENT_EXTRA_EXPORT std::wstring utf8_wchar(string_view utf8);
 	TORRENT_EXTRA_EXPORT std::string wchar_utf8(wstring_view wide, error_code& ec);
 	TORRENT_EXTRA_EXPORT std::string wchar_utf8(wstring_view wide);
+
+	// ``utf8_char32`` converts a UTF-8 string to a UTF-32 string
+	// ``char32_utf8`` converts a UTF-32 string to a UTF-8 string
+	// The return value is one of the enumeration values from utf8_conv_result_t.
+	TORRENT_EXTRA_EXPORT std::u32string utf8_utf32(std::string_view utf8, error_code& ec);
+	TORRENT_EXTRA_EXPORT std::u32string utf8_utf32(std::string_view utf8);
+	TORRENT_EXTRA_EXPORT std::string utf32_utf8(std::u32string_view utf32, error_code& ec);
+	TORRENT_EXTRA_EXPORT std::string utf32_utf8(std::u32string_view utf32);
+
+	// ``latin1_utf8`` converts a ISO-8859-1 (aka latin1) span to a UTF-8 string
+	// ``utf8_latin1`` converts a UTF-8 string to a ISO-8859-1 (aka latin1) string
+	TORRENT_EXTRA_EXPORT std::string latin1_utf8(span<char const> s);
+	TORRENT_EXTRA_EXPORT std::string utf8_latin1(std::string_view sv); // throw invalid_argument if unrepresentable
 
 	// TODO: 3 take a string_view here
 	TORRENT_EXTRA_EXPORT std::pair<std::int32_t, int>

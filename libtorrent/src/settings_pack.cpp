@@ -106,10 +106,18 @@ namespace libtorrent {
 #define DEPRECATED_SET_STR(name, default_value, fun) { "", nullptr, nullptr }
 #endif
 
+		// tested to fail with _MSC_VER <= 1916. The actual version condition
+#if !defined _MSC_VER
+#define CONSTEXPR_SETTINGS constexpr
+#else
+#define CONSTEXPR_SETTINGS
+#endif
+
 	namespace {
 
 	using aux::session_impl;
 
+	CONSTEXPR_SETTINGS
 	aux::array<str_setting_entry_t, settings_pack::num_string_settings> const str_settings
 	({{
 		SET(user_agent, "libtorrent/" LIBTORRENT_VERSION, &session_impl::update_user_agent),
@@ -123,9 +131,11 @@ namespace libtorrent {
 		SET(proxy_password, "", &session_impl::update_proxy),
 		SET(i2p_hostname, "", &session_impl::update_i2p_bridge),
 		SET(peer_fingerprint, "-LT2000-", nullptr),
-		SET(dht_bootstrap_nodes, "dht.libtorrent.org:25401", &session_impl::update_dht_bootstrap_nodes)
+		SET(dht_bootstrap_nodes, "dht.libtorrent.org:25401", &session_impl::update_dht_bootstrap_nodes),
+		SET(webtorrent_stun_server, "stun.l.google.com:19302", nullptr)
 	}});
 
+	CONSTEXPR_SETTINGS
 	aux::array<bool_setting_entry_t, settings_pack::num_bool_settings> const bool_settings
 	({{
 		SET(allow_multiple_connections_per_ip, false, nullptr),
@@ -133,7 +143,7 @@ namespace libtorrent {
 		SET(send_redundant_have, true, nullptr),
 		DEPRECATED_SET(lazy_bitfields, false, nullptr),
 		SET(use_dht_as_fallback, false, nullptr),
-		DEPRECATED_SET(upnp_ignore_nonrouters, false, nullptr),
+		SET(upnp_ignore_nonrouters, false, nullptr),
 		SET(use_parole_mode, true, nullptr),
 		DEPRECATED_SET(use_read_cache, true, nullptr),
 		DEPRECATED_SET(use_write_cache, true, nullptr),
@@ -210,6 +220,7 @@ namespace libtorrent {
 		SET(validate_https_trackers, false, &session_impl::update_validate_https),
 	}});
 
+	CONSTEXPR_SETTINGS
 	aux::array<int_setting_entry_t, settings_pack::num_int_settings> const int_settings
 	({{
 		SET(tracker_completion_timeout, 30, nullptr),
@@ -314,10 +325,10 @@ namespace libtorrent {
 		SET(torrent_connect_boost, 30, nullptr),
 		SET(alert_queue_size, 2000, &session_impl::update_alert_queue_size),
 		SET(max_metadata_size, 3 * 1024 * 10240, nullptr),
-		DEPRECATED_SET(hashing_threads, 1, nullptr),
-		SET(checking_mem_usage, 1024, nullptr),
+		SET(hashing_threads, 2, &session_impl::update_disk_threads),
+		SET(checking_mem_usage, 256, nullptr),
 		SET(predictive_piece_announce, 0, nullptr),
-		SET(aio_threads, 4, &session_impl::update_disk_threads),
+		SET(aio_threads, 10, &session_impl::update_disk_threads),
 		DEPRECATED_SET(aio_max, 300, nullptr),
 		DEPRECATED_SET(network_threads, 0, nullptr),
 		DEPRECATED_SET(ssl_listen, 0, &session_impl::update_ssl_listen),
@@ -347,7 +358,9 @@ namespace libtorrent {
 		SET(max_web_seed_connections, 3, nullptr),
 		SET(resolver_cache_timeout, 1200, &session_impl::update_resolver_cache_timeout),
 		SET(send_not_sent_low_watermark, 16384, nullptr),
+		SET(rate_choker_initial_threshold, 1024, nullptr),
 		SET(upnp_lease_duration, 3600, nullptr),
+		SET(max_concurrent_http_announces, 50, nullptr),
 		SET(dht_max_peers_reply, 100, nullptr),
 		SET(dht_search_branching, 5, nullptr),
 		SET(dht_max_fail_count, 20, nullptr),
@@ -360,10 +373,14 @@ namespace libtorrent {
 		SET(dht_item_lifetime, 0, nullptr),
 		SET(dht_sample_infohashes_interval, 21600, nullptr),
 		SET(dht_max_infohashes_sample_count, 20, nullptr),
+		SET(max_piece_count, 0x200000, nullptr),
+		SET(min_websocket_announce_interval, 1 * 60, nullptr),
+		SET(webtorrent_connection_timeout, 2 * 60, nullptr)
 	}});
 
 #undef SET
 #undef DEPRECATED_SET
+#undef CONSTEXPR_SETTINGS
 
 	} // anonymous namespace
 
@@ -438,7 +455,7 @@ namespace libtorrent {
 				for (int k = 0; k < str_settings.end_index(); ++k)
 				{
 					if (key != str_settings[k].name) continue;
-					pack.set_str(settings_pack::string_type_base + k, val.string_value().to_string());
+					pack.set_str(settings_pack::string_type_base + k, std::string(val.string_value()));
 					break;
 				}
 				break;
@@ -716,7 +733,7 @@ namespace libtorrent {
 	std::string const& settings_pack::get_str(int name) const
 	{
 		static std::string const empty;
-		TORRENT_ASSERT((name & type_mask) == string_type_base);
+		TORRENT_ASSERT_PRECOND((name & type_mask) == string_type_base);
 		if ((name & type_mask) != string_type_base) return empty;
 
 		// this is an optimization. If the settings pack is complete,
@@ -735,7 +752,7 @@ namespace libtorrent {
 
 	int settings_pack::get_int(int name) const
 	{
-		TORRENT_ASSERT((name & type_mask) == int_type_base);
+		TORRENT_ASSERT_PRECOND((name & type_mask) == int_type_base);
 		if ((name & type_mask) != int_type_base) return 0;
 
 		// this is an optimization. If the settings pack is complete,
@@ -754,7 +771,7 @@ namespace libtorrent {
 
 	bool settings_pack::get_bool(int name) const
 	{
-		TORRENT_ASSERT((name & type_mask) == bool_type_base);
+		TORRENT_ASSERT_PRECOND((name & type_mask) == bool_type_base);
 		if ((name & type_mask) != bool_type_base) return false;
 
 		// this is an optimization. If the settings pack is complete,
@@ -766,7 +783,7 @@ namespace libtorrent {
 		}
 		std::pair<std::uint16_t, bool> v(aux::numeric_cast<std::uint16_t>(name), false);
 		auto i = std::lower_bound(m_bools.begin(), m_bools.end(), v
-					, &compare_first<bool>);
+			, &compare_first<bool>);
 		if (i != m_bools.end() && i->first == name) return i->second;
 		return false;
 	}

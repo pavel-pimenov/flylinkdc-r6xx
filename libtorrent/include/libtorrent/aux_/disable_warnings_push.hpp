@@ -34,6 +34,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wall"
 #pragma GCC diagnostic ignored "-Wsign-conversion"
+#pragma GCC diagnostic ignored "-Wsign-compare"
 #pragma GCC diagnostic ignored "-Wconversion"
 #pragma GCC diagnostic ignored "-Wswitch-enum"
 #pragma GCC diagnostic ignored "-Wold-style-cast"
@@ -50,10 +51,12 @@ POSSIBILITY OF SUCH DAMAGE.
 #pragma GCC diagnostic ignored "-Wshift-overflow"
 #pragma GCC diagnostic ignored "-Wshift-count-overflow"
 #pragma GCC diagnostic ignored "-Wshift-count-negative"
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 #endif
 #if __GNUC__ >= 7
 #pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
 #pragma GCC diagnostic ignored "-Wnoexcept-type"
+#pragma GCC diagnostic ignored "-Wregister"
 #endif
 #if __GNUC__ >= 8
 #pragma GCC diagnostic ignored "-Wcast-function-type"
@@ -69,6 +72,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Weverything"
 #pragma clang diagnostic ignored "-Wsign-conversion"
+#pragma clang diagnostic ignored "-Wsign-compare"
 #pragma clang diagnostic ignored "-Wconversion"
 #pragma clang diagnostic ignored "-Wswitch-enum"
 #pragma clang diagnostic ignored "-Wcovered-switch-default"
@@ -108,4 +112,8 @@ POSSIBILITY OF SUCH DAMAGE.
 #pragma warning(disable : 4244)
 // potentially uninitialized local variable 'result' used
 #pragma warning(disable : 4701)
+// unreachable code
+#pragma warning(disable : 4702)
+// potential mod by 0
+#pragma warning(disable : 4724)
 #endif

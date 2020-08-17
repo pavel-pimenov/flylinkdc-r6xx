@@ -214,7 +214,7 @@ namespace libtorrent { namespace dht {
 	std::vector<lt::dht::dht_status> dht_tracker::dht_status() const
 	{
 		std::vector<lt::dht::dht_status> ret;
-		for (auto& n : m_nodes)
+		for (auto const& n : m_nodes)
 			ret.emplace_back(n.second.dht.status());
 		return ret;
 	}
@@ -231,7 +231,7 @@ namespace libtorrent { namespace dht {
 		c.set_value(counters::dht_node_cache, 0);
 		c.set_value(counters::dht_allocated_observers, 0);
 
-		for (auto& n : m_nodes)
+		for (auto const& n : m_nodes)
 			add_dht_counters(n.second.dht, c);
 	}
 
@@ -296,7 +296,7 @@ namespace libtorrent { namespace dht {
 		m_storage.update_node_ids(ids);
 	}
 
-	node* dht_tracker::get_node(node_id const& id, std::string const& family_name)
+	node* dht_tracker::get_node(node_id const& id, string_view  family_name)
 	{
 		TORRENT_UNUSED(id);
 		for (auto& n : m_nodes)
@@ -606,7 +606,7 @@ namespace {
 	dht_state dht_tracker::state() const
 	{
 		dht_state ret;
-		for (auto& n : m_nodes)
+		for (auto const& n : m_nodes)
 		{
 			// use the local rather than external address because if the user is behind NAT
 			// we won't know the external IP on startup

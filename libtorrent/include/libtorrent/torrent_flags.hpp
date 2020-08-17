@@ -108,11 +108,10 @@ namespace torrent_flags {
 	// torrent for instance.
 	constexpr torrent_flags_t apply_ip_filter = 3_bit;
 
-	// specifies whether or not the torrent is to be started in a paused
-	// state. I.e. it won't connect to the tracker or any of the peers
-	// until it's resumed. This is typically a good way of avoiding race
-	// conditions when setting configuration options on torrents before
-	// starting them.
+	// specifies whether or not the torrent is paused. i.e. it won't connect to the tracker or any of the peers
+	// until it's resumed. Note that a paused torrent that also has the
+	// auto_managed flag set can be started at any time by libtorrent's queuing
+	// logic. See queuing_.
 	constexpr torrent_flags_t paused = 4_bit;
 
 	// If the torrent is auto-managed (``auto_managed``), the torrent
@@ -130,10 +129,13 @@ namespace torrent_flags {
 	// used in add_torrent_params to indicate that it's an error to attempt
 	// to add a torrent that's already in the session. If it's not considered an
 	// error, a handle to the existing torrent is returned.
+	// This flag is not saved by write_resume_data(), since it is only meant for
+	// adding torrents.
 	constexpr torrent_flags_t duplicate_is_error = 6_bit;
 
 	// on by default and means that this torrent will be part of state
 	// updates when calling post_torrent_updates().
+	// This flag is not saved by write_resume_data().
 	constexpr torrent_flags_t update_subscribe = 7_bit;
 
 	// sets the torrent into super seeding/initial seeding mode. If the torrent
@@ -161,14 +163,14 @@ namespace torrent_flags {
 	// if the auto_manages flag is cleared and the paused flag is set on the torrent.
 	//
 	// Note that the torrent may transition into a downloading state while
-	// calling this function, and since the logic is edge triggered you may
+	// setting this flag, and since the logic is edge triggered you may
 	// miss the edge. To avoid this race, if the torrent already is in a
 	// downloading state when this call is made, it will trigger the
 	// stop-when-ready immediately.
 	//
 	// When the stop-when-ready logic fires, the flag is cleared. Any
 	// subsequent transitions between downloading and non-downloading states
-	// will not be affected, until this function is used to set it again.
+	// will not be affected, until this flag is set again.
 	//
 	// The behavior is more robust when setting this flag as part of adding
 	// the torrent. See add_torrent_params.
@@ -193,6 +195,7 @@ namespace torrent_flags {
 	// resume data take precedence over the original trackers. This includes if
 	// there's an empty list of trackers, to support the case where they were
 	// explicitly removed in the previous session.
+	// This flag is not saved by write_resume_data()
 	constexpr torrent_flags_t override_trackers = 11_bit;
 
 	// If this flag is set, the web seeds from the add_torrent_params
@@ -204,12 +207,15 @@ namespace torrent_flags {
 	// resume data take precedence over the original ones. This includes if
 	// there's an empty list of web seeds, to support the case where they were
 	// explicitly removed in the previous session.
+	// This flag is not saved by write_resume_data()
 	constexpr torrent_flags_t override_web_seeds = 12_bit;
 
 	// if this flag is set (which it is by default) the torrent will be
 	// considered needing to save its resume data immediately as it's
 	// added. New torrents that don't have any resume data should do that.
 	// This flag is cleared by a successful call to save_resume_data()
+	// This flag is not saved by write_resume_data(), since it represents an
+	// ephemeral state of a running torrent.
 	constexpr torrent_flags_t need_save_resume = 13_bit;
 
 #if TORRENT_ABI_VERSION == 1

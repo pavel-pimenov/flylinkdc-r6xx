@@ -1006,9 +1006,6 @@
     <ClCompile Include="src\ip_voter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\lazy_bdecode.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\lsd.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -1284,9 +1281,6 @@
     </ClCompile>
     <ClCompile Include="src\ed25519\sha512.cpp">
       <Filter>Source Files\ed25519</Filter>
-    </ClCompile>
-    <ClCompile Include="src\disk_interface.cpp">
-      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\sha256.cpp">
       <Filter>Source Files</Filter>

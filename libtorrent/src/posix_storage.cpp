@@ -50,15 +50,15 @@ using namespace libtorrent::flags; // for flag operators
 namespace libtorrent {
 namespace aux {
 
-	posix_storage::posix_storage(storage_params p)
+	posix_storage::posix_storage(storage_params const& p)
 		: m_files(p.files)
-		, m_save_path(std::move(p.path))
+		, m_save_path(p.path)
 		, m_part_file_name("." + to_hex(p.info_hash) + ".parts")
 	{
-		if (p.mapped_files) m_mapped_files.reset(new file_storage(*p.mapped_files));
+		if (p.mapped_files) m_mapped_files = std::make_unique<file_storage>(*p.mapped_files);
 	}
 
-	file_storage const& posix_storage::files() const { return m_mapped_files ? *m_mapped_files.get() : m_files; }
+	file_storage const& posix_storage::files() const { return m_mapped_files ? *m_mapped_files : m_files; }
 
 	posix_storage::~posix_storage()
 	{
@@ -382,7 +382,7 @@ namespace aux {
 
 		if (!m_mapped_files)
 		{
-			m_mapped_files.reset(new file_storage(files()));
+			m_mapped_files = std::make_unique<file_storage>(files());
 		}
 		m_mapped_files->rename_file(index, new_filename);
 	}

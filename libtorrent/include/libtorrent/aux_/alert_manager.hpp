@@ -38,7 +38,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "libtorrent/config.hpp"
 #include "libtorrent/alert.hpp"
 #include "libtorrent/aux_/heterogeneous_queue.hpp"
-#include "libtorrent/stack_allocator.hpp"
+#include "libtorrent/aux_/stack_allocator.hpp"
 #include "libtorrent/alert_types.hpp" // for abi_alert_count
 #include "libtorrent/aux_/array.hpp"
 
@@ -61,7 +61,7 @@ namespace aux {
 	struct TORRENT_EXTRA_EXPORT alert_manager
 	{
 		explicit alert_manager(int queue_limit
-			, alert_category_t alert_mask = alert::error_notification);
+			, alert_category_t alert_mask = alert_category::error);
 
 		alert_manager(alert_manager const&) = delete;
 		alert_manager& operator=(alert_manager const&) = delete;
@@ -168,7 +168,7 @@ namespace aux {
 
 		// this is a stack where alerts can allocate variable length content,
 		// such as strings, to go with the alerts.
-		aux::array<stack_allocator, 2> m_allocations;
+		aux::array<aux::stack_allocator, 2> m_allocations;
 
 #ifndef TORRENT_DISABLE_EXTENSIONS
 		std::list<std::shared_ptr<plugin>> m_ses_extensions;

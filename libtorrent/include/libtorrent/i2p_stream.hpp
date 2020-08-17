@@ -47,7 +47,6 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "libtorrent/string_util.hpp"
 #include "libtorrent/aux_/vector.hpp"
 #include "libtorrent/aux_/proxy_settings.hpp"
-#include "libtorrent/aux_/noexcept_movable.hpp"
 #include "libtorrent/assert.hpp"
 #include "libtorrent/error_code.hpp"
 #include "libtorrent/settings_pack.hpp"
@@ -125,7 +124,7 @@ struct i2p_stream : proxy_base
 
 	void set_session_id(char const* id) { m_id = id; }
 
-	void set_destination(string_view d) { m_dest = d.to_string(); }
+	void set_destination(string_view d) { m_dest = d; }
 	std::string const& destination() { return m_dest; }
 
 	template <class Handler>
@@ -333,11 +332,11 @@ private:
 			}*/
 			else if ("VALUE"_sv == name)
 			{
-				m_name_lookup = value.to_string();
+				m_name_lookup = value;
 			}
 			else if ("DESTINATION"_sv == name)
 			{
-				m_dest = value.to_string();
+				m_dest = value;
 			}
 		}
 
@@ -442,7 +441,7 @@ private:
 	}
 
 	// send and receive buffer
-	aux::noexcept_movable<aux::vector<char>> m_buffer;
+	aux::vector<char> m_buffer;
 	char const* m_id;
 	std::string m_dest;
 	std::string m_name_lookup;

@@ -64,18 +64,6 @@ using namespace std::placeholders;
 
 namespace libtorrent {
 
-	constexpr file_flags_t file_storage::flag_pad_file;
-	constexpr file_flags_t file_storage::flag_hidden;
-	constexpr file_flags_t file_storage::flag_executable;
-	constexpr file_flags_t file_storage::flag_symlink;
-
-#if TORRENT_ABI_VERSION == 1
-	constexpr file_flags_t file_storage::pad_file;
-	constexpr file_flags_t file_storage::attribute_hidden;
-	constexpr file_flags_t file_storage::attribute_executable;
-	constexpr file_flags_t file_storage::attribute_symlink;
-#endif
-
 	file_storage::file_storage() = default;
 	file_storage::~file_storage() = default;
 
@@ -107,9 +95,6 @@ namespace libtorrent {
 		else
 			return piece_length();
 	}
-
-constexpr aux::path_index_t aux::file_entry::no_path;
-constexpr aux::path_index_t aux::file_entry::path_is_absolute;
 
 namespace {
 
@@ -365,23 +350,6 @@ namespace aux {
 
 } // aux namespace
 
-	void file_storage::rebase_pointers(char const* current_base, char const* new_base)
-	{
-		for (auto& f : m_files)
-		{
-			if (f.name_len != aux::file_entry::name_is_owned)
-				f.name = new_base + (f.name - current_base);
-			if (f.root != nullptr)
-				f.root = new_base + (f.root - current_base);
-		}
-
-		for (auto& h : m_file_hashes)
-		{
-			if (h == nullptr) continue;
-			h = new_base + (h - current_base);
-		}
-	}
-
 #if TORRENT_ABI_VERSION == 1
 
 	void file_storage::add_file_borrow(char const* filename, int filename_len
@@ -511,11 +479,12 @@ namespace aux {
 #endif
 
 	std::vector<file_slice> file_storage::map_block(piece_index_t const piece
-		, std::int64_t const offset, int size) const
+		, std::int64_t const offset, std::int64_t size) const
 	{
 		TORRENT_ASSERT_PRECOND(piece >= piece_index_t{0});
 		TORRENT_ASSERT_PRECOND(piece < end_piece());
 		TORRENT_ASSERT_PRECOND(num_files() > 0);
+		TORRENT_ASSERT_PRECOND(size >= 0);
 		std::vector<file_slice> ret;
 
 		if (m_files.empty()) return ret;
@@ -529,7 +498,7 @@ namespace aux {
 
 		// in case the size is past the end, fix it up
 		if (std::int64_t(target.offset) > m_total_size - size)
-			size = aux::numeric_cast<int>(m_total_size - std::int64_t(target.offset));
+			size = m_total_size - std::int64_t(target.offset);
 
 		auto file_iter = std::upper_bound(
 			m_files.begin(), m_files.end(), target, compare_file_offset);
@@ -548,7 +517,7 @@ namespace aux {
 				f.offset = file_offset;
 				f.size = std::min(std::int64_t(file_iter->size) - file_offset, std::int64_t(size));
 				TORRENT_ASSERT(f.size <= size);
-				size -= int(f.size);
+				size -= f.size;
 				file_offset += f.size;
 				ret.push_back(f);
 			}
@@ -720,7 +689,7 @@ namespace aux {
 		else
 		{
 			if (m_files.empty())
-				m_name = lsplit_path(path).first.to_string();
+				m_name = lsplit_path(path).first;
 		}
 
 		// files without a root_hash are assumed to be v1, except symlinks. They
@@ -805,7 +774,7 @@ namespace aux {
 			&& m_symlinks.size() < aux::file_entry::not_a_symlink - 1)
 		{
 			e.symlink_index = m_symlinks.size();
-			m_symlinks.emplace_back(symlink_path.to_string());
+			m_symlinks.emplace_back(symlink_path);
 		}
 		else
 		{
@@ -832,6 +801,12 @@ namespace aux {
 		TORRENT_ASSERT_PRECOND(index >= file_index_t{} && index < end_file());
 		if (m_files[index].root == nullptr) return sha256_hash();
 		return sha256_hash(m_files[index].root);
+	}
+
+	char const* file_storage::root_ptr(file_index_t const index) const
+	{
+		TORRENT_ASSERT_PRECOND(index >= file_index_t{} && index < end_file());
+		return m_files[index].root;
 	}
 
 	std::string file_storage::symlink(file_index_t const index) const
@@ -972,7 +947,7 @@ namespace {
 
 		if (fe.path_index == aux::file_entry::path_is_absolute)
 		{
-			ret = fe.filename().to_string();
+			ret = fe.filename();
 		}
 		else if (fe.path_index == aux::file_entry::no_path)
 		{
@@ -1021,7 +996,7 @@ namespace {
 		}
 		else
 		{
-			return fe.filename().to_string();
+			return std::string(fe.filename());
 		}
 	}
 
@@ -1155,7 +1130,7 @@ namespace {
 
 	std::string file_storage::file_name(aux::file_entry const& fe) const
 	{
-		return fe.filename().to_string();
+		return std::string(fe.filename());
 	}
 
 	std::int64_t file_storage::file_size(aux::file_entry const& fe) const
@@ -1301,8 +1276,7 @@ namespace {
 		bool file_map_initialized = false;
 
 		// lazily instantiated set of all valid directories a symlink may point to
-		// TODO: in C++17 this could be string_view
-		std::unordered_set<std::string> dir_map;
+		std::unordered_set<string_view> dir_map;
 		bool dir_map_initialized = false;
 
 		// symbolic links that points to directories
@@ -1359,7 +1333,7 @@ namespace {
 				{
 					for (auto const& p : m_paths)
 						for (string_view pv = p; !pv.empty(); pv = rsplit_path(pv).first)
-							dir_map.insert(pv.to_string());
+							dir_map.insert(pv);
 					dir_map_initialized = true;
 				}
 
@@ -1441,12 +1415,12 @@ namespace {
 				branch = lsplit_path(target, branch.size() + 1).first)
 			{
 				// this is a concrete directory
-				if (dir_map.count(branch.to_string())) continue;
+				if (dir_map.count(branch)) continue;
 
-				auto const iter = dir_links.find(branch.to_string());
+				auto const iter = dir_links.find(std::string(branch));
 				if (iter == dir_links.end()) goto failed;
-				if (traversed.count(branch.to_string())) goto failed;
-				traversed.insert(branch.to_string());
+				if (traversed.count(std::string(branch))) goto failed;
+				traversed.insert(std::string(branch));
 
 				// this path element is a symlink. substitute the branch so far by
 				// the link target

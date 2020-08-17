@@ -37,7 +37,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "libtorrent/aux_/session_call.hpp"
 #include "libtorrent/aux_/throw.hpp"
 #include "libtorrent/aux_/path.hpp"
-#include "libtorrent/torrent.hpp"
+#include "libtorrent/aux_/torrent.hpp"
 #include "libtorrent/hasher.hpp"
 #include "libtorrent/peer_class.hpp"
 #include "libtorrent/peer_class_type_filter.hpp"
@@ -45,46 +45,11 @@ POSSIBILITY OF SUCH DAMAGE.
 
 #if TORRENT_ABI_VERSION == 1
 #include "libtorrent/read_resume_data.hpp"
-#include "libtorrent/lazy_entry.hpp"
 #endif
 
 using libtorrent::aux::session_impl;
 
 namespace libtorrent {
-
-	constexpr peer_class_t session_handle::global_peer_class_id;
-	constexpr peer_class_t session_handle::tcp_peer_class_id;
-	constexpr peer_class_t session_handle::local_peer_class_id;
-
-	constexpr save_state_flags_t session_handle::save_settings;
-#if TORRENT_ABI_VERSION <= 2
-	constexpr save_state_flags_t session_handle::save_dht_settings; // [-]  TORRENT_DEPRECATED FlylinkDC++
-#endif
-	constexpr save_state_flags_t session_handle::save_dht_state;
-#if TORRENT_ABI_VERSION == 1
-	constexpr save_state_flags_t session_handle::save_encryption_settings;
-	constexpr save_state_flags_t session_handle::save_as_map TORRENT_DEPRECATED_ENUM;
-	constexpr save_state_flags_t session_handle::save_proxy TORRENT_DEPRECATED_ENUM;
-	constexpr save_state_flags_t session_handle::save_i2p_proxy TORRENT_DEPRECATED_ENUM;
-	constexpr save_state_flags_t session_handle::save_dht_proxy TORRENT_DEPRECATED_ENUM;
-	constexpr save_state_flags_t session_handle::save_peer_proxy TORRENT_DEPRECATED_ENUM;
-	constexpr save_state_flags_t session_handle::save_web_proxy TORRENT_DEPRECATED_ENUM;
-	constexpr save_state_flags_t session_handle::save_tracker_proxy TORRENT_DEPRECATED_ENUM;
-#endif
-	constexpr save_state_flags_t session_handle::save_extension_state;
-	constexpr save_state_flags_t session_handle::save_ip_filter;
-
-#if TORRENT_ABI_VERSION <= 2
-	constexpr session_flags_t session_handle::add_default_plugins;
-#endif
-#if TORRENT_ABI_VERSION == 1
-	constexpr session_flags_t session_handle::start_default_features;
-#endif
-
-	constexpr remove_flags_t session_handle::delete_files;
-	constexpr remove_flags_t session_handle::delete_partfile;
-
-	constexpr reopen_network_flags_t session_handle::reopen_map_ports;
 
 	template <typename Fun, typename... Args>
 	void session_handle::async_call(Fun f, Args&&... a) const
@@ -403,7 +368,7 @@ namespace {
 #endif
 		error_code ec;
 		auto ecr = std::ref(ec);
-		torrent_handle r = sync_call_ret<torrent_handle>(&session_impl::add_torrent, std::move(params), ecr);
+		auto r = sync_call_ret<torrent_handle>(&session_impl::add_torrent, std::move(params), ecr);
 		if (ec) aux::throw_ex<system_error>(ec);
 		return r;
 	}
@@ -750,15 +715,6 @@ namespace {
 	}
 
 #if TORRENT_ABI_VERSION == 1
-	void session_handle::load_asnum_db(char const*) {}
-	void session_handle::load_country_db(char const*) {}
-
-	int session_handle::as_for_ip(address const&)
-	{ return 0; }
-
-	void session_handle::load_asnum_db(wchar_t const*) {}
-	void session_handle::load_country_db(wchar_t const*) {}
-
 	void session_handle::load_state(entry const& ses_state
 		, save_state_flags_t const flags)
 	{
@@ -782,28 +738,9 @@ namespace {
 	entry session_handle::state() const
 	{
 		entry ret;
-		auto retp = &ret;
+		auto* const retp = &ret;
 		sync_call(&session_impl::save_state, retp, save_state_flags_t::all());
 		return ret;
-	}
-
-	void session_handle::load_state(lazy_entry const& ses_state
-		, save_state_flags_t const flags)
-	{
-		if (ses_state.type() == lazy_entry::none_t) return;
-		std::pair<char const*, int> buf = ses_state.data_section();
-		bdecode_node e;
-		error_code ec;
-#if TORRENT_USE_ASSERTS || !defined BOOST_NO_EXCEPTIONS
-		int ret =
-#endif
-		bdecode(buf.first, buf.first + buf.second, e, ec);
-
-		TORRENT_ASSERT(ret == 0);
-#ifndef BOOST_NO_EXCEPTIONS
-		if (ret != 0) aux::throw_ex<system_error>(ec);
-#endif
-		sync_call(&session_impl::load_state, &e, flags);
 	}
 #endif // TORRENT_ABI_VERSION
 
@@ -1186,27 +1123,6 @@ namespace {
 	}
 
 #if TORRENT_ABI_VERSION == 1
-	void session_handle::set_severity_level(alert::severity_t s)
-	{
-		alert_category_t m = {};
-		switch (s)
-		{
-			case alert::debug: m = alert_category::all; break;
-			case alert::info: m = alert_category::all & ~(alert::debug_notification
-				| alert::progress_notification | alert_category::dht); break;
-			case alert::warning: m = alert_category::all & ~(alert::debug_notification
-				| alert_category::status | alert::progress_notification
-				| alert_category::dht); break;
-			case alert::critical: m = alert_category::error | alert_category::storage; break;
-			case alert::fatal: m = alert_category::error; break;
-			case alert::none: m = {}; break;
-		}
-
-		settings_pack p;
-		p.set_int(settings_pack::alert_mask, m);
-		apply_settings(std::move(p));
-	}
-
 	size_t session_handle::set_alert_queue_size_limit(size_t queue_size_limit_)
 	{
 		return sync_call_ret<size_t>(&session_impl::set_alert_queue_size_limit, queue_size_limit_);

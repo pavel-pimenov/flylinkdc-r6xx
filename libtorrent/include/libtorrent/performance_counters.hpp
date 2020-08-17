@@ -46,6 +46,7 @@ namespace libtorrent {
 
 	struct TORRENT_EXPORT counters
 	{
+		// internal
 		enum stats_counter_t
 		{
 			// the number of peers that were disconnected this
@@ -144,10 +145,6 @@ namespace libtorrent {
 			on_disk_queue_counter,
 			on_disk_counter,
 
-#if TORRENT_ABI_VERSION == 1
-			torrent_evicted_counter,
-#endif
-
 			// bittorrent message counters
 			// how about dont-have, share-mode, upload-only
 			num_incoming_choke,
@@ -202,7 +199,6 @@ namespace libtorrent {
 			num_blocks_written,
 			num_blocks_read,
 			num_blocks_hashed,
-			num_blocks_cache_hits,
 			num_write_ops,
 			num_read_ops,
 			num_read_back,
@@ -335,6 +331,8 @@ namespace libtorrent {
 
 		// it is important that all gauges have a higher index than counters.
 		// This assumption is relied upon in other parts of the code
+
+		// internal
 		enum stats_gauge_t
 		{
 			num_checking_torrents = num_stats_counters,
@@ -458,6 +456,8 @@ namespace libtorrent {
 			num_utp_deleted,
 
 			num_outstanding_accept,
+
+			num_queued_tracker_announces,
 
 			num_counters,
 			num_gauges_counters = num_counters - num_stats_counters

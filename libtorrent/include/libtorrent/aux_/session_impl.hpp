@@ -51,7 +51,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #include "libtorrent/session.hpp" // for user_load_function_t
-#include "libtorrent/ip_voter.hpp"
+#include "libtorrent/aux_/ip_voter.hpp"
 #include "libtorrent/entry.hpp"
 #include "libtorrent/socket.hpp"
 #include "libtorrent/peer_id.hpp"
@@ -71,7 +71,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "libtorrent/socket_io.hpp" // for print_address
 #include "libtorrent/address.hpp"
 #include "libtorrent/aux_/utp_socket_manager.hpp"
-#include "libtorrent/bloom_filter.hpp"
+#include "libtorrent/aux_/bloom_filter.hpp"
 #include "libtorrent/peer_class.hpp"
 #include "libtorrent/peer_class_type_filter.hpp"
 #include "libtorrent/kademlia/dht_observer.hpp"
@@ -113,7 +113,6 @@ TORRENT_VERSION_NAMESPACE_3_END
 	struct upnp;
 	struct natpmp;
 	struct lsd;
-	struct torrent;
 	struct alert;
 	struct torrent_handle;
 
@@ -128,6 +127,7 @@ namespace aux {
 
 	struct session_impl;
 	struct session_settings;
+	struct torrent;
 
 #ifndef TORRENT_DISABLE_LOGGING
 	struct tracker_logger;
@@ -158,20 +158,20 @@ namespace aux {
 	struct TORRENT_EXTRA_EXPORT listen_socket_t : utp_socket_interface
 	{
 		// we accept incoming connections on this interface
-		static constexpr listen_socket_flags_t accept_incoming = 0_bit;
+		static inline constexpr listen_socket_flags_t accept_incoming = 0_bit;
 
 		// this interface was specified to be just the local network. If this flag
 		// is not set, this interface is assumed to have a path to the internet
 		// (i.e. have a gateway configured)
-		static constexpr listen_socket_flags_t local_network = 1_bit;
+		static inline constexpr listen_socket_flags_t local_network = 1_bit;
 
 		// this interface was expanded from the user requesting to
 		// listen on an unspecified address (either IPv4 or IPv6)
-		static constexpr listen_socket_flags_t was_expanded = 2_bit;
+		static inline constexpr listen_socket_flags_t was_expanded = 2_bit;
 
 		// there's a proxy configured, and this is the only one interface
 		// representing that one proxy
-		static constexpr listen_socket_flags_t proxy = 3_bit;
+		static inline constexpr listen_socket_flags_t proxy = 3_bit;
 
 		listen_socket_t() = default;
 
@@ -596,8 +596,10 @@ namespace aux {
 
 			// second return value is true if the torrent was added and false if an
 			// existing one was found.
-			std::pair<std::shared_ptr<torrent>, bool>
-			add_torrent_impl(add_torrent_params& p, error_code& ec);
+			std::tuple<std::shared_ptr<torrent>, info_hash_t, bool>
+			add_torrent_impl(add_torrent_params&& p, error_code& ec);
+			std::tuple<std::shared_ptr<torrent>, info_hash_t, bool>
+			add_torrent_impl(add_torrent_params const& p, error_code& ec) = delete;
 			void async_add_torrent(add_torrent_params* params);
 
 			void remove_torrent(torrent_handle const& h, remove_flags_t options) override;
@@ -776,7 +778,7 @@ namespace aux {
 			void set_external_address(tcp::endpoint const& local_endpoint
 				, address const& ip
 				, ip_source_t source_type, address const& source) override;
-			external_ip external_address() const override;
+			aux::external_ip external_address() const override;
 
 			// used when posting synchronous function
 			// calls to session_impl and torrent objects
@@ -892,7 +894,7 @@ namespace aux {
 
 			io_context& m_io_context;
 
-#ifdef TORRENT_USE_OPENSSL
+#if TORRENT_USE_SSL
 			// this is a generic SSL context used when talking to HTTPS servers
 			ssl::context m_ssl_ctx;
 #endif
@@ -1029,7 +1031,7 @@ namespace aux {
 			boost::optional<socket_type> m_i2p_listen_socket;
 #endif
 
-#ifdef TORRENT_USE_OPENSSL
+#if TORRENT_USE_SSL
 			ssl::context* ssl_ctx() override { return &m_ssl_ctx; }
 #endif
 #ifdef TORRENT_SSL_PEERS
@@ -1246,6 +1248,9 @@ namespace aux {
 			// abort may not fail and cannot allocate memory
 			aux::handler_storage<aux::abort_handler_max_size, aux::abort_handler> m_abort_handler_storage;
 
+			// submit_deferred may not fail
+			aux::handler_storage<aux::submit_handler_max_size, aux::submit_handler> m_submit_jobs_handler_storage;
+
 			// torrents are announced on the local network in a
 			// round-robin fashion. All torrents are cycled through
 			// within the LSD announce interval (which defaults to
@@ -1370,6 +1375,17 @@ namespace aux {
 			bool should_log() const override;
 			void debug_log(const char* fmt, ...) const noexcept override TORRENT_FORMAT(2,3);
 			session_interface& m_ses;
+
+#if TORRENT_USE_RTC
+			void generate_rtc_offers(int /*count*/
+				, std::function<void(error_code const&, std::vector<aux::rtc_offer>)> handler) override
+			{
+				handler(boost::asio::error::operation_not_supported, {});
+			}
+			void on_rtc_offer(aux::rtc_offer const&) override {}
+			void on_rtc_answer(aux::rtc_answer const&) override {}
+#endif
+
 		private:
 			// explicitly disallow assignment, to silence msvc warning
 			tracker_logger& operator=(tracker_logger const&);

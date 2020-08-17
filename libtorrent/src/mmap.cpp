@@ -98,7 +98,7 @@ namespace {
 
 file_handle::file_handle(string_view name, std::int64_t
 	, open_mode_t const mode)
-	: m_fd(CreateFileW(convert_to_native_path_string(name.to_string()).c_str()
+	: m_fd(CreateFileW(convert_to_native_path_string(std::string(name)).c_str()
 		, file_access(mode)
 		, FILE_SHARE_WRITE | FILE_SHARE_READ | FILE_SHARE_DELETE
 		, nullptr
@@ -161,14 +161,14 @@ namespace {
 
 file_handle::file_handle(string_view name, std::int64_t const size
 	, open_mode_t const mode)
-	: m_fd(open(name.to_string().c_str(), file_flags(mode), 0755))
+	: m_fd(open(std::string(name).c_str(), file_flags(mode), 0755))
 {
 #ifdef O_NOATIME
 	if (m_fd < 0 && (mode & open_mode::no_atime))
 	{
 		// NOATIME may not be allowed for certain files, it's best-effort,
 		// so just try again without NOATIME
-		m_fd = open(name.to_string().c_str()
+		m_fd = open(std::string(name).c_str()
 			, file_flags(mode & ~open_mode::no_atime), 0755);
 	}
 #endif
@@ -377,14 +377,20 @@ file_mapping::file_mapping(file_handle file, open_mode_t const mode, std::int64_
 		throw_ex<system_error>(error_code(errno, system_category()));
 	}
 
-#if TORRENT_USE_MADVISE && defined MADV_DONTDUMP
+#if TORRENT_USE_MADVISE
 	if (file_size > 0)
 	{
+		int const advise = ((mode & open_mode::random_access) ? 0 : MADV_SEQUENTIAL)
+#ifdef MADV_DONTDUMP
 		// on versions of linux that support it, ask for this region to not be
 		// included in coredumps (mostly to make the coredumps more manageable
 		// with large disk caches)
 		// ignore errors here, since this is best-effort
-		madvise(m_mapping, static_cast<std::size_t>(m_size), MADV_DONTDUMP);
+			| MADV_DONTDUMP
+#endif
+		;
+		if (advise != 0)
+			madvise(m_mapping, static_cast<std::size_t>(m_size), advise);
 	}
 #endif
 }
@@ -416,11 +422,8 @@ file_mapping::file_mapping(file_handle file, open_mode_t const mode
 {
 	// you can't create an mmap of size 0, so we just set it to null. We
 	// still need to create the empty file.
-	if (file_size > 0 && m_mapping == nullptr)
-	{
-		fprintf(stderr, "MapViewOfFile failed: %d\n", GetLastError());
+	if (m_size > 0 && m_mapping == nullptr)
 		throw_ex<system_error>(error_code(GetLastError(), system_category()));
-	}
 }
 
 void file_mapping::close()

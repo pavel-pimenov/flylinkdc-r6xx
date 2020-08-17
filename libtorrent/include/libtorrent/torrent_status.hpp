@@ -150,20 +150,20 @@ TORRENT_VERSION_NAMESPACE_2
 		// special values for error_file to describe which file or component
 		// encountered the error (``errc``).
 		// the error did not occur on a file
-		static constexpr file_index_t error_file_none{-1};
+		static inline constexpr file_index_t error_file_none{-1};
 
 		// the error occurred setting up the SSL context
-		static constexpr file_index_t error_file_ssl_ctx{-3};
+		static inline constexpr file_index_t error_file_ssl_ctx{-3};
 
 		// the error occurred while loading the metadata for the torrent
-		static constexpr file_index_t error_file_metadata{-4};
+		static inline constexpr file_index_t error_file_metadata{-4};
 
 		// there was a serious error reported in this torrent. The error code
 		// or a torrent log alert may provide more information.
-		static constexpr file_index_t error_file_exception{-5};
+		static inline constexpr file_index_t error_file_exception{-5};
 
 		// the error occurred with the partfile
-		static constexpr file_index_t error_file_partfile{-6};
+		static inline constexpr file_index_t error_file_partfile{-6};
 
 		// the path to the directory where this torrent's files are stored.
 		// It's typically the path as was given to async_add_torrent() or
@@ -186,7 +186,7 @@ TORRENT_VERSION_NAMESPACE_2
 		std::weak_ptr<const torrent_info> torrent_file;
 
 		// the time until the torrent will announce itself to the tracker.
-		time_duration next_announce = seconds(0);
+		time_duration next_announce = seconds{0};
 
 #if TORRENT_ABI_VERSION == 1
 		// the time the tracker want us to wait until we announce ourself

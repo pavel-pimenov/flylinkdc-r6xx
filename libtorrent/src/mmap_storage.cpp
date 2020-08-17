@@ -59,7 +59,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "libtorrent/aux_/disable_warnings_pop.hpp"
 
 #include "libtorrent/mmap_storage.hpp"
-#include "libtorrent/torrent.hpp"
+#include "libtorrent/aux_/torrent.hpp"
 #include "libtorrent/aux_/path.hpp"
 #include "libtorrent/aux_/invariant_check.hpp"
 #include "libtorrent/aux_/session_impl.hpp"
@@ -849,6 +849,7 @@ namespace libtorrent {
 		, aux::open_mode_t mode
 		, error_code& ec) const
 	{
+		TORRENT_ASSERT(!files().pad_file_at(file));
 		if (!m_allocate_files) mode |= aux::open_mode::sparse;
 
 		// files with priority 0 should always be sparse

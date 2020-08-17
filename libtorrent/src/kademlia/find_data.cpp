@@ -37,7 +37,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <libtorrent/kademlia/find_data.hpp>
 #include <libtorrent/kademlia/node.hpp>
 #include <libtorrent/kademlia/dht_observer.hpp>
-#include <libtorrent/io.hpp>
+#include <libtorrent/aux_/io_bytes.hpp>
 #include <libtorrent/socket.hpp>
 #include <libtorrent/socket_io.hpp>
 
@@ -74,7 +74,7 @@ void find_data_observer::reply(msg const& m)
 	if (token)
 	{
 		static_cast<find_data*>(algorithm())->got_write_token(
-			node_id(id.string_ptr()), token.string_value().to_string());
+			node_id(id.string_ptr()), std::string(token.string_value()));
 	}
 
 	traversal_observer::reply(m);
@@ -112,7 +112,7 @@ void find_data::start()
 void find_data::got_write_token(node_id const& n, std::string write_token)
 {
 #ifndef TORRENT_DISABLE_LOGGING
-	auto logger = get_node().observer();
+	auto* logger = get_node().observer();
 	if (logger != nullptr && logger->should_log(dht_logger::traversal))
 	{
 		logger->log(dht_logger::traversal
@@ -141,7 +141,7 @@ void find_data::done()
 	m_done = true;
 
 #ifndef TORRENT_DISABLE_LOGGING
-	auto logger = get_node().observer();
+	auto* logger = get_node().observer();
 	if (logger != nullptr)
 	{
 		logger->log(dht_logger::traversal, "[%u] %s DONE"

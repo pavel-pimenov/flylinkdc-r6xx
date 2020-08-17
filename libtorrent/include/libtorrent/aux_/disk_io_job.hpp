@@ -45,10 +45,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "libtorrent/session_types.hpp"
 #include "libtorrent/flags.hpp"
 
-#include "libtorrent/aux_/disable_warnings_push.hpp"
-#include <boost/variant/variant.hpp>
-#include "libtorrent/aux_/disable_warnings_pop.hpp"
-
+#include <variant>
 #include <string>
 #include <vector>
 #include <memory>
@@ -102,21 +99,21 @@ namespace aux {
 		// for this job. It means that this no other jobs on the same
 		// storage will execute in parallel with this one. It's used
 		// to lower the fence when the job has completed
-		static constexpr disk_job_flags_t fence = 1_bit;
+		static inline constexpr disk_job_flags_t fence = 1_bit;
 
 		// this job is currently being performed, or it's hanging
 		// on a cache piece that may be flushed soon
-		static constexpr disk_job_flags_t in_progress = 2_bit;
+		static inline constexpr disk_job_flags_t in_progress = 2_bit;
 
 		// this is set for jobs that we're no longer interested in. Any aborted
 		// job that's executed should immediately fail with operation_aborted
 		// instead of executing
-		static constexpr disk_job_flags_t aborted = 6_bit;
+		static inline constexpr disk_job_flags_t aborted = 6_bit;
 
 		// for read and write, this is the disk_buffer_holder
 		// for other jobs, it may point to other job-specific types
 		// for move_storage and rename_file this is a string
-		boost::variant<disk_buffer_holder
+		std::variant<disk_buffer_holder
 			, std::string
 			, add_torrent_params const*
 			, aux::vector<download_priority_t, file_index_t>
@@ -139,7 +136,7 @@ namespace aux {
 		using clear_piece_handler = std::function<void(piece_index_t)>;
 		using set_file_prio_handler = std::function<void(storage_error const&, aux::vector<download_priority_t, file_index_t>)>;
 
-		boost::variant<read_handler
+		std::variant<read_handler
 			, write_handler
 			, hash_handler
 			, hash2_handler

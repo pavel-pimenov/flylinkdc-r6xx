@@ -341,7 +341,7 @@ void node::incoming(aux::listen_socket_handle const& s, msg const& m)
 				{
 					m_observer->log(dht_logger::node, "INCOMING ERROR: (%" PRId64 ") %s"
 						, err.list_int_value_at(0)
-						, err.list_string_value_at(1).to_string().c_str());
+						, std::string(err.list_string_value_at(1)).c_str());
 				}
 				else
 				{
@@ -362,7 +362,7 @@ namespace {
 		, node& node, int const listen_port, sha1_hash const& ih, announce_flags_t const flags)
 	{
 #ifndef TORRENT_DISABLE_LOGGING
-		auto logger = node.observer();
+		auto* logger = node.observer();
 		if (logger != nullptr && logger->should_log(dht_logger::node))
 		{
 			logger->log(dht_logger::node, "sending announce_peer [ ih: %s "
@@ -754,7 +754,7 @@ void node::status(session_status& s)
 
 	m_table.status(s);
 	s.dht_total_allocations += m_rpc.num_allocated_observers();
-	for (auto& r : m_running_requests)
+	for (auto const& r : m_running_requests)
 	{
 		s.active_requests.emplace_back();
 		dht_lookup& lookup = s.active_requests.back();
@@ -789,7 +789,7 @@ void node::incoming_request(msg const& m, entry& e)
 {
 	e = entry(entry::dictionary_t);
 	e["y"] = "r";
-	e["t"] = m.message.dict_find_string_value("t").to_string();
+	e["t"] = m.message.dict_find_string_value("t");
 
 	static key_desc_t const top_desc[] = {
 		{"q", bdecode_node::string_t, 0, 0},
@@ -1218,7 +1218,7 @@ void node::write_nodes_entries(sha1_hash const& info_hash
 		bdecode_node wanted = want.list_at(i);
 		if (wanted.type() != bdecode_node::string_t)
 			continue;
-		node* wanted_node = m_get_foreign_node(info_hash, wanted.string_value().to_string());
+		node* wanted_node = m_get_foreign_node(info_hash, wanted.string_value());
 		if (!wanted_node) continue;
 		std::vector<node_entry> const n = wanted_node->m_table.find_node(info_hash, {});
 		r[wanted_node->protocol_nodes_key()] = write_nodes_entry(n);

@@ -37,7 +37,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "libtorrent/socket.hpp"
 #include "libtorrent/socket_io.hpp"
 #include "libtorrent/address.hpp"
-#include "libtorrent/io.hpp" // for write_uint16
+#include "libtorrent/aux_/io_bytes.hpp" // for write_uint16
 #include "libtorrent/hasher.hpp" // for hasher
 #include "libtorrent/aux_/escape_string.hpp" // for trim
 
@@ -117,7 +117,7 @@ namespace libtorrent {
 			}
 			// shave off the ':'
 			port = port.substr(1);
-			ret.address(make_address_v6(addr.to_string(), ec));
+			ret.address(make_address_v6(addr, ec));
 			if (ec) return ret;
 		}
 		else
@@ -130,7 +130,7 @@ namespace libtorrent {
 			}
 			addr = str.substr(0, port_pos);
 			port = str.substr(port_pos + 1);
-			ret.address(make_address_v4(addr.to_string(), ec));
+			ret.address(make_address_v4(addr, ec));
 			if (ec) return ret;
 		}
 
@@ -140,7 +140,7 @@ namespace libtorrent {
 			return ret;
 		}
 
-		int const port_num = std::atoi(port.to_string().c_str());
+		int const port_num = std::atoi(std::string(port).c_str());
 		if (port_num <= 0 || port_num > std::numeric_limits<std::uint16_t>::max())
 		{
 			ec = errors::invalid_port;

@@ -58,7 +58,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "libtorrent/piece_block.hpp"
 #include "libtorrent/aux_/escape_string.hpp" // for convert_from_native
 #include "libtorrent/string_view.hpp"
-#include "libtorrent/stack_allocator.hpp"
+#include "libtorrent/aux_/stack_allocator.hpp"
 #include "libtorrent/aux_/noexcept_movable.hpp"
 #include "libtorrent/portmap.hpp" // for portmap_transport
 #include "libtorrent/tracker_manager.hpp" // for event_t
@@ -87,7 +87,7 @@ namespace libtorrent {
 #endif
 
 	// internal
-	TORRENT_EXTRA_EXPORT char const* alert_name(int alert_type);
+	TORRENT_EXPORT char const* alert_name(int alert_type);
 
 	// user defined alerts should use IDs greater than this
 	constexpr int user_alert_id = 10000;
@@ -232,7 +232,7 @@ TORRENT_VERSION_NAMESPACE_2
 	// The ``torrent_added_alert`` is posted once every time a torrent is successfully
 	// added. It doesn't contain any members of its own, but inherits the torrent handle
 	// from its base class.
-	// It's posted when the ``status_notification`` bit is set in the alert_mask.
+	// It's posted when the ``alert_category::status`` bit is set in the alert_mask.
 	// deprecated in 1.1.3
 	// use add_torrent_alert instead
 	struct TORRENT_DEPRECATED_EXPORT torrent_added_alert final : torrent_alert
@@ -241,7 +241,7 @@ TORRENT_VERSION_NAMESPACE_2
 		TORRENT_UNEXPORT torrent_added_alert(aux::stack_allocator& alloc, torrent_handle const& h);
 
 		TORRENT_DEFINE_ALERT(torrent_added_alert, 3)
-		static constexpr alert_category_t static_category = alert_category::status;
+		static inline constexpr alert_category_t static_category = alert_category::status;
 		std::string message() const override;
 	};
 
@@ -252,7 +252,7 @@ TORRENT_VERSION_NAMESPACE_2
 	// The ``torrent_removed_alert`` is posted whenever a torrent is removed. Since
 	// the torrent handle in its base class will always be invalid (since the torrent
 	// is already removed) it has the info hash as a member, to identify it.
-	// It's posted when the ``status_notification`` bit is set in the alert_mask.
+	// It's posted when the ``alert_category::status`` bit is set in the alert_mask.
 	//
 	// Even though the ``handle`` member doesn't point to an existing torrent anymore,
 	// it is still useful for comparing to other handles, which may also no
@@ -268,7 +268,7 @@ TORRENT_VERSION_NAMESPACE_2
 			, torrent_handle const& h, info_hash_t const& ih, client_data_t userdata);
 
 		TORRENT_DEFINE_ALERT_PRIO(torrent_removed_alert, 4, alert_priority::critical)
-		static constexpr alert_category_t static_category = alert_category::status;
+		static inline constexpr alert_category_t static_category = alert_category::status;
 		std::string message() const override;
 		info_hash_t info_hash;
 
@@ -296,7 +296,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT_PRIO(read_piece_alert, 5, alert_priority::critical)
 
-		static constexpr alert_category_t static_category = alert_category::storage;
+		static inline constexpr alert_category_t static_category = alert_category::storage;
 		std::string message() const override;
 
 		error_code const error;
@@ -321,7 +321,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 #include "libtorrent/aux_/disable_deprecation_warnings_push.hpp"
 
-		static constexpr alert_category_t static_category =
+		static inline constexpr alert_category_t static_category =
 			alert_category::file_progress
 			PROGRESS_NOTIFICATION
 		;
@@ -343,7 +343,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT_PRIO(file_renamed_alert, 7, alert_priority::critical)
 
-		static constexpr alert_category_t static_category = alert_category::storage;
+		static inline constexpr alert_category_t static_category = alert_category::storage;
 		std::string message() const override;
 
 		// returns the new and previous file name, respectively.
@@ -378,7 +378,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT_PRIO(file_rename_failed_alert, 8, alert_priority::critical)
 
-		static constexpr alert_category_t static_category = alert_category::storage;
+		static inline constexpr alert_category_t static_category = alert_category::storage;
 
 		std::string message() const override;
 
@@ -485,7 +485,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT(performance_alert, 9)
 
-		static constexpr alert_category_t static_category = alert_category::performance_warning;
+		static inline constexpr alert_category_t static_category = alert_category::performance_warning;
 
 		std::string message() const override;
 
@@ -503,7 +503,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT_PRIO(state_changed_alert, 10, alert_priority::high)
 
-		static constexpr alert_category_t static_category = alert_category::status;
+		static inline constexpr alert_category_t static_category = alert_category::status;
 
 		std::string message() const override;
 
@@ -518,11 +518,6 @@ TORRENT_VERSION_NAMESPACE_2
 	// This alert is generated on tracker time outs, premature disconnects,
 	// invalid response or a HTTP response other than "200 OK". From the alert
 	// you can get the handle to the torrent the tracker belongs to.
-	//
-	// The ``times_in_row`` member says how many times in a row this tracker has
-	// failed. ``status_code`` is the code returned from the HTTP server. 401
-	// means the tracker needs authentication, 404 means not found etc. If the
-	// tracker timed out, the code will be set to 0.
 	struct TORRENT_EXPORT tracker_error_alert final : tracker_alert
 	{
 		// internal
@@ -532,16 +527,26 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT_PRIO(tracker_error_alert, 11, alert_priority::high)
 
-		static constexpr alert_category_t static_category = alert_category::tracker | alert_category::error;
+		static inline constexpr alert_category_t static_category = alert_category::tracker | alert_category::error;
 		std::string message() const override;
 
+		// This member says how many times in a row this tracker has failed.
 		int const times_in_row;
+
+		// the error code indicating why the tracker announce failed. If it is
+		// is ``lt::errors::tracker_failure`` the failure_reason() might contain
+		// a more detailed description of why the tracker rejected the request.
+		// HTTP status codes indicating errors are also set in this field.
 		error_code const error;
 
 		operation_t op;
 
-		// the message associated with this error
-		char const* error_message() const;
+		// if the tracker sent a "failure reason" string, it will be returned
+		// here.
+		char const* failure_reason() const;
+
+		// hidden
+		char const* error_message() const { return failure_reason(); }
 
 	private:
 		aux::allocation_slot m_msg_idx;
@@ -564,7 +569,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT(tracker_warning_alert, 12)
 
-		static constexpr alert_category_t static_category = alert_category::tracker | alert_category::error;
+		static inline constexpr alert_category_t static_category = alert_category::tracker | alert_category::error;
 		std::string message() const override;
 
 		// the message associated with this warning
@@ -589,7 +594,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT_PRIO(scrape_reply_alert, 13, alert_priority::critical)
 
-		static constexpr alert_category_t static_category = alert_category::tracker;
+		static inline constexpr alert_category_t static_category = alert_category::tracker;
 		std::string message() const override;
 
 		// the data returned in the scrape response. These numbers
@@ -613,7 +618,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT_PRIO(scrape_failed_alert, 14, alert_priority::critical)
 
-		static constexpr alert_category_t static_category = alert_category::tracker | alert_category::error;
+		static inline constexpr alert_category_t static_category = alert_category::tracker | alert_category::error;
 		std::string message() const override;
 
 		// the error itself. This may indicate that the tracker sent an error
@@ -646,7 +651,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT(tracker_reply_alert, 15)
 
-		static constexpr alert_category_t static_category = alert_category::tracker;
+		static inline constexpr alert_category_t static_category = alert_category::tracker;
 		std::string message() const override;
 
 		// tells how many peers the tracker returned in this response. This is
@@ -668,7 +673,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT(dht_reply_alert, 16)
 
-		static constexpr alert_category_t static_category = alert_category::dht | alert_category::tracker;
+		static inline constexpr alert_category_t static_category = alert_category::dht | alert_category::tracker;
 		std::string message() const override;
 
 		int const num_peers;
@@ -686,7 +691,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT(tracker_announce_alert, 17)
 
-		static constexpr alert_category_t static_category = alert_category::tracker;
+		static inline constexpr alert_category_t static_category = alert_category::tracker;
 		std::string message() const override;
 
 		// specifies what event was sent to the tracker. It is defined as:
@@ -709,7 +714,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT(hash_failed_alert, 18)
 
-		static constexpr alert_category_t static_category = alert_category::status;
+		static inline constexpr alert_category_t static_category = alert_category::status;
 		std::string message() const override;
 
 		piece_index_t const piece_index;
@@ -725,7 +730,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT(peer_ban_alert, 19)
 
-		static constexpr alert_category_t static_category = alert_category::peer;
+		static inline constexpr alert_category_t static_category = alert_category::peer;
 		std::string message() const override;
 	};
 
@@ -739,7 +744,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT(peer_unsnubbed_alert, 20)
 
-		static constexpr alert_category_t static_category = alert_category::peer;
+		static inline constexpr alert_category_t static_category = alert_category::peer;
 		std::string message() const override;
 	};
 
@@ -753,7 +758,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT(peer_snubbed_alert, 21)
 
-		static constexpr alert_category_t static_category = alert_category::peer;
+		static inline constexpr alert_category_t static_category = alert_category::peer;
 		std::string message() const override;
 	};
 
@@ -768,7 +773,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT(peer_error_alert, 22)
 
-		static constexpr alert_category_t static_category = alert_category::peer;
+		static inline constexpr alert_category_t static_category = alert_category::peer;
 		std::string message() const override;
 
 		// a 0-terminated string of the low-level operation that failed, or nullptr if
@@ -784,19 +789,27 @@ TORRENT_VERSION_NAMESPACE_2
 #endif
 	};
 
-	// This alert is posted every time an outgoing peer connect attempts succeeds.
+	// This alert is posted every time an incoming peer connection both
+	// successfully passes the protocol handshake and is associated with a
+	// torrent, or an outgoing peer connection attempt succeeds. For arbitrary
+	// incoming connections, see incoming_connection_alert.
 	struct TORRENT_EXPORT peer_connect_alert final : peer_alert
 	{
+		enum class direction_t { in, out };
+
 		// internal
 		TORRENT_UNEXPORT peer_connect_alert(aux::stack_allocator& alloc, torrent_handle h
-			, tcp::endpoint const& ep, peer_id const& peer_id, socket_type_t type);
+			, tcp::endpoint const& ep, peer_id const& peer_id, socket_type_t type, direction_t direction);
 
 		TORRENT_DEFINE_ALERT(peer_connect_alert, 23)
 
-		static constexpr alert_category_t static_category = alert_category::connect;
+		static inline constexpr alert_category_t static_category = alert_category::connect;
 		std::string message() const override;
 
-		socket_type_t const socket_type;
+		// Tells you if the peer was incoming or outgoing
+		direction_t direction;
+
+		socket_type_t socket_type;
 	};
 
 	// This alert is generated when a peer is disconnected for any reason (other than the ones
@@ -811,7 +824,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT(peer_disconnected_alert, 24)
 
-		static constexpr alert_category_t static_category = alert_category::connect;
+		static inline constexpr alert_category_t static_category = alert_category::connect;
 		std::string message() const override;
 
 		// the kind of socket this peer was connected over
@@ -846,7 +859,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT(invalid_request_alert, 25)
 
-		static constexpr alert_category_t static_category = alert_category::peer;
+		static inline constexpr alert_category_t static_category = alert_category::peer;
 		std::string message() const override;
 
 		// the request we received from the peer
@@ -875,7 +888,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT_PRIO(torrent_finished_alert, 26, alert_priority::high)
 
-		static constexpr alert_category_t static_category = alert_category::status;
+		static inline constexpr alert_category_t static_category = alert_category::status;
 		std::string message() const override;
 	};
 
@@ -896,7 +909,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 #include "libtorrent/aux_/disable_deprecation_warnings_push.hpp"
 
-		static constexpr alert_category_t static_category =
+		static inline constexpr alert_category_t static_category =
 			alert_category::piece_progress
 			PROGRESS_NOTIFICATION
 		;
@@ -920,7 +933,7 @@ TORRENT_VERSION_NAMESPACE_2
 		TORRENT_DEFINE_ALERT(request_dropped_alert, 28)
 
 #include "libtorrent/aux_/disable_deprecation_warnings_push.hpp"
-		static constexpr alert_category_t static_category =
+		static inline constexpr alert_category_t static_category =
 			alert_category::block_progress
 			| alert_category::peer
 			PROGRESS_NOTIFICATION
@@ -945,7 +958,7 @@ TORRENT_VERSION_NAMESPACE_2
 		TORRENT_DEFINE_ALERT(block_timeout_alert, 29)
 
 #include "libtorrent/aux_/disable_deprecation_warnings_push.hpp"
-		static constexpr alert_category_t static_category =
+		static inline constexpr alert_category_t static_category =
 			alert_category::block_progress
 			| alert_category::peer
 			PROGRESS_NOTIFICATION
@@ -969,7 +982,7 @@ TORRENT_VERSION_NAMESPACE_2
 		TORRENT_DEFINE_ALERT(block_finished_alert, 30)
 
 #include "libtorrent/aux_/disable_deprecation_warnings_push.hpp"
-		static constexpr alert_category_t static_category =
+		static inline constexpr alert_category_t static_category =
 			alert_category::block_progress
 			PROGRESS_NOTIFICATION
 		;
@@ -992,7 +1005,7 @@ TORRENT_VERSION_NAMESPACE_2
 		TORRENT_DEFINE_ALERT(block_downloading_alert, 31)
 
 #include "libtorrent/aux_/disable_deprecation_warnings_push.hpp"
-		static constexpr alert_category_t static_category =
+		static inline constexpr alert_category_t static_category =
 			alert_category::block_progress
 			PROGRESS_NOTIFICATION
 		;
@@ -1017,7 +1030,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT(unwanted_block_alert, 32)
 
-		static constexpr alert_category_t static_category = alert_category::peer;
+		static inline constexpr alert_category_t static_category = alert_category::peer;
 		std::string message() const override;
 
 		int const block_index;
@@ -1038,7 +1051,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT_PRIO(storage_moved_alert, 33, alert_priority::critical)
 
-		static constexpr alert_category_t static_category = alert_category::storage;
+		static inline constexpr alert_category_t static_category = alert_category::storage;
 		std::string message() const override;
 
 		// the path the torrent was moved to and from, respectively.
@@ -1065,7 +1078,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT_PRIO(storage_moved_failed_alert, 34, alert_priority::critical)
 
-		static constexpr alert_category_t static_category = alert_category::storage;
+		static inline constexpr alert_category_t static_category = alert_category::storage;
 		std::string message() const override;
 
 		error_code const error;
@@ -1092,7 +1105,7 @@ TORRENT_VERSION_NAMESPACE_2
 	// this alert arrives, since the torrent is being deleted. The ``info_hash`` member
 	// is hence the main way of identifying which torrent just completed the delete.
 	//
-	// This alert is posted in the ``storage_notification`` category, and that bit
+	// This alert is posted in the ``alert_category::storage`` category, and that bit
 	// needs to be set in the alert_mask.
 	struct TORRENT_EXPORT torrent_deleted_alert final : torrent_alert
 	{
@@ -1102,7 +1115,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT_PRIO(torrent_deleted_alert, 35, alert_priority::critical)
 
-		static constexpr alert_category_t static_category = alert_category::storage;
+		static inline constexpr alert_category_t static_category = alert_category::storage;
 		std::string message() const override;
 
 		info_hash_t info_hash;
@@ -1118,7 +1131,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT_PRIO(torrent_delete_failed_alert, 36, alert_priority::critical)
 
-		static constexpr alert_category_t static_category = alert_category::storage
+		static inline constexpr alert_category_t static_category = alert_category::storage
 			| alert_category::error;
 		std::string message() const override;
 
@@ -1147,7 +1160,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT_PRIO(save_resume_data_alert, 37, alert_priority::critical)
 
-		static constexpr alert_category_t static_category = alert_category::storage;
+		static inline constexpr alert_category_t static_category = alert_category::storage;
 		std::string message() const override;
 
 		// the ``params`` structure is populated with the fields to be passed to
@@ -1171,7 +1184,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT_PRIO(save_resume_data_failed_alert, 38, alert_priority::critical)
 
-		static constexpr alert_category_t static_category = alert_category::storage
+		static inline constexpr alert_category_t static_category = alert_category::storage
 			| alert_category::error;
 		std::string message() const override;
 
@@ -1193,7 +1206,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT_PRIO(torrent_paused_alert, 39, alert_priority::high)
 
-		static constexpr alert_category_t static_category = alert_category::status;
+		static inline constexpr alert_category_t static_category = alert_category::status;
 		std::string message() const override;
 	};
 
@@ -1206,7 +1219,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT_PRIO(torrent_resumed_alert, 40, alert_priority::high)
 
-		static constexpr alert_category_t static_category = alert_category::status;
+		static inline constexpr alert_category_t static_category = alert_category::status;
 		std::string message() const override;
 	};
 
@@ -1219,7 +1232,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT_PRIO(torrent_checked_alert, 41, alert_priority::high)
 
-		static constexpr alert_category_t static_category = alert_category::status;
+		static inline constexpr alert_category_t static_category = alert_category::status;
 		std::string message() const override;
 	};
 
@@ -1234,7 +1247,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT(url_seed_alert, 42)
 
-		static constexpr alert_category_t static_category = alert_category::peer | alert_category::error;
+		static inline constexpr alert_category_t static_category = alert_category::peer | alert_category::error;
 		std::string message() const override;
 
 		// the error the web seed encountered. If this is not set, the server
@@ -1272,7 +1285,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT_PRIO(file_error_alert, 43, alert_priority::high)
 
-		static constexpr alert_category_t static_category = alert_category::status
+		static inline constexpr alert_category_t static_category = alert_category::status
 			| alert_category::error
 			| alert_category::storage;
 		std::string message() const override;
@@ -1309,7 +1322,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT(metadata_failed_alert, 44)
 
-		static constexpr alert_category_t static_category = alert_category::error;
+		static inline constexpr alert_category_t static_category = alert_category::error;
 		std::string message() const override;
 
 		// indicates what failed when parsing the metadata. This error is
@@ -1351,7 +1364,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT(metadata_received_alert, 45)
 
-		static constexpr alert_category_t static_category = alert_category::status;
+		static inline constexpr alert_category_t static_category = alert_category::status;
 		std::string message() const override;
 	};
 
@@ -1369,7 +1382,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT(udp_error_alert, 46)
 
-		static constexpr alert_category_t static_category = alert_category::error;
+		static inline constexpr alert_category_t static_category = alert_category::error;
 		std::string message() const override;
 
 		// the source address associated with the error (if any)
@@ -1393,7 +1406,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT(external_ip_alert, 47)
 
-		static constexpr alert_category_t static_category = alert_category::status;
+		static inline constexpr alert_category_t static_category = alert_category::status;
 		std::string message() const override;
 
 		// the IP address that is believed to be our external IP
@@ -1444,7 +1457,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT_PRIO(listen_failed_alert, 48, alert_priority::critical)
 
-		static constexpr alert_category_t static_category = alert_category::status | alert_category::error;
+		static inline constexpr alert_category_t static_category = alert_category::status | alert_category::error;
 		std::string message() const override;
 
 		// the network device libtorrent attempted to listen on, or the IP address
@@ -1526,7 +1539,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT_PRIO(listen_succeeded_alert, 49, alert_priority::critical)
 
-		static constexpr alert_category_t static_category = alert_category::status;
+		static inline constexpr alert_category_t static_category = alert_category::status;
 		std::string message() const override;
 
 		// the address libtorrent ended up listening on. This address
@@ -1563,7 +1576,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT(portmap_error_alert, 50)
 
-		static constexpr alert_category_t static_category = alert_category::port_mapping
+		static inline constexpr alert_category_t static_category = alert_category::port_mapping
 			| alert_category::error;
 		std::string message() const override;
 
@@ -1599,7 +1612,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT(portmap_alert, 51)
 
-		static constexpr alert_category_t static_category = alert_category::port_mapping;
+		static inline constexpr alert_category_t static_category = alert_category::port_mapping;
 		std::string message() const override;
 
 		// refers to the mapping index of the port map that failed, i.e.
@@ -1645,7 +1658,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT(portmap_log_alert, 52)
 
-		static constexpr alert_category_t static_category = alert_category::port_mapping_log;
+		static inline constexpr alert_category_t static_category = alert_category::port_mapping_log;
 		std::string message() const override;
 
 		portmap_transport const map_transport;
@@ -1681,7 +1694,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT_PRIO(fastresume_rejected_alert, 53, alert_priority::critical)
 
-		static constexpr alert_category_t static_category = alert_category::status
+		static inline constexpr alert_category_t static_category = alert_category::status
 			| alert_category::error;
 		std::string message() const override;
 
@@ -1723,7 +1736,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT(peer_blocked_alert, 54)
 
-		static constexpr alert_category_t static_category = alert_category::ip_block;
+		static inline constexpr alert_category_t static_category = alert_category::ip_block;
 		std::string message() const override;
 
 		enum reason_t
@@ -1743,7 +1756,7 @@ TORRENT_VERSION_NAMESPACE_2
 	};
 
 	// This alert is generated when a DHT node announces to an info-hash on our
-	// DHT node. It belongs to the ``dht_notification`` category.
+	// DHT node. It belongs to the ``alert_category::dht`` category.
 	struct TORRENT_EXPORT dht_announce_alert final : alert
 	{
 		// internal
@@ -1752,7 +1765,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT(dht_announce_alert, 55)
 
-		static constexpr alert_category_t static_category = alert_category::dht;
+		static inline constexpr alert_category_t static_category = alert_category::dht;
 		std::string message() const override;
 
 		aux::noexcept_movable<address> ip;
@@ -1761,7 +1774,7 @@ TORRENT_VERSION_NAMESPACE_2
 	};
 
 	// This alert is generated when a DHT node sends a ``get_peers`` message to
-	// our DHT node. It belongs to the ``dht_notification`` category.
+	// our DHT node. It belongs to the ``alert_category::dht`` category.
 	struct TORRENT_EXPORT dht_get_peers_alert final : alert
 	{
 		// internal
@@ -1769,7 +1782,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT(dht_get_peers_alert, 56)
 
-		static constexpr alert_category_t static_category = alert_category::dht;
+		static inline constexpr alert_category_t static_category = alert_category::dht;
 		std::string message() const override;
 
 		sha1_hash info_hash;
@@ -1791,7 +1804,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT(stats_alert, 57)
 
-		static constexpr alert_category_t static_category = alert_category::stats;
+		static inline constexpr alert_category_t static_category = alert_category::stats;
 		std::string message() const override;
 
 		enum stats_channel
@@ -1835,7 +1848,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 	// This alert is posted when the disk cache has been flushed for a specific
 	// torrent as a result of a call to torrent_handle::flush_cache(). This
-	// alert belongs to the ``storage_notification`` category, which must be
+	// alert belongs to the ``alert_category::storage`` category, which must be
 	// enabled to let this alert through. The alert is also posted when removing
 	// a torrent from the session, once the outstanding cache flush is complete
 	// and the torrent does no longer have any files open.
@@ -1846,7 +1859,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT_PRIO(cache_flushed_alert, 58, alert_priority::high)
 
-		static constexpr alert_category_t static_category = alert_category::storage;
+		static inline constexpr alert_category_t static_category = alert_category::storage;
 	};
 
 #if TORRENT_ABI_VERSION == 1
@@ -1865,7 +1878,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT(anonymous_mode_alert, 59)
 
-		static constexpr alert_category_t static_category = alert_category::error;
+		static inline constexpr alert_category_t static_category = alert_category::error;
 		std::string message() const override;
 
 		enum kind_t
@@ -1895,7 +1908,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT(lsd_peer_alert, 60)
 
-		static constexpr alert_category_t static_category = alert_category::peer;
+		static inline constexpr alert_category_t static_category = alert_category::peer;
 		std::string message() const override;
 	};
 
@@ -1910,7 +1923,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT(trackerid_alert, 61)
 
-		static constexpr alert_category_t static_category = alert_category::status;
+		static inline constexpr alert_category_t static_category = alert_category::status;
 		std::string message() const override;
 
 		// The tracker ID returned by the tracker
@@ -1933,7 +1946,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT(dht_bootstrap_alert, 62)
 
-		static constexpr alert_category_t static_category = alert_category::dht;
+		static inline constexpr alert_category_t static_category = alert_category::dht;
 		std::string message() const override;
 	};
 
@@ -1946,7 +1959,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT_PRIO(torrent_error_alert, 64, alert_priority::high)
 
-		static constexpr alert_category_t static_category = alert_category::error | alert_category::status;
+		static inline constexpr alert_category_t static_category = alert_category::error | alert_category::status;
 		std::string message() const override;
 
 		// specifies which error the torrent encountered.
@@ -1977,7 +1990,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT_PRIO(torrent_need_cert_alert, 65, alert_priority::critical)
 
-		static constexpr alert_category_t static_category = alert_category::status;
+		static inline constexpr alert_category_t static_category = alert_category::status;
 		std::string message() const override;
 #if TORRENT_ABI_VERSION == 1
 		TORRENT_DEPRECATED error_code const error;
@@ -1998,7 +2011,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT(incoming_connection_alert, 66)
 
-		static constexpr alert_category_t static_category = alert_category::peer;
+		static inline constexpr alert_category_t static_category = alert_category::peer;
 		std::string message() const override;
 
 		// tells you what kind of socket the connection was accepted
@@ -2025,11 +2038,24 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT_PRIO(add_torrent_alert, 67, alert_priority::critical)
 
-		static constexpr alert_category_t static_category = alert_category::status;
+		static inline constexpr alert_category_t static_category = alert_category::status;
 		std::string message() const override;
 
-		// a copy of the parameters used when adding the torrent, it can be used
-		// to identify which invocation to ``async_add_torrent()`` caused this alert.
+		// This contains copies of the most important fields from the original
+		// add_torrent_params object, passed to add_torrent() or
+		// async_add_torrent(). Specifically, these fields are copied:
+		//
+		// * version
+		// * ti
+		// * name
+		// * save_path
+		// * userdata
+		// * tracker_id
+		// * flags
+		// * info_hash
+		//
+		// the info_hash field will be updated with the info-hash of the torrent
+		// specified by ``ti``.
 		add_torrent_params params;
 
 		// set to the error, if one occurred while adding the torrent.
@@ -2039,7 +2065,7 @@ TORRENT_VERSION_NAMESPACE_2
 	// This alert is only posted when requested by the user, by calling
 	// session::post_torrent_updates() on the session. It contains the torrent
 	// status of all torrents that changed since last time this message was
-	// posted. Its category is ``status_notification``, but it's not subject to
+	// posted. Its category is ``alert_category::status``, but it's not subject to
 	// filtering, since it's only manually posted anyway.
 	struct TORRENT_EXPORT state_update_alert final : alert
 	{
@@ -2049,7 +2075,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT_PRIO(state_update_alert, 68, alert_priority::high)
 
-		static constexpr alert_category_t static_category = alert_category::status;
+		static inline constexpr alert_category_t static_category = alert_category::status;
 		std::string message() const override;
 
 		// contains the torrent status of all torrents that changed since last
@@ -2068,7 +2094,7 @@ TORRENT_VERSION_NAMESPACE_2
 			, error_code const& ec);
 		TORRENT_DEFINE_ALERT(mmap_cache_alert, 69)
 
-		static constexpr alert_category_t static_category = alert_category::error;
+		static inline constexpr alert_category_t static_category = alert_category::error;
 		std::string message() const override;
 
 		error_code const error;
@@ -2101,7 +2127,7 @@ TORRENT_VERSION_NAMESPACE_2
 #include "libtorrent/aux_/disable_warnings_pop.hpp"
 #endif
 
-		static constexpr alert_category_t static_category = {};
+		static inline constexpr alert_category_t static_category = {};
 		std::string message() const override;
 
 		// An array are a mix of *counters* and *gauges*, which meanings can be
@@ -2134,7 +2160,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT(dht_error_alert, 73)
 
-		static constexpr alert_category_t static_category = alert_category::error | alert_category::dht;
+		static inline constexpr alert_category_t static_category = alert_category::error | alert_category::dht;
 		std::string message() const override;
 
 		// the error code
@@ -2165,7 +2191,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT_PRIO(dht_immutable_item_alert, 74, alert_priority::critical)
 
-		static constexpr alert_category_t static_category = alert_category::dht;
+		static inline constexpr alert_category_t static_category = alert_category::dht;
 
 		std::string message() const override;
 
@@ -2188,7 +2214,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT_PRIO(dht_mutable_item_alert, 75, alert_priority::critical)
 
-		static constexpr alert_category_t static_category = alert_category::dht;
+		static inline constexpr alert_category_t static_category = alert_category::dht;
 		std::string message() const override;
 
 		// the public key that was looked up
@@ -2229,7 +2255,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT(dht_put_alert, 76)
 
-		static constexpr alert_category_t static_category = alert_category::dht;
+		static inline constexpr alert_category_t static_category = alert_category::dht;
 		std::string message() const override;
 
 		// the target hash the item was stored under if this was an *immutable*
@@ -2258,7 +2284,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT(i2p_alert, 77)
 
-		static constexpr alert_category_t static_category = alert_category::error;
+		static inline constexpr alert_category_t static_category = alert_category::error;
 		std::string message() const override;
 
 		// the error that occurred in the i2p SAM connection
@@ -2266,7 +2292,7 @@ TORRENT_VERSION_NAMESPACE_2
 	};
 
 	// This alert is generated when we send a get_peers request
-	// It belongs to the ``dht_notification`` category.
+	// It belongs to the ``alert_category::dht`` category.
 	struct TORRENT_EXPORT dht_outgoing_get_peers_alert final : alert
 	{
 		// internal
@@ -2276,7 +2302,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT(dht_outgoing_get_peers_alert, 78)
 
-		static constexpr alert_category_t static_category = alert_category::dht;
+		static inline constexpr alert_category_t static_category = alert_category::dht;
 		std::string message() const override;
 
 		// the info_hash of the torrent we're looking for peers for.
@@ -2307,7 +2333,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT(log_alert, 79)
 
-		static constexpr alert_category_t static_category = alert_category::session_log;
+		static inline constexpr alert_category_t static_category = alert_category::session_log;
 		std::string message() const override;
 
 		// returns the log message
@@ -2336,7 +2362,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT(torrent_log_alert, 80)
 
-		static constexpr alert_category_t static_category = alert_category::torrent_log;
+		static inline constexpr alert_category_t static_category = alert_category::torrent_log;
 		std::string message() const override;
 
 		// returns the log message
@@ -2377,7 +2403,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT(peer_log_alert, 81)
 
-		static constexpr alert_category_t static_category = alert_category::peer_log;
+		static inline constexpr alert_category_t static_category = alert_category::peer_log;
 		std::string message() const override;
 
 		// string literal indicating the kind of event. For messages, this is the
@@ -2400,7 +2426,7 @@ TORRENT_VERSION_NAMESPACE_2
 	};
 
 	// posted if the local service discovery socket fails to start properly.
-	// it's categorized as ``error_notification``.
+	// it's categorized as ``alert_category::error``.
 	struct TORRENT_EXPORT lsd_error_alert final : alert
 	{
 		// internal
@@ -2409,7 +2435,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT(lsd_error_alert, 82)
 
-		static constexpr alert_category_t static_category = alert_category::error;
+		static inline constexpr alert_category_t static_category = alert_category::error;
 		std::string message() const override;
 
 		// the local network the corresponding local service discovery is running
@@ -2479,7 +2505,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT(dht_stats_alert, 83)
 
-		static constexpr alert_category_t static_category = {};
+		static inline constexpr alert_category_t static_category = {};
 		std::string message() const override;
 
 		// a vector of the currently running DHT lookups.
@@ -2507,7 +2533,7 @@ TORRENT_VERSION_NAMESPACE_2
 			, peer_request r, torrent_handle h
 			, tcp::endpoint const& ep, peer_id const& peer_id);
 
-		static constexpr alert_category_t static_category = alert_category::incoming_request;
+		static inline constexpr alert_category_t static_category = alert_category::incoming_request;
 		TORRENT_DEFINE_ALERT(incoming_request_alert, 84)
 
 		std::string message() const override;
@@ -2516,7 +2542,7 @@ TORRENT_VERSION_NAMESPACE_2
 		peer_request req;
 	};
 
-	// debug logging of the DHT when dht_log_notification is set in the alert
+	// debug logging of the DHT when alert_category::dht_log is set in the alert
 	// mask.
 	struct TORRENT_EXPORT dht_log_alert final : alert
 	{
@@ -2533,7 +2559,7 @@ TORRENT_VERSION_NAMESPACE_2
 		TORRENT_UNEXPORT dht_log_alert(aux::stack_allocator& alloc
 			, dht_module_t m, char const* fmt, va_list v);
 
-		static constexpr alert_category_t static_category = alert_category::dht_log;
+		static inline constexpr alert_category_t static_category = alert_category::dht_log;
 		TORRENT_DEFINE_ALERT(dht_log_alert, 85)
 
 		std::string message() const override;
@@ -2561,7 +2587,7 @@ TORRENT_VERSION_NAMESPACE_2
 		TORRENT_UNEXPORT dht_pkt_alert(aux::stack_allocator& alloc, span<char const> buf
 			, dht_pkt_alert::direction_t d, udp::endpoint const& ep);
 
-		static constexpr alert_category_t static_category = alert_category::dht_log;
+		static inline constexpr alert_category_t static_category = alert_category::dht_log;
 		TORRENT_DEFINE_ALERT(dht_pkt_alert, 86)
 
 		std::string message() const override;
@@ -2598,7 +2624,7 @@ TORRENT_VERSION_NAMESPACE_2
 			, sha1_hash const& ih
 			, std::vector<tcp::endpoint> const& peers);
 
-		static constexpr alert_category_t static_category = alert_category::dht_operation;
+		static inline constexpr alert_category_t static_category = alert_category::dht_operation;
 		TORRENT_DEFINE_ALERT(dht_get_peers_reply_alert, 87)
 
 		std::string message() const override;
@@ -2636,7 +2662,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT_PRIO(dht_direct_response_alert, 88, alert_priority::critical)
 
-		static constexpr alert_category_t static_category = alert_category::dht;
+		static inline constexpr alert_category_t static_category = alert_category::dht;
 		std::string message() const override;
 
 		client_data_t userdata;
@@ -2659,7 +2685,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 	// this is posted when one or more blocks are picked by the piece picker,
 	// assuming the verbose piece picker logging is enabled (see
-	// picker_log_notification).
+	// alert_category::picker_log).
 	struct TORRENT_EXPORT picker_log_alert final : peer_alert
 	{
 		// internal
@@ -2669,30 +2695,30 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT(picker_log_alert, 89)
 
-		static constexpr alert_category_t static_category = alert_category::picker_log;
+		static inline constexpr alert_category_t static_category = alert_category::picker_log;
 		std::string message() const override;
 
-		static constexpr picker_flags_t partial_ratio = 0_bit;
-		static constexpr picker_flags_t prioritize_partials = 1_bit;
-		static constexpr picker_flags_t rarest_first_partials = 2_bit;
-		static constexpr picker_flags_t rarest_first = 3_bit;
-		static constexpr picker_flags_t reverse_rarest_first = 4_bit;
-		static constexpr picker_flags_t suggested_pieces = 5_bit;
-		static constexpr picker_flags_t prio_sequential_pieces = 6_bit;
-		static constexpr picker_flags_t sequential_pieces = 7_bit;
-		static constexpr picker_flags_t reverse_pieces = 8_bit;
-		static constexpr picker_flags_t time_critical = 9_bit;
-		static constexpr picker_flags_t random_pieces = 10_bit;
-		static constexpr picker_flags_t prefer_contiguous = 11_bit;
-		static constexpr picker_flags_t reverse_sequential = 12_bit;
-		static constexpr picker_flags_t backup1 = 13_bit;
-		static constexpr picker_flags_t backup2 = 14_bit;
-		static constexpr picker_flags_t end_game = 15_bit;
-		static constexpr picker_flags_t extent_affinity = 16_bit;
+		static inline constexpr picker_flags_t partial_ratio = 0_bit;
+		static inline constexpr picker_flags_t prioritize_partials = 1_bit;
+		static inline constexpr picker_flags_t rarest_first_partials = 2_bit;
+		static inline constexpr picker_flags_t rarest_first = 3_bit;
+		static inline constexpr picker_flags_t reverse_rarest_first = 4_bit;
+		static inline constexpr picker_flags_t suggested_pieces = 5_bit;
+		static inline constexpr picker_flags_t prio_sequential_pieces = 6_bit;
+		static inline constexpr picker_flags_t sequential_pieces = 7_bit;
+		static inline constexpr picker_flags_t reverse_pieces = 8_bit;
+		static inline constexpr picker_flags_t time_critical = 9_bit;
+		static inline constexpr picker_flags_t random_pieces = 10_bit;
+		static inline constexpr picker_flags_t prefer_contiguous = 11_bit;
+		static inline constexpr picker_flags_t reverse_sequential = 12_bit;
+		static inline constexpr picker_flags_t backup1 = 13_bit;
+		static inline constexpr picker_flags_t backup2 = 14_bit;
+		static inline constexpr picker_flags_t end_game = 15_bit;
+		static inline constexpr picker_flags_t extent_affinity = 16_bit;
 
 		// this is a bitmask of which features were enabled for this particular
 		// pick. The bits are defined in the picker_flags_t enum.
-		picker_flags_t const picker_flags;
+		picker_flags_t picker_flags;
 
 		std::vector<piece_block> blocks() const;
 
@@ -2711,7 +2737,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT(session_error_alert, 90)
 
-		static constexpr alert_category_t static_category = alert_category::error;
+		static inline constexpr alert_category_t static_category = alert_category::error;
 		std::string message() const override;
 
 		// The error code, if one is associated with this error
@@ -2734,7 +2760,7 @@ TORRENT_VERSION_NAMESPACE_2
 
 		TORRENT_DEFINE_ALERT(dht_live_nodes_alert, 91)
 
-		static constexpr alert_category_t static_category = alert_category::dht;
+		static inline constexpr alert_category_t static_category = alert_category::dht;
 		std::string message() const override;
 
 		// the local DHT node's node-ID this routing table belongs to
@@ -2767,7 +2793,7 @@ TORRENT_VERSION_NAMESPACE_2
 		explicit TORRENT_UNEXPORT session_stats_header_alert(aux::stack_allocator& alloc);
 		TORRENT_DEFINE_ALERT(session_stats_header_alert, 92)
 
-		static constexpr alert_category_t static_category = {};
+		static inline constexpr alert_category_t static_category = {};
 		std::string message() const override;
 	};
 
@@ -2784,7 +2810,7 @@ TORRENT_VERSION_NAMESPACE_2
 			, std::vector<sha1_hash> const& samples
 			, std::vector<std::pair<sha1_hash, udp::endpoint>> const& nodes);
 
-		static constexpr alert_category_t static_category = alert_category::dht_operation;
+		static inline constexpr alert_category_t static_category = alert_category::dht_operation;
 		TORRENT_DEFINE_ALERT(dht_sample_infohashes_alert, 93)
 
 		std::string message() const override;
@@ -2832,7 +2858,7 @@ TORRENT_VERSION_NAMESPACE_2
 	// This alert is posted when a block intended to be sent to a peer is placed in the
 	// send buffer. Note that if the connection is closed before the send buffer is sent,
 	// the alert may be posted without the bytes having been sent to the peer.
-	// It belongs to the ``upload_notification`` category.
+	// It belongs to the ``alert_category::upload`` category.
 	struct TORRENT_EXPORT block_uploaded_alert final : peer_alert
 	{
 		// internal
@@ -2843,7 +2869,7 @@ TORRENT_VERSION_NAMESPACE_2
 		TORRENT_DEFINE_ALERT(block_uploaded_alert, 94)
 
 #include "libtorrent/aux_/disable_deprecation_warnings_push.hpp"
-		static constexpr alert_category_t static_category =
+		static inline constexpr alert_category_t static_category =
 			alert_category::upload
 			PROGRESS_NOTIFICATION
 		;
@@ -2865,7 +2891,7 @@ TORRENT_VERSION_NAMESPACE_2
 			, std::bitset<abi_alert_count> const&);
 		TORRENT_DEFINE_ALERT_PRIO(alerts_dropped_alert, 95, alert_priority::meta)
 
-		static constexpr alert_category_t static_category = alert_category::error;
+		static inline constexpr alert_category_t static_category = alert_category::error;
 		std::string message() const override;
 
 		// a bitmask indicating which alerts were dropped. Each bit represents the
@@ -2876,7 +2902,7 @@ TORRENT_VERSION_NAMESPACE_2
 	};
 
 	// this alert is posted with SOCKS5 related errors, when a SOCKS5 proxy is
-	// configured. It's enabled with the error_notification alert category.
+	// configured. It's enabled with the alert_category::error alert category.
 	struct TORRENT_EXPORT socks5_alert final : alert
 	{
 		// internal
@@ -2884,7 +2910,7 @@ TORRENT_VERSION_NAMESPACE_2
 			, tcp::endpoint const& ep, operation_t operation, error_code const& ec);
 		TORRENT_DEFINE_ALERT(socks5_alert, 96)
 
-		static constexpr alert_category_t static_category = alert_category::error;
+		static inline constexpr alert_category_t static_category = alert_category::error;
 		std::string message() const override;
 
 		// the error

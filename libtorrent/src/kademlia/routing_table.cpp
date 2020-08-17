@@ -64,8 +64,6 @@ using namespace std::placeholders;
 
 namespace libtorrent { namespace dht {
 
-constexpr find_nodes_flags_t routing_table::include_failed;
-
 namespace {
 
 	template <typename T, typename K>
@@ -317,9 +315,7 @@ void routing_table::status(session_status& s) const
 		dht_routing_bucket b;
 		b.num_nodes = int(i.live_nodes.size());
 		b.num_replacements = int(i.replacements.size());
-#if TORRENT_ABI_VERSION == 1
 		b.last_active = 0;
-#endif
 		s.dht_routing_table.push_back(b);
 	}
 }

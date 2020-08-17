@@ -36,7 +36,6 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "libtorrent/hasher.hpp"
 #include "libtorrent/error_code.hpp"
 #include "libtorrent/assert.hpp"
-#include "libtorrent/aux_/openssl.hpp"
 
 namespace libtorrent {
 
@@ -194,7 +193,7 @@ TORRENT_CRYPTO_NAMESPACE
 
 	hasher256& hasher256::operator=(hasher256 const& h) &
 	{
-		if (this == &h) return;
+		if (this == &h) return *this;
 		gcry_md_close(m_context);
 		gcry_md_copy(&m_context, h.m_context);
 		return *this;

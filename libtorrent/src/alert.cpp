@@ -48,9 +48,9 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "libtorrent/alert_types.hpp"
 #include "libtorrent/socket_io.hpp"
 #include "libtorrent/error_code.hpp"
-#include "libtorrent/torrent.hpp"
+#include "libtorrent/aux_/torrent.hpp"
 #include "libtorrent/performance_counters.hpp"
-#include "libtorrent/stack_allocator.hpp"
+#include "libtorrent/aux_/stack_allocator.hpp"
 #include "libtorrent/piece_block.hpp"
 #include "libtorrent/hex.hpp" // to_hex
 #include "libtorrent/session_stats.hpp"
@@ -65,38 +65,6 @@ POSSIBILITY OF SUCH DAMAGE.
 
 namespace libtorrent {
 
-	constexpr alert_category_t alert::error_notification;
-	constexpr alert_category_t alert::peer_notification;
-	constexpr alert_category_t alert::port_mapping_notification;
-	constexpr alert_category_t alert::storage_notification;
-	constexpr alert_category_t alert::tracker_notification;
-	constexpr alert_category_t alert::connect_notification;
-	constexpr alert_category_t alert::status_notification;
-#if TORRENT_ABI_VERSION == 1
-	constexpr alert_category_t alert::debug_notification;
-	constexpr alert_category_t alert::progress_notification;
-#endif
-	constexpr alert_category_t alert::ip_block_notification;
-	constexpr alert_category_t alert::performance_warning;
-	constexpr alert_category_t alert::dht_notification;
-#if TORRENT_ABI_VERSION <= 2
-	constexpr alert_category_t alert::stats_notification;
-#endif
-	constexpr alert_category_t alert::session_log_notification;
-	constexpr alert_category_t alert::torrent_log_notification;
-	constexpr alert_category_t alert::peer_log_notification;
-	constexpr alert_category_t alert::incoming_request_notification;
-	constexpr alert_category_t alert::dht_log_notification;
-	constexpr alert_category_t alert::dht_operation_notification;
-	constexpr alert_category_t alert::port_mapping_log_notification;
-	constexpr alert_category_t alert::picker_log_notification;
-	constexpr alert_category_t alert::file_progress_notification;
-	constexpr alert_category_t alert::piece_progress_notification;
-	constexpr alert_category_t alert::upload_notification;
-	constexpr alert_category_t alert::block_progress_notification;
-
-	constexpr alert_category_t alert::all_categories;
-
 	alert::alert() : m_timestamp(clock_type::now()) {}
 	alert::~alert() = default;
 	time_point alert::timestamp() const { return m_timestamp; }
@@ -106,7 +74,7 @@ namespace libtorrent {
 		: handle(h)
 		, m_alloc(alloc)
 	{
-		std::shared_ptr<torrent> t = h.native_handle();
+		auto t = h.native_handle();
 		if (t)
 		{
 			std::string name_str = t->name();
@@ -358,7 +326,7 @@ namespace libtorrent {
 		TORRENT_ASSERT(!u.empty());
 	}
 
-	char const* tracker_error_alert::error_message() const
+	char const* tracker_error_alert::failure_reason() const
 	{
 		return m_alloc.get().ptr(m_msg_idx);
 	}
@@ -418,7 +386,6 @@ namespace libtorrent {
 		, string_view u, error_code const& e)
 		: tracker_alert(alloc, h, ep, u)
 		, error(e)
-		, m_msg_idx()
 #if TORRENT_ABI_VERSION == 1
 		, msg(convert_from_native(e.message()))
 #endif
@@ -847,13 +814,14 @@ namespace {
 	{
 		// these numbers are the deprecated enum values in
 		// listen_succeeded_alert and listen_failed_alert
-		static aux::array<int, 9, socket_type_t> const mapping{{
+		static aux::array<int, 10, socket_type_t> const mapping{{
 			0, // tcp
 			4, // socks5,
 			0, // http,
 			2, // utp,
 			3, // i2p,
-			1, // tcp_ssl
+			0, // rtc,
+			1, // tcp_ssl,
 			4, // socks5_ssl,
 			1, // http_ssl,
 			5  // utp_ssl,
@@ -1468,16 +1436,18 @@ namespace {
 	}
 
 	peer_connect_alert::peer_connect_alert(aux::stack_allocator& alloc, torrent_handle h
-		, tcp::endpoint const& ep, peer_id const& peer_id, socket_type_t const type)
+		, tcp::endpoint const& ep, peer_id const& peer_id, socket_type_t const type, direction_t const dir)
 		: peer_alert(alloc, h, ep, peer_id)
+		, direction(dir)
 		, socket_type(type)
 	{}
 
 	std::string peer_connect_alert::message() const
 	{
 		char msg[600];
-		std::snprintf(msg, sizeof(msg), "%s connecting to peer (%s)"
-			, peer_alert::message().c_str(), socket_type_name(socket_type));
+		char const* direction_str = direction == direction_t::in ? "incoming" : "outgoing";
+		std::snprintf(msg, sizeof(msg), "%s %s connection to peer (%s)"
+			, peer_alert::message().c_str(), direction_str, socket_type_name(socket_type));
 		return msg;
 	}
 
@@ -1715,7 +1685,6 @@ namespace {
 		: target(t)
 		, public_key()
 		, signature()
-		, salt()
 		, seq(0)
 		, num_success(n)
 	{}
@@ -1979,7 +1948,6 @@ namespace {
 		: torrent_alert(alloc, h)
 		, error(e)
 		, m_url_idx(alloc.copy_string(u))
-		, m_msg_idx()
 #if TORRENT_ABI_VERSION == 1
 		, url(u)
 		, msg(convert_from_native(e.message()))
@@ -2205,7 +2173,6 @@ namespace {
 		, udp::endpoint const& addr_)
 		: userdata(userdata_), endpoint(addr_)
 		, m_alloc(alloc)
-		, m_response_idx()
 		, m_response_size(0)
 #if TORRENT_ABI_VERSION == 1
 		, addr(addr_)
@@ -2256,24 +2223,6 @@ namespace {
 
 		return ret;
 	}
-
-	constexpr picker_flags_t picker_log_alert::partial_ratio;
-	constexpr picker_flags_t picker_log_alert::prioritize_partials;
-	constexpr picker_flags_t picker_log_alert::rarest_first_partials;
-	constexpr picker_flags_t picker_log_alert::rarest_first;
-	constexpr picker_flags_t picker_log_alert::reverse_rarest_first;
-	constexpr picker_flags_t picker_log_alert::suggested_pieces;
-	constexpr picker_flags_t picker_log_alert::prio_sequential_pieces;
-	constexpr picker_flags_t picker_log_alert::sequential_pieces;
-	constexpr picker_flags_t picker_log_alert::reverse_pieces;
-	constexpr picker_flags_t picker_log_alert::time_critical;
-	constexpr picker_flags_t picker_log_alert::random_pieces;
-	constexpr picker_flags_t picker_log_alert::prefer_contiguous;
-	constexpr picker_flags_t picker_log_alert::reverse_sequential;
-	constexpr picker_flags_t picker_log_alert::backup1;
-	constexpr picker_flags_t picker_log_alert::backup2;
-	constexpr picker_flags_t picker_log_alert::end_game;
-	constexpr picker_flags_t picker_log_alert::extent_affinity;
 
 	std::string picker_log_alert::message() const
 	{
@@ -2636,108 +2585,5 @@ namespace {
 			, operation_name(op), error.message().c_str(), print_endpoint(ip).c_str());
 		return buf;
 	}
-
-	// this will no longer be necessary in C++17
-	constexpr alert_category_t torrent_removed_alert::static_category;
-	constexpr alert_category_t read_piece_alert::static_category;
-	constexpr alert_category_t file_completed_alert::static_category;
-	constexpr alert_category_t file_renamed_alert::static_category;
-	constexpr alert_category_t file_rename_failed_alert::static_category;
-	constexpr alert_category_t performance_alert::static_category;
-#ifndef	TORRENT_NO_STATE_CHANGES_ALERTS
-	constexpr alert_category_t state_changed_alert::static_category;
-#endif
-	constexpr alert_category_t tracker_error_alert::static_category;
-	constexpr alert_category_t tracker_warning_alert::static_category;
-	constexpr alert_category_t scrape_reply_alert::static_category;
-	constexpr alert_category_t scrape_failed_alert::static_category;
-	constexpr alert_category_t tracker_reply_alert::static_category;
-	constexpr alert_category_t dht_reply_alert::static_category;
-	constexpr alert_category_t tracker_announce_alert::static_category;
-	constexpr alert_category_t hash_failed_alert::static_category;
-	constexpr alert_category_t peer_ban_alert::static_category;
-	constexpr alert_category_t peer_unsnubbed_alert::static_category;
-	constexpr alert_category_t peer_snubbed_alert::static_category;
-	constexpr alert_category_t peer_error_alert::static_category;
-	constexpr alert_category_t peer_connect_alert::static_category;
-	constexpr alert_category_t peer_disconnected_alert::static_category;
-	constexpr alert_category_t invalid_request_alert::static_category;
-	constexpr alert_category_t torrent_finished_alert::static_category;
-#ifndef TORRENT_NO_PIECE_ALERTS
-	constexpr alert_category_t piece_finished_alert::static_category;
-#endif
-	constexpr alert_category_t request_dropped_alert::static_category;
-#ifndef TORRENT_NO_BLOCK_ALERTS
-	constexpr alert_category_t block_timeout_alert::static_category;
-	constexpr alert_category_t block_finished_alert::static_category;
-	constexpr alert_category_t block_downloading_alert::static_category;
-	constexpr alert_category_t unwanted_block_alert::static_category;
-#endif // TORRENT_NO_BLOCK_ALERTS
-	constexpr alert_category_t storage_moved_alert::static_category;
-	constexpr alert_category_t storage_moved_failed_alert::static_category;
-	constexpr alert_category_t torrent_deleted_alert::static_category;
-	constexpr alert_category_t torrent_delete_failed_alert::static_category;
-	constexpr alert_category_t save_resume_data_alert::static_category;
-	constexpr alert_category_t save_resume_data_failed_alert::static_category;
-	constexpr alert_category_t torrent_paused_alert::static_category;
-	constexpr alert_category_t torrent_resumed_alert::static_category;
-	constexpr alert_category_t torrent_checked_alert::static_category;
-	constexpr alert_category_t url_seed_alert::static_category;
-	constexpr alert_category_t file_error_alert::static_category;
-	constexpr alert_category_t metadata_failed_alert::static_category;
-	constexpr alert_category_t metadata_received_alert::static_category;
-	constexpr alert_category_t udp_error_alert::static_category;
-	constexpr alert_category_t external_ip_alert::static_category;
-	constexpr alert_category_t listen_failed_alert::static_category;
-	constexpr alert_category_t listen_succeeded_alert::static_category;
-	constexpr alert_category_t portmap_error_alert::static_category;
-	constexpr alert_category_t portmap_alert::static_category;
-	constexpr alert_category_t portmap_log_alert::static_category;
-	constexpr alert_category_t fastresume_rejected_alert::static_category;
-	constexpr alert_category_t peer_blocked_alert::static_category;
-	constexpr alert_category_t dht_announce_alert::static_category;
-	constexpr alert_category_t dht_get_peers_alert::static_category;
-#if TORRENT_ABI_VERSION <= 2
-	constexpr alert_category_t stats_alert::static_category;
-#endif
-	constexpr alert_category_t cache_flushed_alert::static_category;
-	constexpr alert_category_t lsd_peer_alert::static_category;
-	constexpr alert_category_t trackerid_alert::static_category;
-	constexpr alert_category_t dht_bootstrap_alert::static_category;
-	constexpr alert_category_t torrent_error_alert::static_category;
-	constexpr alert_category_t torrent_need_cert_alert::static_category;
-	constexpr alert_category_t incoming_connection_alert::static_category;
-	constexpr alert_category_t add_torrent_alert::static_category;
-	constexpr alert_category_t state_update_alert::static_category;
-	constexpr alert_category_t session_stats_alert::static_category;
-	constexpr alert_category_t dht_error_alert::static_category;
-	constexpr alert_category_t dht_immutable_item_alert::static_category;
-	constexpr alert_category_t dht_mutable_item_alert::static_category;
-	constexpr alert_category_t dht_put_alert::static_category;
-	constexpr alert_category_t i2p_alert::static_category;
-	constexpr alert_category_t dht_outgoing_get_peers_alert::static_category;
-	constexpr alert_category_t log_alert::static_category;
-	constexpr alert_category_t torrent_log_alert::static_category;
-	constexpr alert_category_t peer_log_alert::static_category;
-	constexpr alert_category_t lsd_error_alert::static_category;
-	constexpr alert_category_t dht_stats_alert::static_category;
-	constexpr alert_category_t incoming_request_alert::static_category;
-	constexpr alert_category_t dht_log_alert::static_category;
-	constexpr alert_category_t dht_pkt_alert::static_category;
-	constexpr alert_category_t dht_get_peers_reply_alert::static_category;
-	constexpr alert_category_t dht_direct_response_alert::static_category;
-	constexpr alert_category_t picker_log_alert::static_category;
-	constexpr alert_category_t session_error_alert::static_category;
-	constexpr alert_category_t dht_live_nodes_alert::static_category;
-	constexpr alert_category_t session_stats_header_alert::static_category;
-	constexpr alert_category_t dht_sample_infohashes_alert::static_category;
-	constexpr alert_category_t block_uploaded_alert::static_category;
-	constexpr alert_category_t alerts_dropped_alert::static_category;
-	constexpr alert_category_t socks5_alert::static_category;
-#if TORRENT_ABI_VERSION == 1
-	constexpr alert_category_t anonymous_mode_alert::static_category;
-	constexpr alert_category_t mmap_cache_alert::static_category;
-	constexpr alert_category_t torrent_added_alert::static_category;
-#endif
 
 } // namespace libtorrent

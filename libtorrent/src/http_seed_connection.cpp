@@ -38,17 +38,17 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <cinttypes> // for PRId64 et.al.
 
 #include "libtorrent/config.hpp"
-#include "libtorrent/http_seed_connection.hpp"
+#include "libtorrent/aux_/http_seed_connection.hpp"
 #include "libtorrent/aux_/invariant_check.hpp"
 #include "libtorrent/aux_/session_impl.hpp"
 #include "libtorrent/peer_info.hpp"
 #include "libtorrent/hex.hpp" // for is_hex
 #include "libtorrent/optional.hpp"
 
-namespace libtorrent {
+namespace libtorrent::aux {
 
 	http_seed_connection::http_seed_connection(peer_connection_args& pack
-		, web_seed_t& web)
+		, aux::web_seed_t& web)
 		: web_connection_base(pack, web)
 		, m_url(web.url)
 		, m_web(&web)
@@ -61,7 +61,7 @@ namespace libtorrent {
 		if (!m_settings.get_bool(settings_pack::report_web_seed_downloads))
 			ignore_stats(true);
 
-		std::shared_ptr<torrent> tor = pack.tor.lock();
+		auto tor = pack.tor.lock();
 		TORRENT_ASSERT(tor);
 		int blocks_per_piece = tor->torrent_file().piece_length() / tor->block_size();
 
@@ -96,7 +96,7 @@ namespace libtorrent {
 			m_web->endpoints.erase(m_web->endpoints.begin());
 		}
 
-		std::shared_ptr<torrent> t = associated_torrent().lock();
+		auto t = associated_torrent().lock();
 		peer_connection::disconnect(ec, op, error);
 		if (t) t->disconnect_web_seed(this);
 	}
@@ -105,7 +105,7 @@ namespace libtorrent {
 	{
 		if (m_requests.empty()) return {};
 
-		std::shared_ptr<torrent> t = associated_torrent().lock();
+		auto t = associated_torrent().lock();
 		TORRENT_ASSERT(t);
 
 		piece_block_progress ret;
@@ -140,7 +140,7 @@ namespace libtorrent {
 	{
 		INVARIANT_CHECK;
 
-		std::shared_ptr<torrent> t = associated_torrent().lock();
+		auto t = associated_torrent().lock();
 		TORRENT_ASSERT(t);
 
 		TORRENT_ASSERT(t->valid_metadata());
@@ -172,7 +172,7 @@ namespace libtorrent {
 		request += "GET ";
 		request += using_proxy ? m_url : m_path;
 		request += "?info_hash=";
-		request += escape_string({associated_info_hash().data(), 20});
+		request += lt::escape_string({associated_info_hash().data(), 20});
 		request += "&piece=";
 		request += to_string(r.piece);
 
@@ -181,10 +181,10 @@ namespace libtorrent {
 		if (r.start > 0 || r.length != t->torrent_file().piece_size(r.piece))
 		{
 			request += "&ranges=";
-			request += to_string(r.start).data();
+			request += lt::to_string(r.start).data();
 			request += "-";
 			// ranges are inclusive, just like HTTP
-			request += to_string(r.start + r.length - 1).data();
+			request += lt::to_string(r.start + r.length - 1).data();
 		}
 
 		request += " HTTP/1.1\r\n";
@@ -221,7 +221,7 @@ namespace libtorrent {
 			return;
 		}
 
-		std::shared_ptr<torrent> t = associated_torrent().lock();
+		auto t = associated_torrent().lock();
 		TORRENT_ASSERT(t);
 
 		for (;;)
@@ -276,7 +276,7 @@ namespace libtorrent {
 				}
 
 				// if the status code is not one of the accepted ones, abort
-				if (!is_ok_status(m_parser.status_code()))
+				if (!aux::is_ok_status(m_parser.status_code()))
 				{
 					auto const retry_time = value_or(m_parser.header_duration("retry-after")
 						, seconds32(m_settings.get_int(settings_pack::urlseed_wait_retry)));
@@ -286,7 +286,7 @@ namespace libtorrent {
 
 					if (t->alerts().should_post<url_seed_alert>())
 					{
-						std::string const error_msg = to_string(m_parser.status_code()).data()
+						std::string const error_msg = lt::to_string(m_parser.status_code()).data()
 							+ (" " + m_parser.message());
 						t->alerts().emplace_alert<url_seed_alert>(t->get_handle(), url()
 							, error_msg);
@@ -306,7 +306,7 @@ namespace libtorrent {
 			// we just completed reading the header
 			if (!header_finished)
 			{
-				if (is_redirect(m_parser.status_code()))
+				if (aux::is_redirect(m_parser.status_code()))
 				{
 					// this means we got a redirection request
 					// look for the location header

@@ -65,7 +65,8 @@ namespace {
 
 } // anonyous namespace
 
-	add_torrent_params read_resume_data(bdecode_node const& rd, error_code& ec)
+	add_torrent_params read_resume_data(bdecode_node const& rd, error_code& ec
+		, int const piece_limit)
 	{
 		add_torrent_params ret;
 		if (rd.type() != bdecode_node::dict_t)
@@ -97,7 +98,7 @@ namespace {
 			return ret;
 		}
 
-		ret.name = rd.dict_find_string_value("name").to_string();
+		ret.name = rd.dict_find_string_value("name");
 
 		if (info_hash.size() == 20)
 			ret.info_hash.v1.assign(info_hash.data());
@@ -121,7 +122,7 @@ namespace {
 				ret.ti = std::make_shared<torrent_info>(resume_ih);
 
 				error_code err;
-				if (!ret.ti->parse_info_section(info, err))
+				if (!ret.ti->parse_info_section(info, err, piece_limit))
 				{
 					ec = err;
 				}
@@ -158,13 +159,17 @@ namespace {
 					ret.merkle_trees.back().emplace_back(hashes);
 				}
 
-				auto verified = de.dict_find_string_value("verified");
+				auto const verified = de.dict_find_string_value("verified");
 				ret.verified_leaf_hashes.emplace_back();
 				ret.verified_leaf_hashes.back().reserve(verified.size());
 				for (auto const bit : verified)
-				{
 					ret.verified_leaf_hashes.back().emplace_back(bit == '1');
-				}
+
+				auto const mask = de.dict_find_string_value("mask");
+				ret.merkle_tree_mask.emplace_back();
+				ret.merkle_tree_mask.back().reserve(mask.size());
+				for (auto const bit : mask)
+					ret.merkle_tree_mask.back().emplace_back(bit == '1');
 			}
 		}
 
@@ -191,19 +196,29 @@ namespace {
 		ret.upload_limit = int(rd.dict_find_int_value("upload_rate_limit", -1));
 		ret.download_limit = int(rd.dict_find_int_value("download_rate_limit", -1));
 
-		// torrent state
+		// torrent flags
 		apply_flag(ret.flags, rd, "seed_mode", torrent_flags::seed_mode);
-		apply_flag(ret.flags, rd, "super_seeding", torrent_flags::super_seeding);
-		apply_flag(ret.flags, rd, "auto_managed", torrent_flags::auto_managed);
-		apply_flag(ret.flags, rd, "sequential_download", torrent_flags::sequential_download);
+		apply_flag(ret.flags, rd, "upload_mode", torrent_flags::upload_mode);
+#ifndef TORRENT_DISABLE_SHARE_MODE
+		apply_flag(ret.flags, rd, "share_mode", torrent_flags::share_mode);
+#endif
+		apply_flag(ret.flags, rd, "apply_ip_filter", torrent_flags::apply_ip_filter);
 		apply_flag(ret.flags, rd, "paused", torrent_flags::paused);
+		apply_flag(ret.flags, rd, "auto_managed", torrent_flags::auto_managed);
+#ifndef TORRENT_DISABLE_SUPERSEEDING
+		apply_flag(ret.flags, rd, "super_seeding", torrent_flags::super_seeding);
+#endif
+		apply_flag(ret.flags, rd, "sequential_download", torrent_flags::sequential_download);
 		apply_flag(ret.flags, rd, "stop_when_ready", torrent_flags::stop_when_ready);
+		apply_flag(ret.flags, rd, "disable_dht", torrent_flags::disable_dht);
+		apply_flag(ret.flags, rd, "disable_lsd", torrent_flags::disable_lsd);
+		apply_flag(ret.flags, rd, "disable_pex", torrent_flags::disable_pex);
 
-		ret.save_path = rd.dict_find_string_value("save_path").to_string();
+		ret.save_path = rd.dict_find_string_value("save_path");
 
 #if TORRENT_ABI_VERSION == 1
 		// deprecated in 1.2
-		ret.url = rd.dict_find_string_value("url").to_string();
+		ret.url = rd.dict_find_string_value("url");
 #endif
 
 		bdecode_node const mapped_files = rd.dict_find_list("mapped_files");
@@ -213,7 +228,7 @@ namespace {
 			{
 				auto new_filename = mapped_files.list_string_value_at(i);
 				if (new_filename.empty()) continue;
-				ret.renamed_files[file_index_t(i)] = new_filename.to_string();
+				ret.renamed_files[file_index_t(i)] = new_filename;
 			}
 		}
 
@@ -262,7 +277,7 @@ namespace {
 
 				for (int j = 0; j < tier_list.list_size(); ++j)
 				{
-					ret.trackers.push_back(tier_list.list_string_value_at(j).to_string());
+					ret.trackers.emplace_back(tier_list.list_string_value_at(j));
 					ret.tracker_tiers.push_back(tier);
 				}
 				++tier;
@@ -288,7 +303,7 @@ namespace {
 			{
 				auto url = url_list.list_string_value_at(i);
 				if (url.empty()) continue;
-				ret.url_seeds.push_back(url.to_string());
+				ret.url_seeds.emplace_back(url);
 			}
 		}
 
@@ -298,7 +313,7 @@ namespace {
 			{
 				auto url = httpseeds.list_string_value_at(i);
 				if (url.empty()) continue;
-				ret.http_seeds.push_back(url.to_string());
+				ret.http_seeds.emplace_back(url);
 			}
 		}
 
@@ -389,29 +404,35 @@ namespace {
 		return ret;
 	}
 
-	add_torrent_params read_resume_data(span<char const> buffer, error_code& ec)
+	add_torrent_params read_resume_data(span<char const> buffer, error_code& ec
+		, load_torrent_limits const& cfg)
 	{
-		bdecode_node rd = bdecode(buffer, ec);
+		int pos;
+		bdecode_node rd = bdecode(buffer, ec, &pos, cfg.max_decode_depth
+			, cfg.max_decode_tokens);
 		if (ec) return add_torrent_params();
 
-		return read_resume_data(rd, ec);
+		return read_resume_data(rd, ec, cfg.max_pieces);
 	}
 
-	add_torrent_params read_resume_data(bdecode_node const& rd)
+	add_torrent_params read_resume_data(bdecode_node const& rd, int const piece_limit)
 	{
 		error_code ec;
-		auto ret = read_resume_data(rd, ec);
+		auto ret = read_resume_data(rd, ec, piece_limit);
 		if (ec) throw system_error(ec);
 		return ret;
 	}
 
-	add_torrent_params read_resume_data(span<char const> buffer)
+	add_torrent_params read_resume_data(span<char const> buffer
+		, load_torrent_limits const& cfg)
 	{
+		int pos;
 		error_code ec;
-		bdecode_node rd = bdecode(buffer, ec);
+		bdecode_node rd = bdecode(buffer, ec, &pos, cfg.max_decode_depth
+			, cfg.max_decode_tokens);
 		if (ec) throw system_error(ec);
 
-		auto ret = read_resume_data(rd, ec);
+		auto ret = read_resume_data(rd, ec, cfg.max_pieces);
 		if (ec) throw system_error(ec);
 		return ret;
 	}

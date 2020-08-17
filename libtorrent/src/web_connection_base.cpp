@@ -38,22 +38,22 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <limits>
 #include <cstdlib>
 
-#include "libtorrent/web_connection_base.hpp"
+#include "libtorrent/aux_/web_connection_base.hpp"
 #include "libtorrent/aux_/invariant_check.hpp"
 #include "libtorrent/parse_url.hpp"
 #include "libtorrent/peer_info.hpp"
 
-namespace libtorrent {
+namespace libtorrent::aux {
 
 	web_connection_base::web_connection_base(
 		peer_connection_args& pack
-		, web_seed_t const& web)
+		, aux::web_seed_t const& web)
 		: peer_connection(pack)
 		, m_first_request(true)
 		, m_ssl(false)
 		, m_external_auth(web.auth)
 		, m_extra_headers(web.extra_headers)
-		, m_parser(http_parser::dont_parse_chunks)
+		, m_parser(aux::http_parser::dont_parse_chunks)
 		, m_body_start(0)
 	{
 		TORRENT_ASSERT(&web.peer_info == pack.peerinfo);
@@ -79,7 +79,7 @@ namespace libtorrent {
 		if (m_port == -1 && protocol == "http")
 			m_port = 80;
 
-#ifdef TORRENT_USE_OPENSSL
+#if TORRENT_USE_SSL
 		if (protocol == "https")
 		{
 			m_ssl = true;
@@ -117,7 +117,7 @@ namespace libtorrent {
 
 	void web_connection_base::on_connected()
 	{
-		std::shared_ptr<torrent> t = associated_torrent().lock();
+		auto t = associated_torrent().lock();
 		TORRENT_ASSERT(t);
 
 		// it is always possible to request pieces

@@ -47,17 +47,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <functional>
 #include <memory>
 #include <unordered_map>
-
-#ifdef TORRENT_USE_OPENSSL
-// there is no forward declaration header for asio
-namespace boost {
-namespace asio {
-namespace ssl {
-	class context;
-}
-}
-}
-#endif
+#include <deque>
 
 #include "libtorrent/flags.hpp"
 #include "libtorrent/socket.hpp"
@@ -74,6 +64,12 @@ namespace ssl {
 #include "libtorrent/error_code.hpp"
 #include "libtorrent/aux_/listen_socket_handle.hpp"
 #include "libtorrent/udp_socket.hpp"
+#include "libtorrent/aux_/session_settings.hpp"
+#include "libtorrent/ssl.hpp"
+
+#if TORRENT_USE_RTC
+#include "libtorrent/aux_/rtc_signaling.hpp"
+#endif
 
 namespace libtorrent {
 
@@ -81,6 +77,7 @@ namespace libtorrent {
 	struct timeout_handler;
 	class udp_tracker_connection;
 	class http_tracker_connection;
+	struct resolver_interface;
 	struct counters;
 #if TORRENT_USE_I2P
 	class i2p_connection;
@@ -89,10 +86,14 @@ namespace aux {
 	struct session_logger;
 	struct session_settings;
 	struct resolver_interface;
+#if TORRENT_USE_RTC
+	struct websocket_tracker_connection;
+#endif
 }
 
 using tracker_request_flags_t = flags::bitfield_flag<std::uint8_t, struct tracker_request_flags_tag>;
 
+// internal
 enum class event_t : std::uint8_t
 {
 	none,
@@ -106,11 +107,11 @@ enum class event_t : std::uint8_t
 	{
 		tracker_request() = default;
 
-		static constexpr tracker_request_flags_t scrape_request = 0_bit;
+		static inline constexpr tracker_request_flags_t scrape_request = 0_bit;
 
 		// affects interpretation of peers string in HTTP response
 		// see parse_tracker_response()
-		static constexpr tracker_request_flags_t i2p = 1_bit;
+		static inline constexpr tracker_request_flags_t i2p = 1_bit;
 
 		std::string url;
 		std::string trackerid;
@@ -146,11 +147,14 @@ enum class event_t : std::uint8_t
 		// scrape_tracker() or force_reannounce()
 		bool triggered_manually = false;
 
-#ifdef TORRENT_USE_OPENSSL
-		boost::asio::ssl::context* ssl_ctx = nullptr;
+#if TORRENT_USE_SSL
+		ssl::context* ssl_ctx = nullptr;
 #endif
 #if TORRENT_USE_I2P
 		i2p_connection* i2pconn = nullptr;
+#endif
+#if TORRENT_USE_RTC
+		std::vector<aux::rtc_offer> offers;
 #endif
 	};
 
@@ -225,7 +229,12 @@ enum class event_t : std::uint8_t
 			, operation_t op
 			, const std::string& msg
 			, seconds32 retry_interval) = 0;
-
+#if TORRENT_USE_RTC
+		virtual void generate_rtc_offers(int count
+			, std::function<void(error_code const&, std::vector<aux::rtc_offer>)> handler) = 0;
+		virtual void on_rtc_offer(aux::rtc_offer const&) = 0;
+		virtual void on_rtc_answer(aux::rtc_answer const&) = 0;
+#endif
 #ifndef TORRENT_DISABLE_LOGGING
 		virtual bool should_log() const = 0;
 		virtual void debug_log(const char* fmt, ...) const noexcept TORRENT_FORMAT(2,3) = 0;
@@ -302,15 +311,12 @@ enum class event_t : std::uint8_t
 				timeout_handler::shared_from_this());
 		}
 
-	private:
-
-		const tracker_request m_req;
-
 	protected:
 
 		void fail_impl(error_code const& ec, operation_t op, std::string msg = std::string()
 			, seconds32 interval = seconds32(0), seconds32 min_interval = seconds32(0));
 
+		tracker_request m_req;
 		std::weak_ptr<request_callback> m_requester;
 
 		tracker_manager& m_man;
@@ -348,17 +354,22 @@ enum class event_t : std::uint8_t
 		void queue_request(
 			io_context& ios
 			, tracker_request&& r
+			, aux::session_settings const& sett
 			, std::weak_ptr<request_callback> c
 				= std::weak_ptr<request_callback>());
 		void queue_request(
 			io_context& ios
 			, tracker_request const& r
+			, aux::session_settings const& sett
 			, std::weak_ptr<request_callback> c
 				= std::weak_ptr<request_callback>()) = delete;
 		void abort_all_requests(bool all = false);
 
 		void remove_request(http_tracker_connection const* c);
 		void remove_request(udp_tracker_connection const* c);
+#if TORRENT_USE_RTC
+		void remove_request(aux::websocket_tracker_connection const* c);
+#endif
 		bool empty() const;
 		int num_requests() const;
 
@@ -397,6 +408,12 @@ enum class event_t : std::uint8_t
 		std::unordered_map<std::uint32_t, std::shared_ptr<udp_tracker_connection>> m_udp_conns;
 
 		std::vector<std::shared_ptr<http_tracker_connection>> m_http_conns;
+		std::deque<std::shared_ptr<http_tracker_connection>> m_queued;
+
+#if TORRENT_USE_RTC
+		// websocket connections by URL
+		std::unordered_map<std::string, std::shared_ptr<aux::websocket_tracker_connection>> m_websocket_conns;
+#endif
 
 		send_fun_t m_send_fun;
 		send_fun_hostname_t m_send_fun_hostname;
