@@ -1010,7 +1010,7 @@ bool CFlyServerConfig::torrentSearchParser(HWND p_wnd, int p_message, string p_s
 {
 	try
 	{
-		std::vector<byte> l_data;
+		std::vector<unsigned char> l_data;
 		CFlyHTTPDownloader l_http_downloader;
 		l_http_downloader.m_is_use_cache = true;
 		if (!p_local_agent.empty())

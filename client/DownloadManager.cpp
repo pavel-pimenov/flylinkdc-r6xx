@@ -1130,7 +1130,7 @@ void DownloadManager::onTorrentAlertNotify()
 					if (const auto l_delete = lt::alert_cast<lt::torrent_removed_alert>(a))
 					{
 						LogManager::torrent_message("torrent_removed_alert: " + a->message());
-						auto const l_sha1 = l_delete->info_hash;
+						auto const l_sha1 = l_delete->info_hash.get_best();
 						auto i = m_torrents.find(l_delete->handle);
 						if (i == m_torrents.end())
 						{
@@ -1148,7 +1148,7 @@ void DownloadManager::onTorrentAlertNotify()
 						}
 						--m_torrent_resume_count;
 						CFlylinkDBManager::getInstance()->delete_torrent_resume(l_sha1);
-						LogManager::torrent_message("CFlylinkDBManager::getInstance()->delete_torrent_resume(l_sha1): " + lt::aux::to_hex(l_delete->handle.info_hash().get_best()));
+						LogManager::torrent_message("CFlylinkDBManager::getInstance()->delete_torrent_resume(l_sha1): " + lt::aux::to_hex(l_delete->handle.info_hash()));
 						fly_fire1(DownloadManagerListener::RemoveTorrent(), l_sha1);
 					}
 					if (const auto l_rename = lt::alert_cast<lt::file_renamed_alert>(a))
@@ -1196,8 +1196,7 @@ void DownloadManager::onTorrentAlertNotify()
 						auto l_files = l_a->handle.torrent_file()->files();
 						const auto l_hash_file = l_files.hash(l_a->index);
 						const auto l_size = l_files.file_size(l_a->index);
-						const auto l_file_name = l_files.file_name(l_a->index).to_string();
-						//const auto l_file_path = l_files.file_path(l_a->index);
+						const auto l_file_name = l_files.file_name(l_a->index);
 						
 						const torrent_status st = l_a->handle.status(torrent_handle::query_save_path);
 						
@@ -1235,7 +1234,7 @@ void DownloadManager::onTorrentAlertNotify()
 						}
 						
 						const CFlyTTHKey l_file(l_sha1, l_size, p_is_sha1_for_file);
-						CFlyServerJSON::addDownloadCounter(l_file, l_file_name);
+						CFlyServerJSON::addDownloadCounter(l_file, std::string(l_file_name));
 #ifdef _DEBUG
 						CFlyServerJSON::sendDownloadCounter(false);
 #endif
@@ -1264,7 +1263,7 @@ void DownloadManager::onTorrentAlertNotify()
 								else
 								{
 #ifdef _DEBUG
-									LogManager::torrent_message("CFlylinkDBManager::is_resume_torrent: sha1 = " + lt::aux::to_hex(l_a->handle.info_hash().get_best()));
+									LogManager::torrent_message("CFlylinkDBManager::is_resume_torrent: sha1 = " + lt::aux::to_hex(l_a->handle.info_hash()));
 #endif
 								}
 							}
@@ -1282,7 +1281,7 @@ void DownloadManager::onTorrentAlertNotify()
 						CFlylinkDBManager::getInstance()->delete_torrent_resume(l_a->handle.info_hash());
 						m_torrents.erase(l_a->handle);
 #ifdef _DEBUG
-						LogManager::torrent_message("CFlylinkDBManager::delete_torrent_resume: sha1 = " + lt::aux::to_hex(l_a->handle.info_hash().get_best()));
+						LogManager::torrent_message("CFlylinkDBManager::delete_torrent_resume: sha1 = " + lt::aux::to_hex(l_a->handle.info_hash()));
 #endif
 					}
 					
