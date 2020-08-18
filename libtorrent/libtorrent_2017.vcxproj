@@ -317,7 +317,6 @@
     <ClCompile Include="src\chained_buffer.cpp" />
     <ClCompile Include="src\choker.cpp" />
     <ClCompile Include="src\close_reason.cpp" />
-    <ClCompile Include="src\ConvertUTF.cpp" />
     <ClCompile Include="src\cpuid.cpp" />
     <ClCompile Include="src\crc32c.cpp" />
     <ClCompile Include="src\create_torrent.cpp" />

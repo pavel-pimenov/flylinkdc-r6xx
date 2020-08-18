@@ -42,6 +42,8 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <cstring> // for memset
 #include <cstdio> // for snprintf
 #include <cinttypes> // for PRId64 et.al.
+#include <any>
+#include <algorithm>
 
 #ifndef BOOST_SYSTEM_NOEXCEPT
 #define BOOST_SYSTEM_NOEXCEPT throw()

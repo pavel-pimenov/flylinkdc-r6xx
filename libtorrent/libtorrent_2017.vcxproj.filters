@@ -919,9 +919,6 @@
     <ClCompile Include="src\close_reason.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ConvertUTF.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\cpuid.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
