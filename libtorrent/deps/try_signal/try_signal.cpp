@@ -48,9 +48,7 @@ namespace {
 thread_local sigjmp_buf* jmpbuf = nullptr;
 }
 
-#if !defined _WIN32
 std::atomic_flag once = ATOMIC_FLAG_INIT;
-#endif
 
 scoped_jmpbuf::scoped_jmpbuf(sigjmp_buf* ptr)
 {

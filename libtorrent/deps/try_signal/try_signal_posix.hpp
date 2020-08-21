@@ -45,7 +45,7 @@ extern std::atomic_flag once;
 
 struct scoped_jmpbuf
 {
-	scoped_jmpbuf(sigjmp_buf* ptr);
+	explicit scoped_jmpbuf(sigjmp_buf* ptr);
 	~scoped_jmpbuf();
 	scoped_jmpbuf(scoped_jmpbuf const&) = delete;
 	scoped_jmpbuf& operator=(scoped_jmpbuf const&) = delete;

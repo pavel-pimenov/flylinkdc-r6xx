@@ -81,7 +81,7 @@ namespace {
 #undef SIGNAL_CASE
 		}
 		std::error_condition default_error_condition(int ev) const noexcept override
-		{ return std::error_condition(ev, *this); }
+		{ return {ev, *this}; }
 	};
 } // anonymous namespace
 
@@ -90,12 +90,12 @@ namespace errors {
 
 	std::error_code make_error_code(error_code_enum e)
 	{
-		return std::error_code(e, sig_category());
+		return {e, sig_category()};
 	}
 
 	std::error_condition make_error_condition(error_code_enum e)
 	{
-		return std::error_condition(e, sig_category());
+		return {e, sig_category()};
 	}
 
 } // namespace errors
@@ -192,7 +192,7 @@ namespace seh_errors {
 
 	std::error_code make_error_code(error_code_enum e)
 	{
-		return std::error_code(e, seh_category());
+		return {static_cast<int>(e), seh_category()};
 	}
 
 } // namespace errors
