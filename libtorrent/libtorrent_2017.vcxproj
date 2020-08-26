@@ -387,6 +387,7 @@
     <ClCompile Include="src\lsd.cpp" />
     <ClCompile Include="src\magnet_uri.cpp" />
     <ClCompile Include="src\merkle.cpp" />
+    <ClCompile Include="src\merkle_tree.cpp" />
     <ClCompile Include="src\mmap.cpp" />
     <ClCompile Include="src\mmap_disk_io.cpp" />
     <ClCompile Include="src\mmap_storage.cpp" />
@@ -416,6 +417,8 @@
     <ClCompile Include="src\request_blocks.cpp" />
     <ClCompile Include="src\resolver.cpp" />
     <ClCompile Include="src\resolve_links.cpp" />
+    <ClCompile Include="src\rtc_signaling.cpp" />
+    <ClCompile Include="src\rtc_stream.cpp" />
     <ClCompile Include="src\session.cpp" />
     <ClCompile Include="src\session_call.cpp" />
     <ClCompile Include="src\session_handle.cpp" />

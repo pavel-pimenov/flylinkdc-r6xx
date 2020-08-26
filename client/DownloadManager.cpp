@@ -1039,7 +1039,7 @@ void DownloadManager::onTorrentAlertNotify()
 								                          + " ] Download: " + Util::toString(s.download_payload_rate / 1000) + " kB/s "
 								                          + " ] Upload: " + Util::toString(s.upload_payload_rate / 1000) + " kB/s "
 								                          + Util::toString(s.total_done / 1000) + " kB ("
-								                          + Util::toString(s.progress_ppm / 10000) + "%) downloaded sha1: " + aux::to_hex(s.info_hash.get_best());
+								                          + Util::toString(s.progress_ppm / 10000) + "%) downloaded sha1: " + aux::to_hex(s.info_hash);
 								static std::string g_last_log;
 								if (g_last_log != l_log)
 								{
@@ -1130,7 +1130,7 @@ void DownloadManager::onTorrentAlertNotify()
 					if (const auto l_delete = lt::alert_cast<lt::torrent_removed_alert>(a))
 					{
 						LogManager::torrent_message("torrent_removed_alert: " + a->message());
-						auto const l_sha1 = l_delete->info_hash.get_best();
+						auto const l_sha1 = l_delete->info_hash;
 						auto i = m_torrents.find(l_delete->handle);
 						if (i == m_torrents.end())
 						{
