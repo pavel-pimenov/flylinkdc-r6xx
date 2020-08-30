@@ -17,8 +17,9 @@
  */
 
 #include "stdinc.h"
-#include <future>
 
+
+#include <future>
 #include "flyServer.h"
 #include "../client/Socket.h"
 #include "../client/ClientManager.h"
@@ -36,10 +37,10 @@
 
 #include "../windows/resource.h"
 #include "../client/FavoriteManager.h"
-#include "../client/syslog/syslog.h"
+
 
 #ifdef IRAINMAN_INCLUDE_GDI_OLE
-#include "../GdiOle/GDIImage.h"
+//#include "../GdiOle/GDIImage.h"
 #endif
 
 #include "ZenLib/ZtringListList.h"
@@ -2241,7 +2242,7 @@ bool CFlyServerJSON::pushStatistic(const bool p_is_sync_run)
 				}
 			}
 		}
-#ifdef IRAINMAN_INCLUDE_GDI_OLE
+#if 0// IRAINMAN_INCLUDE_GDI_OLE
 		if (CGDIImage::g_AnimationDeathDetectCount || CGDIImage::g_AnimationCount || CGDIImage::g_AnimationCountMax)
 		{
 			Json::Value& l_debug_info = l_info["Debug"];

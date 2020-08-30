@@ -201,19 +201,21 @@ class OperaColors
 		};
 		
 		struct fci_hash {
-			size_t operator()(const FloodCacheItem::FCIMapper& __x) const { return (__x.c1 ^ __x.c2); }
+			size_t operator()(const FloodCacheItem::FCIMapper& __x) const {
+				return (__x.c1 ^ __x.c2);
+			}
 			//bool operator()(const FloodCacheItem::FCIMapper& a, const FloodCacheItem::FCIMapper& b) {
-			//	return a.c1 < b.c1 && a.c2 < b.c2;
+			//  return a.c1 < b.c1 && a.c2 < b.c2;
 			//};
 		};
-
+		
 		struct fci_equal_to {
 			bool operator()(const FloodCacheItem::FCIMapper& __x, const FloodCacheItem::FCIMapper& __y) const {
 				return (__x.c1 == __y.c1) && (__x.c2 == __y.c2);
 			}
 		};
-
-
+		
+		
 		typedef std::unordered_map<FloodCacheItem::FCIMapper, FloodCacheItem*, fci_hash, fci_equal_to> FCIMap;
 		
 		static FCIMap g_flood_cache;

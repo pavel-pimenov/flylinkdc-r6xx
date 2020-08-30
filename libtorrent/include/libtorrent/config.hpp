@@ -487,7 +487,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #ifndef TORRENT_USE_RTC
-#define TORRENT_USE_RTC 1
+#define TORRENT_USE_RTC 0 // FlylinkDC++
 #endif
 
 #ifndef TORRENT_HAS_SYMLINK
