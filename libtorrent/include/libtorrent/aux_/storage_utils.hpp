@@ -1,6 +1,7 @@
 /*
 
-Copyright (c) 2003-2016, Arvid Norberg
+Copyright (c) 2017-2019, Arvid Norberg
+Copyright (c) 2018, Alden Torres
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -47,13 +48,14 @@ POSSIBILITY OF SUCH DAMAGE.
 namespace libtorrent {
 
 	struct part_file;
-	struct stat_cache;
 
 	// TODO: 3 remove this typedef, and use span<char const> for disk write
 	// operations
 	using iovec_t = span<char>;
 
 namespace aux {
+
+	struct stat_cache;
 
 	TORRENT_EXTRA_EXPORT int copy_bufs(span<iovec_t const> bufs
 		, int bytes, span<iovec_t> target);

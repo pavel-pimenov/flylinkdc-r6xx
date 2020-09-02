@@ -1,6 +1,11 @@
 /*
 
-Copyright (c) 2006, Arvid Norberg
+Copyright (c) 2006-2020, Arvid Norberg
+Copyright (c) 2014-2019, Steven Siloti
+Copyright (c) 2015, Thomas
+Copyright (c) 2015-2020, Alden Torres
+Copyright (c) 2016-2017, Pavel Pimenov
+Copyright (c) 2020, Paul-Louis Ageneau
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -62,7 +67,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "libtorrent/aux_/ip_notifier.hpp"
 #include "libtorrent/session_status.hpp"
 #include "libtorrent/add_torrent_params.hpp"
-#include "libtorrent/stat.hpp"
+#include "libtorrent/aux_/stat.hpp"
 #include "libtorrent/aux_/bandwidth_manager.hpp"
 #include "libtorrent/udp_socket.hpp"
 #include "libtorrent/assert.hpp"
@@ -90,10 +95,6 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "libtorrent/session_settings.hpp"
 #endif
 
-#if TORRENT_COMPLETE_TYPES_REQUIRED
-#include "libtorrent/peer_connection.hpp"
-#endif
-
 #include <algorithm>
 #include <vector>
 #include <set>
@@ -115,6 +116,7 @@ TORRENT_VERSION_NAMESPACE_3_END
 	struct lsd;
 	struct alert;
 	struct torrent_handle;
+	struct peer_connection;
 
 namespace dht {
 

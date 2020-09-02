@@ -1,13 +1,16 @@
 /*
 
 Copyright (c) 2017, toinetoine
-Copyright (c) 2004-2019, Arvid Norberg
+Copyright (c) 2004-2020, Arvid Norberg
 Copyright (c) 2008, Andrew Resch
 Copyright (c) 2014-2018, Steven Siloti
 Copyright (c) 2015, Thomas
 Copyright (c) 2015-2018, Alden Torres
 Copyright (c) 2017, Antoine Dahan
 Copyright (c) 2018, d-komarov
+Copyright (c) 2019, ghbplayer
+Copyright (c) 2020, Fonic
+Copyright (c) 2020, Viktor Elofsson
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -47,7 +50,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "libtorrent/assert.hpp"
 #include "libtorrent/identify_client.hpp"
 #include "libtorrent/address.hpp"
-#include "libtorrent/stat.hpp"
+#include "libtorrent/aux_/stat.hpp"
 #include "libtorrent/add_torrent_params.hpp"
 #include "libtorrent/torrent_status.hpp"
 #include "libtorrent/entry.hpp"
@@ -1809,7 +1812,7 @@ TORRENT_VERSION_NAMESPACE_3
 	{
 		// internal
 		TORRENT_UNEXPORT stats_alert(aux::stack_allocator& alloc, torrent_handle const& h, int interval
-			, stat const& s);
+			, aux::stat const& s);
 
 		TORRENT_DEFINE_ALERT(stats_alert, 57)
 

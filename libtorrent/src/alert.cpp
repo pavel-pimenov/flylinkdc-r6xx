@@ -2,7 +2,7 @@
 
 Copyright (c) 2003, Daniel Wallin
 Copyright (c) 2004, Magnus Jonsson
-Copyright (c) 2009-2019, Arvid Norberg
+Copyright (c) 2009-2020, Arvid Norberg
 Copyright (c) 2014-2018, Steven Siloti
 Copyright (c) 2015, Thomas
 Copyright (c) 2015-2018, Alden Torres
@@ -10,6 +10,8 @@ Copyright (c) 2016, Pavel Pimenov
 Copyright (c) 2017, Andrei Kurushin
 Copyright (c) 2017, Antoine Dahan
 Copyright (c) 2019, Amir Abrams
+Copyright (c) 2020, Fonic
+Copyright (c) 2020, Viktor Elofsson
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -1240,16 +1242,16 @@ namespace {
 #if TORRENT_ABI_VERSION <= 2
 namespace {
 
-		std::array<int, stats_alert::num_channels> stat_to_array(stat const& s)
+		std::array<int, stats_alert::num_channels> stat_to_array(aux::stat const& s)
 		{
-			std::array<int, stats_alert::num_channels> arr;
+			std::array<int, stats_alert::num_channels> arr{};
 
-			arr[stats_alert::upload_payload] = s[stat::upload_payload].counter();
-			arr[stats_alert::upload_protocol] = s[stat::upload_protocol].counter();
-			arr[stats_alert::download_payload] = s[stat::download_payload].counter();
-			arr[stats_alert::download_protocol] = s[stat::download_protocol].counter();
-			arr[stats_alert::upload_ip_protocol] = s[stat::upload_ip_protocol].counter();
-			arr[stats_alert::download_ip_protocol] = s[stat::download_ip_protocol].counter();
+			arr[stats_alert::upload_payload] = s[aux::stat::upload_payload].counter();
+			arr[stats_alert::upload_protocol] = s[aux::stat::upload_protocol].counter();
+			arr[stats_alert::download_payload] = s[aux::stat::download_payload].counter();
+			arr[stats_alert::download_protocol] = s[aux::stat::download_protocol].counter();
+			arr[stats_alert::upload_ip_protocol] = s[aux::stat::upload_ip_protocol].counter();
+			arr[stats_alert::download_ip_protocol] = s[aux::stat::download_ip_protocol].counter();
 
 #if TORRENT_ABI_VERSION == 1
 			arr[stats_alert::upload_dht_protocol] = 0;
@@ -1267,7 +1269,7 @@ namespace {
 	}
 
 	stats_alert::stats_alert(aux::stack_allocator& alloc
-		, torrent_handle const& h, int in, stat const& s)
+		, torrent_handle const& h, int in, aux::stat const& s)
 		: torrent_alert(alloc, h)
 		, transferred(stat_to_array(s))
 		, interval(in)

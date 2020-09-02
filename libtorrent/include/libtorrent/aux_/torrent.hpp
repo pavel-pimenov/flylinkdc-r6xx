@@ -1,14 +1,16 @@
 /*
 
-Copyright (c) 2003-2019, Arvid Norberg
+Copyright (c) 2003-2020, Arvid Norberg
 Copyright (c) 2003, Daniel Wallin
 Copyright (c) 2004, Magnus Jonsson
-Copyright (c) 2016-2018, Alden Torres
-Copyright (c) 2016-2017, Pavel Pimenov
+Copyright (c) 2016-2020, Alden Torres
 Copyright (c) 2017, Falcosc
+Copyright (c) 2017, Pavel Pimenov
 Copyright (c) 2017, AllSeeingEyeTolledEweSew
-Copyright (c) 2017-2019, Steven Siloti
 Copyright (c) 2018, d-komarov
+Copyright (c) 2018-2019, Steven Siloti
+Copyright (c) 2019, ghbplayer
+Copyright (c) 2020, Paul-Louis Ageneau
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -62,7 +64,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "libtorrent/address.hpp"
 #include "libtorrent/aux_/peer_list.hpp"
 #include "libtorrent/tracker_manager.hpp"
-#include "libtorrent/stat.hpp"
+#include "libtorrent/aux_/stat.hpp"
 #include "libtorrent/alert.hpp"
 #include "libtorrent/piece_picker.hpp"
 #include "libtorrent/aux_/hash_picker.hpp"
@@ -93,10 +95,6 @@ POSSIBILITY OF SUCH DAMAGE.
 #if TORRENT_USE_RTC
     #include "libtorrent/aux_/rtc_signaling.hpp"
     #include "libtorrent/aux_/rtc_stream.hpp"
-#endif
-
-#if TORRENT_COMPLETE_TYPES_REQUIRED
-#include "libtorrent/peer_connection.hpp"
 #endif
 
 // define as 0 to disable. 1 enables debug output of the pieces and requested
@@ -1324,7 +1322,7 @@ namespace aux {
 
 		// this is the upload and download statistics for the whole torrent.
 		// it's updated from all its peers once every second.
-		libtorrent::stat m_stat;
+		stat m_stat;
 
 		// -----------------------------
 

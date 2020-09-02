@@ -1,6 +1,6 @@
 /*
 
-Copyright (c) 2003-2010, 2013-2019, Arvid Norberg
+Copyright (c) 2003-2009, 2013-2020, Arvid Norberg
 Copyright (c) 2016-2017, Alden Torres
 All rights reserved.
 
@@ -281,15 +281,8 @@ namespace libtorrent {
 	private:
 
 		aux::aligned_union<1
-#if TORRENT_COMPLETE_TYPES_REQUIRED
-			// for implementations that require complete types, use char and hope
-			// for the best
-			, std::list<char>
-			, std::map<std::string, char>
-#else
 			, list_type
 			, dictionary_type
-#endif
 			, preformatted_type
 			, string_type
 			, integer_type

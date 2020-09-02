@@ -1,12 +1,13 @@
 /*
 
-Copyright (c) 2005, 2007-2019, Arvid Norberg
+Copyright (c) 2005, 2008-2020, Arvid Norberg
 Copyright (c) 2015, John Sebastian Peterson
 Copyright (c) 2016, terry zhao
-Copyright (c) 2016-2017, Alden Torres
-Copyright (c) 2016, Andrei Kurushin
+Copyright (c) 2016-2017, 2019, Alden Torres
+Copyright (c) 2016, 2019, Andrei Kurushin
 Copyright (c) 2017, Steven Siloti
 Copyright (c) 2018, Pavel Pimenov
+Copyright (c) 2020, Paul-Louis Ageneau
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -95,17 +96,9 @@ POSSIBILITY OF SUCH DAMAGE.
 #pragma GCC diagnostic ignored "-Wformat-extra-args"
 #endif
 
-#if defined __GNUC__
-
-#ifdef _GLIBCXX_CONCEPT_CHECKS
-#define TORRENT_COMPLETE_TYPES_REQUIRED 1
-#endif
-
 // ======= SUNPRO =========
 
-#elif defined __SUNPRO_CC
-
-#define TORRENT_COMPLETE_TYPES_REQUIRED 1
+#if defined __SUNPRO_CC
 
 // ======= MSVC =========
 
@@ -448,10 +441,6 @@ POSSIBILITY OF SUCH DAMAGE.
 
 #ifndef TORRENT_USE_MADVISE
 #define TORRENT_USE_MADVISE 0
-#endif
-
-#ifndef TORRENT_COMPLETE_TYPES_REQUIRED
-#define TORRENT_COMPLETE_TYPES_REQUIRED 0
 #endif
 
 #ifndef TORRENT_USE_FDATASYNC

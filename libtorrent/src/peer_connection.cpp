@@ -1,13 +1,14 @@
 /*
 
-Copyright (c) 2003-2019, Arvid Norberg
+Copyright (c) 2016, tnextday
+Copyright (c) 2003-2020, Arvid Norberg
 Copyright (c) 2004, Magnus Jonsson
 Copyright (c) 2015, Mikhail Titov
-Copyright (c) 2016-2018, Alden Torres
-Copyright (c) 2016, tnextday
+Copyright (c) 2016-2018, 2020, Alden Torres
 Copyright (c) 2016-2018, Steven Siloti
 Copyright (c) 2016, Andrei Kurushin
 Copyright (c) 2017-2018, Pavel Pimenov
+Copyright (c) 2020, Viktor Elofsson
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -1076,12 +1077,12 @@ namespace {
 			if (peers_with_requests == 0) peers_with_requests = 1;
 
 			// TODO: this should be the global download rate
-			rate = t->statistics().transfer_rate(stat::download_payload) / peers_with_requests;
+			rate = t->statistics().transfer_rate(aux::stat::download_payload) / peers_with_requests;
 		}
 		else
 		{
 			// current download rate in bytes per seconds
-			rate = m_statistics.transfer_rate(stat::download_payload);
+			rate = m_statistics.transfer_rate(aux::stat::download_payload);
 		}
 
 		// avoid division by zero
