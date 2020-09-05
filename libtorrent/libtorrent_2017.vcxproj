@@ -353,7 +353,6 @@
     <ClCompile Include="src\hex.cpp" />
     <ClCompile Include="src\http_connection.cpp" />
     <ClCompile Include="src\http_parser.cpp" />
-    <ClCompile Include="src\http_seed_connection.cpp" />
     <ClCompile Include="src\http_tracker_connection.cpp" />
     <ClCompile Include="src\i2p_stream.cpp" />
     <ClCompile Include="src\identify_client.cpp" />

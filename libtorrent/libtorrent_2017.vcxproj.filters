@@ -979,9 +979,6 @@
     <ClCompile Include="src\http_parser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\http_seed_connection.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\http_tracker_connection.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

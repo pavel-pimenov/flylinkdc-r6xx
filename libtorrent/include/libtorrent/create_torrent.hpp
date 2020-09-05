@@ -6,31 +6,8 @@ Copyright (c) 2016-2017, 2019, Alden Torres
 Copyright (c) 2017, Steven Siloti
 All rights reserved.
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions
-are met:
-
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in
-      the documentation and/or other materials provided with the distribution.
-    * Neither the name of the author nor the names of its
-      contributors may be used to endorse or promote products derived
-      from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
-
+You may use, distribute and modify this code under the terms of the BSD license,
+see LICENSE file.
 */
 
 #ifndef TORRENT_CREATE_TORRENT_HPP_INCLUDED
@@ -273,10 +250,12 @@ namespace libtorrent {
 		// content as the file of the torrent. For a multi-file torrent, it should point to
 		// a directory containing a directory with the same name as this torrent, and all the
 		// files of the torrent in it.
-		//
-		// The second function, ``add_http_seed()`` adds an HTTP seed instead.
 		void add_url_seed(string_view url);
+
+#if TORRENT_ABI_VERSION < 4
+		TORRENT_DEPRECATED
 		void add_http_seed(string_view url);
+#endif
 
 		// This adds a DHT node to the torrent. This especially useful if you're creating a
 		// tracker less torrent. It can be used by clients to bootstrap their DHT node from.
@@ -354,7 +333,6 @@ namespace libtorrent {
 		std::vector<std::pair<std::string, int>> m_urls;
 
 		std::vector<std::string> m_url_seeds;
-		std::vector<std::string> m_http_seeds;
 
 		aux::vector<sha1_hash, piece_index_t> m_piece_hash;
 

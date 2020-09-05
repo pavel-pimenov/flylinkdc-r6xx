@@ -11,39 +11,18 @@ Copyright (c) 2016-2020, Alden Torres
 Copyright (c) 2016-2018, Pavel Pimenov
 Copyright (c) 2016-2017, Andrei Kurushin
 Copyright (c) 2017, Falcosc
-Copyright (c) 2017, AllSeeingEyeTolledEweSew
 Copyright (c) 2017, ximply
-Copyright (c) 2018, Fernando Rodriguez
+Copyright (c) 2017, AllSeeingEyeTolledEweSew
 Copyright (c) 2018, d-komarov
+Copyright (c) 2018, Fernando Rodriguez
 Copyright (c) 2018, airium
+Copyright (c) 2020, Viktor Elofsson
+Copyright (c) 2020, Rosen Penev
 Copyright (c) 2020, Paul-Louis Ageneau
 All rights reserved.
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions
-are met:
-
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in
-      the documentation and/or other materials provided with the distribution.
-    * Neither the name of the author nor the names of its
-      contributors may be used to endorse or promote products derived
-      from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
-
+You may use, distribute and modify this code under the terms of the BSD license,
+see LICENSE file.
 */
 
 #include "libtorrent/config.hpp"
@@ -81,7 +60,6 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "libtorrent/peer_connection.hpp"
 #include "libtorrent/aux_/bt_peer_connection.hpp"
 #include "libtorrent/aux_/web_peer_connection.hpp"
-#include "libtorrent/aux_/http_seed_connection.hpp"
 #include "libtorrent/peer_connection_handle.hpp"
 #include "libtorrent/peer_id.hpp"
 #include "libtorrent/identify_client.hpp"
@@ -157,10 +135,10 @@ bool is_downloading_state(int const st)
 		peer_info.web_seed = true;
 	}
 
-	web_seed_t::web_seed_t(std::string const& url_, web_seed_entry::type_t type_
+	web_seed_t::web_seed_t(std::string const& url_
 		, std::string const& auth_
 		, web_seed_entry::headers_t const& extra_headers_)
-		: web_seed_entry(url_, type_, auth_, extra_headers_)
+		: web_seed_entry(url_, auth_, extra_headers_)
 	{
 		peer_info.web_seed = true;
 	}
@@ -292,20 +270,13 @@ bool is_downloading_state(int const st)
 
 		for (auto const& u : p.url_seeds)
 		{
-			ws.emplace_back(web_seed_t(u, web_seed_entry::url_seed));
+			ws.emplace_back(u);
 
 			// correct URLs to end with a "/" for multi-file torrents
 			if (multi_file)
 				ensure_trailing_slash(ws.back().url);
 			if (!m_torrent_file->is_valid())
 				m_torrent_file->add_url_seed(ws.back().url);
-		}
-
-		for (auto const& e : p.http_seeds)
-		{
-			ws.emplace_back(e, web_seed_entry::http_seed);
-			if (!m_torrent_file->is_valid())
-				m_torrent_file->add_http_seed(e);
 		}
 
 		aux::random_shuffle(ws);
@@ -6481,15 +6452,7 @@ namespace {
 			, aux::generate_peer_id(settings())
 		};
 
-		std::shared_ptr<peer_connection> c;
-		if (web->type == web_seed_entry::url_seed)
-		{
-			c = std::make_shared<web_peer_connection>(pack, *web);
-		}
-		else if (web->type == web_seed_entry::http_seed)
-		{
-			c = std::make_shared<http_seed_connection>(pack, *web);
-		}
+		auto c = std::make_shared<web_peer_connection>(pack, *web);
 		if (!c) return;
 
 #if TORRENT_USE_ASSERTS
@@ -6730,10 +6693,7 @@ namespace {
 		for (auto const& ws : m_web_seeds)
 		{
 			if (ws.removed || ws.ephemeral) continue;
-			if (ws.type == web_seed_entry::url_seed)
-				ret.url_seeds.push_back(ws.url);
-			else if (ws.type == web_seed_entry::http_seed)
-				ret.http_seeds.push_back(ws.url);
+			ret.url_seeds.push_back(ws.url);
 		}
 
 		// write have bitmask
@@ -9229,12 +9189,11 @@ namespace {
 	// add or remove a url that will be attempted for
 	// finding the file(s) in this torrent.
 	web_seed_t* torrent::add_web_seed(std::string const& url
-		, web_seed_entry::type_t const type
 		, std::string const& auth
 		, web_seed_entry::headers_t const& extra_headers
 		, web_seed_flag_t const flags)
 	{
-		web_seed_t ent(url, type, auth, extra_headers);
+		web_seed_t ent(url, auth, extra_headers);
 		ent.ephemeral = bool(flags & ephemeral);
 
 		// don't add duplicates
@@ -10569,7 +10528,7 @@ namespace {
 	}
 #endif // TORRENT_DISABLE_STREAMING
 
-	std::set<std::string> torrent::web_seeds(web_seed_entry::type_t const type) const
+	std::set<std::string> torrent::web_seeds() const
 	{
 		TORRENT_ASSERT(is_single_thread());
 		std::set<std::string> ret;
@@ -10577,16 +10536,15 @@ namespace {
 		{
 			if (s.peer_info.banned) continue;
 			if (s.removed) continue;
-			if (s.type != type) continue;
 			ret.insert(s.url);
 		}
 		return ret;
 	}
 
-	void torrent::remove_web_seed(std::string const& url, web_seed_entry::type_t const type)
+	void torrent::remove_web_seed(std::string const& url)
 	{
 		auto const i = std::find_if(m_web_seeds.begin(), m_web_seeds.end()
-			, [&] (web_seed_t const& w) { return w.url == url && w.type == type; });
+			, [&] (web_seed_t const& w) { return w.url == url; });
 
 		if (i != m_web_seeds.end())
 		{

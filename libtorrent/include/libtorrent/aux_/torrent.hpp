@@ -7,37 +7,15 @@ Copyright (c) 2016-2020, Alden Torres
 Copyright (c) 2017, Falcosc
 Copyright (c) 2017, Pavel Pimenov
 Copyright (c) 2017, AllSeeingEyeTolledEweSew
-Copyright (c) 2018, d-komarov
 Copyright (c) 2018-2019, Steven Siloti
+Copyright (c) 2018, d-komarov
 Copyright (c) 2019, ghbplayer
+Copyright (c) 2020, Viktor Elofsson
 Copyright (c) 2020, Paul-Louis Ageneau
 All rights reserved.
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions
-are met:
-
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in
-      the documentation and/or other materials provided with the distribution.
-    * Neither the name of the author nor the names of its
-      contributors may be used to endorse or promote products derived
-      from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
-
+You may use, distribute and modify this code under the terms of the BSD license,
+see LICENSE file.
 */
 
 #ifndef TORRENT_TORRENT_HPP_INCLUDE
@@ -152,7 +130,7 @@ namespace aux {
 	struct web_seed_t : web_seed_entry
 	{
 		explicit web_seed_t(web_seed_entry const& wse);
-		web_seed_t(std::string const& url_, web_seed_entry::type_t type_
+		web_seed_t(std::string const& url_
 			, std::string const& auth_ = std::string()
 			, web_seed_entry::headers_t const& extra_headers_ = web_seed_entry::headers_t());
 
@@ -644,12 +622,11 @@ namespace aux {
 		// add_web_seed won't add duplicates. If we have already added an entry
 		// with this URL, we'll get back the existing entry
 		web_seed_t* add_web_seed(std::string const& url
-			, web_seed_t::type_t type
 			, std::string const& auth = std::string()
 			, web_seed_t::headers_t const& extra_headers = web_seed_entry::headers_t()
 			, web_seed_flag_t flags = {});
 
-		void remove_web_seed(std::string const& url, web_seed_t::type_t type);
+		void remove_web_seed(std::string const& url);
 		void disconnect_web_seed(peer_connection* p);
 
 		void retry_web_seed(peer_connection* p, boost::optional<seconds32> retry = boost::none);
@@ -657,7 +634,7 @@ namespace aux {
 		void remove_web_seed_conn(peer_connection* p, error_code const& ec
 			, operation_t op, disconnect_severity_t error = peer_connection_interface::normal);
 
-		std::set<std::string> web_seeds(web_seed_entry::type_t type) const;
+		std::set<std::string> web_seeds() const;
 
 		bool free_upload_slots() const
 		{ return m_num_uploads < m_max_uploads; }

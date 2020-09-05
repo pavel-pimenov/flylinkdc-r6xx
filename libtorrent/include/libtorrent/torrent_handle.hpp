@@ -4,38 +4,15 @@ Copyright (c) 2019, Amir Abrams
 Copyright (c) 2003-2020, Arvid Norberg
 Copyright (c) 2004, Magnus Jonsson
 Copyright (c) 2015, 2018, Steven Siloti
-Copyright (c) 2016-2017, Alden Torres
+Copyright (c) 2016-2017, 2020, Alden Torres
 Copyright (c) 2017, Falcosc
 Copyright (c) 2017, AllSeeingEyeTolledEweSew
 Copyright (c) 2019, ghbplayer
 Copyright (c) 2019, Andrei Kurushin
 All rights reserved.
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions
-are met:
-
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in
-      the documentation and/or other materials provided with the distribution.
-    * Neither the name of the author nor the names of its
-      contributors may be used to endorse or promote products derived
-      from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
-
+You may use, distribute and modify this code under the terms of the BSD license,
+see LICENSE file.
 */
 
 #ifndef TORRENT_TORRENT_HANDLE_HPP_INCLUDED
@@ -508,13 +485,18 @@ namespace aux {
 		void remove_url_seed(std::string const& url) const;
 		std::set<std::string> url_seeds() const;
 
+#if TORRENT_ABI_VERSION < 4
 		// These functions are identical as the ``*_url_seed()`` variants, but
 		// they operate on `BEP 17`_ web seeds instead of `BEP 19`_.
 		//
 		// See http-seeding_ for more information.
+		TORRENT_DEPRECATED
 		void add_http_seed(std::string const& url) const;
+		TORRENT_DEPRECATED
 		void remove_http_seed(std::string const& url) const;
+		TORRENT_DEPRECATED
 		std::set<std::string> http_seeds() const;
+#endif
 
 		// add the specified extension to this torrent. The ``ext`` argument is
 		// a function that will be called from within libtorrent's context
