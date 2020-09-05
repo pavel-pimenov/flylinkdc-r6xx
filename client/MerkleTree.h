@@ -76,7 +76,7 @@ class MerkleTree
 			leaves.reserve(l_n);
 			for (size_t i = 0; i < l_n; i++, p_Data += Hasher::BYTES)
 			{
-				leaves.push_back(MerkleValue(p_Data));
+				leaves.emplace_back(MerkleValue(p_Data));
 			}
 			calcRoot();
 		}
@@ -147,12 +147,12 @@ class MerkleTree
 				h.update(buf + i, n); // n=1024 [4] https://www.box.net/shared/248a073eee69128a3c7b
 				if ((int64_t)BASE_BLOCK_SIZE < blockSize)
 				{
-					blocks.push_back(MerkleBlock(MerkleValue(h.finalize()), BASE_BLOCK_SIZE));
+					blocks.emplace_back(MerkleBlock(MerkleValue(h.finalize()), BASE_BLOCK_SIZE));
 					reduceBlocks();
 				}
 				else
 				{
-					leaves.push_back(MerkleValue(h.finalize()));
+					leaves.emplace_back(MerkleValue(h.finalize()));
 				}
 				i += n;
 			}

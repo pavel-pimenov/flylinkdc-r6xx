@@ -1756,7 +1756,7 @@ class TreeOutputStream : public OutputStream
 				size_t left = len - pos;
 				if (bufPos == 0 && left >= TigerTree::BYTES)
 				{
-					tree.getLeaves().push_back(TTHValue(b + pos));
+					tree.getLeaves().emplace_back(TTHValue(b + pos));
 					pos += TigerTree::BYTES;
 				}
 				else
@@ -1767,7 +1767,7 @@ class TreeOutputStream : public OutputStream
 					pos += bytes;
 					if (bufPos == TigerTree::BYTES)
 					{
-						tree.getLeaves().push_back(TTHValue(buf));
+						tree.getLeaves().emplace_back(TTHValue(buf));
 						bufPos = 0;
 					}
 				}

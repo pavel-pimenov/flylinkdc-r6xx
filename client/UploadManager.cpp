@@ -1087,7 +1087,7 @@ size_t UploadManager::addFailedUpload(const UserConnection* aSource, const strin
 	if (it == m_slotQueue.end())
 	{
 		++queue_position;
-		m_slotQueue.push_back(WaitingUser(aSource->getHintedUser(), aSource->getUserConnectionToken(), uqi));
+		m_slotQueue.emplace_back(WaitingUser(aSource->getHintedUser(), aSource->getUserConnectionToken(), uqi));
 	}
 	else
 	{

@@ -442,7 +442,7 @@ void ConnectionManager::onUserUpdated(const UserPtr& aUser)
 			{
 				if ((*i)->getUser() == aUser) // todo - map
 				{
-					l_download_users.push_back(CFlyTokenItem(*i));
+					l_download_users.emplace_back(CFlyTokenItem(*i));
 				}
 			}
 		}
@@ -453,7 +453,7 @@ void ConnectionManager::onUserUpdated(const UserPtr& aUser)
 			{
 				if ((*i)->getUser() == aUser)  // todo - map
 				{
-					l_upload_users.push_back(CFlyTokenItem(*i));
+					l_upload_users.emplace_back(CFlyTokenItem(*i));
 				}
 			}
 		}
@@ -1059,7 +1059,7 @@ bool ConnectionManager::checkIpFlood(const string& aIPServer, uint16_t aPort, co
 		l_item.m_first_tick = l_tick;
 		l_item.m_last_tick = l_tick;
 		CFlyFastLock(g_csDdosCheck);
-		auto l_result = g_ddos_map.insert(std::pair<CFlyDDOSkey, CFlyDDoSTick>(l_key, l_item));
+		auto l_result = g_ddos_map.emplace(std::pair<CFlyDDOSkey, CFlyDDoSTick>(l_key, l_item));
 		auto& l_cur_value = l_result.first->second;
 		++l_cur_value.m_count_connect;
 		string l_debug_key;
