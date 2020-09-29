@@ -709,7 +709,7 @@ namespace libtorrent::aux {
 		TORRENT_ASSERT(i);
 		c.set_peer_info(i);
 		TORRENT_ASSERT(i->connection == nullptr);
-		c.add_stat(std::int64_t(i->prev_amount_download) << 10, std::int64_t(i->prev_amount_upload) << 10);
+		c.add_stat(std::int64_t(i->prev_amount_download) * 1024, std::int64_t(i->prev_amount_upload) * 1024);
 
 		i->prev_amount_download = 0;
 		i->prev_amount_upload = 0;
@@ -774,14 +774,9 @@ namespace libtorrent::aux {
 #if TORRENT_USE_ASSERTS
 		else
 		{
-			if (true
 #if TORRENT_USE_I2P
-			&& !p->is_i2p_addr
+			if(!p->is_i2p_addr)
 #endif
-#if TORRENT_USE_RTC
-			&& !p->is_rtc_addr
-#endif
-			)
 			{
 				std::pair<iterator, iterator> range = find_peers(p->address());
 				TORRENT_ASSERT(std::distance(range.first, range.second) == 1);
@@ -898,6 +893,16 @@ namespace libtorrent::aux {
 		, pex_flags_t const flags, tcp::endpoint const& remote)
 	{
 		TORRENT_ASSERT(is_single_thread());
+
+#if TORRENT_USE_RTC
+		if (p->is_rtc_addr)
+		{
+			// This method must not be used for rtc peers
+			TORRENT_ASSERT_FAIL();
+			return;
+		}
+#endif
+
 		bool const was_conn_cand = is_connect_candidate(*p);
 
 		TORRENT_ASSERT(p->in_use);
@@ -985,7 +990,7 @@ namespace libtorrent::aux {
 #endif // TORRENT_USE_I2P
 
 #if TORRENT_USE_RTC
-	torrent_peer* peer_list::add_rtc_peer(string_view const peer_id
+	torrent_peer* peer_list::add_rtc_peer(tcp::endpoint const& remote
 		, peer_source_flags_t const src, pex_flags_t const flags
 		, torrent_state* state)
 	{
@@ -993,12 +998,25 @@ namespace libtorrent::aux {
 		INVARIANT_CHECK;
 
 		iterator const iter = std::lower_bound(m_peers.begin(), m_peers.end()
-				, peer_id, peer_address_compare());
+				, remote.address(), peer_address_compare());
+
+		if (!state->allow_multiple_connections_per_ip
+				&& iter != m_peers.end() && (*iter)->address() == remote.address())
+		{
+			// the peer exists
+			torrent_peer* p = *iter;
+			if (!p->is_rtc_addr)
+				return nullptr; // prefer the non-rtc peer
+
+			// update and return it
+			p->port = remote.port();
+			return p;
+		}
 
 		torrent_peer* p = m_peer_allocator.allocate_peer_entry(
 				torrent_peer_allocator_interface::rtc_peer_type);
 		if (p == nullptr) return nullptr;
-		p = new (p) rtc_peer(peer_id, src);
+		p = new (p) rtc_peer(remote, src);
 
 		if (!insert_peer(p, iter, flags, state))
 		{

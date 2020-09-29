@@ -57,6 +57,7 @@
     <ClInclude Include="include\libtorrent\aux_\deprecated.hpp" />
     <ClInclude Include="include\libtorrent\aux_\deque.hpp" />
     <ClInclude Include="include\libtorrent\aux_\dev_random.hpp" />
+    <ClInclude Include="include\libtorrent\aux_\directory.hpp" />
     <ClInclude Include="include\libtorrent\aux_\disable_deprecation_warnings_push.hpp" />
     <ClInclude Include="include\libtorrent\aux_\disable_warnings_pop.hpp" />
     <ClInclude Include="include\libtorrent\aux_\disable_warnings_push.hpp" />
@@ -64,6 +65,7 @@
     <ClInclude Include="include\libtorrent\aux_\escape_string.hpp" />
     <ClInclude Include="include\libtorrent\aux_\export.hpp" />
     <ClInclude Include="include\libtorrent\aux_\ffs.hpp" />
+    <ClInclude Include="include\libtorrent\aux_\file_pointer.hpp" />
     <ClInclude Include="include\libtorrent\aux_\file_progress.hpp" />
     <ClInclude Include="include\libtorrent\aux_\file_view_pool.hpp" />
     <ClInclude Include="include\libtorrent\aux_\generate_peer_id.hpp" />
@@ -166,7 +168,6 @@
     <ClInclude Include="include\libtorrent\http_parser.hpp" />
     <ClInclude Include="include\libtorrent\http_seed_connection.hpp" />
     <ClInclude Include="include\libtorrent\http_stream.hpp" />
-    <ClInclude Include="include\libtorrent\http_tracker_connection.hpp" />
     <ClInclude Include="include\libtorrent\i2p_stream.hpp" />
     <ClInclude Include="include\libtorrent\identify_client.hpp" />
     <ClInclude Include="include\libtorrent\index_range.hpp" />
@@ -211,7 +212,6 @@
     <ClInclude Include="include\libtorrent\natpmp.hpp" />
     <ClInclude Include="include\libtorrent\netlink.hpp" />
     <ClInclude Include="include\libtorrent\operations.hpp" />
-    <ClInclude Include="include\libtorrent\optional.hpp" />
     <ClInclude Include="include\libtorrent\packet_buffer.hpp" />
     <ClInclude Include="include\libtorrent\packet_pool.hpp" />
     <ClInclude Include="include\libtorrent\parse_url.hpp" />
@@ -319,6 +319,7 @@
     <ClCompile Include="src\cpuid.cpp" />
     <ClCompile Include="src\crc32c.cpp" />
     <ClCompile Include="src\create_torrent.cpp" />
+    <ClCompile Include="src\directory.cpp" />
     <ClCompile Include="src\disabled_disk_io.cpp" />
     <ClCompile Include="src\disk_buffer_holder.cpp" />
     <ClCompile Include="src\disk_buffer_pool.cpp" />

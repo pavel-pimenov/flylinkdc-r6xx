@@ -28,13 +28,13 @@ see LICENSE file.
 #include <deque>
 #include <limits> // for numeric_limits
 #include <memory> // for unique_ptr
+#include <optional>
 
 #include "libtorrent/aux_/disable_warnings_push.hpp"
 #include <boost/logic/tribool.hpp>
 #include "libtorrent/aux_/disable_warnings_pop.hpp"
 
 #include "libtorrent/fwd.hpp"
-#include "libtorrent/optional.hpp"
 #include "libtorrent/torrent_handle.hpp"
 #include "libtorrent/entry.hpp"
 #include "libtorrent/torrent_info.hpp"
@@ -477,7 +477,7 @@ namespace aux {
 		std::string name() const;
 
 		stat statistics() const { return m_stat; }
-		boost::optional<std::int64_t> bytes_left() const;
+		std::optional<std::int64_t> bytes_left() const;
 
 		void bytes_done(torrent_status& st, status_flags_t) const;
 
@@ -629,7 +629,7 @@ namespace aux {
 		void remove_web_seed(std::string const& url);
 		void disconnect_web_seed(peer_connection* p);
 
-		void retry_web_seed(peer_connection* p, boost::optional<seconds32> retry = boost::none);
+		void retry_web_seed(peer_connection* p, std::optional<seconds32> retry = std::nullopt);
 
 		void remove_web_seed_conn(peer_connection* p, error_code const& ec
 			, operation_t op, disconnect_severity_t error = peer_connection_interface::normal);
@@ -708,7 +708,7 @@ namespace aux {
 			, std::function<void(error_code const&, std::vector<aux::rtc_offer>)> handler) override;
 		void on_rtc_offer(aux::rtc_offer const& offer) override;
 		void on_rtc_answer(aux::rtc_answer const& answer) override;
-		void on_rtc_stream(peer_id const& pid, aux::rtc_stream_init stream_init);
+		void on_rtc_stream(aux::rtc_stream_init stream_init);
 #endif
 		void remove_connection(peer_connection const* p);
 	public:
@@ -1051,7 +1051,7 @@ namespace aux {
 
 		torrent_handle get_handle();
 
-		void write_resume_data(add_torrent_params&) const;
+		void write_resume_data(resume_data_flags_t const flags, add_torrent_params& ret) const;
 
 		void seen_complete() { m_last_seen_complete = ::time(nullptr); }
 		int time_since_complete() const { return int(::time(nullptr) - m_last_seen_complete); }
@@ -1600,9 +1600,7 @@ namespace aux {
 		// the maximum number of uploads for this torrent
 		std::uint32_t m_max_uploads:24;
 
-		// these are the flags sent in on a call to save_resume_data
-		// we need to save them to check them in write_resume_data
-		resume_data_flags_t m_save_resume_flags;
+		// 8 bits free
 
 // ----
 

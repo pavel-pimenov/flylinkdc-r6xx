@@ -93,7 +93,7 @@ license you like.
 // 3. /CMakeLists.txt
 // IMPORTANT: also update the SOVERSION!!
 
-#define JSONCPP_VERSION_STRING "1.9.3"
+#define JSONCPP_VERSION_STRING "1.9.4"
 #define JSONCPP_VERSION_MAJOR 1
 #define JSONCPP_VERSION_MINOR 9
 #define JSONCPP_VERSION_PATCH 3

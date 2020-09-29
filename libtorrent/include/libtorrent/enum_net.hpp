@@ -20,7 +20,7 @@ see LICENSE file.
 #include <sys/socket.h> // for SO_BINDTODEVICE
 #endif
 
-#include <boost/optional.hpp>
+#include <optional>
 
 #include "libtorrent/aux_/disable_warnings_pop.hpp"
 
@@ -36,10 +36,12 @@ see LICENSE file.
 
 namespace libtorrent {
 
+	// internal
 using interface_flags = flags::bitfield_flag<std::uint32_t, struct interface_flags_tag>;
 
 namespace if_flags {
 
+	// internal
 	constexpr interface_flags up = 0_bit;
 	constexpr interface_flags broadcast = 1_bit;
 	constexpr interface_flags loopback = 2_bit;
@@ -56,6 +58,7 @@ namespace if_flags {
 	constexpr interface_flags dormant = 13_bit;
 }
 
+// internal
 enum class if_state : std::uint8_t {
 
 	up,
@@ -67,6 +70,7 @@ enum class if_state : std::uint8_t {
 	unknown
 };
 
+// internal
 	struct ip_interface
 	{
 		address interface_address;
@@ -82,6 +86,7 @@ enum class if_state : std::uint8_t {
 		if_state state = if_state::unknown;
 	};
 
+// internal
 	struct ip_route
 	{
 		address destination;
@@ -114,7 +119,7 @@ enum class if_state : std::uint8_t {
 
 	// return the gateway for the given ip_interface, if there is one. Otherwise
 	// return nullopt.
-	TORRENT_EXTRA_EXPORT boost::optional<address> get_gateway(
+	TORRENT_EXTRA_EXPORT std::optional<address> get_gateway(
 		ip_interface const& iface, span<ip_route const> routes);
 
 	// returns whether there is a route to the specified device for for any global

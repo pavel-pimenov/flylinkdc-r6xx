@@ -549,7 +549,7 @@ namespace aux {
 			bool ignore_unchoke_slots_set(peer_class_set const& set) const override;
 			int copy_pertinent_channels(peer_class_set const& set
 				, int channel, bandwidth_channel** dst, int m) override;
-			int use_quota_overhead(peer_class_set& set, int amount_down, int amount_up) override;
+			std::uint8_t use_quota_overhead(peer_class_set& set, int amount_down, int amount_up) override;
 			bool use_quota_overhead(bandwidth_channel* ch, int amount);
 
 			peer_class_t create_peer_class(char const* name);
@@ -1007,7 +1007,7 @@ namespace aux {
 
 #if TORRENT_USE_I2P
 			i2p_connection m_i2p_conn;
-			boost::optional<socket_type> m_i2p_listen_socket;
+			std::optional<socket_type> m_i2p_listen_socket;
 #endif
 
 #if TORRENT_USE_SSL

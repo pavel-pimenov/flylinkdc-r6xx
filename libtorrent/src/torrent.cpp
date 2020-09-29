@@ -1235,8 +1235,21 @@ bool is_downloading_state(int const st)
 		for (int i = 0; i < blocks_in_piece; ++i, p.start += block_size())
 		{
 			piece_block const block(piece, i);
-			if (!(flags & torrent_handle::overwrite_existing)
-				&& picker().is_finished(block))
+
+			bool const finished = picker().is_finished(block);
+
+			// if this block is already finished, only resume if we have the
+			// flag set to overwrite existing data.
+			if (!(flags & torrent_handle::overwrite_existing) && finished)
+				continue;
+
+			bool const downloaded = picker().is_downloaded(block);
+
+			// however, if the block is downloaded by not written to disk yet,
+			// we can't (easily) replace it. We would have to synchronize with
+			// the disk in a clear_piece() call. Instead, just ignore such
+			// blocks.
+			if (downloaded && !finished)
 				continue;
 
 			p.length = std::min(piece_size - p.start, block_size());
@@ -2822,7 +2835,7 @@ namespace {
 		req.downloaded = m_stat.total_payload_download() - m_total_failed_bytes;
 		req.uploaded = m_stat.total_payload_upload();
 		req.corrupt = m_total_failed_bytes;
-		req.left = value_or(bytes_left(), 16*1024);
+		req.left = bytes_left().value_or(16 * 1024);
 #ifdef TORRENT_SSL_PEERS
 		// if this torrent contains an SSL certificate, make sure
 		// any SSL tracker presents a certificate signed by it
@@ -3655,7 +3668,7 @@ namespace {
 	}
 	catch (...) { handle_exception(); }
 
-	boost::optional<std::int64_t> torrent::bytes_left() const
+	std::optional<std::int64_t> torrent::bytes_left() const
 	{
 		// if we don't have the metadata yet, we
 		// cannot tell how big the torrent is.
@@ -3978,6 +3991,7 @@ namespace {
 
 		set_need_save_resume();
 		state_updated();
+		update_want_tick();
 
 #ifndef TORRENT_NO_PIECE_ALERTS
 		if (m_ses.alerts().should_post<piece_finished_alert>())
@@ -4919,9 +4933,14 @@ namespace {
 				--i;
 			}
 			// just in case this piece had priority 0
-			download_priority_t prev_prio = m_picker->piece_priority(piece);
-			m_picker->set_piece_priority(piece, top_priority);
-			if (prev_prio == dont_download) update_gauge();
+			download_priority_t const prev_prio = m_picker->piece_priority(piece);
+			bool const was_finished = is_finished();
+			bool const filter_updated = m_picker->set_piece_priority(piece, top_priority);
+			if (prev_prio == dont_download)
+			{
+				update_gauge();
+				if (filter_updated) update_peer_interest(was_finished);
+			}
 			return;
 		}
 
@@ -4939,9 +4958,14 @@ namespace {
 		m_time_critical_pieces.insert(critical_piece_it, p);
 
 		// just in case this piece had priority 0
-		download_priority_t prev_prio = m_picker->piece_priority(piece);
-		m_picker->set_piece_priority(piece, top_priority);
-		if (prev_prio == dont_download) update_gauge();
+		download_priority_t const prev_prio = m_picker->piece_priority(piece);
+		bool const was_finished = is_finished();
+		bool const filter_updated = m_picker->set_piece_priority(piece, top_priority);
+		if (prev_prio == dont_download)
+		{
+			update_gauge();
+			if (filter_updated) update_peer_interest(was_finished);
+		}
 
 		piece_picker::downloading_piece pi;
 		m_picker->piece_info(piece, pi);
@@ -5816,7 +5840,7 @@ namespace {
 		{
 			m_rtc_signaling = std::make_shared<aux::rtc_signaling>(m_ses.get_context()
 				, this
-				, std::bind(&torrent::on_rtc_stream, this, _1, _2));
+				, std::bind(&torrent::on_rtc_stream, this, _1));
 		}
 
 		m_rtc_signaling->generate_offers(count, std::move(handler));
@@ -5834,20 +5858,25 @@ namespace {
 		if(m_rtc_signaling) m_rtc_signaling->process_answer(answer);
 	}
 
-	void torrent::on_rtc_stream(peer_id const& pid, aux::rtc_stream_init stream_init)
+	void torrent::on_rtc_stream(aux::rtc_stream_init stream_init)
 	{
 		aux::socket_type s(aux::rtc_stream(m_ses.get_context(), stream_init));
 
-		need_peer_list();
-		torrent_state st = get_peer_list_state();
-		torrent_peer* peerinfo = m_peer_list->add_rtc_peer(pid.to_string(), peer_source_flags_t{}, {}, &st);
-
 		error_code ec;
 		auto endpoint = s.remote_endpoint(ec);
-		TORRENT_ASSERT(!ec);
-		if(ec) return;
+		if(ec)
+		{
+			// This can happen if the peer immediately disconnects
+#ifndef TORRENT_DISABLE_LOGGING
+			debug_log("failed to get RTC stream remote endpoint: %s", ec.message().c_str());
+#endif
+			return;
+		}
 
-		create_peer_connection(peerinfo, std::move(s), std::move(endpoint));
+		need_peer_list();
+		torrent_state st = get_peer_list_state();
+		if(torrent_peer* peerinfo = m_peer_list->add_rtc_peer(endpoint, peer_source_flags_t{}, {}, &st))
+			create_peer_connection(peerinfo, std::move(s), std::move(endpoint));
 	}
 #endif
 
@@ -5951,8 +5980,8 @@ namespace {
 
 			TORRENT_ASSERT(pp->prev_amount_upload == 0);
 			TORRENT_ASSERT(pp->prev_amount_download == 0);
-			pp->prev_amount_download += aux::numeric_cast<std::uint32_t>(p->statistics().total_payload_download() >> 10);
-			pp->prev_amount_upload += aux::numeric_cast<std::uint32_t>(p->statistics().total_payload_upload() >> 10);
+			pp->prev_amount_download += aux::numeric_cast<std::uint32_t>(p->statistics().total_payload_download() / 1024);
+			pp->prev_amount_upload += aux::numeric_cast<std::uint32_t>(p->statistics().total_payload_upload() / 1024);
 
 			// only decrement the seed count if the peer completed attaching to the torrent
 			// otherwise the seed count did not get incremented for this peer
@@ -6494,8 +6523,8 @@ namespace {
 		web->peer_info.in_use = true;
 #endif
 
-		c->add_stat(std::int64_t(web->peer_info.prev_amount_download) << 10
-			, std::int64_t(web->peer_info.prev_amount_upload) << 10);
+		c->add_stat(std::int64_t(web->peer_info.prev_amount_download) * 1024
+			, std::int64_t(web->peer_info.prev_amount_upload) * 1024);
 		web->peer_info.prev_amount_download = 0;
 		web->peer_info.prev_amount_upload = 0;
 #ifndef TORRENT_DISABLE_LOGGING
@@ -6614,7 +6643,7 @@ namespace {
 				aep.enabled = true;
 	}
 
-	void torrent::write_resume_data(add_torrent_params& ret) const
+	void torrent::write_resume_data(resume_data_flags_t const flags, add_torrent_params& ret) const
 	{
 		ret.version = LIBTORRENT_VERSION_NUM;
 		ret.storage_mode = storage_mode();
@@ -6633,7 +6662,7 @@ namespace {
 		ret.num_incomplete = m_incomplete;
 		ret.num_downloaded = m_downloaded;
 
-		ret.flags = flags();
+		ret.flags = this->flags();
 
 		ret.added_time = m_added_time;
 		ret.completed_time = m_completed_time;
@@ -6641,6 +6670,7 @@ namespace {
 		ret.save_path = m_save_path;
 
 		ret.info_hashes = torrent_file().info_hashes();
+		if (m_name) ret.name = *m_name;
 
 #if TORRENT_ABI_VERSION < 3
 		ret.info_hash = ret.info_hashes.get_best();
@@ -6648,7 +6678,7 @@ namespace {
 
 		if (valid_metadata())
 		{
-			if (m_magnet_link || (m_save_resume_flags & torrent_handle::save_info_dict))
+			if (m_magnet_link || (flags & torrent_handle::save_info_dict))
 			{
 				ret.ti = m_torrent_file;
 			}
@@ -6667,7 +6697,8 @@ namespace {
 			// info for each unfinished piece
 			for (auto const& dp : q)
 			{
-				if (dp.finished == 0) continue;
+				if (dp.finished == 0 && dp.writing == 0)
+					continue;
 
 				bitfield bitmask;
 				bitmask.resize(num_blocks_per_piece, false);
@@ -6675,7 +6706,8 @@ namespace {
 				auto const info = m_picker->blocks_for_piece(dp);
 				for (int i = 0; i < int(info.size()); ++i)
 				{
-					if (info[i].state == piece_picker::block_info::state_finished)
+					if (info[i].state == piece_picker::block_info::state_finished
+						|| info[i].state == piece_picker::block_info::state_writing)
 						bitmask.set_bit(i);
 				}
 				ret.unfinished_pieces.emplace(dp.index, std::move(bitmask));
@@ -6733,7 +6765,8 @@ namespace {
 		}
 
 		// write renamed files
-		if (&m_torrent_file->files() != &m_torrent_file->orig_files()
+		if (valid_metadata()
+			&& &m_torrent_file->files() != &m_torrent_file->orig_files()
 			&& m_torrent_file->files().num_files() == m_torrent_file->orig_files().num_files())
 		{
 			file_storage const& fs = m_torrent_file->files();
@@ -6815,7 +6848,7 @@ namespace {
 			ret.file_priorities = m_file_priority;
 		}
 
-		if (has_picker())
+		if (valid_metadata() && has_picker())
 		{
 			// write piece priorities
 			// but only if they are not set to the default
@@ -7032,6 +7065,15 @@ namespace {
 		TORRENT_ASSERT(peerinfo);
 		TORRENT_ASSERT(peerinfo->connection == nullptr);
 
+#if TORRENT_USE_RTC
+		if (peerinfo->is_rtc_addr)
+		{
+			// unsollicited connection is not possible
+			TORRENT_ASSERT_FAIL();
+			return false;
+		}
+#endif
+
 		if (m_abort) return false;
 
 		peerinfo->last_connected = m_ses.session_time();
@@ -7040,20 +7082,13 @@ namespace {
 #if TORRENT_USE_I2P
 			&& !peerinfo->is_i2p_addr
 #endif
-#if TORRENT_USE_RTC
-			&& !peerinfo->is_rtc_addr
-#endif
 		)
 		{
 			// this asserts that we don't have duplicates in the peer_list's peer list
 			peer_iterator i_ = std::find_if(m_connections.begin(), m_connections.end()
 				, [peerinfo] (peer_connection const* p)
 				{
-					return !p->is_disconnecting() && p->remote() == peerinfo->ip()
-#if TORRENT_USE_RTC
-						&& p->peer_info_struct() && !p->peer_info_struct()->is_rtc_addr
-#endif
-						;
+					return !p->is_disconnecting() && p->remote() == peerinfo->ip();
 				});
 
 			TORRENT_ASSERT(i_ == m_connections.end()
@@ -7086,15 +7121,6 @@ namespace {
 					alerts().emplace_alert<i2p_alert>(errors::no_i2p_router);
 				return false;
 			}
-		}
-		else
-#endif
-#if TORRENT_USE_RTC
-		if (peerinfo->is_rtc_addr)
-		{
-			// unsollicited connection is not possible
-			TORRENT_ASSERT_FAIL();
-			return false;
 		}
 		else
 #endif
@@ -7199,8 +7225,8 @@ namespace {
 		c->m_in_constructor = false;
 #endif
 
-		c->add_stat(std::int64_t(peerinfo->prev_amount_download) << 10
-			, std::int64_t(peerinfo->prev_amount_upload) << 10);
+		c->add_stat(std::int64_t(peerinfo->prev_amount_download) * 1024
+			, std::int64_t(peerinfo->prev_amount_upload) * 1024);
 		peerinfo->prev_amount_download = 0;
 		peerinfo->prev_amount_upload = 0;
 
@@ -8947,13 +8973,6 @@ namespace {
 		TORRENT_ASSERT(is_single_thread());
 		INVARIANT_CHECK;
 
-		if (!valid_metadata())
-		{
-			alerts().emplace_alert<save_resume_data_failed_alert>(get_handle()
-				, errors::no_metadata);
-			return;
-		}
-
 		if ((flags & torrent_handle::only_if_modified) && !m_need_save_resume_data)
 		{
 			alerts().emplace_alert<save_resume_data_failed_alert>(get_handle()
@@ -8962,7 +8981,6 @@ namespace {
 		}
 
 		m_need_save_resume_data = false;
-		m_save_resume_flags = flags;
 		state_updated();
 
 		if ((flags & torrent_handle::flush_disk_cache) && m_storage)
@@ -8974,7 +8992,7 @@ namespace {
 		state_updated();
 
 		add_torrent_params atp;
-		write_resume_data(atp);
+		write_resume_data(flags, atp);
 		alerts().emplace_alert<save_resume_data_alert>(std::move(atp), get_handle());
 	}
 
@@ -10591,7 +10609,7 @@ namespace {
 		remove_web_seed_iter(i);
 	}
 
-	void torrent::retry_web_seed(peer_connection* p, boost::optional<seconds32> const retry)
+	void torrent::retry_web_seed(peer_connection* p, std::optional<seconds32> const retry)
 	{
 		TORRENT_ASSERT(is_single_thread());
 		auto const i = std::find_if(m_web_seeds.begin(), m_web_seeds.end()
@@ -10600,7 +10618,7 @@ namespace {
 		TORRENT_ASSERT(i != m_web_seeds.end());
 		if (i == m_web_seeds.end()) return;
 		if (i->removed) return;
-		i->retry = aux::time_now32() + value_or(retry, seconds32(
+		i->retry = aux::time_now32() + retry.value_or(seconds32(
 			settings().get_int(settings_pack::urlseed_wait_retry)));
 	}
 

@@ -293,7 +293,8 @@ void File_Riff::Streams_Finish ()
             }
 
             //Hacks - After
-            Fill(StreamKind_Last, StreamPos_Last, Fill_Parameter(StreamKind_Last, Generic_StreamSize), StreamSize, true);
+            if (!Temp->second.Parsers.empty() && Temp->second.Parsers[0]->Count_Get(StreamKind_Last)==1)
+                Fill(StreamKind_Last, StreamPos_Last, Fill_Parameter(StreamKind_Last, Generic_StreamSize), StreamSize, true);
             if (StreamKind_Last==Stream_Video)
             {
                 if (!Codec_Temp.empty())
@@ -773,7 +774,15 @@ bool File_Riff::Header_Begin()
             default        : AVI__movi_xxxx();
         }
 
+        bool ShouldStop=false;
         if (Config->ParseSpeed<1.0 && File_Offset+Buffer_Offset+Element_Offset-Buffer_DataToParse_Begin>=256*1024)
+        {
+            ShouldStop=true;
+            for (std::map<int32u, stream>::iterator StreamItem=Stream.begin(); StreamItem!=Stream.end(); ++StreamItem)
+                if (StreamItem->second.Parsers.size()>1 || (!StreamItem->second.Parsers.empty() && !StreamItem->second.Parsers[0]->Status[IsFilled]))
+                    ShouldStop=false;
+        }
+        if (ShouldStop)
         {
             File_GoTo=Buffer_DataToParse_End;
             Buffer_Offset=Buffer_Size;

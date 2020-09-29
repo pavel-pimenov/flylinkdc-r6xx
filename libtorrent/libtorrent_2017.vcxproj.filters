@@ -329,9 +329,6 @@
     <ClInclude Include="include\libtorrent\http_stream.hpp">
       <Filter>Header Files\libtorrent</Filter>
     </ClInclude>
-    <ClInclude Include="include\libtorrent\http_tracker_connection.hpp">
-      <Filter>Header Files\libtorrent</Filter>
-    </ClInclude>
     <ClInclude Include="include\libtorrent\i2p_stream.hpp">
       <Filter>Header Files\libtorrent</Filter>
     </ClInclude>
@@ -698,9 +695,6 @@
     <ClInclude Include="include\libtorrent\download_priority.hpp">
       <Filter>Header Files\libtorrent</Filter>
     </ClInclude>
-    <ClInclude Include="include\libtorrent\optional.hpp">
-      <Filter>Header Files\libtorrent</Filter>
-    </ClInclude>
     <ClInclude Include="include\libtorrent\pex_flags.hpp">
       <Filter>Header Files\libtorrent</Filter>
     </ClInclude>
@@ -819,6 +813,12 @@
       <Filter>Header Files\libtorrent\aux_</Filter>
     </ClInclude>
     <ClInclude Include="include\libtorrent\aux_\stat_cache.hpp">
+      <Filter>Header Files\libtorrent\aux_</Filter>
+    </ClInclude>
+    <ClInclude Include="include\libtorrent\aux_\directory.hpp">
+      <Filter>Header Files\libtorrent\aux_</Filter>
+    </ClInclude>
+    <ClInclude Include="include\libtorrent\aux_\file_pointer.hpp">
       <Filter>Header Files\libtorrent\aux_</Filter>
     </ClInclude>
   </ItemGroup>
@@ -1304,6 +1304,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\ssl.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\directory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
