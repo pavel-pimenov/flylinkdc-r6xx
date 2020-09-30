@@ -4092,9 +4092,8 @@ void WinUtil::CheckOnWhoisIP(WORD wID, const tstring& whoisIP)
 }
 void WinUtil::AppendMenuOnWhoisIP(CMenu& p_menuname, const tstring& p_IP, bool p_inSubmenu)
 {
-	// ToDo::  if p_inSubmenu == true : create and append into SubMenu
-	p_menuname.AppendMenu(MF_STRING, IDC_WHOIS_IP, (TSTRING(WHO_IS) + _T("Ripe.net  ") + p_IP).c_str());
-	p_menuname.AppendMenu(MF_STRING, IDC_WHOIS_IP2, (TSTRING(WHO_IS) + _T("Bgp.He  ") + p_IP).c_str());
+	p_menuname.AppendMenu(MF_STRING, IDC_WHOIS_IP, (TSTRING(WHO_IS) + _T(" Ripe.net  ") + p_IP).c_str());
+	p_menuname.AppendMenu(MF_STRING, IDC_WHOIS_IP2, (TSTRING(WHO_IS) + _T(" Bgp.He  ") + p_IP).c_str());
 	p_menuname.AppendMenu(MF_STRING, IDC_WHOIS_IP4_INFO, tstring(_T("IP v4 Info ") + p_IP).c_str());
 	//p_menu.AppendMenu(MF_SEPARATOR);
 }
