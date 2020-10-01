@@ -689,10 +689,13 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
 	
 	SettingsManager::newInstance();
 	SettingsManager::getInstance()->load();
+
+	LogManager::init();
+
 	const bool l_is_create_wide = SettingsManager::LoadLanguage();
 	ResourceManager::startup(l_is_create_wide);
 	SettingsManager::getInstance()->setDefaults();
-	LogManager::init();
+
 	CreateSplash();
 	
 	g_fly_server_config.loadConfig();
@@ -734,6 +737,7 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
 				
 				sendCmdLine(hOther, lpstrCmdLine);
 			}
+			DestroySplash();
 			return FALSE;
 		}
 	}

@@ -767,6 +767,9 @@
     <ClCompile Include="Source\MediaInfo\Audio\File_ChannelSplitting.cpp">
       <Filter>Source Files\Audio</Filter>
     </ClCompile>
+    <ClCompile Include="Source\MediaInfo\Video\File_CineForm.cpp">
+      <Filter>Source Files\Video</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\MediaInfo\File__Analyse_Automatic.h">
@@ -1428,6 +1431,9 @@
     </ClInclude>
     <ClInclude Include="Source\MediaInfo\Audio\File_ChannelSplitting.h">
       <Filter>Header Files\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\MediaInfo\Video\File_CineForm.h">
+      <Filter>Header Files\Video</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

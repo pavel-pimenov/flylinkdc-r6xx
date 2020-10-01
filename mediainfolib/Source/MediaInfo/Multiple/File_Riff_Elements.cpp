@@ -167,6 +167,9 @@ std::string ExtensibleWave_ChannelMask_ChannelLayout(int32u ChannelMask)
     #include "MediaInfo/Multiple/File_Ogg.h"
     #include "MediaInfo/Multiple/File_Ogg_SubElement.h"
 #endif
+#if defined(MEDIAINFO_CINEFORM_YES)
+    #include "MediaInfo/Video/File_CineForm.h"
+#endif
 #if defined(MEDIAINFO_FFV1_YES)
     #include "MediaInfo/Video/File_Ffv1.h"
 #endif
@@ -1878,10 +1881,17 @@ void File_Riff::AVI__hdlr_strl_strf_vids()
         if (Resolution==32)
         {
             Fill(StreamKind_Last, StreamPos_Last, Fill_Parameter(StreamKind_Last, Generic_Format), "RGBA", Unlimited, true, true);
+            if (StreamKind_Last==Stream_Video)
+                Fill(Stream_Video, StreamPos_Last, Video_ColorSpace, "RGBA", Unlimited, true, true);
             Fill(StreamKind_Last, StreamPos_Last, "BitDepth", Resolution/4); //With Alpha
         }
         else
+        {
+            Fill(StreamKind_Last, StreamPos_Last, Fill_Parameter(StreamKind_Last, Generic_Format), "RGB", Unlimited, true, true);
+            if (StreamKind_Last==Stream_Video)
+                Fill(Stream_Video, StreamPos_Last, Video_ColorSpace, "RGB", Unlimited, true, true);
             Fill(StreamKind_Last, StreamPos_Last, "BitDepth", Resolution<=16?8:(Resolution/3)); //indexed or normal
+        }
     }
     else if (Compression==0x56503632 //VP62
             || MediaInfoLib::Config.CodecID_Get(StreamKind_Last, InfoCodecID_Format_Riff, Ztring().From_CC4(Compression), InfoCodecID_Format)==__T("H.263") //H.263
@@ -1897,6 +1907,13 @@ void File_Riff::AVI__hdlr_strl_strf_vids()
         File_Ffv1* Parser=new File_Ffv1;
         Parser->Width=Width;
         Parser->Height=Height;
+        Stream[Stream_ID].Parsers.push_back(Parser);
+    }
+    #endif
+    #if defined(MEDIAINFO_CINEFORM_YES)
+    else if (MediaInfoLib::Config.CodecID_Get(Stream_Video, InfoCodecID_Format_Riff, Ztring().From_CC4(Compression), InfoCodecID_Format)==__T("CineForm"))
+    {
+        File_CineForm* Parser=new File_CineForm;
         Stream[Stream_ID].Parsers.push_back(Parser);
     }
     #endif
