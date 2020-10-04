@@ -3748,53 +3748,6 @@ int VideoImage::getMediaVideoIcon(const tstring& p_col)
 }
 #endif
 
-#ifdef SSA_SHELL_INTEGRATION
-wstring WinUtil::getShellExtDllPath()
-{
-	// [!] TODO: To fully integrate on Windows x64 need both libraries.
-	static const auto filePath = Text::toT(Util::getExePath()) + _T("FlylinkShellExt")
-#if defined(_WIN64)
-	                             _T("_x64")
-#endif
-	                             _T(".dll");
-	                             
-	return filePath;
-}
-
-bool WinUtil::makeShellIntegration(bool isNeedUnregistred)
-{
-	typedef  HRESULT(WINAPIV Registration)(void);
-	
-	bool bResult = false;
-	HINSTANCE hModule = nullptr;
-	try
-	{
-		const auto filePath = WinUtil::getShellExtDllPath();
-		hModule =::LoadLibrary(filePath.c_str());
-		if (hModule != nullptr)
-		{
-			bResult = false;
-			Registration* reg = nullptr;
-			reg = (Registration*)::GetProcAddress((HMODULE)hModule, isNeedUnregistred ? "DllUnregisterServer" : "DllRegisterServer");
-			if (reg != nullptr)
-			{
-				bResult = SUCCEEDED(reg());
-			}
-			::FreeLibrary(hModule);
-		}
-	}
-	catch (...)
-	{
-		if (hModule)
-			::FreeLibrary(hModule);
-			
-		bResult = false;
-	}
-	
-	
-	return bResult;
-}
-#endif // SSA_SHELL_INTEGRATION
 bool WinUtil::runElevated(
     HWND    hwnd,
     LPCTSTR pszPath,

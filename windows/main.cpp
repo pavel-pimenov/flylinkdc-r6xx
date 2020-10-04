@@ -661,18 +661,6 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
 		l_is_openfile = true;
 	if (_tcsstr(lpstrCmdLine, _T("/share")) != NULL)
 		l_is_sharefolder = true;
-#ifdef SSA_SHELL_INTEGRATION
-	if (_tcsstr(lpstrCmdLine, _T("/installShellExt")) != NULL)
-	{
-		WinUtil::makeShellIntegration(false);
-		return 0;
-	}
-	if (_tcsstr(lpstrCmdLine, _T("/uninstallShellExt")) != NULL)
-	{
-		WinUtil::makeShellIntegration(true);
-		return 0;
-	}
-#endif
 	if (_tcsstr(lpstrCmdLine, _T("/installStartup")) != NULL)
 	{
 		WinUtil::AutoRunShortCut(true);

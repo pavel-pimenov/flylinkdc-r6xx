@@ -616,14 +616,6 @@ SettingsManager::IntSetting AutoUpdate::getSettingByTitle(const string& wTitle)
 	if (wTitle == "customlocation")
 		return SettingsManager::AUTOUPDATE_CUSTOMLOCATION;
 #endif // IRAINMAN_AUTOUPDATE_ALL_USERS_DATA
-#ifdef SSA_SHELL_INTEGRATION
-	if (wTitle == "shellext")
-		return SettingsManager::AUTOUPDATE_SHELL_EXT;
-#endif
-	/*
-	if (wTitle == "chatbot")
-	    return SettingsManager::AUTOUPDATE_UPDATE_CHATBOT;
-	*/
 	return SettingsManager::INT_LAST;
 }
 

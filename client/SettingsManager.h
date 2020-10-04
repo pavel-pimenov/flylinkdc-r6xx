@@ -437,9 +437,6 @@ class SettingsManager : public Singleton<SettingsManager>, public Speaker<Settin
 		                  PROVIDER_USE_MENU, PROVIDER_USE_HUBLIST, PROVIDER_USE_PROVIDER_LOCATIONS,
 		                  AUTOUPDATE_GEOIP,
 		                  AUTOUPDATE_CUSTOMLOCATION,
-#ifdef SSA_SHELL_INTEGRATION
-		                  AUTOUPDATE_SHELL_EXT,
-#endif
 #ifdef IRAINMAN_USE_BB_CODES
 		                  FORMAT_BB_CODES_COLORS,
 #endif

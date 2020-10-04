@@ -1795,10 +1795,6 @@ class WinUtil
 			int length;
 		};
 		
-#ifdef SSA_SHELL_INTEGRATION
-		static wstring getShellExtDllPath();
-		static bool makeShellIntegration(bool isNeedUnregistred);
-#endif
 		static bool runElevated(HWND    hwnd, LPCTSTR pszPath, LPCTSTR pszParameters = NULL, LPCTSTR pszDirectory = NULL);
 		
 		template<class M>

@@ -412,9 +412,6 @@ static const char* g_settingTags[] =
 	"ProviderUseResources",
 	"ProviderUseMenu", "ProviderUseHublist", "ProviderUseLocations",
 	"AutoUpdateGeoIP", "AutoUpdateCustomLocation",
-#ifdef SSA_SHELL_INTEGRATION
-	"AutoUpdateShellExt",
-#endif
 #ifdef IRAINMAN_USE_BB_CODES
 	"FormatBBCodeColors",
 #endif
@@ -1153,9 +1150,6 @@ void SettingsManager::setDefaults()
 	setDefault(AUTOUPDATE_UPDATE_CHATBOT, TRUE);
 	setDefault(AUTOUPDATE_GEOIP, TRUE);
 	setDefault(AUTOUPDATE_CUSTOMLOCATION, TRUE);
-#ifdef SSA_SHELL_INTEGRATION
-	setDefault(AUTOUPDATE_SHELL_EXT, TRUE);
-#endif
 	setDefault(AUTOUPDATE_FORCE_RESTART, TRUE);
 	setDefault(AUTOUPDATE_ENABLE, TRUE);
 	//setDefault(AUTOUPDATE_USE_CUSTOM_URL, false);

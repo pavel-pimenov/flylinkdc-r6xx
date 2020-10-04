@@ -30,5 +30,4 @@ del /S /F /Q compiled\update\*.xml
 del /S /F /Q compiled\update\*.rtf
 del /S /F /Q compiled\update\*.sign
 
-rem "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\devenv.exe" FlylinkDC_2017.sln /Clean "Release|Win32"
 "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\devenv.exe" FlylinkDC_2017.sln /Clean "Release|x64"
