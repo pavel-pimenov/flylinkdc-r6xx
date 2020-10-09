@@ -43,7 +43,6 @@
     <ClInclude Include="include\libtorrent\announce_entry.hpp" />
     <ClInclude Include="include\libtorrent\assert.hpp" />
     <ClInclude Include="include\libtorrent\aux_\aligned_storage.hpp" />
-    <ClInclude Include="include\libtorrent\aux_\aligned_union.hpp" />
     <ClInclude Include="include\libtorrent\aux_\alloca.hpp" />
     <ClInclude Include="include\libtorrent\aux_\allocating_handler.hpp" />
     <ClInclude Include="include\libtorrent\aux_\array.hpp" />
