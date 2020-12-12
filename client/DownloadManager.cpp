@@ -41,6 +41,8 @@
 #include "libtorrent/magnet_uri.hpp"
 #endif
 
+#pragma comment (lib, "crypt32")
+
 std::unique_ptr<webrtc::RWLockWrapper> DownloadManager::g_csDownload = std::unique_ptr<webrtc::RWLockWrapper> (webrtc::RWLockWrapper::CreateRWLock());
 DownloadList DownloadManager::g_download_map;
 UserConnectionList DownloadManager::g_idlers;

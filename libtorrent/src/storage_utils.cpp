@@ -15,11 +15,11 @@ see LICENSE file.
 #include "libtorrent/file_storage.hpp"
 #include "libtorrent/aux_/alloca.hpp"
 #include "libtorrent/aux_/path.hpp" // for count_bufs
-#include "libtorrent/part_file.hpp"
 #include "libtorrent/session.hpp" // for session::delete_files
 #include "libtorrent/aux_/stat_cache.hpp"
 #include "libtorrent/add_torrent_params.hpp"
 #include "libtorrent/torrent_status.hpp"
+#include "libtorrent/error_code.hpp"
 
 #include <set>
 
@@ -188,7 +188,7 @@ namespace libtorrent { namespace aux {
 	std::pair<status_t, std::string> move_storage(file_storage const& f
 		, std::string save_path
 		, std::string const& destination_save_path
-		, part_file* pf
+		, std::function<void(std::string const&, error_code&)> const& move_partfile
 		, move_flags_t const flags, storage_error& ec)
 	{
 		status_t ret = status_t::no_error;
@@ -297,9 +297,9 @@ namespace libtorrent { namespace aux {
 			}
 		}
 
-		if (!e && pf)
+		if (!e && move_partfile)
 		{
-			pf->move_partfile(new_save_path, e);
+			move_partfile(new_save_path, e);
 			if (e)
 			{
 				ec.ec = e;
@@ -482,6 +482,7 @@ std::int64_t get_filesize(stat_cache& stat, file_index_t const file_index
 #ifdef TORRENT_DISABLE_MUTABLE_TORRENTS
 		TORRENT_UNUSED(links);
 #else
+		bool added_files = false;
 		if (!links.empty())
 		{
 			TORRENT_ASSERT(int(links.size()) == fs.num_files());
@@ -500,18 +501,39 @@ std::int64_t get_filesize(stat_cache& stat, file_index_t const file_index
 				error_code err;
 				std::string file_path = fs.file_path(idx, save_path);
 				hard_link(s, file_path, err);
+				if (err == boost::system::errc::no_such_file_or_directory)
+				{
+					// we create directories lazily, so it's possible it hasn't
+					// been created yet. Create the directories now and try
+					// again
+					create_directories(parent_path(file_path), err);
+
+					if (err)
+					{
+						ec.file(idx);
+						ec.operation = operation_t::mkdir;
+						return false;
+					}
+
+					hard_link(s, file_path, err);
+				}
 
 				// if the file already exists, that's not an error
+				if (err == boost::system::errc::file_exists)
+					continue;
+
 				// TODO: 2 is this risky? The upper layer will assume we have the
 				// whole file. Perhaps we should verify that at least the size
 				// of the file is correct
-				if (!err || err == boost::system::errc::file_exists)
-					continue;
-
-				ec.ec = err;
-				ec.file(idx);
-				ec.operation = operation_t::file_hard_link;
-				return false;
+				if (err)
+				{
+					ec.ec = err;
+					ec.file(idx);
+					ec.operation = operation_t::file_hard_link;
+					return false;
+				}
+				added_files = true;
+				stat.set_dirty(idx);
 			}
 		}
 #endif // TORRENT_DISABLE_MUTABLE_TORRENTS
@@ -548,6 +570,12 @@ std::int64_t get_filesize(stat_cache& stat, file_index_t const file_index
 			}
 			return true;
 		}
+
+#ifndef TORRENT_DISABLE_MUTABLE_TORRENTS
+		// always trigger a full recheck when we pull in files from other
+		// torrents, via hard links
+		if (added_files) return false;
+#endif
 
 		// parse have bitmask. Verify that the files we expect to have
 		// actually do exist

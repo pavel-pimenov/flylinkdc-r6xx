@@ -576,9 +576,6 @@ namespace leveldb
 
 int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lpstrCmdLine, int nCmdShow)
 {
-#ifdef _DEBUG
-// [-] VLD  _CrtSetDbgFlag( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-#endif
 	CompatibilityManager::init();
 #ifdef _DEBUG
 	static uint8_t l_data[24];
@@ -677,13 +674,13 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
 	
 	SettingsManager::newInstance();
 	SettingsManager::getInstance()->load();
-
+	
 	LogManager::init();
-
+	
 	const bool l_is_create_wide = SettingsManager::LoadLanguage();
 	ResourceManager::startup(l_is_create_wide);
 	SettingsManager::getInstance()->setDefaults();
-
+	
 	CreateSplash();
 	
 	g_fly_server_config.loadConfig();

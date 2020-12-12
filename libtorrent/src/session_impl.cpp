@@ -136,6 +136,12 @@ namespace {
 
 #endif // TORRENT_USE_LIBGCRYPT
 
+#ifdef TORRENT_USE_OPENSSL
+#ifdef TORRENT_WINDOWS
+#include <wincrypt.h>
+#endif
+#endif // TORRENT_USE_OPENSSL
+
 #ifdef TORRENT_WINDOWS
 // for ERROR_SEM_TIMEOUT
 #include <winerror.h>
@@ -464,7 +470,8 @@ bool ssl_server_name_callback(ssl::stream_handle_type stream_handle, std::string
 #endif // TORRENT_SSL_PEERS
 
 	session_impl::session_impl(io_context& ioc, settings_pack const& pack
-		, disk_io_constructor_type disk_io_constructor)
+		, disk_io_constructor_type disk_io_constructor
+		, session_flags_t const flags)
 		: m_settings(pack)
 		, m_io_context(ioc)
 #if TORRENT_USE_SSL
@@ -518,6 +525,7 @@ bool ssl_server_name_callback(ssl::stream_handle_type stream_handle, std::string
 		, m_timer(m_io_context)
 		, m_lsd_announce_timer(m_io_context)
 		, m_close_file_timer(m_io_context)
+		, m_paused(flags & session::paused)
 	{
 	}
 
@@ -555,6 +563,34 @@ bool ssl_server_name_callback(ssl::stream_handle_type stream_handle, std::string
 #if TORRENT_USE_SSL
 		error_code ec;
 		m_ssl_ctx.set_default_verify_paths(ec);
+#if defined TORRENT_WINDOWS && defined TORRENT_USE_OPENSSL
+		// TODO: come up with some abstraction to do this for gnutls as well
+		// load certificates from the windows system certificate store
+		X509_STORE* store = X509_STORE_new();
+		if (store)
+		{
+			HCERTSTORE system_store = CertOpenSystemStoreA(0, "ROOT");
+			// this is best effort
+			if (system_store)
+			{
+				CERT_CONTEXT const* ctx = nullptr;
+				while ((ctx = CertEnumCertificatesInStore(system_store, ctx)) != nullptr)
+				{
+					unsigned char const* cert_ptr = reinterpret_cast<unsigned char const*>(ctx->pbCertEncoded);
+					X509* x509 = d2i_X509(nullptr, &cert_ptr, ctx->cbCertEncoded);
+					// this is best effort
+					if (!x509) continue;
+					X509_STORE_add_cert(store, x509);
+					X509_free(x509);
+				}
+				CertFreeCertificateContext(ctx);
+				CertCloseStore(system_store, 0);
+			}
+		}
+
+		SSL_CTX* ssl_ctx = m_ssl_ctx.native_handle();
+		SSL_CTX_set_cert_store(ssl_ctx, store);
+#endif
 #endif
 #ifdef TORRENT_SSL_PEERS
 		m_peer_ssl_ctx.set_verify_mode(ssl::context::verify_none, ec);
@@ -1012,7 +1048,7 @@ bool ssl_server_name_callback(ssl::stream_handle_type stream_handle, std::string
 #ifndef TORRENT_DISABLE_LOGGING
 		session_log(" aborting all tracker requests");
 #endif
-		m_tracker_manager.abort_all_requests();
+		m_tracker_manager.stop();
 
 #ifndef TORRENT_DISABLE_LOGGING
 		session_log(" aborting all connections (%d)", int(m_connections.size()));
@@ -4308,8 +4344,16 @@ namespace {
 		int const allowed_upload_slots = unchoke_sort(peers
 			, unchoke_interval, m_settings);
 
-		m_stats_counters.set_value(counters::num_unchoke_slots
-			, allowed_upload_slots);
+		if (m_settings.get_int(settings_pack::choking_algorithm) == settings_pack::fixed_slots_choker)
+		{
+			int const upload_slots = get_int_setting(settings_pack::unchoke_slots_limit);
+			m_stats_counters.set_value(counters::num_unchoke_slots, upload_slots);
+		}
+		else
+		{
+			m_stats_counters.set_value(counters::num_unchoke_slots
+				, allowed_upload_slots);
+		}
 
 #ifndef TORRENT_DISABLE_LOGGING
 		if (should_log())

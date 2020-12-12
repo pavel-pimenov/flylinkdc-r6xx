@@ -1,6 +1,6 @@
 /*
 
-Copyright (c) 2008-2020, Arvid Norberg
+Copyright (c) 2008-2010, 2012-2020, Arvid Norberg
 Copyright (c) 2016, 2020, Alden Torres
 Copyright (c) 2017, 2019, Steven Siloti
 All rights reserved.
@@ -101,11 +101,6 @@ namespace aux {
 	struct file_entry
 	{
 		friend class ::lt::file_storage;
-#if TORRENT_USE_INVARIANT_CHECKS
-		// for torrent_info::invariant_check
-//		friend class ::lt::torrent_info;
-#endif
-
 		file_entry();
 		file_entry(file_entry const& fe);
 		file_entry& operator=(file_entry const& fe) &;
@@ -200,7 +195,6 @@ namespace aux {
 	// file structure.
 	class TORRENT_EXPORT file_storage
 	{
-	friend class torrent_info;
 	public:
 		// hidden
 		file_storage();
@@ -209,7 +203,7 @@ namespace aux {
 		file_storage(file_storage const&);
 		file_storage& operator=(file_storage const&) &;
 		file_storage(file_storage&&) noexcept;
-		file_storage& operator=(file_storage&&) & = default;
+		file_storage& operator=(file_storage&&) &;
 
 		// internal limitations restrict file sizes to not be larger than this
 		static constexpr std::int64_t max_file_size = (std::int64_t(1) << 48) - 1;
@@ -584,6 +578,13 @@ namespace aux {
 		// other files or directories inside this storage. Any invalid symlinks
 		// are updated to point to themselves.
 		void sanitize_symlinks();
+
+		// returns true if this torrent contains v2 metadata.
+		bool v2() const { return m_v2; }
+
+		// internal
+		// this is an optimization for create_torrent
+		std::string const& internal_symlink(file_index_t index) const;
 
 	private:
 

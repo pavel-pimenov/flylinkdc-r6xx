@@ -2390,32 +2390,6 @@ void MainFrame::autoConnect(const FavoriteHubEntry::List& fl)
 				}
 			}
 		}
-		// Откроем ранее открытые хабы, но не помещенные в избранные
-		if (BOOLSETTING(OPEN_RECENT_HUBS))
-		{
-			for (auto j = FavoriteManager::getRecentHubs().cbegin(); j != FavoriteManager::getRecentHubs().cend(); ++ j)
-			{
-				if ((*j)->getAutoOpen() == false && (*j)->getOpenTab() == "+")
-				{
-					const auto l_server = (*j)->getServer();
-#ifdef FLYLINKDC_USE_PROVIDER_RESOURCES
-					if (FavoriteManager::isISPDelete(l_server) == false)
-#endif
-					{
-						frm_current = HubFrame::openHubWindow(true,
-						                                      l_server,
-						                                      (*j)->getName()
-						                                     );
-						if (frm_current)
-						{
-							frm_last = frm_current;
-						}
-						
-					}
-				}
-			}
-		}
-		// Создаем смайлы в конец
 #ifdef IRAINMAN_INCLUDE_SMILE
 		CAGEmotionSetup::reCreateEmotionSetup();
 #endif

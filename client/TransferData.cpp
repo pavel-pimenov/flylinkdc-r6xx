@@ -51,9 +51,6 @@ void TransferData::init(libtorrent::torrent_status const& s)
 		case  libtorrent::torrent_status::seeding:
 			m_status_string += TSTRING(SEEDING);
 			break;
-		case  libtorrent::torrent_status::allocating:
-			m_status_string += TSTRING(ALLOCATING);
-			break;
 		case  libtorrent::torrent_status::checking_resume_data:
 			m_status_string += TSTRING(CHECKING_RESUME_DATA);
 			break;

@@ -108,7 +108,7 @@ namespace libtorrent {
 		SET(proxy_username, "", &session_impl::update_proxy),
 		SET(proxy_password, "", &session_impl::update_proxy),
 		SET(i2p_hostname, "", &session_impl::update_i2p_bridge),
-		SET(peer_fingerprint, "-LT2000-", nullptr),
+		SET(peer_fingerprint, "-LT2010-", nullptr),
 		SET(dht_bootstrap_nodes, "dht.libtorrent.org:25401", &session_impl::update_dht_bootstrap_nodes),
 		SET(webtorrent_stun_server, "stun.l.google.com:19302", nullptr)
 	}});
@@ -195,7 +195,9 @@ namespace libtorrent {
 		SET(dht_ignore_dark_internet, true, nullptr),
 		SET(dht_read_only, false, nullptr),
 		SET(piece_extent_affinity, false, nullptr),
-		SET(validate_https_trackers, false, &session_impl::update_validate_https),
+		SET(validate_https_trackers, true, &session_impl::update_validate_https),
+		SET(ssrf_mitigation, true, nullptr),
+		SET(allow_idna, false, nullptr),
 		SET(enable_set_file_valid_data, false, nullptr),
 	}});
 

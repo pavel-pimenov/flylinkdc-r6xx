@@ -421,20 +421,19 @@ int SearchManager::UdpQueue::run()
 			{
 				// ADC commands must end with \n
 				if (x[x.length() - 1] != 0x0a) {
-					//dcassert(0);
+					dcassert(0);
 					dcdebug("Invalid UDP data received: %s (no newline)\n", x.c_str());
-					CFlyServerJSON::pushError(88, "[UDP]Invalid UDP data received: %s (no newline): ip = " + remoteIp.to_string() + " x = [" + x + "]");
+					//CFlyServerJSON::pushError(88, "[UDP]Invalid UDP data received: %s (no newline): ip = " + remoteIp.to_string() + " x = [" + x + "]");
 					continue;
 				}
 				
 				if (!Text::validateUtf8(x)) {
 					dcassert(0);
 					dcdebug("UTF-8 validation failed for received UDP data: %s\n", x.c_str());
-					CFlyServerJSON::pushError(87, "[UDP]UTF-8 validation failed for received UDP data: ip = " + remoteIp.to_string() + " x = [" + x + "]");
+					//CFlyServerJSON::pushError(87, "[UDP]UTF-8 validation failed for received UDP data: ip = " + remoteIp.to_string() + " x = [" + x + "]");
 					continue;
 				}
 				// TODO  respond(AdcCommand(x.substr(0, x.length()-1)));
-				
 			}
 		}
 		catch (const ParseException& e)

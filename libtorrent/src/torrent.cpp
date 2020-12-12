@@ -11,6 +11,7 @@ Copyright (c) 2016-2020, Alden Torres
 Copyright (c) 2016-2018, Pavel Pimenov
 Copyright (c) 2016-2017, Andrei Kurushin
 Copyright (c) 2017, Falcosc
+Copyright (c) 2017, 2020, AllSeeingEyeTolledEweSew
 Copyright (c) 2017, ximply
 Copyright (c) 2017, AllSeeingEyeTolledEweSew
 Copyright (c) 2018, d-komarov
@@ -113,7 +114,6 @@ bool is_downloading_state(int const st)
 	switch (st)
 	{
 		case torrent_status::checking_files:
-		case torrent_status::allocating:
 		case torrent_status::checking_resume_data:
 			return false;
 		case torrent_status::downloading_metadata:
@@ -200,9 +200,9 @@ bool is_downloading_state(int const st)
 		, m_max_uploads((1 << 24) - 1)
 		, m_num_uploads(0)
 		, m_enable_pex(!bool(p.flags & torrent_flags::disable_pex))
-		, m_magnet_link(false)
 		, m_apply_ip_filter(p.flags & torrent_flags::apply_ip_filter)
 		, m_pending_active_change(false)
+		, m_v2_piece_layers_validated(false)
 		, m_connect_boost_counter(static_cast<std::uint8_t>(settings().get_int(settings_pack::torrent_connect_boost)))
 		, m_incomplete(0xffffff)
 		, m_announce_to_dht(!(p.flags & torrent_flags::paused))
@@ -233,25 +233,11 @@ bool is_downloading_state(int const st)
 			inc_stats_counter(counters::non_filter_torrents);
 		}
 
-		if (!p.ti || !p.ti->is_valid())
-		{
-			// we don't have metadata for this torrent. We'll download
-			// it either through the URL passed in, or through a metadata
-			// extension. Make sure that when we save resume data for this
-			// torrent, we also save the metadata
-			m_magnet_link = true;
-		}
-
 		if (!m_torrent_file)
 			m_torrent_file = (p.ti ? p.ti : std::make_shared<torrent_info>(m_info_hash));
 
-		// in case we added the torrent via magnet link, make sure to preserve any
-		// DHT nodes passed in on the URI in the torrent file itself
-		if (!m_torrent_file->is_valid())
-		{
-			for (auto const& n : p.dht_nodes)
-				m_torrent_file->add_node(n);
-		}
+		if (m_torrent_file->is_valid())
+			initialize_merkle_trees();
 
 		// --- WEB SEEDS ---
 
@@ -367,7 +353,7 @@ bool is_downloading_state(int const st)
 		if (m_torrent_file->is_valid() && m_torrent_file->info_hashes().has_v2())
 		{
 			if (!p.merkle_trees.empty())
-				m_torrent_file->internal_load_merkle_trees(
+				load_merkle_trees(
 					std::move(p.merkle_trees), std::move(p.merkle_tree_mask));
 
 			// we really don't want to store extra copies of the trees
@@ -388,6 +374,30 @@ bool is_downloading_state(int const st)
 
 		// TODO: 3 we could probably get away with just saving a few fields here
 		m_add_torrent_params = std::make_unique<add_torrent_params>(std::move(p));
+	}
+
+	void torrent::load_merkle_trees(
+		aux::vector<std::vector<sha256_hash>, file_index_t> trees_import
+		, aux::vector<std::vector<bool>, file_index_t> mask)
+	{
+		auto const& fs = m_torrent_file->orig_files();
+
+		for (file_index_t i{0}; i < fs.end_file(); ++i)
+		{
+			if (fs.pad_file_at(i) || fs.file_size(i) == 0)
+				continue;
+
+			if (i >= trees_import.end_index()) break;
+			if (i < mask.end_index() && !mask[i].empty())
+			{
+				mask[i].resize(m_merkle_trees[i].size(), false);
+				m_merkle_trees[i].load_sparse_tree(trees_import[i], mask[i]);
+			}
+			else
+			{
+				m_merkle_trees[i].load_tree(trees_import[i]);
+			}
+		}
 	}
 
 	void torrent::inc_stats_counter(int c, int value)
@@ -1172,8 +1182,11 @@ bool is_downloading_state(int const st)
 		//INVARIANT_CHECK;
 
 		m_hash_picker = std::make_unique<hash_picker>(m_torrent_file->orig_files()
-			, m_torrent_file->internal_merkle_trees(), std::move(verified)
-			, m_torrent_file->v2_piece_hashes_verified()
+			, m_merkle_trees, std::move(verified)
+			// if we have all the piece layers and the piece size is the same as
+			// the block size, we have all the hashes we need already. This
+			// means "have all hashes".
+			, m_v2_piece_layers_validated
 				&& m_torrent_file->piece_length() == default_block_size);
 	}
 
@@ -1849,11 +1862,12 @@ bool is_downloading_state(int const st)
 			std::vector<resolve_links::link_t> const& l = res.get_links();
 			if (!l.empty())
 			{
+				links.resize(m_torrent_file->files().num_files());
 				for (auto const& i : l)
 				{
 					if (!i.ti) continue;
-					links.push_back(combine_path(i.save_path
-						, i.ti->files().file_path(i.file_idx)));
+					links[i.file_idx] = combine_path(i.save_path
+						, i.ti->files().file_path(i.file_idx));
 				}
 			}
 		}
@@ -1863,14 +1877,22 @@ bool is_downloading_state(int const st)
 		TORRENT_ASSERT(m_outstanding_check_files == false);
 		m_outstanding_check_files = true;
 #endif
-		m_ses.disk_thread().async_check_files(
-			m_storage, m_add_torrent_params ? m_add_torrent_params.get() : nullptr
-			, std::move(links), [self = shared_from_this()](status_t st, storage_error const& error)
-			{ self->on_resume_data_checked(st, error); });
+
+		if (!m_add_torrent_params || !(m_add_torrent_params->flags & torrent_flags::no_verify_files))
+		{
+			m_ses.disk_thread().async_check_files(
+				m_storage, m_add_torrent_params ? m_add_torrent_params.get() : nullptr
+				, std::move(links), [self = shared_from_this()](status_t st, storage_error const& error)
+				{ self->on_resume_data_checked(st, error); });
 #ifndef TORRENT_DISABLE_LOGGING
-		debug_log("init, async_check_files");
+			debug_log("init, async_check_files");
 #endif
-		m_ses.deferred_submit_jobs();
+			m_ses.deferred_submit_jobs();
+		}
+		else
+		{
+			on_resume_data_checked(status_t::no_error, storage_error{});
+		}
 
 		update_want_peers();
 		update_want_tick();
@@ -2182,8 +2204,6 @@ bool is_downloading_state(int const st)
 		// we're checking everything anyway, no point in assuming we are a seed
 		// now.
 		leave_seed_mode(seed_mode_t::skip_checking);
-
-		m_ses.disk_thread().async_release_files(m_storage);
 
 		// forget that we have any pieces
 		m_have_all = false;
@@ -4035,6 +4055,7 @@ namespace {
 				recalc_share_mode();
 #endif
 		}
+		update_want_tick();
 	}
 
 	boost::tribool torrent::on_blocks_hashed(piece_index_t const piece
@@ -4211,7 +4232,6 @@ namespace {
 		m_picker->piece_passed(index);
 		update_gauge();
 		we_have(index);
-		update_want_tick();
 	}
 
 #ifndef TORRENT_DISABLE_PREDICTIVE_PIECES
@@ -6087,6 +6107,23 @@ namespace {
 		error_code ec;
 		std::tie(protocol, auth, hostname, port, path)
 			= parse_url_components(web->url, ec);
+
+		if (!settings().get_bool(settings_pack::allow_idna) && is_idna(hostname))
+		{
+#ifndef TORRENT_DISABLE_LOGGING
+			if (should_log())
+				debug_log("IDNA disallowed in web seeds: %s", web->url.c_str());
+#endif
+			if (m_ses.alerts().should_post<url_seed_alert>())
+			{
+				m_ses.alerts().emplace_alert<url_seed_alert>(get_handle()
+					, web->url, error_code(errors::banned_by_ip_filter));
+			}
+			// never try it again
+			remove_web_seed_iter(web);
+			return;
+		}
+
 		if (port == -1)
 		{
 			port = protocol == "http" ? 80 : 443;
@@ -6424,14 +6461,55 @@ namespace {
 		}
 
 		std::string hostname;
+		std::string path;
 		error_code ec;
 		using std::ignore;
-		std::tie(ignore, ignore, hostname, ignore, ignore)
+		std::tie(ignore, ignore, hostname, ignore, path)
 			= parse_url_components(web->url, ec);
 		if (ec)
 		{
 			if (m_ses.alerts().should_post<url_seed_alert>())
 				m_ses.alerts().emplace_alert<url_seed_alert>(get_handle(), web->url, ec);
+			return;
+		}
+
+		if (!settings().get_bool(settings_pack::allow_idna) && is_idna(hostname))
+		{
+#ifndef TORRENT_DISABLE_LOGGING
+			if (should_log())
+				debug_log("IDNA disallowed in web seeds: %s", web->url.c_str());
+#endif
+			if (m_ses.alerts().should_post<url_seed_alert>())
+			{
+				m_ses.alerts().emplace_alert<url_seed_alert>(get_handle()
+					, web->url, error_code(errors::banned_by_ip_filter));
+			}
+			// never try it again
+			remove_web_seed_iter(web);
+			return;
+		}
+
+		// The SSRF mitigation for web seeds is that any HTTP server on the
+		// local network may not use any query string parameters
+		if (settings().get_bool(settings_pack::ssrf_mitigation)
+			&& aux::is_local(web->peer_info.addr)
+			&& path.find('?') != std::string::npos)
+		{
+#ifndef TORRENT_DISABLE_LOGGING
+			if (should_log())
+			{
+				debug_log("*** SSRF MITIGATION BLOCKED WEB SEED: %s"
+					, web->url.c_str());
+			}
+#endif
+			if (m_ses.alerts().should_post<url_seed_alert>())
+				m_ses.alerts().emplace_alert<url_seed_alert>(get_handle()
+					, web->url, errors::banned_by_ip_filter);
+			if (m_ses.alerts().should_post<peer_blocked_alert>())
+				m_ses.alerts().emplace_alert<peer_blocked_alert>(get_handle()
+					, a, peer_blocked_alert::ssrf_mitigation);
+			// never try it again
+			remove_web_seed_iter(web);
 			return;
 		}
 
@@ -6556,7 +6634,7 @@ namespace {
 		if (!m_torrent_file->is_valid()) return {};
 		TORRENT_ASSERT(validate_hash_request(req, m_torrent_file->files()));
 
-		auto const& f = m_torrent_file->internal_merkle_trees()[req.file];
+		auto const& f = m_merkle_trees[req.file];
 
 		return f.get_hashes(req.base, req.index, req.count, req.proof_layers);
 	}
@@ -6634,6 +6712,14 @@ namespace {
 		return m_torrent_file;
 	}
 
+	std::vector<std::vector<sha256_hash>> torrent::get_piece_layers() const
+	{
+		std::vector<std::vector<sha256_hash>> ret;
+		for (auto const& tree : m_merkle_trees)
+			ret.emplace_back(tree.get_piece_layer());
+		return ret;
+	}
+
 	void torrent::enable_all_trackers()
 	{
 		for (aux::announce_entry& ae : m_trackers)
@@ -6674,12 +6760,9 @@ namespace {
 		ret.info_hash = ret.info_hashes.get_best();
 #endif
 
-		if (valid_metadata())
+		if (valid_metadata() && (flags & torrent_handle::save_info_dict))
 		{
-			if (m_magnet_link || (flags & torrent_handle::save_info_dict))
-			{
-				ret.ti = m_torrent_file;
-			}
+			ret.ti = m_torrent_file;
 		}
 
 		// if this torrent is a seed, we won't have a piece picker
@@ -6871,8 +6954,8 @@ namespace {
 		if (m_torrent_file->info_hashes().has_v2())
 		{
 			ret.merkle_trees.clear();
-			ret.merkle_trees.reserve(m_torrent_file->internal_merkle_trees().size());
-			for (auto const& t : m_torrent_file->internal_merkle_trees())
+			ret.merkle_trees.reserve(m_merkle_trees.size());
+			for (auto const& t : m_merkle_trees)
 			{
 				auto [sparse_tree, mask] = t.build_sparse_vector();
 				ret.merkle_trees.emplace_back(std::move(sparse_tree));
@@ -7274,6 +7357,44 @@ namespace {
 		return true;
 	}
 
+	void torrent::initialize_merkle_trees()
+	{
+		if (!info_hash().has_v2()) return;
+
+		bool valid = m_torrent_file->v2_piece_hashes_verified();
+
+		file_storage const& fs = m_torrent_file->orig_files();
+		m_merkle_trees.reserve(fs.num_files());
+		for (file_index_t i : fs.file_range())
+		{
+			if (fs.pad_file_at(i) || fs.file_size(i) == 0)
+			{
+				m_merkle_trees.emplace_back();
+				continue;
+			}
+			m_merkle_trees.emplace_back(fs.file_num_blocks(i)
+				, fs.piece_length() / default_block_size, fs.root_ptr(i));
+			auto const piece_layer = m_torrent_file->piece_layer(i);
+			if (piece_layer.empty())
+			{
+				valid = false;
+				continue;
+			}
+
+			if (!m_merkle_trees[i].load_piece_layer(piece_layer))
+			{
+				set_error(errors::torrent_invalid_piece_layer
+					, torrent_status::error_file_metadata);
+				valid = false;
+				m_merkle_trees[i] = aux::merkle_tree();
+			}
+		}
+
+		m_v2_piece_layers_validated = valid;
+
+		m_torrent_file->free_piece_layers();
+	}
+
 	bool torrent::set_metadata(span<char const> metadata_buf)
 	{
 		TORRENT_ASSERT(is_single_thread());
@@ -7358,6 +7479,8 @@ namespace {
 		m_info_hash = m_torrent_file->info_hashes();
 
 		m_ses.update_torrent_info_hash(shared_from_this(), old_ih);
+
+		initialize_merkle_trees();
 
 		update_gauge();
 		update_want_tick();
@@ -7696,8 +7819,7 @@ namespace {
 
 		if (is_auto_managed() && !has_error())
 		{
-			if (m_state == torrent_status::checking_files
-				|| m_state == torrent_status::allocating)
+			if (m_state == torrent_status::checking_files)
 			{
 				is_checking = true;
 			}
@@ -7915,6 +8037,7 @@ namespace {
 	// pieces have been downloaded)
 	void torrent::finished()
 	{
+		update_want_tick();
 		update_state_list();
 
 		INVARIANT_CHECK;
@@ -7989,8 +8112,7 @@ namespace {
 //		INVARIANT_CHECK;
 
 		TORRENT_ASSERT(m_state != torrent_status::checking_resume_data
-			&& m_state != torrent_status::checking_files
-			&& m_state != torrent_status::allocating);
+			&& m_state != torrent_status::checking_files);
 
 		// we're downloading now, which means we're no longer in seed mode
 		if (m_seed_mode)
@@ -8419,8 +8541,7 @@ namespace {
 
 		if (is_auto_managed() && !has_error())
 		{
-			if (m_state == torrent_status::checking_files
-				|| m_state == torrent_status::allocating)
+			if (m_state == torrent_status::checking_files)
 			{
 				is_checking = true;
 			}
@@ -8968,6 +9089,13 @@ namespace {
 		TORRENT_ASSERT(is_single_thread());
 		INVARIANT_CHECK;
 
+		if (m_abort)
+		{
+			alerts().emplace_alert<save_resume_data_failed_alert>(get_handle()
+				, errors::torrent_removed);
+			return;
+		}
+
 		if ((flags & torrent_handle::only_if_modified) && !m_need_save_resume_data)
 		{
 			alerts().emplace_alert<save_resume_data_failed_alert>(get_handle()
@@ -9321,19 +9449,19 @@ namespace {
 
 		clear_error();
 
-		if (m_state == torrent_status::checking_files)
+		if (m_state == torrent_status::checking_files
+			&& m_auto_managed)
 		{
-			if (m_auto_managed) m_ses.trigger_auto_manage();
-			if (should_check_files()) start_checking();
+			m_ses.trigger_auto_manage();
 		}
+
+		if (should_check_files()) start_checking();
 
 		state_updated();
 		update_want_peers();
 		update_want_tick();
 		update_want_scrape();
 		update_gauge();
-
-		if (should_check_files()) start_checking();
 
 		if (m_state == torrent_status::checking_files) return;
 
@@ -10668,6 +10796,8 @@ namespace {
 		, peer_source_flags_t const source, pex_flags_t flags)
 	{
 		TORRENT_ASSERT(is_single_thread());
+
+		TORRENT_ASSERT(info_hash().has_v2() || !(flags & pex_lt_v2));
 
 #ifndef TORRENT_DISABLE_DHT
 		if (source != peer_info::resume_data)

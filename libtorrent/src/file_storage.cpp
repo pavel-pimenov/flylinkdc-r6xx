@@ -51,6 +51,7 @@ namespace libtorrent {
 	file_storage::file_storage(file_storage const&) = default;
 	file_storage& file_storage::operator=(file_storage const&) & = default;
 	file_storage::file_storage(file_storage&&) noexcept = default;
+	file_storage& file_storage::operator=(file_storage&&) & = default;
 
 	void file_storage::reserve(int num_files)
 	{
@@ -777,6 +778,15 @@ namespace aux {
 		return ret;
 	}
 
+	std::string const& file_storage::internal_symlink(file_index_t const index) const
+	{
+		TORRENT_ASSERT_PRECOND(index >= file_index_t{} && index < end_file());
+		aux::file_entry const& fe = m_files[index];
+		TORRENT_ASSERT(fe.symlink_index < int(m_symlinks.size()));
+
+		return m_symlinks[fe.symlink_index];
+	}
+
 	std::time_t file_storage::mtime(file_index_t const index) const
 	{
 		TORRENT_ASSERT_PRECOND(index >= file_index_t{} && index < end_file());
@@ -938,7 +948,7 @@ namespace {
 		aux::file_entry const& fe = m_files[index];
 
 		if (fe.path_index != aux::file_entry::path_is_absolute
-		 && fe.path_index != aux::file_entry::no_path)
+			&& fe.path_index != aux::file_entry::no_path)
 		{
 			std::string ret;
 			std::string const& p = m_paths[fe.path_index];
@@ -1117,6 +1127,7 @@ namespace {
 		swap(ti.m_total_size, m_total_size);
 		swap(ti.m_num_pieces, m_num_pieces);
 		swap(ti.m_piece_length, m_piece_length);
+		swap(ti.m_v2, m_v2);
 	}
 
 	void file_storage::canonicalize()
@@ -1171,7 +1182,7 @@ namespace {
 		std::int64_t off = 0;
 		for (file_index_t i : new_order)
 		{
-			if ((off % piece_length()) != 0)
+			if ((off % piece_length()) != 0 && m_files[i].size > 0)
 			{
 				auto const pad_size = piece_length() - (off % piece_length());
 				TORRENT_ASSERT(pad_size < piece_length());

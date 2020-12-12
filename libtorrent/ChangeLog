@@ -3,10 +3,21 @@
 	* libtorrent now requires C++17 to build
 	* added support for WebTorrent
 
+	* fix unaligned piece requests in mmap_storage
+	* improve client_data_t ergonomics
+	* fix issue with concurrent access to part files
+
+* 2.0.1 released
+
+	* fix attribute in single-file v2 torrent creation
+	* fix padding for empty files in v2 torrent creation
+	* add function to ask a file_storage whether it's v2 or not
+	* fix mtime field when creating single-file v2 torrents
+	* fix performance regression in checking files
 	* disable use of SetFileValidData() by default (windows). A new setting
 	  allows enabling it
 
-2.0 release
+2.0 released
 
 	* dropped depenency on iconv
 	* deprecate set_file_hash() in torrent creator, as it's superceded by v2 torrents
@@ -37,6 +48,22 @@
 	* libtorrent now requires C++14 to build
 	* added support for GnuTLS for HTTPS and torrents over SSL
 
+	* validate HTTPS certificates by default (trackers and web seeds)
+	* load SSL certificates from windows system certificate store, to authenticate trackers
+	* introduce mitigation for Server Side Request Forgery in tracker and web seed URLs
+	* fix error handling for pool allocation failure
+
+1.2.11 released
+
+	* fix issue with moving the session object
+	* deprecate torrent_status::allocating. This state is no longer used
+	* fix bug creating torrents with symbolic links
+	* remove special case to save metadata in resume data unconditionally when added throught magnet link
+	* fix bugs in mutable-torrent support (reusing identical files from different torrents)
+	* fix incorrectly inlined move-assignment of file_storage
+	* add session::paused flag, and the ability to construct a session in paused mode
+	* fix session-pause causing tracker announces to fail
+	* fix peer-exchange flags bug
 	* allow saving resume data before metadata has been downloaded (for magnet links)
 	* record blocks in the disk queue as downloaded in the resume data
 	* fix bug in set_piece_deadline() when set in a zero-priority piece

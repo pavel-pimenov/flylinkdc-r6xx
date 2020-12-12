@@ -1,6 +1,6 @@
 /*
 
-Copyright (c) 2017-2019, Arvid Norberg
+Copyright (c) 2017-2020, Arvid Norberg
 Copyright (c) 2017, Alden Torres
 All rights reserved.
 
@@ -19,10 +19,8 @@ namespace libtorrent {
 	// hidden
 	using save_state_flags_t = flags::bitfield_flag<std::uint32_t, struct save_state_flags_tag>;
 
-#if TORRENT_ABI_VERSION <= 2
 	// hidden
 	using session_flags_t = flags::bitfield_flag<std::uint8_t, struct session_flags_tag>;
-#endif
 
 	// The flags type used to specify options to removing files of torrents
 	using remove_flags_t = flags::bitfield_flag<std::uint8_t, struct remove_flags_tag>;

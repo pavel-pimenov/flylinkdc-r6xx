@@ -2,9 +2,10 @@
 
 Copyright (c) 2018, d-komarov
 Copyright (c) 2004-2020, Arvid Norberg
+Copyright (c) 2016, Alden Torres
 Copyright (c) 2016-2017, Steven Siloti
 Copyright (c) 2016-2017, Andrei Kurushin
-Copyright (c) 2016-2017, 2019, Alden Torres
+Copyright (c) 2020, Tiger Wang
 All rights reserved.
 
 You may use, distribute and modify this code under the terms of the BSD license,
@@ -101,8 +102,6 @@ struct iovec
 #include <sys/ioctl.h>
 #ifdef TORRENT_ANDROID
 #include <sys/syscall.h>
-#define lseek lseek64
-#define ftruncate ftruncate64
 #endif
 
 #endif
@@ -126,24 +125,29 @@ namespace libtorrent {
 
 #ifdef TORRENT_WINDOWS
 namespace {
-	std::int64_t read(HANDLE fd, void* data, std::size_t len)
+	std::int64_t pread(HANDLE fd, void* data, std::size_t len, std::int64_t const offset)
 	{
+		OVERLAPPED ol{};
+		ol.Offset = offset & 0xffffffff;
+		ol.OffsetHigh = offset >> 32;
 		DWORD bytes_read = 0;
-		if (ReadFile(fd, data, DWORD(len), &bytes_read, nullptr) == FALSE)
+		if (ReadFile(fd, data, DWORD(len), &bytes_read, &ol) == FALSE)
 		{
+			if (GetLastError() == ERROR_HANDLE_EOF) return 0;
 			return -1;
 		}
 
 		return bytes_read;
 	}
 
-	std::int64_t write(HANDLE fd, void const* data, std::size_t len)
+	std::int64_t pwrite(HANDLE fd, void const* data, std::size_t len, std::int64_t const offset)
 	{
+		OVERLAPPED ol{};
+		ol.Offset = offset & 0xffffffff;
+		ol.OffsetHigh = offset >> 32;
 		DWORD bytes_written = 0;
-		if (WriteFile(fd, data, DWORD(len), &bytes_written, nullptr) == FALSE)
-		{
+		if (WriteFile(fd, data, DWORD(len), &bytes_written, &ol) == FALSE)
 			return -1;
-		}
 
 		return bytes_written;
 	}
@@ -166,25 +170,38 @@ namespace {
 		return *this;
 	}
 
+	file::~file()
+	{
+		if (m_file_handle == INVALID_HANDLE_VALUE) return;
+
+#ifdef TORRENT_WINDOWS
+		CloseHandle(m_file_handle);
+#else
+		if (m_file_handle != INVALID_HANDLE_VALUE)
+			::close(m_file_handle);
+#endif
+
+		m_file_handle = INVALID_HANDLE_VALUE;
+	}
+
 	file::file(std::string const& path, aux::open_mode_t const mode, error_code& ec)
 		: m_file_handle(INVALID_HANDLE_VALUE)
 	{
 		// the return value is not important, since the
 		// error code contains the same information
-		open(path, mode, ec);
-	}
-
-	file::~file()
-	{
-		close();
-	}
-
-	bool file::open(std::string const& path, aux::open_mode_t mode, error_code& ec)
-	{
-		close();
 		native_path_string file_path = convert_to_native_path_string(path);
 
 #ifdef TORRENT_WINDOWS
+#ifdef TORRENT_WINRT
+
+		const auto handle = CreateFile2(file_path.c_str()
+			, (mode & aux::open_mode::write) ? GENERIC_WRITE | GENERIC_READ : GENERIC_READ
+			, FILE_SHARE_READ | FILE_SHARE_WRITE
+			, (mode & aux::open_mode::write) ? OPEN_ALWAYS : OPEN_EXISTING
+			, nullptr);
+
+#else
+
 		handle_type handle = CreateFileW(file_path.c_str()
 			, (mode & aux::open_mode::write) ? GENERIC_WRITE | GENERIC_READ : GENERIC_READ
 			, FILE_SHARE_READ | FILE_SHARE_WRITE
@@ -192,11 +209,13 @@ namespace {
 			, (mode & aux::open_mode::write) ? OPEN_ALWAYS : OPEN_EXISTING
 			, 0, nullptr);
 
+#endif
+
 		if (handle == INVALID_HANDLE_VALUE)
 		{
 			ec.assign(GetLastError(), system_category());
 			TORRENT_ASSERT(ec);
-			return false;
+			return;
 		}
 
 		m_file_handle = handle;
@@ -215,28 +234,13 @@ namespace {
 		{
 			ec.assign(errno, system_category());
 			TORRENT_ASSERT(ec);
-			return false;
+			return;
 		}
 
 		m_file_handle = handle;
 #endif
 
 		TORRENT_ASSERT(m_file_handle != INVALID_HANDLE_VALUE);
-		return true;
-	}
-
-	void file::close()
-	{
-		if (m_file_handle == INVALID_HANDLE_VALUE) return;
-
-#ifdef TORRENT_WINDOWS
-		CloseHandle(m_file_handle);
-#else
-		if (m_file_handle != INVALID_HANDLE_VALUE)
-			::close(m_file_handle);
-#endif
-
-		m_file_handle = INVALID_HANDLE_VALUE;
 	}
 
 namespace {
@@ -246,26 +250,9 @@ namespace {
 		, span<iovec_t const> bufs, error_code& ec)
 	{
 		std::int64_t ret = 0;
-
-#ifdef TORRENT_WINDOWS
-		LARGE_INTEGER offs;
-		offs.QuadPart = file_offset;
-		if (SetFilePointerEx(fd, offs, &offs, FILE_BEGIN) == FALSE)
-		{
-			ec.assign(GetLastError(), system_category());
-			return -1;
-		}
-#else
-		if (lseek(fd, file_offset, SEEK_SET) < 0)
-		{
-			ec.assign(errno, system_category());
-			return -1;
-		}
-#endif
-
 		for (auto i : bufs)
 		{
-			std::int64_t const tmp_ret = f(fd, i.data(), static_cast<std::size_t>(i.size()));
+			std::int64_t const tmp_ret = f(fd, i.data(), static_cast<std::size_t>(i.size()), file_offset);
 			if (tmp_ret < 0)
 			{
 #ifdef TORRENT_WINDOWS
@@ -302,7 +289,7 @@ namespace {
 		TORRENT_ASSERT(!bufs.empty());
 		TORRENT_ASSERT(m_file_handle != INVALID_HANDLE_VALUE);
 
-		return iov(&read, m_file_handle, file_offset, bufs, ec);
+		return iov(&pread, m_file_handle, file_offset, bufs, ec);
 	}
 
 	// This has to be thread safe, i.e. atomic.
@@ -325,59 +312,8 @@ namespace {
 
 		ec.clear();
 
-		std::int64_t ret = iov(&write, m_file_handle, file_offset, bufs, ec);
+		std::int64_t ret = iov(&pwrite, m_file_handle, file_offset, bufs, ec);
 
 		return ret;
-	}
-
-	bool file::set_size(std::int64_t s, error_code& ec)
-	{
-		TORRENT_ASSERT(m_file_handle != INVALID_HANDLE_VALUE);
-		TORRENT_ASSERT(s >= 0);
-
-#ifdef TORRENT_WINDOWS
-
-		LARGE_INTEGER offs;
-		offs.QuadPart = s;
-		if (SetFilePointerEx(m_file_handle, offs, &offs, FILE_BEGIN) == FALSE)
-		{
-			ec.assign(GetLastError(), system_category());
-			return false;
-		}
-		if (::SetEndOfFile(m_file_handle) == FALSE)
-		{
-			ec.assign(GetLastError(), system_category());
-			return false;
-		}
-
-#else // NON-WINDOWS
-		if (::ftruncate(m_file_handle, s) < 0)
-		{
-			ec.assign(errno, system_category());
-			return false;
-		}
-#endif // TORRENT_WINDOWS
-		return true;
-	}
-
-	std::int64_t file::get_size(error_code& ec) const
-	{
-#ifdef TORRENT_WINDOWS
-		LARGE_INTEGER file_size;
-		if (!GetFileSizeEx(m_file_handle, &file_size))
-		{
-			ec.assign(GetLastError(), system_category());
-			return -1;
-		}
-		return file_size.QuadPart;
-#else
-		struct stat fs = {};
-		if (::fstat(m_file_handle, &fs) != 0)
-		{
-			ec.assign(errno, system_category());
-			return -1;
-		}
-		return fs.st_size;
-#endif
 	}
 }

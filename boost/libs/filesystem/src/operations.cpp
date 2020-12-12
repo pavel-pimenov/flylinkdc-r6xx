@@ -13,6 +13,7 @@
 
 #include "platform_config.hpp"
 
+#include <boost/predef/os/bsd/open.h>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/file_status.hpp>
 #include <boost/filesystem/exception.hpp>
@@ -45,7 +46,7 @@
 #   include <sys/stat.h>
 #   if defined(__wasm)
 // WASI does not have statfs or statvfs.
-#   elif !defined(__APPLE__) && !defined(__OpenBSD__) && !defined(__ANDROID__) && !defined(__VXWORKS__)
+#   elif !defined(__APPLE__) && (!defined(__OpenBSD__) || BOOST_OS_BSD_OPEN >= BOOST_VERSION_NUMBER(4, 4, 0)) && !defined(__ANDROID__) && !defined(__VXWORKS__)
 #     include <sys/statvfs.h>
 #     define BOOST_STATVFS statvfs
 #     define BOOST_STATVFS_F_FRSIZE vfs.f_frsize
@@ -59,14 +60,14 @@
 #       include <sys/mount.h>
 #     endif
 #     define BOOST_STATVFS statfs
-#     define BOOST_STATVFS_F_FRSIZE static_cast<boost::uintmax_t>(vfs.f_bsize)
+#     define BOOST_STATVFS_F_FRSIZE static_cast<uintmax_t>(vfs.f_bsize)
 #   endif
 #   include <unistd.h>
 #   include <fcntl.h>
 #   if _POSIX_C_SOURCE < 200809L
 #     include <utime.h>
 #   endif
-#   include "limits.h"
+#   include <limits.h>
 #   if defined(linux) || defined(__linux) || defined(__linux__)
 #     include <sys/utsname.h>
 #     include <sys/sendfile.h>
@@ -74,6 +75,9 @@
 #     define BOOST_FILESYSTEM_USE_SENDFILE
 #     if defined(__NR_copy_file_range)
 #       define BOOST_FILESYSTEM_USE_COPY_FILE_RANGE
+#     endif
+#     if !defined(BOOST_FILESYSTEM_HAS_STATX) && defined(BOOST_FILESYSTEM_HAS_STATX_SYSCALL)
+#       include <linux/stat.h>
 #     endif
 #   endif
 
@@ -83,6 +87,17 @@
 #     define BOOST_FILESYSTEM_STAT_ST_MTIMENSEC st_mtimespec.tv_nsec
 #   elif defined(BOOST_FILESYSTEM_HAS_STAT_ST_MTIMENSEC)
 #     define BOOST_FILESYSTEM_STAT_ST_MTIMENSEC st_mtimensec
+#   endif
+
+#   if defined(BOOST_FILESYSTEM_HAS_STAT_ST_BIRTHTIM)
+#     define BOOST_FILESYSTEM_STAT_ST_BIRTHTIME st_birthtim.tv_sec
+#     define BOOST_FILESYSTEM_STAT_ST_BIRTHTIMENSEC st_birthtim.tv_nsec
+#   elif defined(BOOST_FILESYSTEM_HAS_STAT_ST_BIRTHTIMESPEC)
+#     define BOOST_FILESYSTEM_STAT_ST_BIRTHTIME st_birthtimespec.tv_sec
+#     define BOOST_FILESYSTEM_STAT_ST_BIRTHTIMENSEC st_birthtimespec.tv_nsec
+#   elif defined(BOOST_FILESYSTEM_HAS_STAT_ST_BIRTHTIMENSEC)
+#     define BOOST_FILESYSTEM_STAT_ST_BIRTHTIME st_birthtime
+#     define BOOST_FILESYSTEM_STAT_ST_BIRTHTIMENSEC st_birthtimensec
 #   endif
 
 # else // BOOST_WINDOWS_API
@@ -213,8 +228,6 @@ union reparse_data_buffer
 #   define BOOST_CREATE_SYMBOLIC_LINK(F,T,Flag)(::symlink(T, F)== 0)
 #   define BOOST_REMOVE_DIRECTORY(P)(::rmdir(P)== 0)
 #   define BOOST_DELETE_FILE(P)(::unlink(P)== 0)
-#   define BOOST_COPY_DIRECTORY(F,T)(!(::stat(from.c_str(), &from_stat)!= 0\
-         || ::mkdir(to.c_str(),from_stat.st_mode)!= 0))
 #   define BOOST_MOVE_FILE(OLD,NEW)(::rename(OLD, NEW)== 0)
 #   define BOOST_RESIZE_FILE(P,SZ)(::truncate(P, SZ)== 0)
 
@@ -225,7 +238,6 @@ union reparse_data_buffer
 #   define BOOST_CREATE_SYMBOLIC_LINK(F,T,Flag)(create_symbolic_link_api(F, T, Flag)!= 0)
 #   define BOOST_REMOVE_DIRECTORY(P)(::RemoveDirectoryW(P)!= 0)
 #   define BOOST_DELETE_FILE(P)(::DeleteFileW(P)!= 0)
-#   define BOOST_COPY_DIRECTORY(F,T)(::CreateDirectoryExW(F, T, 0)!= 0)
 #   define BOOST_MOVE_FILE(OLD,NEW)(::MoveFileExW(OLD, NEW, MOVEFILE_REPLACE_EXISTING|MOVEFILE_COPY_ALLOWED)!= 0)
 #   define BOOST_RESIZE_FILE(P,SZ)(resize_file_api(P, SZ)!= 0)
 #   define BOOST_READ_SYMLINK(P,T)
@@ -263,14 +275,14 @@ bool is_empty_directory(const path& p, error_code* ec)
 bool not_found_error(int errval) BOOST_NOEXCEPT; // forward declaration
 
 // only called if directory exists
-bool remove_directory(const path& p) // true if succeeds or not found
+inline bool remove_directory(const path& p) // true if succeeds or not found
 {
   return BOOST_REMOVE_DIRECTORY(p.c_str())
     || not_found_error(BOOST_ERRNO);  // mitigate possible file system race. See #11166
 }
 
 // only called if file exists
-bool remove_file(const path& p) // true if succeeds or not found
+inline bool remove_file(const path& p) // true if succeeds or not found
 {
   return BOOST_DELETE_FILE(p.c_str())
     || not_found_error(BOOST_ERRNO);  // mitigate possible file system race. See #11166
@@ -305,10 +317,9 @@ bool remove_file_or_directory(const path& p, fs::file_type type, error_code* ec)
   return true;
 }
 
-boost::uintmax_t remove_all_aux(const path& p, fs::file_type type,
-  error_code* ec)
+uintmax_t remove_all_aux(const path& p, fs::file_type type, error_code* ec)
 {
-  boost::uintmax_t count = 0u;
+  uintmax_t count = 0u;
 
   if (type == fs::directory_file)  // but not a directory symlink
   {
@@ -351,6 +362,14 @@ boost::uintmax_t remove_all_aux(const path& p, fs::file_type type,
 
 BOOST_CONSTEXPR_OR_CONST char dot = '.';
 
+#if !defined(BOOST_FILESYSTEM_HAS_STATX) && defined(BOOST_FILESYSTEM_HAS_STATX_SYSCALL)
+//! A wrapper for the statx syscall
+inline int statx(int dirfd, const char* path, int flags, unsigned int mask, struct ::statx* stx) BOOST_NOEXCEPT
+{
+  return ::syscall(__NR_statx, dirfd, path, flags, mask, stx);
+}
+#endif // !defined(BOOST_FILESYSTEM_HAS_STATX) && defined(BOOST_FILESYSTEM_HAS_STATX_SYSCALL)
+
 struct fd_wrapper
 {
   int fd;
@@ -371,7 +390,29 @@ inline bool not_found_error(int errval) BOOST_NOEXCEPT
   return errval == ENOENT || errval == ENOTDIR;
 }
 
-//! Returns \c true of the two \c stat structures refer to the same file
+#if defined(BOOST_FILESYSTEM_HAS_STATX) || defined(BOOST_FILESYSTEM_HAS_STATX_SYSCALL)
+
+//! Returns \c true if the two \c statx structures refer to the same file
+inline bool equivalent_stat(struct ::statx const& s1, struct ::statx const& s2) BOOST_NOEXCEPT
+{
+  return s1.stx_dev_major == s2.stx_dev_major && s1.stx_dev_minor == s2.stx_dev_minor && s1.stx_ino == s2.stx_ino;
+}
+
+//! Returns file type/access mode from \c statx structure
+inline mode_t get_mode(struct ::statx const& st) BOOST_NOEXCEPT
+{
+  return st.stx_mode;
+}
+
+//! Returns file size from \c statx structure
+inline uintmax_t get_size(struct ::statx const& st) BOOST_NOEXCEPT
+{
+  return st.stx_size;
+}
+
+#else // defined(BOOST_FILESYSTEM_HAS_STATX) || defined(BOOST_FILESYSTEM_HAS_STATX_SYSCALL)
+
+//! Returns \c true if the two \c stat structures refer to the same file
 inline bool equivalent_stat(struct ::stat const& s1, struct ::stat const& s2) BOOST_NOEXCEPT
 {
   // According to the POSIX stat specs, "The st_ino and st_dev fields
@@ -379,10 +420,24 @@ inline bool equivalent_stat(struct ::stat const& s1, struct ::stat const& s2) BO
   return s1.st_dev == s2.st_dev && s1.st_ino == s2.st_ino;
 }
 
-typedef int (copy_file_data_t)(int infile, struct ::stat const& from_stat, int outfile, struct ::stat const& to_stat);
+//! Returns file type/access mode from \c stat structure
+inline mode_t get_mode(struct ::stat const& st) BOOST_NOEXCEPT
+{
+  return st.st_mode;
+}
+
+//! Returns file size from \c stat structure
+inline uintmax_t get_size(struct ::stat const& st) BOOST_NOEXCEPT
+{
+  return st.st_size;
+}
+
+#endif // defined(BOOST_FILESYSTEM_HAS_STATX) || defined(BOOST_FILESYSTEM_HAS_STATX_SYSCALL)
+
+typedef int (copy_file_data_t)(int infile, int outfile, uintmax_t size);
 
 //! copy_file implementation that uses read/write loop
-int copy_file_data_read_write(int infile, struct ::stat const& from_stat, int outfile, struct ::stat const& to_stat)
+int copy_file_data_read_write(int infile, int outfile, uintmax_t size)
 {
   BOOST_CONSTEXPR_OR_CONST std::size_t buf_sz = 65536u;
   boost::scoped_array<char> buf(new (std::nothrow) char[buf_sz]);
@@ -428,17 +483,16 @@ copy_file_data_t* copy_file_data = &copy_file_data_read_write;
 #if defined(BOOST_FILESYSTEM_USE_SENDFILE)
 
 //! copy_file implementation that uses sendfile loop. Requires sendfile to support file descriptors.
-int copy_file_data_sendfile(int infile, struct ::stat const& from_stat, int outfile, struct ::stat const& to_stat)
+int copy_file_data_sendfile(int infile, int outfile, uintmax_t size)
 {
   // sendfile will not send more than this amount of data in one call
   BOOST_CONSTEXPR_OR_CONST std::size_t max_send_size = 0x7ffff000u;
-  off_t size = from_stat.st_size;
-  off_t offset = 0;
+  uintmax_t offset = 0u;
   while (offset < size)
   {
-    off_t size_left = size - offset;
+    uintmax_t size_left = size - offset;
     std::size_t size_to_copy = max_send_size;
-    if (size_left < static_cast< off_t >(max_send_size))
+    if (size_left < static_cast< uintmax_t >(max_send_size))
       size_to_copy = static_cast< std::size_t >(size_left);
     ssize_t sz = ::sendfile(outfile, infile, NULL, size_to_copy);
     if (BOOST_UNLIKELY(sz < 0))
@@ -460,18 +514,17 @@ int copy_file_data_sendfile(int infile, struct ::stat const& from_stat, int outf
 #if defined(BOOST_FILESYSTEM_USE_COPY_FILE_RANGE)
 
 //! copy_file implementation that uses copy_file_range loop. Requires copy_file_range to support cross-filesystem copying.
-int copy_file_data_copy_file_range(int infile, struct ::stat const& from_stat, int outfile, struct ::stat const& to_stat)
+int copy_file_data_copy_file_range(int infile, int outfile, uintmax_t size)
 {
   // Although copy_file_range does not document any particular upper limit of one transfer, still use some upper bound to guarantee
   // that size_t is not overflown in case if off_t is larger and the file size does not fit in size_t.
   BOOST_CONSTEXPR_OR_CONST std::size_t max_send_size = 0x7ffff000u;
-  loff_t size = from_stat.st_size;
-  loff_t offset = 0;
+  uintmax_t offset = 0u;
   while (offset < size)
   {
-    loff_t size_left = size - offset;
+    uintmax_t size_left = size - offset;
     std::size_t size_to_copy = max_send_size;
-    if (size_left < static_cast< off_t >(max_send_size))
+    if (size_left < static_cast< uintmax_t >(max_send_size))
       size_to_copy = static_cast< std::size_t >(size_left);
     // Note: Use syscall directly to avoid depending on libc version. copy_file_range is added in glibc 2.27.
     // uClibc-ng does not have copy_file_range as of the time of this writing (the latest uClibc-ng release is 1.0.33).
@@ -573,28 +626,19 @@ inline bool not_found_error(int errval) BOOST_NOEXCEPT
 }
 
 // these constants come from inspecting some Microsoft sample code
-std::time_t to_time_t(const FILETIME & ft)
+inline std::time_t to_time_t(const FILETIME & ft) BOOST_NOEXCEPT
 {
-  __int64 t = (static_cast<__int64>(ft.dwHighDateTime)<< 32)
-    + ft.dwLowDateTime;
-#   if !defined(BOOST_MSVC) || BOOST_MSVC > 1300 // > VC++ 7.0
-  t -= 116444736000000000LL;
-#   else
-  t -= 116444736000000000;
-#   endif
-  t /= 10000000;
+  uint64_t t = (static_cast<uint64_t>(ft.dwHighDateTime) << 32) | ft.dwLowDateTime;
+  t -= 116444736000000000ull;
+  t /= 10000000u;
   return static_cast<std::time_t>(t);
 }
 
-void to_FILETIME(std::time_t t, FILETIME & ft)
+inline void to_FILETIME(std::time_t t, FILETIME & ft) BOOST_NOEXCEPT
 {
-  __int64 temp = t;
-  temp *= 10000000;
-#   if !defined(BOOST_MSVC) || BOOST_MSVC > 1300 // > VC++ 7.0
-  temp += 116444736000000000LL;
-#   else
-  temp += 116444736000000000;
-#   endif
+  uint64_t temp = t;
+  temp *= 10000000u;
+  temp += 116444736000000000ull;
   ft.dwLowDateTime = static_cast<DWORD>(temp);
   ft.dwHighDateTime = static_cast<DWORD>(temp >> 32);
 }
@@ -618,7 +662,7 @@ struct handle_wrapper
   BOOST_DELETED_FUNCTION(handle_wrapper& operator= (handle_wrapper const&))
 };
 
-HANDLE create_file_handle(const path& p, DWORD dwDesiredAccess,
+inline HANDLE create_file_handle(const path& p, DWORD dwDesiredAccess,
   DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes,
   DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes,
   HANDLE hTemplateFile)
@@ -708,7 +752,7 @@ fs::file_type query_file_type(const path& p, error_code* ec)
     : fs::regular_file;
 }
 
-BOOL resize_file_api(const wchar_t* p, boost::uintmax_t size)
+inline BOOL resize_file_api(const wchar_t* p, uintmax_t size)
 {
   handle_wrapper h(CreateFileW(p, GENERIC_WRITE, 0, 0, OPEN_EXISTING,
                               FILE_ATTRIBUTE_NORMAL, 0));
@@ -759,7 +803,6 @@ PtrCreateSymbolicLinkW create_symbolic_link_api = PtrCreateSymbolicLinkW(
 //--------------------------------------------------------------------------------------//
 //                                                                                      //
 //                operations functions declared in operations.hpp                       //
-//                            in alphabetic order                                       //
 //                                                                                      //
 //--------------------------------------------------------------------------------------//
 
@@ -1159,15 +1202,36 @@ bool copy_file(const path& from, const path& to, unsigned int options, error_cod
     break;
   }
 
-  struct ::stat from_stat = {};
-  if (BOOST_UNLIKELY(::fstat(infile.fd, &from_stat) != 0))
+#if defined(BOOST_FILESYSTEM_HAS_STATX) || defined(BOOST_FILESYSTEM_HAS_STATX_SYSCALL)
+  unsigned int statx_data_mask = STATX_TYPE | STATX_MODE | STATX_INO | STATX_SIZE;
+  if ((options & static_cast< unsigned int >(copy_options::update_existing)) != 0u)
+    statx_data_mask |= STATX_MTIME;
+
+  struct ::statx from_stat;
+  if (BOOST_UNLIKELY(statx(infile.fd, "", AT_EMPTY_PATH | AT_NO_AUTOMOUNT, statx_data_mask, &from_stat) < 0))
   {
   fail_errno:
     err = errno;
     goto fail;
   }
 
-  if (BOOST_UNLIKELY(!S_ISREG(from_stat.st_mode)))
+  if (BOOST_UNLIKELY((from_stat.stx_mask & statx_data_mask) != statx_data_mask))
+  {
+    err = ENOSYS;
+    goto fail;
+  }
+#else
+  struct ::stat from_stat;
+  if (BOOST_UNLIKELY(::fstat(infile.fd, &from_stat) != 0))
+  {
+  fail_errno:
+    err = errno;
+    goto fail;
+  }
+#endif
+
+  const mode_t from_mode = get_mode(from_stat);
+  if (BOOST_UNLIKELY(!S_ISREG(from_mode)))
   {
     err = ENOSYS;
     goto fail;
@@ -1175,7 +1239,7 @@ bool copy_file(const path& from, const path& to, unsigned int options, error_cod
 
   // Enable writing for the newly created files. Having write permission set is important e.g. for NFS,
   // which checks the file permission on the server, even if the client's file descriptor supports writing.
-  mode_t to_mode = from_stat.st_mode | S_IWUSR;
+  mode_t to_mode = from_mode | S_IWUSR;
   int oflag = O_WRONLY | O_CLOEXEC;
 
   if ((options & static_cast< unsigned int >(copy_options::update_existing)) != 0u)
@@ -1229,11 +1293,31 @@ bool copy_file(const path& from, const path& to, unsigned int options, error_cod
     }
   }
 
-  struct ::stat to_stat = {};
-  if (BOOST_UNLIKELY(::fstat(outfile.fd, &to_stat) != 0))
+#if defined(BOOST_FILESYSTEM_HAS_STATX) || defined(BOOST_FILESYSTEM_HAS_STATX_SYSCALL)
+  statx_data_mask = STATX_TYPE | STATX_MODE | STATX_INO;
+  if ((oflag & O_TRUNC) == 0)
+  {
+    // O_TRUNC is not set if copy_options::update_existing is set and an existing file was opened.
+    statx_data_mask |= STATX_MTIME;
+  }
+
+  struct ::statx to_stat;
+  if (BOOST_UNLIKELY(statx(outfile.fd, "", AT_EMPTY_PATH | AT_NO_AUTOMOUNT, statx_data_mask, &to_stat) < 0))
     goto fail_errno;
 
-  if (BOOST_UNLIKELY(!S_ISREG(to_stat.st_mode)))
+  if (BOOST_UNLIKELY((to_stat.stx_mask & statx_data_mask) != statx_data_mask))
+  {
+    err = ENOSYS;
+    goto fail;
+  }
+#else
+  struct ::stat to_stat;
+  if (BOOST_UNLIKELY(::fstat(outfile.fd, &to_stat) != 0))
+    goto fail_errno;
+#endif
+
+  to_mode = get_mode(to_stat);
+  if (BOOST_UNLIKELY(!S_ISREG(to_mode)))
   {
     err = ENOSYS;
     goto fail;
@@ -1249,7 +1333,10 @@ bool copy_file(const path& from, const path& to, unsigned int options, error_cod
   {
     // O_TRUNC is not set if copy_options::update_existing is set and an existing file was opened.
     // We need to check the last write times.
-#if defined(BOOST_FILESYSTEM_STAT_ST_MTIMENSEC)
+#if defined(BOOST_FILESYSTEM_HAS_STATX) || defined(BOOST_FILESYSTEM_HAS_STATX_SYSCALL)
+    if (from_stat.stx_mtime.tv_sec < to_stat.stx_mtime.tv_sec || (from_stat.stx_mtime.tv_sec == to_stat.stx_mtime.tv_sec && from_stat.stx_mtime.tv_nsec <= to_stat.stx_mtime.tv_nsec))
+      return false;
+#elif defined(BOOST_FILESYSTEM_STAT_ST_MTIMENSEC)
     // Modify time is available with nanosecond precision.
     if (from_stat.st_mtime < to_stat.st_mtime || (from_stat.st_mtime == to_stat.st_mtime && from_stat.BOOST_FILESYSTEM_STAT_ST_MTIMENSEC <= to_stat.BOOST_FILESYSTEM_STAT_ST_MTIMENSEC))
       return false;
@@ -1262,15 +1349,15 @@ bool copy_file(const path& from, const path& to, unsigned int options, error_cod
       goto fail_errno;
   }
 
-  err = detail::copy_file_data(infile.fd, from_stat, outfile.fd, to_stat);
+  err = detail::copy_file_data(infile.fd, outfile.fd, get_size(from_stat));
   if (BOOST_UNLIKELY(err != 0))
     goto fail; // err already contains the error code
 
   // If we created a new file with an explicitly added S_IWUSR permission,
   // we may need to update its mode bits to match the source file.
-  if (to_stat.st_mode != from_stat.st_mode)
+  if (to_mode != from_mode)
   {
-    if (BOOST_UNLIKELY(::fchmod(outfile.fd, from_stat.st_mode) != 0))
+    if (BOOST_UNLIKELY(::fchmod(outfile.fd, from_mode) != 0))
       goto fail_errno;
   }
 
@@ -1351,8 +1438,7 @@ bool copy_file(const path& from, const path& to, unsigned int options, error_cod
 }
 
 BOOST_FILESYSTEM_DECL
-void copy_symlink(const path& existing_symlink, const path& new_symlink,
-  system::error_code* ec)
+void copy_symlink(const path& existing_symlink, const path& new_symlink, system::error_code* ec)
 {
   path p(read_symlink(existing_symlink, ec));
   if (ec && *ec)
@@ -1424,20 +1510,36 @@ bool create_directory(const path& p, const path* existing, error_code* ec)
   mode_t mode = S_IRWXU | S_IRWXG | S_IRWXO;
   if (existing)
   {
-    struct ::stat existing_stat = {};
-    if (::stat(existing->c_str(), &existing_stat) < 0)
+#if defined(BOOST_FILESYSTEM_HAS_STATX) || defined(BOOST_FILESYSTEM_HAS_STATX_SYSCALL)
+    struct ::statx existing_stat;
+    if (BOOST_UNLIKELY(statx(AT_FDCWD, existing->c_str(), AT_NO_AUTOMOUNT, STATX_TYPE | STATX_MODE, &existing_stat) < 0))
     {
       emit_error(errno, p, *existing, ec, "boost::filesystem::create_directory");
       return false;
     }
 
-    if (!S_ISDIR(existing_stat.st_mode))
+    if (BOOST_UNLIKELY((existing_stat.stx_mask & (STATX_TYPE | STATX_MODE)) != (STATX_TYPE | STATX_MODE)))
+    {
+      emit_error(BOOST_ERROR_NOT_SUPPORTED, p, *existing, ec, "boost::filesystem::create_directory");
+      return false;
+    }
+#else
+    struct ::stat existing_stat;
+    if (::stat(existing->c_str(), &existing_stat) < 0)
+    {
+      emit_error(errno, p, *existing, ec, "boost::filesystem::create_directory");
+      return false;
+    }
+#endif
+
+    const mode_t existing_mode = get_mode(existing_stat);
+    if (!S_ISDIR(existing_mode))
     {
       emit_error(ENOTDIR, p, *existing, ec, "boost::filesystem::create_directory");
       return false;
     }
 
-    mode = existing_stat.st_mode;
+    mode = existing_mode;
   }
 
   if (::mkdir(p.c_str(), mode) == 0)
@@ -1472,16 +1574,51 @@ bool create_directory(const path& p, const path* existing, error_code* ec)
 BOOST_FILESYSTEM_DECL
 void copy_directory(const path& from, const path& to, system::error_code* ec)
 {
-# ifdef BOOST_POSIX_API
-  struct stat from_stat;
-# endif
-  error(!BOOST_COPY_DIRECTORY(from.c_str(), to.c_str()) ? BOOST_ERRNO : 0,
-    from, to, ec, "boost::filesystem::copy_directory");
+  if (ec)
+    ec->clear();
+
+#if defined(BOOST_POSIX_API)
+
+#if defined(BOOST_FILESYSTEM_HAS_STATX) || defined(BOOST_FILESYSTEM_HAS_STATX_SYSCALL)
+  int err;
+  struct ::statx from_stat;
+  if (BOOST_UNLIKELY(statx(AT_FDCWD, from.c_str(), AT_NO_AUTOMOUNT, STATX_TYPE | STATX_MODE, &from_stat) < 0))
+  {
+  fail_errno:
+    err = errno;
+  fail:
+    emit_error(err, from, to, ec, "boost::filesystem::copy_directory");
+    return;
+  }
+
+  if (BOOST_UNLIKELY((from_stat.stx_mask & (STATX_TYPE | STATX_MODE)) != (STATX_TYPE | STATX_MODE)))
+  {
+    err = BOOST_ERROR_NOT_SUPPORTED;
+    goto fail;
+  }
+#else
+  struct ::stat from_stat;
+  if (BOOST_UNLIKELY(::stat(from.c_str(), &from_stat) < 0))
+  {
+  fail_errno:
+    emit_error(errno, from, to, ec, "boost::filesystem::copy_directory");
+    return;
+  }
+#endif
+
+  if (BOOST_UNLIKELY(::mkdir(to.c_str(), get_mode(from_stat)) < 0))
+    goto fail_errno;
+
+#else // defined(BOOST_POSIX_API)
+
+  if (BOOST_UNLIKELY(!::CreateDirectoryExW(from.c_str(), to.c_str(), 0)))
+    emit_error(BOOST_ERRNO, from, to, ec, "boost::filesystem::copy_directory");
+
+#endif // defined(BOOST_POSIX_API)
 }
 
 BOOST_FILESYSTEM_DECL
-void create_directory_symlink(const path& to, const path& from,
-                               system::error_code* ec)
+void create_directory_symlink(const path& to, const path& from, system::error_code* ec)
 {
 #if defined(BOOST_WINDOWS_API)
   // see if actually supported by Windows runtime dll
@@ -1608,19 +1745,42 @@ void current_path(const path& p, system::error_code* ec)
 BOOST_FILESYSTEM_DECL
 bool equivalent(const path& p1, const path& p2, system::error_code* ec)
 {
-# ifdef BOOST_POSIX_API
+#if defined(BOOST_POSIX_API)
+
   // p2 is done first, so any error reported is for p1
-  struct ::stat s2 = {};
+#if defined(BOOST_FILESYSTEM_HAS_STATX) || defined(BOOST_FILESYSTEM_HAS_STATX_SYSCALL)
+  struct ::statx s2;
+  int e2 = statx(AT_FDCWD, p2.c_str(), AT_NO_AUTOMOUNT, STATX_INO, &s2);
+  if (BOOST_LIKELY(e2 == 0))
+  {
+    if (BOOST_UNLIKELY((s2.stx_mask & STATX_INO) != STATX_INO))
+    {
+    fail_unsupported:
+      emit_error(BOOST_ERROR_NOT_SUPPORTED, p1, p2, ec, "boost::filesystem::equivalent");
+      return false;
+    }
+  }
+
+  struct ::statx s1;
+  int e1 = statx(AT_FDCWD, p1.c_str(), AT_NO_AUTOMOUNT, STATX_INO, &s1);
+  if (BOOST_LIKELY(e1 == 0))
+  {
+    if (BOOST_UNLIKELY((s1.stx_mask & STATX_INO) != STATX_INO))
+      goto fail_unsupported;
+  }
+#else
+  struct ::stat s2;
   int e2 = ::stat(p2.c_str(), &s2);
-  struct ::stat s1 = {};
+  struct ::stat s1;
   int e1 = ::stat(p1.c_str(), &s1);
+#endif
 
   if (BOOST_UNLIKELY(e1 != 0 || e2 != 0))
   {
     // if one is invalid and the other isn't then they aren't equivalent,
     // but if both are invalid then it is an error
     if (e1 != 0 && e2 != 0)
-      error(errno, p1, p2, ec, "boost::filesystem::equivalent");
+      emit_error(errno, p1, p2, ec, "boost::filesystem::equivalent");
     return false;
   }
 
@@ -1694,66 +1854,123 @@ bool equivalent(const path& p1, const path& p2, system::error_code* ec)
 }
 
 BOOST_FILESYSTEM_DECL
-boost::uintmax_t file_size(const path& p, error_code* ec)
+uintmax_t file_size(const path& p, error_code* ec)
 {
-# ifdef BOOST_POSIX_API
+  if (ec)
+    ec->clear();
 
+#if defined(BOOST_POSIX_API)
+
+#if defined(BOOST_FILESYSTEM_HAS_STATX) || defined(BOOST_FILESYSTEM_HAS_STATX_SYSCALL)
+  struct ::statx path_stat;
+  if (BOOST_UNLIKELY(statx(AT_FDCWD, p.c_str(), AT_NO_AUTOMOUNT, STATX_TYPE | STATX_SIZE, &path_stat) < 0))
+  {
+    emit_error(errno, p, ec, "boost::filesystem::file_size");
+    return static_cast<uintmax_t>(-1);
+  }
+
+  if (BOOST_UNLIKELY((path_stat.stx_mask & (STATX_TYPE | STATX_SIZE)) != (STATX_TYPE | STATX_SIZE) || !S_ISREG(path_stat.stx_mode)))
+  {
+    emit_error(BOOST_ERROR_NOT_SUPPORTED, p, ec, "boost::filesystem::file_size");
+    return static_cast<uintmax_t>(-1);
+  }
+#else
   struct ::stat path_stat;
-  if (error(::stat(p.c_str(), &path_stat)!= 0 ? BOOST_ERRNO : 0,
-      p, ec, "boost::filesystem::file_size"))
-    return static_cast<boost::uintmax_t>(-1);
-  if (error(!S_ISREG(path_stat.st_mode) ? EPERM : 0,
-      p, ec, "boost::filesystem::file_size"))
-    return static_cast<boost::uintmax_t>(-1);
+  if (BOOST_UNLIKELY(::stat(p.c_str(), &path_stat) < 0))
+  {
+    emit_error(errno, p, ec, "boost::filesystem::file_size");
+    return static_cast<uintmax_t>(-1);
+  }
 
-  return static_cast<boost::uintmax_t>(path_stat.st_size);
+  if (BOOST_UNLIKELY(!S_ISREG(path_stat.st_mode)))
+  {
+    emit_error(BOOST_ERROR_NOT_SUPPORTED, p, ec, "boost::filesystem::file_size");
+    return static_cast<uintmax_t>(-1);
+  }
+#endif
 
-# else  // Windows
+  return get_size(path_stat);
+
+#else // defined(BOOST_POSIX_API)
 
   // assume uintmax_t is 64-bits on all Windows compilers
 
   WIN32_FILE_ATTRIBUTE_DATA fad;
 
-  if (error(::GetFileAttributesExW(p.c_str(), ::GetFileExInfoStandard, &fad)== 0
-    ? BOOST_ERRNO : 0, p, ec, "boost::filesystem::file_size"))
-        return static_cast<boost::uintmax_t>(-1);
+  if (BOOST_UNLIKELY(!::GetFileAttributesExW(p.c_str(), ::GetFileExInfoStandard, &fad)))
+  {
+    emit_error(BOOST_ERRNO, p, ec, "boost::filesystem::file_size");
+    return static_cast<uintmax_t>(-1);
+  }
 
-  if (error((fad.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)!= 0
-    ? ERROR_NOT_SUPPORTED : 0, p, ec, "boost::filesystem::file_size"))
-    return static_cast<boost::uintmax_t>(-1);
+  if (BOOST_UNLIKELY((fad.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0))
+  {
+    emit_error(ERROR_NOT_SUPPORTED, p, ec, "boost::filesystem::file_size");
+    return static_cast<uintmax_t>(-1);
+  }
 
-  return (static_cast<boost::uintmax_t>(fad.nFileSizeHigh)
-            << (sizeof(fad.nFileSizeLow)*8)) + fad.nFileSizeLow;
-# endif
+  return (static_cast<uintmax_t>(fad.nFileSizeHigh)
+    << (sizeof(fad.nFileSizeLow) * 8u)) | fad.nFileSizeLow;
+
+#endif // defined(BOOST_POSIX_API)
 }
 
 BOOST_FILESYSTEM_DECL
-boost::uintmax_t hard_link_count(const path& p, system::error_code* ec)
+uintmax_t hard_link_count(const path& p, system::error_code* ec)
 {
-# ifdef BOOST_POSIX_API
+  if (ec)
+    ec->clear();
 
+#if defined(BOOST_POSIX_API)
+
+#if defined(BOOST_FILESYSTEM_HAS_STATX) || defined(BOOST_FILESYSTEM_HAS_STATX_SYSCALL)
+  struct ::statx path_stat;
+  if (BOOST_UNLIKELY(statx(AT_FDCWD, p.c_str(), AT_NO_AUTOMOUNT, STATX_NLINK, &path_stat) < 0))
+  {
+    emit_error(errno, p, ec, "boost::filesystem::hard_link_count");
+    return static_cast<uintmax_t>(-1);
+  }
+
+  if (BOOST_UNLIKELY((path_stat.stx_mask & STATX_NLINK) != STATX_NLINK))
+  {
+    emit_error(BOOST_ERROR_NOT_SUPPORTED, p, ec, "boost::filesystem::hard_link_count");
+    return static_cast<uintmax_t>(-1);
+  }
+
+  return static_cast<uintmax_t>(path_stat.stx_nlink);
+#else
   struct ::stat path_stat;
-  return error(::stat(p.c_str(), &path_stat)!= 0 ? BOOST_ERRNO : 0,
-                p, ec, "boost::filesystem::hard_link_count")
-         ? 0
-         : static_cast<boost::uintmax_t>(path_stat.st_nlink);
+  if (BOOST_UNLIKELY(::stat(p.c_str(), &path_stat) < 0))
+  {
+    emit_error(errno, p, ec, "boost::filesystem::hard_link_count");
+    return static_cast<uintmax_t>(-1);
+  }
 
-# else // Windows
+  return static_cast<uintmax_t>(path_stat.st_nlink);
+#endif
 
-  // Link count info is only available through GetFileInformationByHandle
-  BY_HANDLE_FILE_INFORMATION info;
+#else // defined(BOOST_POSIX_API)
+
   handle_wrapper h(
     create_file_handle(p.c_str(), 0,
         FILE_SHARE_DELETE | FILE_SHARE_READ | FILE_SHARE_WRITE, 0,
         OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, 0));
-  return
-    !error(h.handle == INVALID_HANDLE_VALUE ? BOOST_ERRNO : 0,
-            p, ec, "boost::filesystem::hard_link_count")
-    && !error(::GetFileInformationByHandle(h.handle, &info)== 0 ? BOOST_ERRNO : 0,
-               p, ec, "boost::filesystem::hard_link_count")
-         ? info.nNumberOfLinks
-         : 0;
-# endif
+
+  if (BOOST_UNLIKELY(h.handle == INVALID_HANDLE_VALUE))
+  {
+  fail_errno:
+    emit_error(BOOST_ERRNO, p, ec, "boost::filesystem::hard_link_count");
+    return static_cast<uintmax_t>(-1);
+  }
+
+  // Link count info is only available through GetFileInformationByHandle
+  BY_HANDLE_FILE_INFORMATION info;
+  if (BOOST_UNLIKELY(!::GetFileInformationByHandle(h.handle, &info)))
+    goto fail_errno;
+
+  return static_cast<uintmax_t>(info.nNumberOfLinks);
+
+#endif // defined(BOOST_POSIX_API)
 }
 
 BOOST_FILESYSTEM_DECL
@@ -1769,71 +1986,185 @@ path initial_path(error_code* ec)
 BOOST_FILESYSTEM_DECL
 bool is_empty(const path& p, system::error_code* ec)
 {
-# ifdef BOOST_POSIX_API
+  if (ec)
+    ec->clear();
 
-  struct ::stat path_stat;
-  if (error(::stat(p.c_str(), &path_stat)!= 0,
-      p, ec, "boost::filesystem::is_empty"))
+#if defined(BOOST_POSIX_API)
+
+#if defined(BOOST_FILESYSTEM_HAS_STATX) || defined(BOOST_FILESYSTEM_HAS_STATX_SYSCALL)
+  struct ::statx path_stat;
+  if (BOOST_UNLIKELY(statx(AT_FDCWD, p.c_str(), AT_NO_AUTOMOUNT, STATX_TYPE | STATX_SIZE, &path_stat) < 0))
+  {
+    emit_error(errno, p, ec, "boost::filesystem::is_empty");
     return false;
-  return S_ISDIR(path_stat.st_mode)
-    ? is_empty_directory(p, ec)
-    : path_stat.st_size == 0;
+  }
 
-# else
+  if (BOOST_UNLIKELY((path_stat.stx_mask & STATX_TYPE) != STATX_TYPE))
+  {
+  fail_unsupported:
+    emit_error(BOOST_ERROR_NOT_SUPPORTED, p, ec, "boost::filesystem::is_empty");
+    return false;
+  }
+
+  if (S_ISDIR(get_mode(path_stat)))
+    return is_empty_directory(p, ec);
+
+  if (BOOST_UNLIKELY((path_stat.stx_mask & STATX_SIZE) != STATX_SIZE))
+    goto fail_unsupported;
+
+  return get_size(path_stat) == 0u;
+#else
+  struct ::stat path_stat;
+  if (BOOST_UNLIKELY(::stat(p.c_str(), &path_stat) < 0))
+  {
+    emit_error(errno, p, ec, "boost::filesystem::is_empty");
+    return false;
+  }
+
+  return S_ISDIR(get_mode(path_stat))
+    ? is_empty_directory(p, ec)
+    : get_size(path_stat) == 0u;
+#endif
+
+#else // defined(BOOST_POSIX_API)
 
   WIN32_FILE_ATTRIBUTE_DATA fad;
-  if (error(::GetFileAttributesExW(p.c_str(), ::GetFileExInfoStandard, &fad)== 0
-    ? BOOST_ERRNO : 0, p, ec, "boost::filesystem::is_empty"))
-      return false;
+  if (BOOST_UNLIKELY(!::GetFileAttributesExW(p.c_str(), ::GetFileExInfoStandard, &fad)))
+  {
+    emit_error(BOOST_ERRNO, p, ec, "boost::filesystem::is_empty");
+    return false;
+  }
 
-  if (ec != 0) ec->clear();
   return
     (fad.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
       ? is_empty_directory(p, ec)
       : (!fad.nFileSizeHigh && !fad.nFileSizeLow);
 
-# endif
+#endif // defined(BOOST_POSIX_API)
 }
 
 BOOST_FILESYSTEM_DECL
-std::time_t last_write_time(const path& p, system::error_code* ec)
+std::time_t creation_time(const path& p, system::error_code* ec)
 {
-# ifdef BOOST_POSIX_API
+  if (ec)
+    ec->clear();
 
-  struct ::stat path_stat;
-  if (error(::stat(p.c_str(), &path_stat)!= 0 ? BOOST_ERRNO : 0,
-    p, ec, "boost::filesystem::last_write_time"))
-      return std::time_t(-1);
-  return path_stat.st_mtime;
+#if defined(BOOST_POSIX_API)
 
-# else
+#if defined(BOOST_FILESYSTEM_HAS_STATX) || defined(BOOST_FILESYSTEM_HAS_STATX_SYSCALL)
+  struct ::statx stx;
+  if (BOOST_UNLIKELY(statx(AT_FDCWD, p.c_str(), AT_NO_AUTOMOUNT, STATX_BTIME, &stx) < 0))
+  {
+    emit_error(BOOST_ERRNO, p, ec, "boost::filesystem::creation_time");
+    return (std::numeric_limits< std::time_t >::min)();
+  }
+  if (BOOST_UNLIKELY((stx.stx_mask & STATX_BTIME) != STATX_BTIME))
+  {
+    emit_error(BOOST_ERROR_NOT_SUPPORTED, p, ec, "boost::filesystem::creation_time");
+    return (std::numeric_limits< std::time_t >::min)();
+  }
+  return stx.stx_btime.tv_sec;
+#elif defined(BOOST_FILESYSTEM_STAT_ST_BIRTHTIME) && defined(BOOST_FILESYSTEM_STAT_ST_BIRTHTIMENSEC)
+  struct ::stat st;
+  if (BOOST_UNLIKELY(::stat(p.c_str(), &st) < 0))
+  {
+    emit_error(BOOST_ERRNO, p, ec, "boost::filesystem::creation_time");
+    return (std::numeric_limits< std::time_t >::min)();
+  }
+  return st.BOOST_FILESYSTEM_STAT_ST_BIRTHTIME;
+#else
+  emit_error(BOOST_ERROR_NOT_SUPPORTED, p, ec, "boost::filesystem::creation_time");
+  return (std::numeric_limits< std::time_t >::min)();
+#endif
+
+#else // defined(BOOST_POSIX_API)
 
   handle_wrapper hw(
     create_file_handle(p.c_str(), 0,
       FILE_SHARE_DELETE | FILE_SHARE_READ | FILE_SHARE_WRITE, 0,
       OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, 0));
 
-  if (error(hw.handle == INVALID_HANDLE_VALUE ? BOOST_ERRNO : 0,
-    p, ec, "boost::filesystem::last_write_time"))
-      return std::time_t(-1);
+  if (BOOST_UNLIKELY(hw.handle == INVALID_HANDLE_VALUE))
+  {
+  fail:
+    emit_error(BOOST_ERRNO, p, ec, "boost::filesystem::creation_time");
+    return (std::numeric_limits< std::time_t >::min)();
+  }
 
-  FILETIME lwt;
+  FILETIME ct;
 
-  if (error(::GetFileTime(hw.handle, 0, 0, &lwt)== 0 ? BOOST_ERRNO : 0,
-    p, ec, "boost::filesystem::last_write_time"))
-      return std::time_t(-1);
+  if (BOOST_UNLIKELY(!::GetFileTime(hw.handle, &ct, NULL, NULL)))
+    goto fail;
 
-  return to_time_t(lwt);
+  return to_time_t(ct);
 
-# endif
+#endif // defined(BOOST_POSIX_API)
 }
 
 BOOST_FILESYSTEM_DECL
-void last_write_time(const path& p, const std::time_t new_time,
-                      system::error_code* ec)
+std::time_t last_write_time(const path& p, system::error_code* ec)
 {
-# ifdef BOOST_POSIX_API
-#   if _POSIX_C_SOURCE >= 200809L
+  if (ec)
+    ec->clear();
+
+#if defined(BOOST_POSIX_API)
+
+#if defined(BOOST_FILESYSTEM_HAS_STATX) || defined(BOOST_FILESYSTEM_HAS_STATX_SYSCALL)
+  struct ::statx stx;
+  if (BOOST_UNLIKELY(statx(AT_FDCWD, p.c_str(), AT_NO_AUTOMOUNT, STATX_MTIME, &stx) < 0))
+  {
+    emit_error(BOOST_ERRNO, p, ec, "boost::filesystem::last_write_time");
+    return (std::numeric_limits< std::time_t >::min)();
+  }
+  if (BOOST_UNLIKELY((stx.stx_mask & STATX_MTIME) != STATX_MTIME))
+  {
+    emit_error(BOOST_ERROR_NOT_SUPPORTED, p, ec, "boost::filesystem::last_write_time");
+    return (std::numeric_limits< std::time_t >::min)();
+  }
+  return stx.stx_mtime.tv_sec;
+#else
+  struct ::stat st;
+  if (BOOST_UNLIKELY(::stat(p.c_str(), &st) < 0))
+  {
+    emit_error(BOOST_ERRNO, p, ec, "boost::filesystem::last_write_time");
+    return (std::numeric_limits< std::time_t >::min)();
+  }
+  return st.st_mtime;
+#endif
+
+#else // defined(BOOST_POSIX_API)
+
+  handle_wrapper hw(
+    create_file_handle(p.c_str(), 0,
+      FILE_SHARE_DELETE | FILE_SHARE_READ | FILE_SHARE_WRITE, 0,
+      OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, 0));
+
+  if (BOOST_UNLIKELY(hw.handle == INVALID_HANDLE_VALUE))
+  {
+  fail:
+    emit_error(BOOST_ERRNO, p, ec, "boost::filesystem::last_write_time");
+    return (std::numeric_limits< std::time_t >::min)();
+  }
+
+  FILETIME lwt;
+
+  if (BOOST_UNLIKELY(!::GetFileTime(hw.handle, NULL, NULL, &lwt)))
+    goto fail;
+
+  return to_time_t(lwt);
+
+#endif // defined(BOOST_POSIX_API)
+}
+
+BOOST_FILESYSTEM_DECL
+void last_write_time(const path& p, const std::time_t new_time, system::error_code* ec)
+{
+  if (ec)
+    ec->clear();
+
+#if defined(BOOST_POSIX_API)
+
+#if _POSIX_C_SOURCE >= 200809L
 
   struct timespec times[2] = {};
 
@@ -1844,48 +2175,54 @@ void last_write_time(const path& p, const std::time_t new_time,
 
   if (BOOST_UNLIKELY(::utimensat(AT_FDCWD, p.c_str(), times, 0) != 0))
   {
-    error(BOOST_ERRNO, p, ec, "boost::filesystem::last_write_time");
+    emit_error(BOOST_ERRNO, p, ec, "boost::filesystem::last_write_time");
     return;
   }
 
-#   else // _POSIX_C_SOURCE >= 200809L
+#else // _POSIX_C_SOURCE >= 200809L
 
-  struct ::stat path_stat;
-  if (error(::stat(p.c_str(), &path_stat)!= 0,
-    p, ec, "boost::filesystem::last_write_time"))
-      return;
+  struct ::stat st;
+  if (BOOST_UNLIKELY(::stat(p.c_str(), &st) < 0))
+  {
+    emit_error(BOOST_ERRNO, p, ec, "boost::filesystem::last_write_time");
+    return;
+  }
+
   ::utimbuf buf;
-  buf.actime = path_stat.st_atime; // utime()updates access time too:-(
+  buf.actime = st.st_atime; // utime()updates access time too:-(
   buf.modtime = new_time;
-  error(::utime(p.c_str(), &buf)!= 0 ? BOOST_ERRNO : 0,
-    p, ec, "boost::filesystem::last_write_time");
+  if (BOOST_UNLIKELY(::utime(p.c_str(), &buf) < 0))
+    emit_error(BOOST_ERRNO, p, ec, "boost::filesystem::last_write_time");
 
-#   endif // _POSIX_C_SOURCE >= 200809L
+#endif // _POSIX_C_SOURCE >= 200809L
 
-# else
+#else // defined(BOOST_POSIX_API)
 
   handle_wrapper hw(
     create_file_handle(p.c_str(), FILE_WRITE_ATTRIBUTES,
       FILE_SHARE_DELETE | FILE_SHARE_READ | FILE_SHARE_WRITE, 0,
       OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, 0));
 
-  if (error(hw.handle == INVALID_HANDLE_VALUE ? BOOST_ERRNO : 0,
-    p, ec, "boost::filesystem::last_write_time"))
-      return;
+  if (BOOST_UNLIKELY(hw.handle == INVALID_HANDLE_VALUE))
+  {
+  fail:
+    emit_error(BOOST_ERRNO, p, ec, "boost::filesystem::last_write_time");
+    return;
+  }
 
   FILETIME lwt;
   to_FILETIME(new_time, lwt);
 
-  error(::SetFileTime(hw.handle, 0, 0, &lwt)== 0 ? BOOST_ERRNO : 0,
-    p, ec, "boost::filesystem::last_write_time");
+  if (BOOST_UNLIKELY(!::SetFileTime(hw.handle, 0, 0, &lwt)))
+    goto fail;
 
-# endif
+#endif // defined(BOOST_POSIX_API)
 }
 
-# ifdef BOOST_POSIX_API
+#ifdef BOOST_POSIX_API
 const perms active_bits(all_all | set_uid_on_exe | set_gid_on_exe | sticky_bit);
 inline mode_t mode_cast(perms prms) { return prms & active_bits; }
-# endif
+#endif
 
 BOOST_FILESYSTEM_DECL
 void permissions(const path& p, perms prms, system::error_code* ec)
@@ -2107,7 +2444,7 @@ bool remove(const path& p, error_code* ec)
 }
 
 BOOST_FILESYSTEM_DECL
-boost::uintmax_t remove_all(const path& p, error_code* ec)
+uintmax_t remove_all(const path& p, error_code* ec)
 {
   error_code tmp_ec;
   file_type type = query_file_type(p, &tmp_ec);
@@ -2132,7 +2469,7 @@ void resize_file(const path& p, uintmax_t size, system::error_code* ec)
 {
 # if defined(BOOST_POSIX_API)
   if (BOOST_UNLIKELY(size > static_cast< uintmax_t >((std::numeric_limits< off_t >::max)()))) {
-    error(system::errc::file_too_large, p, ec, "boost::filesystem::resize_file");
+    emit_error(system::errc::file_too_large, p, ec, "boost::filesystem::resize_file");
     return;
   }
 # endif
@@ -2145,9 +2482,9 @@ space_info space(const path& p, error_code* ec)
 {
   space_info info;
   // Initialize members to -1, as required by C++20 [fs.op.space]/1 in case of error
-  info.capacity = static_cast<boost::uintmax_t>(-1);
-  info.free = static_cast<boost::uintmax_t>(-1);
-  info.available = static_cast<boost::uintmax_t>(-1);
+  info.capacity = static_cast<uintmax_t>(-1);
+  info.free = static_cast<uintmax_t>(-1);
+  info.available = static_cast<uintmax_t>(-1);
 
   if (ec)
     ec->clear();
@@ -2163,11 +2500,11 @@ space_info space(const path& p, error_code* ec)
     p, ec, "boost::filesystem::space"))
   {
     info.capacity
-      = static_cast<boost::uintmax_t>(vfs.f_blocks) * BOOST_STATVFS_F_FRSIZE;
+      = static_cast<uintmax_t>(vfs.f_blocks) * BOOST_STATVFS_F_FRSIZE;
     info.free
-      = static_cast<boost::uintmax_t>(vfs.f_bfree) * BOOST_STATVFS_F_FRSIZE;
+      = static_cast<uintmax_t>(vfs.f_bfree) * BOOST_STATVFS_F_FRSIZE;
     info.available
-      = static_cast<boost::uintmax_t>(vfs.f_bavail) * BOOST_STATVFS_F_FRSIZE;
+      = static_cast<uintmax_t>(vfs.f_bavail) * BOOST_STATVFS_F_FRSIZE;
   }
 
 # else
@@ -2176,7 +2513,7 @@ space_info space(const path& p, error_code* ec)
   // To work around this, test if the path refers to a directory and use the parent directory if not.
   error_code local_ec;
   file_status status = detail::status(p, &local_ec);
-  if (status.type() == fs::status_error)
+  if (status.type() == fs::status_error || status.type() == fs::file_not_found)
   {
   fail_local_ec:
     if (!ec)
@@ -2220,9 +2557,9 @@ space_info space(const path& p, error_code* ec)
   if (!error(::GetDiskFreeSpaceExW(str.c_str(), &avail, &total, &free) == 0,
      p, ec, "boost::filesystem::space"))
   {
-    info.capacity = static_cast<boost::uintmax_t>(total.QuadPart);
-    info.free = static_cast<boost::uintmax_t>(free.QuadPart);
-    info.available = static_cast<boost::uintmax_t>(avail.QuadPart);
+    info.capacity = static_cast<uintmax_t>(total.QuadPart);
+    info.free = static_cast<uintmax_t>(free.QuadPart);
+    info.available = static_cast<uintmax_t>(avail.QuadPart);
   }
 
 # endif
@@ -2233,12 +2570,22 @@ space_info space(const path& p, error_code* ec)
 BOOST_FILESYSTEM_DECL
 file_status status(const path& p, error_code* ec)
 {
-# ifdef BOOST_POSIX_API
+  if (ec)
+    ec->clear();
 
+#if defined(BOOST_POSIX_API)
+
+#if defined(BOOST_FILESYSTEM_HAS_STATX) || defined(BOOST_FILESYSTEM_HAS_STATX_SYSCALL)
+  struct ::statx path_stat;
+  int err = statx(AT_FDCWD, p.c_str(), AT_NO_AUTOMOUNT, STATX_TYPE | STATX_MODE, &path_stat);
+#else
   struct ::stat path_stat;
-  if (::stat(p.c_str(), &path_stat)!= 0)
+  int err = ::stat(p.c_str(), &path_stat);
+#endif
+
+  if (err != 0)
   {
-    const int err = errno;
+    err = errno;
     if (ec != 0)                            // always report errno, even though some
       ec->assign(err, system_category());   // errno values are not status_errors
 
@@ -2251,37 +2598,43 @@ file_status status(const path& p, error_code* ec)
         p, error_code(err, system_category())));
     return fs::file_status(fs::status_error);
   }
-  if (ec != 0)
-    ec->clear();
-  if (S_ISDIR(path_stat.st_mode))
+
+#if defined(BOOST_FILESYSTEM_HAS_STATX) || defined(BOOST_FILESYSTEM_HAS_STATX_SYSCALL)
+  if (BOOST_UNLIKELY((path_stat.stx_mask & (STATX_TYPE | STATX_MODE)) != (STATX_TYPE | STATX_MODE)))
+  {
+    emit_error(BOOST_ERROR_NOT_SUPPORTED, p, ec, "boost::filesystem::status");
+    return fs::file_status(fs::status_error);
+  }
+#endif
+
+  const mode_t mode = get_mode(path_stat);
+  if (S_ISDIR(mode))
     return fs::file_status(fs::directory_file,
-      static_cast<perms>(path_stat.st_mode) & fs::perms_mask);
-  if (S_ISREG(path_stat.st_mode))
+      static_cast<perms>(mode) & fs::perms_mask);
+  if (S_ISREG(mode))
     return fs::file_status(fs::regular_file,
-      static_cast<perms>(path_stat.st_mode) & fs::perms_mask);
-  if (S_ISBLK(path_stat.st_mode))
+      static_cast<perms>(mode) & fs::perms_mask);
+  if (S_ISBLK(mode))
     return fs::file_status(fs::block_file,
-      static_cast<perms>(path_stat.st_mode) & fs::perms_mask);
-  if (S_ISCHR(path_stat.st_mode))
+      static_cast<perms>(mode) & fs::perms_mask);
+  if (S_ISCHR(mode))
     return fs::file_status(fs::character_file,
-      static_cast<perms>(path_stat.st_mode) & fs::perms_mask);
-  if (S_ISFIFO(path_stat.st_mode))
+      static_cast<perms>(mode) & fs::perms_mask);
+  if (S_ISFIFO(mode))
     return fs::file_status(fs::fifo_file,
-      static_cast<perms>(path_stat.st_mode) & fs::perms_mask);
-  if (S_ISSOCK(path_stat.st_mode))
+      static_cast<perms>(mode) & fs::perms_mask);
+  if (S_ISSOCK(mode))
     return fs::file_status(fs::socket_file,
-      static_cast<perms>(path_stat.st_mode) & fs::perms_mask);
+      static_cast<perms>(mode) & fs::perms_mask);
   return fs::file_status(fs::type_unknown);
 
-# else  // Windows
+#else // defined(BOOST_POSIX_API)
 
   DWORD attr(::GetFileAttributesW(p.c_str()));
   if (attr == 0xFFFFFFFF)
   {
     return process_status_failure(p, ec);
   }
-
-  if (ec != 0) ec->clear();
 
   perms permissions = make_permissions(p, attr);
 
@@ -2325,18 +2678,28 @@ file_status status(const path& p, error_code* ec)
     ? file_status(directory_file, permissions)
     : file_status(regular_file, permissions);
 
-# endif
+#endif // defined(BOOST_POSIX_API)
 }
 
 BOOST_FILESYSTEM_DECL
 file_status symlink_status(const path& p, error_code* ec)
 {
-# ifdef BOOST_POSIX_API
+  if (ec)
+    ec->clear();
 
+#if defined(BOOST_POSIX_API)
+
+#if defined(BOOST_FILESYSTEM_HAS_STATX) || defined(BOOST_FILESYSTEM_HAS_STATX_SYSCALL)
+  struct ::statx path_stat;
+  int err = statx(AT_FDCWD, p.c_str(), AT_SYMLINK_NOFOLLOW | AT_NO_AUTOMOUNT, STATX_TYPE | STATX_MODE, &path_stat);
+#else
   struct ::stat path_stat;
-  if (::lstat(p.c_str(), &path_stat)!= 0)
+  int err = ::lstat(p.c_str(), &path_stat);
+#endif
+
+  if (err != 0)
   {
-    const int err = errno;
+    err = errno;
     if (ec != 0)                            // always report errno, even though some
       ec->assign(err, system_category());   // errno values are not status_errors
 
@@ -2345,44 +2708,50 @@ file_status symlink_status(const path& p, error_code* ec)
       return fs::file_status(fs::file_not_found, fs::no_perms);
     }
     if (ec == 0)
-      BOOST_FILESYSTEM_THROW(filesystem_error("boost::filesystem::status",
+      BOOST_FILESYSTEM_THROW(filesystem_error("boost::filesystem::symlink_status",
         p, error_code(err, system_category())));
     return fs::file_status(fs::status_error);
   }
-  if (ec != 0)
-    ec->clear();
-  if (S_ISREG(path_stat.st_mode))
+
+#if defined(BOOST_FILESYSTEM_HAS_STATX) || defined(BOOST_FILESYSTEM_HAS_STATX_SYSCALL)
+  if (BOOST_UNLIKELY((path_stat.stx_mask & (STATX_TYPE | STATX_MODE)) != (STATX_TYPE | STATX_MODE)))
+  {
+    emit_error(BOOST_ERROR_NOT_SUPPORTED, p, ec, "boost::filesystem::symlink_status");
+    return fs::file_status(fs::status_error);
+  }
+#endif
+
+  const mode_t mode = get_mode(path_stat);
+  if (S_ISREG(mode))
     return fs::file_status(fs::regular_file,
-      static_cast<perms>(path_stat.st_mode) & fs::perms_mask);
-  if (S_ISDIR(path_stat.st_mode))
+      static_cast<perms>(mode) & fs::perms_mask);
+  if (S_ISDIR(mode))
     return fs::file_status(fs::directory_file,
-      static_cast<perms>(path_stat.st_mode) & fs::perms_mask);
-  if (S_ISLNK(path_stat.st_mode))
+      static_cast<perms>(mode) & fs::perms_mask);
+  if (S_ISLNK(mode))
     return fs::file_status(fs::symlink_file,
-      static_cast<perms>(path_stat.st_mode) & fs::perms_mask);
-  if (S_ISBLK(path_stat.st_mode))
+      static_cast<perms>(mode) & fs::perms_mask);
+  if (S_ISBLK(mode))
     return fs::file_status(fs::block_file,
-      static_cast<perms>(path_stat.st_mode) & fs::perms_mask);
-  if (S_ISCHR(path_stat.st_mode))
+      static_cast<perms>(mode) & fs::perms_mask);
+  if (S_ISCHR(mode))
     return fs::file_status(fs::character_file,
-      static_cast<perms>(path_stat.st_mode) & fs::perms_mask);
-  if (S_ISFIFO(path_stat.st_mode))
+      static_cast<perms>(mode) & fs::perms_mask);
+  if (S_ISFIFO(mode))
     return fs::file_status(fs::fifo_file,
-      static_cast<perms>(path_stat.st_mode) & fs::perms_mask);
-  if (S_ISSOCK(path_stat.st_mode))
+      static_cast<perms>(mode) & fs::perms_mask);
+  if (S_ISSOCK(mode))
     return fs::file_status(fs::socket_file,
-      static_cast<perms>(path_stat.st_mode) & fs::perms_mask);
+      static_cast<perms>(mode) & fs::perms_mask);
   return fs::file_status(fs::type_unknown);
 
-# else  // Windows
+#else // defined(BOOST_POSIX_API)
 
   DWORD attr(::GetFileAttributesW(p.c_str()));
   if (attr == 0xFFFFFFFF)
   {
     return process_status_failure(p, ec);
   }
-
-  if (ec != 0) ec->clear();
 
   perms permissions = make_permissions(p, attr);
 
@@ -2395,7 +2764,7 @@ file_status symlink_status(const path& p, error_code* ec)
     ? file_status(directory_file, permissions)
     : file_status(regular_file, permissions);
 
-# endif
+#endif // defined(BOOST_POSIX_API)
 }
 
  // contributed by Jeff Flinn

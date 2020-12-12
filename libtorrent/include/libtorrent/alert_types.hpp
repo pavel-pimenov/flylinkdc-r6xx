@@ -11,6 +11,7 @@ Copyright (c) 2018, d-komarov
 Copyright (c) 2019, ghbplayer
 Copyright (c) 2020, Fonic
 Copyright (c) 2020, Viktor Elofsson
+Copyright (c) 2020, AllSeeingEyeTolledEweSew
 All rights reserved.
 
 You may use, distribute and modify this code under the terms of the BSD license,
@@ -1745,7 +1746,8 @@ TORRENT_VERSION_NAMESPACE_3
 			privileged_ports,
 			utp_disabled,
 			tcp_disabled,
-			invalid_local_interface
+			invalid_local_interface,
+			ssrf_mitigation
 		};
 
 		// the reason for the peer being blocked. Is one of the values from the

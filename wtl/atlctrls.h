@@ -4226,8 +4226,27 @@ public:
 
 	BOOL SetCheckState(HTREEITEM hItem, BOOL bCheck)
 	{
+		ATLASSERT(::IsWindow(this->m_hWnd));
+		ATLASSERT((this->GetStyle() & TVS_CHECKBOXES) != 0);
 		int nCheck = bCheck ? 2 : 1;   // one based index
 		return SetItemState(hItem, INDEXTOSTATEIMAGEMASK(nCheck), TVIS_STATEIMAGEMASK);
+	}
+
+	// for standard and extended checkboxes (0 = no checkbox, 1 = unchecked, 2 = checked, >2 = optional extended check states)
+	UINT GetCheckStateEx(HTREEITEM hItem) const
+	{
+		ATLASSERT(::IsWindow(this->m_hWnd));
+		ATLASSERT(this->GetImageList(TVSIL_STATE) != NULL);
+		UINT uRet = GetItemState(hItem, TVIS_STATEIMAGEMASK);
+		return (uRet >> 12);
+	}
+
+	BOOL SetCheckStateEx(HTREEITEM hItem, UINT uCheckState)
+	{
+		ATLASSERT(::IsWindow(this->m_hWnd));
+		ATLASSERT(this->GetImageList(TVSIL_STATE) != NULL);
+		ATLASSERT(uCheckState < (UINT)::ImageList_GetImageCount(this->GetImageList(TVSIL_STATE)));
+		return SetItemState(hItem, INDEXTOSTATEIMAGEMASK(uCheckState), TVIS_STATEIMAGEMASK);
 	}
 
 	COLORREF GetBkColor() const

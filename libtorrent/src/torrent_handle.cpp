@@ -4,7 +4,7 @@ Copyright (c) 2003-2020, Arvid Norberg
 Copyright (c) 2004, Magnus Jonsson
 Copyright (c) 2016-2017, 2019-2020, Alden Torres
 Copyright (c) 2017, Falcosc
-Copyright (c) 2017, AllSeeingEyeTolledEweSew
+Copyright (c) 2017, 2020, AllSeeingEyeTolledEweSew
 Copyright (c) 2018, Steven Siloti
 Copyright (c) 2019, ghbplayer
 Copyright (c) 2019, Andrei Kurushin
@@ -664,6 +664,12 @@ namespace libtorrent {
 	{
 		return sync_call_ret<std::shared_ptr<const torrent_info>>(
 			std::shared_ptr<const torrent_info>(), &aux::torrent::get_torrent_copy);
+	}
+
+	std::vector<std::vector<sha256_hash>> torrent_handle::piece_layers() const
+	{
+		return sync_call_ret<std::vector<std::vector<sha256_hash>>>({}
+			, &aux::torrent::get_piece_layers);
 	}
 
 #if TORRENT_ABI_VERSION == 1

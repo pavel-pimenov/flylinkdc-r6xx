@@ -590,9 +590,13 @@ namespace aux {
 			deprecated_broadcast_lsd,
 #endif
 
-			// when set to true, libtorrent will try to make outgoing utp
-			// connections controls whether libtorrent will accept incoming
-			// connections or make outgoing connections of specific type.
+			// Enables incoming and outgoing, TCP and uTP peer connections.
+			// ``false`` is disabled and ``true`` is enabled. When outgoing
+			// connections are disabled, libtorrent will simply not make
+			// outgoing peer connections with the specific transport protocol.
+			// Disabled incoming peer connections will simply be rejected.
+			// These options only apply to peer connections, not tracker- or any
+			// other kinds of connections.
 			enable_outgoing_utp,
 			enable_incoming_utp,
 			enable_outgoing_tcp,
@@ -916,11 +920,33 @@ namespace aux {
 			// small piece sizes
 			piece_extent_affinity,
 
-			// when set to true, the certificate of HTTPS trackers will be
-			// validated against the system's certificate store (as defined by
-			// OpenSSL). If the system does not have one, enabling this may cause
-			// HTTPS trackers to fail.
+			// when set to true, the certificate of HTTPS trackers and HTTPS web
+			// seeds will be validated against the system's certificate store
+			// (as defined by OpenSSL). If the system does not have a
+			// certificate store, this option may have to be disabled in order
+			// to get trackers and web seeds to work).
 			validate_https_trackers,
+
+			// when enabled, tracker and web seed requests are subject to
+			// certain restrictions.
+			//
+			// An HTTP(s) tracker requests to localhost (loopback)
+			// must have the request path start with "/announce". This is the
+			// conventional bittorrent tracker request. Any other HTTP(S)
+			// tracker request to loopback will be rejected. This applies to
+			// trackers that redirect to loopback as well.
+			//
+			// Web seeds that end up on the client's local network (i.e. in a
+			// private IP address range) may not include query string arguments.
+			// This applies to web seeds redirecting to the local network as
+			// well.
+			ssrf_mitigation,
+
+			// when disabled, any tracker or web seed with an IDNA hostname
+			// (internationalized domain name) is ignored. This is a security
+			// precaution to avoid various unicode encoding attacks that might
+			// happen at the application level.
+			allow_idna,
 
 			// when set to true, enables the attempt to use SetFileValidData()
 			// to pre-allocate disk space. This system call will only work when

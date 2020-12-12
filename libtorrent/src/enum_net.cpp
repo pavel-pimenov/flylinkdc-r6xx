@@ -5,6 +5,7 @@ Copyright (c) 2015-2018, Alden Torres
 Copyright (c) 2015-2018, 2020, Steven Siloti
 Copyright (c) 2016-2017, Andrei Kurushin
 Copyright (c) 2018, Alexandre Janniaux
+Copyright (c) 2020, Tiger Wang
 Copyright (c) 2020, Pave Pimenov
 All rights reserved.
 
@@ -61,6 +62,9 @@ see LICENSE file.
 #include "libtorrent/aux_/windows.hpp"
 #include <iphlpapi.h>
 #include <ifdef.h> // for IF_OPER_STATUS
+#ifdef TORRENT_WINRT
+#include <netioapi.h>
+#endif
 #endif
 
 #if TORRENT_USE_NETLINK

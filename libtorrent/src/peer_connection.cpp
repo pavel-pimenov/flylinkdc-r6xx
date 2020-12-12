@@ -1277,6 +1277,9 @@ namespace {
 			return;
 		}
 
+		// if this peer supports v2, this better be a v2 torrent
+		TORRENT_ASSERT(t->info_hash().has_v2() || !(peer_info_struct() && peer_info_struct()->protocol_v2));
+
 		if (t->is_paused()
 			&& t->is_auto_managed()
 			&& m_settings.get_bool(settings_pack::incoming_starts_queued_torrents)
@@ -1336,6 +1339,7 @@ namespace {
 			|| t->info_hash().v2 == ih.v2))
 		{
 			peer_info_struct()->protocol_v2 = true;
+			TORRENT_ASSERT(t->info_hash().has_v2());
 		}
 
 		if (m_exceeded_limit)
@@ -2583,7 +2587,7 @@ namespace {
 	{
 		TORRENT_ASSERT(is_single_thread());
 		m_last_piece.set(m_connect, aux::time_now());
-		TORRENT_ASSERT(m_outstanding_bytes >= bytes);
+		TORRENT_ASSERT_VAL(m_outstanding_bytes >= bytes, m_outstanding_bytes - bytes);
 		m_outstanding_bytes -= bytes;
 		if (m_outstanding_bytes < 0) m_outstanding_bytes = 0;
 		auto t = associated_torrent().lock();
@@ -3968,8 +3972,7 @@ namespace {
 		// we can't download pieces in these states
 		if (t->state() == torrent_status::checking_files
 			|| t->state() == torrent_status::checking_resume_data
-			|| t->state() == torrent_status::downloading_metadata
-			|| t->state() == torrent_status::allocating)
+			|| t->state() == torrent_status::downloading_metadata)
 			return;
 
 		if (int(m_download_queue.size()) >= m_desired_queue_size
@@ -5207,12 +5210,13 @@ namespace {
 			&& (send_buffer_size() + m_reading_bytes < buffer_size_watermark); ++i)
 		{
 			TORRENT_ASSERT(t->ready_for_connections());
-			peer_request& r = m_requests[i];
+			peer_request const& r = m_requests[i];
 
 			TORRENT_ASSERT(r.piece >= piece_index_t(0));
 			TORRENT_ASSERT(r.piece < piece_index_t(m_have_piece.size()));
 			TORRENT_ASSERT(r.start + r.length <= t->torrent_file().piece_size(r.piece));
-			TORRENT_ASSERT(r.length > 0 && r.start >= 0);
+			TORRENT_ASSERT(r.length > 0);
+			TORRENT_ASSERT(r.start >= 0);
 
 			if (t->is_deleted())
 			{

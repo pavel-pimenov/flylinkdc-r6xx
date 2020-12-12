@@ -700,7 +700,6 @@ void FavoriteManager::removeRecent(const RecentHubEntry* entry)
 
 void FavoriteManager::updateRecent(const RecentHubEntry* entry)
 {
-	g_recent_dirty = true;
 	if (!ClientManager::isBeforeShutdown())
 	{
 		const auto i = find(g_recentHubs.begin(), g_recentHubs.end(), entry);
@@ -1043,21 +1042,28 @@ void FavoriteManager::load()
 	for (auto k = l_values.cbegin(); k != l_values.cend(); ++k)
 	{
 		const StringTokenizer<string> tok(k->second.m_val_str, '\n');
-		if (tok.getTokens().size() > 3)
+		const auto l_tok = tok.getTokens();
+		if (l_tok.size() > 3)
 		{
 			RecentHubEntry* e = new RecentHubEntry();
 			e->setName(k->first);
-			e->setDescription(tok.getTokens()[0]);
-			e->setUsers(tok.getTokens()[1]);
-			e->setShared(tok.getTokens()[2]);
-			const string l_server = Util::formatDchubUrl(tok.getTokens()[3]);
+			e->setDescription(l_tok[0]);
+			e->setUsers(l_tok[1]);
+			e->setShared(l_tok[2]);
+			const string l_server = Util::formatDchubUrl(l_tok[3]);
 			e->setServer(l_server);
-			if (tok.getTokens().size() > 4) //-V112
+			if (l_tok.size() > 4) //-V112
 			{
-				e->setLastSeen(tok.getTokens()[4]);
-				if (tok.getTokens().size() > 5) //-V112
+				e->setLastSeen(l_tok[4]);
+				if (l_tok.size() > 5) //-V112
 				{
-					e->setOpenTab(tok.getTokens()[5]);
+#ifdef _DEBUG
+					if (l_tok[5] == "+")
+					{
+						int a = 0;
+					}
+#endif
+					e->setOpenTab(l_tok[5]);
 				}
 			}
 			bool l_is_dead = false;
@@ -1069,6 +1075,9 @@ void FavoriteManager::load()
 			if (!l_is_dead)
 			{
 				g_recentHubs.push_back(e);
+			}
+			else
+			{
 				g_recent_dirty = true;
 			}
 		}

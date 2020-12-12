@@ -237,7 +237,7 @@ static const char* g_settingTags[] =
 	"UserListDoubleClick", "TransferListDoubleClick", "ChatDoubleClick", "AdcDebug", "NmdcDebug",
 	"ToggleActiveWindow", "ProgressbaroDCStyle", "SearchHistory",
 	"AcceptedDisconnects", "AcceptedTimeouts",
-	"OpenRecentHubs", "OpenPublic", "OpenFavoriteHubs", "OpenFavoriteUsers", "OpenQueue", "OpenFinishedDownloads",
+	"OpenPublic", "OpenFavoriteHubs", "OpenFavoriteUsers", "OpenQueue", "OpenFinishedDownloads",
 	"OpenFinishedUploads", "OpenSearchSpy", "OpenNetworkStatistics", "OpenNotepad", "OutgoingConnections",
 	"NoIPOverride", "ForgetSearchRequest", "SaveSearchSettings", "UseSearchGroupTreeSettings",
 	"UseTorrentSearch", "UseTorrentRSS",
@@ -619,7 +619,6 @@ void SettingsManager::setDefaults()
 	setDefault(PRIO_NORMAL_SIZE, 1024);
 	setDefault(PRIO_LOW_SIZE, 2048);
 	//setDefault(PRIO_LOWEST, false);
-	setDefault(OPEN_RECENT_HUBS, TRUE);
 	//setDefault(OPEN_PUBLIC, false);
 	//setDefault(OPEN_FAVORITE_HUBS, false);
 	//setDefault(OPEN_FAVORITE_USERS, false);
