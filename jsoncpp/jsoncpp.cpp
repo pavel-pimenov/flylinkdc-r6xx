@@ -202,14 +202,18 @@ template <typename Iter> void fixNumericLocaleInput(Iter begin, Iter end) {
  * Return iterator that would be the new end of the range [begin,end), if we
  * were to delete zeros in the end of string, but not the last zero before '.'.
  */
-template <typename Iter> Iter fixZerosInTheEnd(Iter begin, Iter end) {
+template <typename Iter>
+Iter fixZerosInTheEnd(Iter begin, Iter end, unsigned int precision) {
   for (; begin != end; --end) {
     if (*(end - 1) != '0') {
       return end;
     }
     // Don't delete the last zero before the decimal point.
-    if (begin != (end - 1) && *(end - 2) == '.') {
+    if (begin != (end - 1) && begin != (end - 2) && *(end - 2) == '.') {
+      if (precision) {
       return end;
+    }
+      return end - 2;
     }
   }
   return end;
@@ -4217,16 +4221,18 @@ String valueToString(double value, bool useSpecialFloats,
 
   buffer.erase(fixNumericLocale(buffer.begin(), buffer.end()), buffer.end());
 
-  // strip the zero padding from the right
-  if (precisionType == PrecisionType::decimalPlaces) {
-    buffer.erase(fixZerosInTheEnd(buffer.begin(), buffer.end()), buffer.end());
-  }
-
   // try to ensure we preserve the fact that this was given to us as a double on
   // input
   if (buffer.find('.') == buffer.npos && buffer.find('e') == buffer.npos) {
     buffer += ".0";
   }
+
+  // strip the zero padding from the right
+  if (precisionType == PrecisionType::decimalPlaces) {
+    buffer.erase(fixZerosInTheEnd(buffer.begin(), buffer.end(), precision),
+                 buffer.end());
+  }
+
   return buffer;
 }
 } // namespace

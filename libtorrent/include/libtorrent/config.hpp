@@ -132,10 +132,18 @@ see LICENSE file.
 #if TARGET_OS_IPHONE
 #define TORRENT_USE_SC_NETWORK_REACHABILITY 1
 #endif
+
+#define TORRENT_USE_DEV_RANDOM 1
+
+#else
+
+// non-Apple BSD
+#define TORRENT_USE_GETRANDOM 1
+
 #endif // __APPLE__
 
 #define TORRENT_HAS_SYMLINK 1
-#define TORRENT_USE_DEV_RANDOM 1
+
 #ifndef TORRENT_HAVE_MMAP
 #define TORRENT_HAVE_MMAP 1
 #endif
@@ -163,6 +171,7 @@ see LICENSE file.
 #define TORRENT_USE_IFCONF 1
 #define TORRENT_HAS_SALEN 0
 #define TORRENT_USE_FDATASYNC 1
+#define TORRENT_USE_GETRANDOM 1
 
 // ===== ANDROID ===== (almost linux, sort of)
 #if defined __ANDROID__
@@ -217,6 +226,7 @@ see LICENSE file.
 // unless some other crypto library has been specified, default to the native
 // windows CryptoAPI
 #define TORRENT_USE_CRYPTOAPI 1
+#define TORRENT_USE_DEV_RANDOM 0
 
 #ifdef NTDDI_VERSION
 # if (NTDDI_VERSION > NTDDI_WINXPSP2)
@@ -262,6 +272,7 @@ see LICENSE file.
 // unless some other crypto library has been specified, default to the native
 // windows CryptoAPI
 #define TORRENT_USE_CRYPTOAPI 1
+#define TORRENT_USE_DEV_RANDOM 0
 
 #ifdef NTDDI_VERSION
 # if (NTDDI_VERSION > NTDDI_WINXPSP2)
@@ -301,6 +312,7 @@ see LICENSE file.
 #endif
 #define TORRENT_USE_MADVISE 1
 #define TORRENT_HAS_SYMLINK 1
+#define TORRENT_USE_GETRANDOM 1
 
 // ==== BEOS ===
 #elif defined __BEOS__ || defined __HAIKU__
@@ -317,6 +329,7 @@ see LICENSE file.
 #define TORRENT_USE_IFADDRS 1
 #define TORRENT_USE_IFCONF 1
 #define TORRENT_HAS_SYMLINK 1
+#define TORRENT_USE_GETRANDOM 1
 
 // ==== eCS(OS/2) ===
 #elif defined __OS2__
@@ -405,7 +418,7 @@ see LICENSE file.
 #endif
 
 #ifndef TORRENT_USE_DEV_RANDOM
-#define TORRENT_USE_DEV_RANDOM 0
+#define TORRENT_USE_DEV_RANDOM 1
 #endif
 
 #ifndef TORRENT_HAVE_MMAP
@@ -462,6 +475,10 @@ see LICENSE file.
 
 #ifndef TORRENT_USE_IFCONF
 #define TORRENT_USE_IFCONF 0
+#endif
+
+#ifndef TORRENT_USE_GETRANDOM
+#define TORRENT_USE_GETRANDOM 0
 #endif
 
 #ifndef TORRENT_NATIVE_UTF8
