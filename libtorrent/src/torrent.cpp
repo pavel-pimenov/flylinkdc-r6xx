@@ -105,8 +105,7 @@ see LICENSE file.
 
 using namespace std::placeholders;
 
-namespace libtorrent {
-namespace aux {
+namespace libtorrent::aux {
 namespace {
 
 bool is_downloading_state(int const st)
@@ -5389,7 +5388,7 @@ namespace {
 			return;
 		}
 
-		prio = aux::clamp(prio, dont_download, top_priority);
+		prio = std::clamp(prio, dont_download, top_priority);
 
 		if (m_outstanding_file_priority)
 		{
@@ -11872,5 +11871,4 @@ namespace {
 	catch (std::exception const&) {}
 #endif
 
-}
 }

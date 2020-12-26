@@ -154,7 +154,7 @@ void File_DvDif::Read_Buffer_Continue()
                                                            + ((Buffer[Buffer_Offset+3+Pos+3]&0x0F)   )   ;
                             int8u Years                     =((Buffer[Buffer_Offset+3+Pos+4]&0xF0)>>4)*10
                                                            + ((Buffer[Buffer_Offset+3+Pos+4]&0x0F)   )   ;
-                            if (Years!=165
+                            if (Years<=99
                              && Months && Months<=12
                              && Days && Days<=31)
                             {
@@ -1444,8 +1444,7 @@ void File_DvDif::Errors_Stats_Update()
                 Event.Errors=Errors.c_str();
             }
             struct MediaInfo_Event_DvDif_Analysis_Frame_1 Event1;
-            Event_Prepare((struct MediaInfo_Event_Generic*)&Event1);
-            Event1.EventCode=MediaInfo_EventCode_Create(MediaInfo_Parser_DvDif, MediaInfo_Event_DvDif_Analysis_Frame, 1);
+            Event_Prepare((struct MediaInfo_Event_Generic*)&Event1, MediaInfo_EventCode_Create(MediaInfo_Parser_DvDif, MediaInfo_Event_DvDif_Analysis_Frame, 1), sizeof(MediaInfo_Event_DvDif_Analysis_Frame_1));
             Event1.StreamOffset=Speed_FrameCount_StartOffset;
             Event1.TimeCode=Event.TimeCode;
             Event1.RecordedDateTime1=Event.RecordedDateTime1;
