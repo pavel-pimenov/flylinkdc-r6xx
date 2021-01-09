@@ -25,7 +25,7 @@ see LICENSE file.
 #include "libtorrent/aux_/disable_warnings_pop.hpp"
 
 #include "libtorrent/config.hpp"
-#include "libtorrent/peer_connection.hpp"
+#include "libtorrent/aux_/peer_connection.hpp"
 #include "libtorrent/entry.hpp"
 #include "libtorrent/bencode.hpp"
 #include "libtorrent/alert_types.hpp"
@@ -44,7 +44,7 @@ see LICENSE file.
 #include "libtorrent/aux_/alloca.hpp"
 #include "libtorrent/disk_interface.hpp"
 #include "libtorrent/aux_/bandwidth_manager.hpp"
-#include "libtorrent/request_blocks.hpp" // for request_a_block
+#include "libtorrent/aux_/request_blocks.hpp" // for request_a_block
 #include "libtorrent/performance_counters.hpp" // for counters
 #include "libtorrent/aux_/alert_manager.hpp" // for alert_manager
 #include "libtorrent/ip_filter.hpp"
@@ -73,7 +73,7 @@ see LICENSE file.
 
 using namespace std::placeholders;
 
-namespace libtorrent {
+namespace libtorrent::aux {
 namespace {
 	// the limits of the download queue size
 	constexpr int min_request_queue = 2;
@@ -984,7 +984,7 @@ namespace {
 			&& has_piece(index))
 		{
 #ifndef TORRENT_DISABLE_LOGGING
-			peer_log(peer_log_alert::outgoing_message, "HAVE", "piece: %d SUPRESSED"
+			peer_log(peer_log_alert::outgoing_message, "HAVE", "piece: %d SUPPRESSED"
 				, static_cast<int>(index));
 #endif
 			return;
@@ -1604,7 +1604,7 @@ namespace {
 
 		if (m_request_queue.empty() && m_download_queue.size() < 2)
 		{
-			if (request_a_block(*t, *this))
+			if (aux::request_a_block(*t, *this))
 				m_counters.inc_stats_counter(counters::reject_piece_picks);
 		}
 
@@ -2334,7 +2334,7 @@ namespace {
 #ifndef TORRENT_DISABLE_LOGGING
 			if (should_log(peer_log_alert::info))
 			{
-				peer_log(peer_log_alert::info, "INVALID_REQUEST", "piece not superseeded "
+				peer_log(peer_log_alert::info, "INVALID_REQUEST", "piece not super-seeded "
 					"i: %d t: %d n: %d h: %d ss1: %d ss2: %d"
 					, m_peer_interested
 					, valid_piece_index
@@ -2553,6 +2553,8 @@ namespace {
 			TORRENT_ASSERT(t->valid_metadata());
 			TORRENT_ASSERT(r.piece >= piece_index_t(0));
 			TORRENT_ASSERT(r.piece < t->torrent_file().end_piece());
+			TORRENT_ASSERT(r.length <= default_block_size);
+			TORRENT_ASSERT(r.length > 0);
 
 			m_requests.push_back(r);
 
@@ -5480,6 +5482,8 @@ namespace {
 		, peer_request const& r, time_point const issue_time)
 	{
 		TORRENT_ASSERT(is_single_thread());
+		TORRENT_ASSERT(r.length >= 0);
+
 		// return value:
 		// 0: success, piece passed hash check
 		// -1: disk failure
@@ -6543,6 +6547,16 @@ namespace {
 			}
 
 			TORRENT_ASSERT(m_outstanding_bytes == outstanding_bytes);
+		}
+
+		for (auto const& r : m_requests)
+		{
+			TORRENT_ASSERT(r.piece >= piece_index_t(0));
+			TORRENT_ASSERT(r.piece < piece_index_t(m_have_piece.size()));
+			if (t) TORRENT_ASSERT(r.start + r.length <= t->torrent_file().piece_size(r.piece));
+			TORRENT_ASSERT(r.length > 0);
+			TORRENT_ASSERT(r.length <= default_block_size);
+			TORRENT_ASSERT(r.start >= 0);
 		}
 
 		std::set<piece_block> unique;

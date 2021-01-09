@@ -12,8 +12,8 @@ see LICENSE file.
 
 #include "libtorrent/aux_/torrent_peer.hpp"
 #include "libtorrent/assert.hpp"
-#include "libtorrent/string_util.hpp"
-#include "libtorrent/peer_connection.hpp"
+#include "libtorrent/aux_/string_util.hpp"
+#include "libtorrent/aux_/peer_connection.hpp"
 #include "libtorrent/aux_/crc32c.hpp"
 #include "libtorrent/aux_/ip_voter.hpp"
 #include "libtorrent/aux_/io_bytes.hpp" // for write_uint16

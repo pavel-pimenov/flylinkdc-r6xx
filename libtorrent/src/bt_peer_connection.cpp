@@ -47,7 +47,7 @@ see LICENSE file.
 #include "libtorrent/aux_/merkle.hpp"
 #include "libtorrent/performance_counters.hpp" // for counters
 #include "libtorrent/aux_/alert_manager.hpp" // for alert_manager
-#include "libtorrent/string_util.hpp" // for search
+#include "libtorrent/aux_/string_util.hpp" // for search
 #include "libtorrent/aux_/generate_peer_id.hpp"
 
 #if !defined TORRENT_DISABLE_ENCRYPTION
@@ -2589,6 +2589,7 @@ namespace {
 
 		TORRENT_ASSERT(m_sent_handshake);
 		TORRENT_ASSERT(m_sent_bitfield);
+		TORRENT_ASSERT(r.length >= 0);
 
 		auto t = associated_torrent().lock();
 		TORRENT_ASSERT(t);

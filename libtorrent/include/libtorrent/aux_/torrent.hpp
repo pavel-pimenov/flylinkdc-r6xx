@@ -41,7 +41,7 @@ see LICENSE file.
 #include "libtorrent/socket.hpp"
 #include "libtorrent/address.hpp"
 #include "libtorrent/aux_/peer_list.hpp"
-#include "libtorrent/tracker_manager.hpp"
+#include "libtorrent/aux_/tracker_manager.hpp"
 #include "libtorrent/aux_/stat.hpp"
 #include "libtorrent/alert.hpp"
 #include "libtorrent/piece_picker.hpp"
@@ -56,7 +56,7 @@ see LICENSE file.
 #include "libtorrent/deadline_timer.hpp"
 #include "libtorrent/peer_class_set.hpp"
 #include "libtorrent/link.hpp"
-#include "libtorrent/vector_utils.hpp"
+#include "libtorrent/aux_/vector_utils.hpp"
 #include "libtorrent/debug.hpp"
 #include "libtorrent/piece_block.hpp"
 #include "libtorrent/disk_interface.hpp"
@@ -80,12 +80,9 @@ see LICENSE file.
 // logic
 #define TORRENT_DEBUG_STREAMING 0
 
-namespace libtorrent {
+namespace libtorrent::aux {
 
 	struct tracker_request;
-
-namespace aux {
-
 	class http_parser;
 	struct bt_peer_connection;
 
@@ -1463,7 +1460,7 @@ namespace aux {
 
 		// the number of bytes that has been
 		// downloaded that failed the hash-test
-		std::int32_t m_total_failed_bytes = 0;
+		std::int64_t m_total_failed_bytes = 0;
 		std::int64_t m_total_redundant_bytes = 0;
 
 		// the sequence number for this torrent, this is a
@@ -1758,7 +1755,6 @@ namespace aux {
 		std::shared_ptr<aux::rtc_signaling> m_rtc_signaling;
 #endif
 	};
-}
 }
 
 #endif // TORRENT_TORRENT_HPP_INCLUDED

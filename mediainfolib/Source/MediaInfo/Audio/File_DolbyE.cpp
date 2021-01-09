@@ -1263,7 +1263,6 @@ void File_DolbyE::Streams_Fill_ED2()
         string ChannelLayout;
         if (Bed_Object_Count<ObjectElements.size() && p<ObjectElements.size()-Bed_Object_Count && !ObjectElements[Bed_Object_Count+p].Alts.empty())
         {
-            string A=P;
             const dyn_object::dyn_object_alt& DynObject_Current=ObjectElements[Bed_Object_Count+p].Alts[0];
             if (DynObject_Current.pos3d_x_bits!=(int8u)-1)
             {

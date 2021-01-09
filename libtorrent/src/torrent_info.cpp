@@ -13,20 +13,18 @@ see LICENSE file.
 
 #include "libtorrent/config.hpp"
 #include "libtorrent/torrent_info.hpp"
-#include "libtorrent/string_util.hpp" // is_space, is_i2p_url
+#include "libtorrent/aux_/string_util.hpp" // is_space, is_i2p_url
 #include "libtorrent/bencode.hpp"
 #include "libtorrent/hasher.hpp"
 #include "libtorrent/entry.hpp"
 #include "libtorrent/aux_/path.hpp"
 #include "libtorrent/aux_/open_mode.hpp"
-#include "libtorrent/utf8.hpp"
+#include "libtorrent/aux_/utf8.hpp"
 #include "libtorrent/time.hpp"
 #include "libtorrent/random.hpp"
 #include "libtorrent/aux_/invariant_check.hpp"
 #include "libtorrent/aux_/escape_string.hpp" // maybe_url_encode
-#include "libtorrent/aux_/merkle.hpp" // for merkle_*
 #include "libtorrent/aux_/throw.hpp"
-#include "libtorrent/add_torrent_params.hpp"
 #include "libtorrent/magnet_uri.hpp"
 #include "libtorrent/announce_entry.hpp"
 #include "libtorrent/hex.hpp" // to_hex
@@ -731,7 +729,7 @@ namespace {
 	void process_string_lowercase(CRC& crc, string_view str)
 	{
 		for (char const c : str)
-			crc.process_byte(to_lower(c) & 0xff);
+			crc.process_byte(aux::to_lower(c) & 0xff);
 	}
 
 	struct name_entry
@@ -770,7 +768,7 @@ namespace {
 				{
 					if (c == TORRENT_SEPARATOR)
 						files.insert({local_crc.checksum(), {path_index, count}});
-					local_crc.process_byte(to_lower(c) & 0xff);
+					local_crc.process_byte(aux::to_lower(c) & 0xff);
 					++count;
 				}
 				files.insert({local_crc.checksum(), {path_index, int(path.size())}});
@@ -792,7 +790,7 @@ namespace {
 				std::string const other_name = o.second.idx < file_index_t{}
 					? combine_path(m_files.name(), paths[std::size_t(-static_cast<int>(o.second.idx)-1)].substr(0, std::size_t(o.second.length)))
 					: m_files.file_path(o.second.idx);
-				return string_equal_no_case(other_name, m_files.file_path(i));
+				return aux::string_equal_no_case(other_name, m_files.file_path(i));
 			});
 
 			if (match == range.second)
@@ -1437,7 +1435,8 @@ namespace {
 			}
 
 			auto const hashes = piece_layer->second;
-			if ((hashes.size() % sha256_hash::size()) != 0) {
+			if ((hashes.size() % sha256_hash::size()) != 0)
+			{
 				ec = errors::torrent_invalid_piece_layer;
 				return false;
 			}
@@ -1453,6 +1452,14 @@ namespace {
 	{
 		TORRENT_ASSERT_PRECOND(f >= file_index_t(0));
 		if (f >= m_piece_layers.end_index()) return {};
+		if (m_files.pad_file_at(f)) return {};
+
+		if (m_files.file_size(f) <= piece_length())
+		{
+			auto const root_ptr = m_files.root_ptr(f);
+			if (root_ptr == nullptr) return {};
+			return {root_ptr, lt::sha256_hash::size()};
+		}
 		return m_piece_layers[f];
 	}
 
@@ -1569,13 +1576,13 @@ namespace {
 				for (int k = 0, end2(tier.list_size()); k < end2; ++k)
 				{
 					announce_entry e(tier.list_string_value_at(k));
-					ltrim(e.url);
+					aux::ltrim(e.url);
 					if (e.url.empty()) continue;
 					e.tier = std::uint8_t(j);
 					e.fail_limit = 0;
 					e.source = announce_entry::source_torrent;
 #if TORRENT_USE_I2P
-					if (is_i2p_url(e.url)) m_flags |= i2p;
+					if (aux::is_i2p_url(e.url)) m_flags |= i2p;
 #endif
 					m_urls.push_back(e);
 				}
@@ -1596,9 +1603,9 @@ namespace {
 			announce_entry e(torrent_file.dict_find_string_value("announce"));
 			e.fail_limit = 0;
 			e.source = announce_entry::source_torrent;
-			ltrim(e.url);
+			aux::ltrim(e.url);
 #if TORRENT_USE_I2P
-			if (is_i2p_url(e.url)) m_flags |= i2p;
+			if (aux::is_i2p_url(e.url)) m_flags |= i2p;
 #endif
 			if (!e.url.empty()) m_urls.push_back(e);
 		}
@@ -1634,7 +1641,7 @@ namespace {
 		{
 			web_seed_entry ent(maybe_url_encode(url_seeds.string_value()));
 			if ((m_flags & multifile) && num_files() > 1)
-				ensure_trailing_slash(ent.url);
+				aux::ensure_trailing_slash(ent.url);
 			m_web_seeds.push_back(std::move(ent));
 		}
 		else if (url_seeds && url_seeds.type() == bdecode_node::list_t)
@@ -1648,7 +1655,7 @@ namespace {
 				if (url.string_length() == 0) continue;
 				web_seed_entry ent(maybe_url_encode(url.string_value()));
 				if ((m_flags & multifile) && num_files() > 1)
-					ensure_trailing_slash(ent.url);
+					aux::ensure_trailing_slash(ent.url);
 				if (!unique.insert(ent.url).second) continue;
 				m_web_seeds.push_back(std::move(ent));
 			}
@@ -1788,6 +1795,9 @@ namespace {
 	{
 		return m_info_hash.get_best();
 	}
+
+	bool torrent_info::v1() const { return m_piece_hashes != 0; }
+	bool torrent_info::v2() const { return !m_piece_layers.empty(); }
 
 TORRENT_VERSION_NAMESPACE_3_END
 

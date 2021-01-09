@@ -27,9 +27,9 @@ see LICENSE file.
 #include "libtorrent/assert.hpp"
 #include "libtorrent/parse_url.hpp"
 
-#include "libtorrent/utf8.hpp"
+#include "libtorrent/aux_/utf8.hpp"
 #include "libtorrent/aux_/escape_string.hpp"
-#include "libtorrent/string_util.hpp" // for to_string
+#include "libtorrent/aux_/string_util.hpp" // for to_string
 #include "libtorrent/aux_/array.hpp"
 
 namespace libtorrent {
@@ -212,7 +212,7 @@ namespace libtorrent {
 		if (port != -1)
 		{
 			msg.append(":");
-			msg.append(to_string(port).data());
+			msg.append(aux::to_string(port).data());
 		}
 		msg.append(escaped_path);
 
@@ -504,7 +504,7 @@ namespace {
 		while (!ptr.empty())
 		{
 			// decode a single utf-8 character
-			auto [codepoint, len] = parse_utf8_codepoint(ptr);
+			auto [codepoint, len] = aux::parse_utf8_codepoint(ptr);
 
 			if (codepoint == -1)
 				codepoint = '.';
@@ -544,7 +544,7 @@ namespace {
 			}
 			else
 			{
-				append_utf8_codepoint(ret, static_cast<std::int32_t>(codepoint));
+				aux::append_utf8_codepoint(ret, static_cast<std::int32_t>(codepoint));
 				ptr = ptr.substr(size < 1 ? 1 : size);
 			}
 		}

@@ -12,7 +12,6 @@ see LICENSE file.
 */
 
 #include "libtorrent/create_torrent.hpp"
-#include "libtorrent/utf8.hpp"
 #include "libtorrent/mmap_disk_io.hpp" // for hasher_thread_divisor
 #include "libtorrent/disk_interface.hpp"
 #include "libtorrent/aux_/merkle.hpp" // for merkle_*()
@@ -23,7 +22,6 @@ see LICENSE file.
 #include "libtorrent/aux_/session_settings.hpp"
 #include "libtorrent/session.hpp" // for default_disk_io_constructor
 #include "libtorrent/aux_/directory.hpp"
-#include "libtorrent/disk_interface.hpp"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -595,7 +593,8 @@ namespace {
 		if (!m_comment.empty())
 			dict["comment"] = m_comment;
 
-		dict["creation date"] = m_creation_date;
+		if (m_creation_date != 0)
+			dict["creation date"] = m_creation_date;
 
 		if (!m_created_by.empty())
 			dict["created by"] = m_created_by;
@@ -905,5 +904,10 @@ namespace {
 	{
 		if (str == nullptr) m_created_by.clear();
 		else m_created_by = str;
+	}
+
+	void create_torrent::set_creation_date(std::time_t timestamp)
+	{
+		m_creation_date = timestamp;
 	}
 }

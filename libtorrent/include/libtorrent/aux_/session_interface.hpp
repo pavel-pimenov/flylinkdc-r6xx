@@ -36,16 +36,16 @@ see LICENSE file.
 
 namespace libtorrent {
 
-	struct peer_connection;
 	struct peer_class_set;
 	struct peer_class_pool;
 	struct disk_observer;
 	struct disk_interface;
-	struct tracker_request;
-	struct request_callback;
 	struct counters;
 
 namespace aux {
+	struct tracker_request;
+	struct request_callback;
+	struct peer_connection;
 	struct utp_socket_manager;
 	struct bandwidth_channel;
 	struct bandwidth_manager;
@@ -92,8 +92,8 @@ namespace aux {
 
 #if TORRENT_USE_ASSERTS
 		virtual bool is_single_thread() const = 0;
-		virtual bool has_peer(peer_connection const* p) const = 0;
-		virtual bool any_torrent_has_peer(peer_connection const* p) const = 0;
+		virtual bool has_peer(aux::peer_connection const* p) const = 0;
+		virtual bool any_torrent_has_peer(aux::peer_connection const* p) const = 0;
 		virtual bool is_posting_torrent_updates() const = 0;
 #endif
 	protected:
@@ -201,8 +201,8 @@ namespace aux {
 		virtual void apply_settings_pack(std::shared_ptr<settings_pack> pack) = 0;
 		virtual session_settings const& settings() const = 0;
 
-		virtual void queue_tracker_request(tracker_request req
-			, std::weak_ptr<request_callback> c) = 0;
+		virtual void queue_tracker_request(aux::tracker_request req
+			, std::weak_ptr<aux::request_callback> c) = 0;
 
 		// peer-classes
 		virtual void set_peer_classes(peer_class_set* s, address const& a, socket_type_t st) = 0;

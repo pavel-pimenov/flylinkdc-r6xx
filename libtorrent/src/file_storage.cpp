@@ -11,8 +11,7 @@ see LICENSE file.
 */
 
 #include "libtorrent/file_storage.hpp"
-#include "libtorrent/string_util.hpp" // for allocate_string_copy
-#include "libtorrent/utf8.hpp"
+#include "libtorrent/aux_/string_util.hpp" // for allocate_string_copy
 #include "libtorrent/index_range.hpp"
 #include "libtorrent/aux_/path.hpp"
 #include "libtorrent/aux_/numeric_cast.hpp"
@@ -313,7 +312,7 @@ namespace aux {
 		}
 		else
 		{
-			name = allocate_string_copy(n);
+			name = aux::allocate_string_copy(n);
 			name_len = name_is_owned;
 		}
 	}
@@ -767,6 +766,9 @@ namespace aux {
 	{
 		TORRENT_ASSERT_PRECOND(index >= file_index_t{} && index < end_file());
 		aux::file_entry const& fe = m_files[index];
+		if (fe.symlink_index == aux::file_entry::not_a_symlink)
+			return {};
+
 		TORRENT_ASSERT(fe.symlink_index < int(m_symlinks.size()));
 
 		auto const& link = m_symlinks[fe.symlink_index];
@@ -800,7 +802,7 @@ namespace {
 		void process_string_lowercase(CRC& crc, string_view str)
 		{
 			for (char const c : str)
-				crc.process_byte(to_lower(c) & 0xff);
+				crc.process_byte(aux::to_lower(c) & 0xff);
 		}
 
 		template <class CRC>
@@ -813,7 +815,7 @@ namespace {
 			{
 				if (c == TORRENT_SEPARATOR)
 					table.insert(crc.checksum());
-				crc.process_byte(to_lower(c) & 0xff);
+				crc.process_byte(aux::to_lower(c) & 0xff);
 			}
 			table.insert(crc.checksum());
 		}

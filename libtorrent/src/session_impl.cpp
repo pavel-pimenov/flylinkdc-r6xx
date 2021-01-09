@@ -44,7 +44,7 @@ see LICENSE file.
 #include "libtorrent/ssl.hpp"
 #include "libtorrent/peer_id.hpp"
 #include "libtorrent/torrent_info.hpp"
-#include "libtorrent/tracker_manager.hpp"
+#include "libtorrent/aux_/tracker_manager.hpp"
 #include "libtorrent/bencode.hpp"
 #include "libtorrent/hasher.hpp"
 #include "libtorrent/entry.hpp"
@@ -63,7 +63,6 @@ see LICENSE file.
 #include "libtorrent/kademlia/node_entry.hpp"
 #endif
 #include "libtorrent/enum_net.hpp"
-#include "libtorrent/utf8.hpp"
 #include "libtorrent/upnp.hpp"
 #include "libtorrent/natpmp.hpp"
 #include "libtorrent/lsd.hpp"
