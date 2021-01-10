@@ -1031,14 +1031,6 @@ bool CFlyServerConfig::torrentSearchParser(HWND p_wnd, int p_message, string p_s
 				const std::string l_group_result = p_lua_parser["search_group_id"](p_index, l_html_result.c_str());
 				if (!l_group_result.empty())
 				{
-				/*
-				{
-				"items":
-				[
-				"Зарубежные фильмы", "Наши фильмы", "Научно-популярные фильмы", "Сериалы ", "Телевизор", "Мультипликация ", "Аниме ", "Музыка", "Игры ", "Софт ", "Спорт и Здоровье", "Юмор", "Хозяйство и Быт", "Книги ", "Другое"
-				]
-				}
-				*/
 				Json::Value l_root;
 				Json::Reader l_reader(Json::Features::strictMode());
 				const bool l_parsingSuccessful = l_reader.parse(l_group_result, l_root);
@@ -1083,7 +1075,7 @@ bool CFlyServerConfig::torrentSearchParser(HWND p_wnd, int p_message, string p_s
 						dcassert(i != string::npos);
 						if (i != string::npos)
 						{
-							auto j = p_search_url.find('/', i+3);
+							const auto j = p_search_url.find('/', i+3);
 							dcassert(j != string::npos);
 							if (j != string::npos)
 							{
@@ -1236,10 +1228,10 @@ bool CFlyServerConfig::torrentGetTop(HWND p_wnd, int p_message)
 		}
 		else
 		{
-			string l_agent = l_root["agent"].asString();
+			const string l_agent = l_root["agent"].asString();
 			const string l_version = l_root["version"].asString();
 			const string l_error_base = "Version:" + l_version + " onTorrentSearch";
-			unsigned l_page_limit_global = l_root["page_limit"].asUInt();
+			const unsigned l_page_limit_global = l_root["page_limit"].asUInt();
 			const Json::Value& l_arrays = l_root["items"];
 			const Json::Value::ArrayIndex l_count = l_arrays.size();
 			for (Json::Value::ArrayIndex k = 0; k < l_count; ++k)

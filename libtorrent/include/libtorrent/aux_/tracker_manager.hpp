@@ -32,9 +32,9 @@ see LICENSE file.
 #include "libtorrent/fwd.hpp"
 #include "libtorrent/address.hpp"
 #include "libtorrent/peer_id.hpp"
-#include "libtorrent/peer.hpp" // peer_entry
+#include "libtorrent/aux_/peer.hpp" // peer_entry
 #include "libtorrent/deadline_timer.hpp"
-#include "libtorrent/union_endpoint.hpp"
+#include "libtorrent/aux_/union_endpoint.hpp"
 #include "libtorrent/io_context.hpp"
 #include "libtorrent/span.hpp"
 #include "libtorrent/time.hpp"

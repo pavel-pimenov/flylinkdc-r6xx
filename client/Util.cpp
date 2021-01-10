@@ -2939,7 +2939,13 @@ uint64_t CFlyHTTPDownloader::getBinaryDataFromInet(const string& p_url, std::vec
 	//useDebugProxy(hInternet);
 	if (p_time_out)
 	{
-		InternetSetOption(hInternet, INTERNET_OPTION_CONNECT_TIMEOUT, &p_time_out, sizeof(p_time_out));
+		auto l_res = InternetSetOption(hInternet, INTERNET_OPTION_CONNECT_TIMEOUT, &p_time_out, sizeof(p_time_out));
+		if (l_res == FALSE)
+		{
+			dcassert(0);
+			create_error_message("InternetSetOption + INTERNET_OPTION_CONNECT_TIMEOUT", p_url);
+			LogManager::message(m_error_message);
+		}
 	}
 	// https://github.com/ak48disk/simulationcraft/blob/392937fde95bdc4f13ccd3681e2fa61813856bb6/engine/interfaces/sc_http.cpp
 	// http://msdn.microsoft.com/en-us/library/ms906346.aspx
