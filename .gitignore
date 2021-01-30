@@ -18,3 +18,4 @@ client.key
 *.lastbuildstate
 *.vcxproj.FileListAbsolute.txt
 unsuccessfulbuild
+/compiled/GDIImage.htm
