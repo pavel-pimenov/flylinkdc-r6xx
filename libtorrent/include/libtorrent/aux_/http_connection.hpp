@@ -22,13 +22,13 @@ see LICENSE file.
 #include "libtorrent/socket.hpp"
 #include "libtorrent/error_code.hpp"
 #include "libtorrent/aux_/http_parser.hpp"
-#include "libtorrent/deadline_timer.hpp"
+#include "libtorrent/aux_/deadline_timer.hpp"
 #include "libtorrent/assert.hpp"
 #include "libtorrent/i2p_stream.hpp"
 #include "libtorrent/aux_/socket_type.hpp"
 #include "libtorrent/aux_/vector.hpp"
 #include "libtorrent/aux_/resolver_interface.hpp"
-#include "libtorrent/ssl.hpp"
+#include "libtorrent/aux_/ssl.hpp"
 
 namespace libtorrent::aux {
 

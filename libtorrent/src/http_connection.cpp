@@ -24,13 +24,13 @@ see LICENSE file.
 #include "libtorrent/aux_/resolver_interface.hpp"
 #include "libtorrent/settings_pack.hpp"
 #include "libtorrent/aux_/time.hpp"
-#include "libtorrent/random.hpp"
-#include "libtorrent/debug.hpp"
+#include "libtorrent/aux_/random.hpp"
+#include "libtorrent/aux_/debug.hpp"
 #include "libtorrent/time.hpp"
 #include "libtorrent/io_context.hpp"
 #include "libtorrent/i2p_stream.hpp"
 #include "libtorrent/aux_/ip_helpers.hpp"
-#include "libtorrent/ssl.hpp"
+#include "libtorrent/aux_/ssl.hpp"
 
 #include <functional>
 #include <string>

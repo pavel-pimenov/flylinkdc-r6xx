@@ -29,20 +29,20 @@ see LICENSE file.
 #include "libtorrent/aux_/link.hpp" // for torrent_list_index_t
 #include "libtorrent/info_hash.hpp"
 #include "libtorrent/aux_/socket_type.hpp"
-#include "libtorrent/ssl.hpp"
+#include "libtorrent/aux_/ssl.hpp"
 
 #include <functional>
 #include <memory>
 
 namespace libtorrent {
 
-	struct peer_class_set;
 	struct peer_class_pool;
 	struct disk_observer;
 	struct disk_interface;
 	struct counters;
 
 namespace aux {
+	struct peer_class_set;
 	struct tracker_request;
 	struct request_callback;
 	struct peer_connection;

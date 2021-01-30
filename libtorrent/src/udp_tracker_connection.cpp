@@ -19,7 +19,7 @@ see LICENSE file.
 #include "libtorrent/aux_/parse_url.hpp"
 #include "libtorrent/aux_/udp_tracker_connection.hpp"
 #include "libtorrent/hex.hpp"
-#include "libtorrent/random.hpp"
+#include "libtorrent/aux_/random.hpp"
 #include "libtorrent/aux_/session_settings.hpp"
 #include "libtorrent/aux_/resolver_interface.hpp"
 #include "libtorrent/ip_filter.hpp"
@@ -30,7 +30,7 @@ see LICENSE file.
 #include "libtorrent/error_code.hpp"
 
 #ifndef TORRENT_DISABLE_LOGGING
-#include "libtorrent/socket_io.hpp"
+#include "libtorrent/aux_/socket_io.hpp"
 #endif
 
 namespace libtorrent::aux {

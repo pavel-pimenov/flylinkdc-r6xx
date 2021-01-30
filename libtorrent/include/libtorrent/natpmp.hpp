@@ -17,12 +17,12 @@ see LICENSE file.
 #include "libtorrent/socket.hpp"
 #include "libtorrent/address.hpp"
 #include "libtorrent/error_code.hpp"
-#include "libtorrent/deadline_timer.hpp"
+#include "libtorrent/aux_/deadline_timer.hpp"
 #include "libtorrent/time.hpp"
-#include "libtorrent/debug.hpp"
+#include "libtorrent/aux_/debug.hpp"
 #include "libtorrent/aux_/portmap.hpp"
 #include "libtorrent/aux_/vector.hpp"
-#include "libtorrent/enum_net.hpp" // for ip_interface
+#include "libtorrent/aux_/enum_net.hpp" // for ip_interface
 #include "libtorrent/aux_/listen_socket_handle.hpp"
 
 namespace libtorrent {
@@ -64,11 +64,11 @@ namespace libtorrent {
 
 struct TORRENT_EXTRA_EXPORT natpmp final
 	: std::enable_shared_from_this<natpmp>
-	, single_threaded
+	, aux::single_threaded
 {
 	natpmp(io_context& ios, aux::portmap_callback& cb, aux::listen_socket_handle ls);
 
-	void start(ip_interface const& ip);
+	void start(aux::ip_interface const& ip);
 
 	// maps the ports, if a port is set to 0
 	// it will not be mapped
@@ -174,10 +174,10 @@ private:
 
 	// used to resend udp packets in case
 	// they time out
-	deadline_timer m_send_timer;
+	aux::deadline_timer m_send_timer;
 
 	// timer used to refresh mappings
-	deadline_timer m_refresh_timer;
+	aux::deadline_timer m_refresh_timer;
 
 	// the mapping index that will expire next
 	port_mapping_t m_next_refresh{-1};

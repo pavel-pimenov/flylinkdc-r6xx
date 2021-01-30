@@ -30,12 +30,12 @@ see LICENSE file.
 #include "libtorrent/natpmp.hpp"
 #include "libtorrent/aux_/io_bytes.hpp"
 #include "libtorrent/assert.hpp"
-#include "libtorrent/enum_net.hpp"
-#include "libtorrent/socket_io.hpp"
+#include "libtorrent/aux_/enum_net.hpp"
+#include "libtorrent/aux_/socket_io.hpp"
 #include "libtorrent/io_context.hpp"
 #include "libtorrent/aux_/time.hpp"
-#include "libtorrent/debug.hpp"
-#include "libtorrent/random.hpp"
+#include "libtorrent/aux_/debug.hpp"
+#include "libtorrent/aux_/random.hpp"
 #include "libtorrent/aux_/ip_helpers.hpp" // for is_local
 #include "libtorrent/aux_/escape_string.hpp"
 #include "libtorrent/aux_/numeric_cast.hpp"
@@ -129,7 +129,7 @@ natpmp::natpmp(io_context& ios
 	m_mappings.reserve(10);
 }
 
-void natpmp::start(ip_interface const& ip)
+void natpmp::start(aux::ip_interface const& ip)
 {
 	TORRENT_ASSERT(is_single_thread());
 

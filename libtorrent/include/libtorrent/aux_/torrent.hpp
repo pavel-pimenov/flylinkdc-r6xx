@@ -53,11 +53,11 @@ see LICENSE file.
 #include "libtorrent/assert.hpp"
 #include "libtorrent/aux_/session_interface.hpp"
 #include "libtorrent/aux_/time.hpp"
-#include "libtorrent/deadline_timer.hpp"
-#include "libtorrent/peer_class_set.hpp"
+#include "libtorrent/aux_/deadline_timer.hpp"
+#include "libtorrent/aux_/peer_class_set.hpp"
 #include "libtorrent/aux_/link.hpp"
 #include "libtorrent/aux_/vector_utils.hpp"
-#include "libtorrent/debug.hpp"
+#include "libtorrent/aux_/debug.hpp"
 #include "libtorrent/piece_block.hpp"
 #include "libtorrent/disk_interface.hpp"
 #include "libtorrent/aux_/file_progress.hpp"
@@ -68,7 +68,7 @@ see LICENSE file.
 #include "libtorrent/aux_/allocating_handler.hpp"
 #include "libtorrent/aux_/announce_entry.hpp"
 #include "libtorrent/extensions.hpp" // for add_peer_flags_t
-#include "libtorrent/ssl.hpp"
+#include "libtorrent/aux_/ssl.hpp"
 
 #if TORRENT_USE_RTC
     #include "libtorrent/aux_/rtc_signaling.hpp"
@@ -169,6 +169,11 @@ namespace libtorrent::aux {
 		// saved in the resume data
 		bool ephemeral = false;
 
+		// this is set to true when this web seed was created from a redirect
+		// from a global IP, and SSRF mitigation is enabled. It prevents this
+		// web seed from resolving to any local network IPs.
+		bool no_local_ips = false;
+
 		// if the web server doesn't support keepalive or a block request was
 		// interrupted, the block received so far is kept here for the next
 		// connection to pick up
@@ -199,6 +204,7 @@ namespace libtorrent::aux {
 			resolving = std::move(rhs.resolving);
 			removed = std::move(rhs.removed);
 			ephemeral = std::move(rhs.ephemeral);
+			no_local_ips = std::move(rhs.no_local_ips);
 			restart_request = std::move(rhs.restart_request);
 			restart_piece = std::move(rhs.restart_piece);
 			redirects = std::move(rhs.redirects);
@@ -618,6 +624,7 @@ namespace libtorrent::aux {
 		// PEER MANAGEMENT
 
 		static inline constexpr web_seed_flag_t ephemeral = 0_bit;
+		static inline constexpr web_seed_flag_t no_local_ips = 1_bit;
 
 		// add_web_seed won't add duplicates. If we have already added an entry
 		// with this URL, we'll get back the existing entry

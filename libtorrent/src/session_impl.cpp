@@ -41,7 +41,7 @@ see LICENSE file.
 #include <boost/asio/ts/executor.hpp>
 #include "libtorrent/aux_/disable_warnings_pop.hpp"
 
-#include "libtorrent/ssl.hpp"
+#include "libtorrent/aux_/ssl.hpp"
 #include "libtorrent/peer_id.hpp"
 #include "libtorrent/torrent_info.hpp"
 #include "libtorrent/aux_/tracker_manager.hpp"
@@ -62,13 +62,13 @@ see LICENSE file.
 #include "libtorrent/kademlia/types.hpp"
 #include "libtorrent/kademlia/node_entry.hpp"
 #endif
-#include "libtorrent/enum_net.hpp"
+#include "libtorrent/aux_/enum_net.hpp"
 #include "libtorrent/upnp.hpp"
 #include "libtorrent/natpmp.hpp"
-#include "libtorrent/lsd.hpp"
+#include "libtorrent/aux_/lsd.hpp"
 #include "libtorrent/aux_/instantiate_connection.hpp"
 #include "libtorrent/peer_info.hpp"
-#include "libtorrent/random.hpp"
+#include "libtorrent/aux_/random.hpp"
 #include "libtorrent/magnet_uri.hpp"
 #include "libtorrent/aux_/session_settings.hpp"
 #include "libtorrent/aux_/torrent_peer.hpp"
@@ -86,7 +86,7 @@ see LICENSE file.
 
 #ifndef TORRENT_DISABLE_LOGGING
 
-#include "libtorrent/socket_io.hpp"
+#include "libtorrent/aux_/socket_io.hpp"
 
 // for logging stat layout
 #include "libtorrent/aux_/stat.hpp"
@@ -155,7 +155,7 @@ namespace boost {
 }
 #endif
 
-namespace libtorrent {
+namespace libtorrent::aux {
 
 #if defined TORRENT_ASIO_DEBUGGING
 	std::map<std::string, async_t> _async_ops;
@@ -167,8 +167,6 @@ namespace libtorrent {
 	std::mutex _handler_storage_mutex;
 	bool _handler_logger_registered = false;
 #endif
-
-namespace aux {
 
 void apply_deprecated_dht_settings(settings_pack& sett, bdecode_node const& s)
 {
@@ -7211,4 +7209,4 @@ namespace {
 		}
 		catch (std::exception const&) {}
 #endif // TORRENT_DISABLE_LOGGING
-}}
+}

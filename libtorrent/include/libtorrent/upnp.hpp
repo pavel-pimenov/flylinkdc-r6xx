@@ -16,17 +16,17 @@ see LICENSE file.
 
 #include "libtorrent/socket.hpp"
 #include "libtorrent/error_code.hpp"
-#include "libtorrent/deadline_timer.hpp"
-#include "libtorrent/enum_net.hpp"
+#include "libtorrent/aux_/deadline_timer.hpp"
+#include "libtorrent/aux_/enum_net.hpp"
 #include "libtorrent/aux_/resolver.hpp"
-#include "libtorrent/debug.hpp"
+#include "libtorrent/aux_/debug.hpp"
 #include "libtorrent/aux_/string_util.hpp"
 #include "libtorrent/aux_/portmap.hpp"
 #include "libtorrent/aux_/vector.hpp"
 #include "libtorrent/aux_/listen_socket_handle.hpp"
 #include "libtorrent/aux_/noexcept_movable.hpp"
 #include "libtorrent/aux_/session_settings.hpp"
-#include "libtorrent/ssl.hpp"
+#include "libtorrent/aux_/ssl.hpp"
 
 #include <memory>
 #include <functional>
@@ -131,7 +131,7 @@ TORRENT_EXTRA_EXPORT void find_ip_address(int type, string_view string
 // TODO: support using the windows API for UPnP operations as well
 struct TORRENT_EXTRA_EXPORT upnp final
 	: std::enable_shared_from_this<upnp>
-	, single_threaded
+	, aux::single_threaded
 {
 	upnp(io_context& ios
 		, aux::session_settings const& settings
@@ -324,17 +324,17 @@ private:
 
 	// used to resend udp packets in case
 	// they time out
-	deadline_timer m_broadcast_timer;
+	aux::deadline_timer m_broadcast_timer;
 
 	// timer used to refresh mappings
-	deadline_timer m_refresh_timer;
+	aux::deadline_timer m_refresh_timer;
 
 	// this timer fires one second after the last UPnP response. This is the
 	// point where we assume we have received most or all SSDP responses. If we
 	// are ignoring non-routers and at this point we still haven't received a
 	// response from a router UPnP device, we override the ignoring behavior and
 	// map them anyway.
-	deadline_timer m_map_timer;
+	aux::deadline_timer m_map_timer;
 
 	bool m_disabled = false;
 	bool m_closing = false;
@@ -348,7 +348,7 @@ private:
 	std::string m_device;
 
 #if TORRENT_USE_SSL
-	ssl::context m_ssl_ctx;
+	aux::ssl::context m_ssl_ctx;
 #endif
 
 	aux::listen_socket_handle m_listen_handle;

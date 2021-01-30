@@ -46,7 +46,7 @@ see LICENSE file.
 
 #ifdef TORRENT_SSL_PEERS
 #include "libtorrent/aux_/ssl_stream.hpp"
-#include "libtorrent/ssl.hpp"
+#include "libtorrent/aux_/ssl.hpp"
 #endif // TORRENT_SSL_PEERS
 
 #include "libtorrent/torrent_handle.hpp"
@@ -71,9 +71,9 @@ see LICENSE file.
 #include "libtorrent/kademlia/dht_tracker.hpp"
 #include "libtorrent/peer_info.hpp"
 #include "libtorrent/aux_/http_connection.hpp"
-#include "libtorrent/random.hpp"
+#include "libtorrent/aux_/random.hpp"
 #include "libtorrent/peer_class.hpp" // for peer_class
-#include "libtorrent/socket_io.hpp" // for read_*_endpoint
+#include "libtorrent/aux_/socket_io.hpp" // for read_*_endpoint
 #include "libtorrent/ip_filter.hpp"
 #include "libtorrent/aux_/request_blocks.hpp"
 #include "libtorrent/performance_counters.hpp" // for counters
@@ -94,7 +94,7 @@ see LICENSE file.
 #include "libtorrent/aux_/path.hpp"
 #include "libtorrent/aux_/generate_peer_id.hpp"
 #include "libtorrent/aux_/announce_entry.hpp"
-#include "libtorrent/ssl.hpp"
+#include "libtorrent/aux_/ssl.hpp"
 
 #ifndef TORRENT_DISABLE_LOGGING
 #include "libtorrent/aux_/session_impl.hpp" // for tracker_logger
@@ -6282,6 +6282,7 @@ namespace {
 		}
 
 		if (m_abort) return;
+		if (m_ses.is_aborted()) return;
 
 		if (e || addrs.empty())
 		{
@@ -6296,8 +6297,6 @@ namespace {
 			remove_web_seed_iter(web);
 			return;
 		}
-
-		if (m_ses.is_aborted()) return;
 
 		if (num_peers() >= int(m_max_connections)
 			|| m_ses.num_connections() >= settings().get_int(settings_pack::connections_limit))
@@ -6380,12 +6379,16 @@ namespace {
 
 			// unavailable, retry in `settings_pack::web_seed_name_lookup_retry` seconds
 			web->retry = aux::time_now32()
-			+ seconds32(settings().get_int(settings_pack::web_seed_name_lookup_retry));
+				+ seconds32(settings().get_int(settings_pack::web_seed_name_lookup_retry));
 			return;
 		}
 
 		for (auto const& addr : addrs)
 		{
+			// if this is set, we don't allow this web seed to have resolved to a
+			// local IP
+			if (web->no_local_ips && !aux::is_global(addr)) continue;
+
 			// fill in the peer struct's address field
 			web->endpoints.emplace_back(addr, std::uint16_t(port));
 
@@ -6393,6 +6396,20 @@ namespace {
 			if (should_log())
 				debug_log("  -> %s", print_endpoint(tcp::endpoint(addr, std::uint16_t(port))).c_str());
 #endif
+		}
+
+		if (web->endpoints.empty())
+		{
+			if (m_ses.alerts().should_post<url_seed_alert>())
+			{
+				m_ses.alerts().emplace_alert<url_seed_alert>(get_handle()
+					, web->url, errors::banned_by_ip_filter);
+			}
+
+			// the name lookup failed for the http host. Don't try
+			// this host again
+			remove_web_seed_iter(web);
+			return;
 		}
 
 		if (num_peers() >= int(m_max_connections)
@@ -9334,11 +9351,12 @@ namespace {
 	{
 		web_seed_t ent(url, auth, extra_headers);
 		ent.ephemeral = bool(flags & ephemeral);
+		ent.no_local_ips = bool(flags & no_local_ips);
 
 		// don't add duplicates
 		auto const it = std::find(m_web_seeds.begin(), m_web_seeds.end(), ent);
 		if (it != m_web_seeds.end()) return &*it;
-		m_web_seeds.push_back(ent);
+		m_web_seeds.emplace_back(std::move(ent));
 		set_need_save_resume();
 		update_want_tick();
 		return &m_web_seeds.back();

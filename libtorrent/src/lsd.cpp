@@ -14,15 +14,15 @@ see LICENSE file.
 #include <functional>
 #include <cstdio> // for vsnprintf
 
-#include "libtorrent/lsd.hpp"
+#include "libtorrent/aux_/lsd.hpp"
 #include "libtorrent/time.hpp"
-#include "libtorrent/random.hpp"
+#include "libtorrent/aux_/random.hpp"
 #include "libtorrent/aux_/http_parser.hpp"
-#include "libtorrent/socket_io.hpp" // for print_address
-#include "libtorrent/debug.hpp"
+#include "libtorrent/aux_/socket_io.hpp" // for print_address
+#include "libtorrent/aux_/debug.hpp"
 #include "libtorrent/hex.hpp" // to_hex, from_hex
 #include "libtorrent/aux_/numeric_cast.hpp"
-#include "libtorrent/enum_net.hpp"
+#include "libtorrent/aux_/enum_net.hpp"
 
 #include "libtorrent/aux_/disable_warnings_push.hpp"
 #include <boost/asio/ip/multicast.hpp>
@@ -30,7 +30,7 @@ see LICENSE file.
 
 using namespace std::placeholders;
 
-namespace libtorrent {
+namespace libtorrent::aux {
 
 namespace {
 
@@ -55,7 +55,7 @@ lsd::lsd(io_context& ios, aux::lsd_callback& cb
 	, m_netmask(netmask)
 	, m_socket(ios)
 	, m_broadcast_timer(ios)
-	, m_cookie((random(0x7fffffff) ^ std::uintptr_t(this)) & 0x7fffffff)
+	, m_cookie((aux::random(0x7fffffff) ^ std::uintptr_t(this)) & 0x7fffffff)
 {
 }
 
@@ -199,7 +199,7 @@ void lsd::on_announce(error_code const& ec)
 	m_socket.async_wait(udp::socket::wait_read
 		, std::bind(&lsd::on_announce, self(), _1));
 
-	if (!match_addr_mask(from.address(), m_listen_address, m_netmask))
+	if (!aux::match_addr_mask(from.address(), m_listen_address, m_netmask))
 	{
 		// we don't care about this network. Ignore this packet
 #ifndef TORRENT_DISABLE_LOGGING
@@ -296,7 +296,7 @@ void lsd::on_announce(error_code const& ec)
 			if (should_log())
 			{
 				debug_log("<== LSD: %s:%d ih: %s"
-					, print_address(from.address()).c_str()
+					, aux::print_address(from.address()).c_str()
 					, int(port), ih_str.c_str());
 			}
 #endif
@@ -314,4 +314,4 @@ void lsd::close()
 	m_disabled = true;
 }
 
-} // libtorrent namespace
+} // libtorrent::aux namespace

@@ -24,7 +24,7 @@ see LICENSE file.
 #include "libtorrent/time.hpp"
 #include "libtorrent/aux_/session_interface.hpp"
 #include "libtorrent/peer_info.hpp"
-#include "libtorrent/random.hpp"
+#include "libtorrent/aux_/random.hpp"
 #include "libtorrent/extensions.hpp"
 #include "libtorrent/ip_filter.hpp"
 #include "libtorrent/aux_/torrent_peer_allocator.hpp"
@@ -32,11 +32,11 @@ see LICENSE file.
 #include "libtorrent/aux_/ip_helpers.hpp" // for is_v6
 
 #if TORRENT_USE_ASSERTS
-#include "libtorrent/socket_io.hpp" // for print_endpoint
+#include "libtorrent/aux_/socket_io.hpp" // for print_endpoint
 #endif
 
 #ifndef TORRENT_DISABLE_LOGGING
-#include "libtorrent/socket_io.hpp" // for print_endpoint
+#include "libtorrent/aux_/socket_io.hpp" // for print_endpoint
 #endif
 
 using namespace std::placeholders;
@@ -1006,6 +1006,9 @@ namespace libtorrent::aux {
 			torrent_peer* p = *iter;
 			if (!p->is_rtc_addr)
 				return nullptr; // prefer the non-rtc peer
+
+			if (p->connection)
+				return nullptr; // the peer is already connected
 
 			// update and return it
 			p->port = remote.port();

@@ -12,10 +12,10 @@ see LICENSE file.
 #ifndef TORRENT_HTTP_STREAM_HPP_INCLUDED
 #define TORRENT_HTTP_STREAM_HPP_INCLUDED
 
-#include "libtorrent/proxy_base.hpp"
+#include "libtorrent/aux_/proxy_base.hpp"
 #include "libtorrent/aux_/string_util.hpp"
 #include "libtorrent/aux_/escape_string.hpp" // for base64encode
-#include "libtorrent/socket_io.hpp" // for print_endpoint
+#include "libtorrent/aux_/socket_io.hpp" // for print_endpoint
 
 namespace libtorrent::aux {
 
