@@ -23,9 +23,11 @@
 #include "BZUtils.h"
 #include "../FlyFeatures/flyServer.h"
 #include "ClientManager.h"
+#include "CompatibilityManager.h"
+#else
+#include "BaseUtil.h"
 #endif
 
-#include "CompatibilityManager.h"
 
 const FileFindIter FileFindIter::end;
 
@@ -103,7 +105,7 @@ int64_t File::getTimeStamp(const string& aFileName)
 {
 	WIN32_FIND_DATA fd;
 	HANDLE hFind = FindFirstFileEx(Text::toT(formatPath(aFileName)).c_str(),
-	                               CompatibilityManager::g_find_file_level,
+		FindExInfoBasic,
 	                               &fd,
 	                               FindExSearchNameMatch,
 	                               NULL,
@@ -556,7 +558,7 @@ string File::read()
 	setPos(0);
 	int64_t sz = getSize();
 	if (sz <= 0)
-		return Util::emptyString;
+		return string();
 	return read((uint32_t)sz);
 }
 uint64_t File::calcFilesSize(const string& path, const string& pattern)
@@ -564,7 +566,7 @@ uint64_t File::calcFilesSize(const string& path, const string& pattern)
 	uint64_t l_size = 0;
 	WIN32_FIND_DATA data;
 	HANDLE hFind = FindFirstFileEx(formatPath(Text::toT(path + pattern)).c_str(),
-	                               CompatibilityManager::g_find_file_level,
+		FindExInfoBasic,
 	                               &data,
 	                               FindExSearchNameMatch,
 	                               NULL,
@@ -612,8 +614,10 @@ void File::deleteFiles(const string& path, const string& pattern)
 	}
 	else
 	{
+#ifndef _CONSOLE
 		const string l_error = Util::translateError();
 		LogManager::message("File::deleteFiles error [" + path + "] code:" + l_error);
+#endif
 	}
 }
 StringList File::findFiles(const string& path, const string& pattern, bool p_append_path /*= true */)
@@ -629,7 +633,7 @@ StringList File::findFiles(const string& path, const string& pattern, bool p_app
 	};
 	WIN32_FIND_DATA data;
 	HANDLE hFind = FindFirstFileEx(formatPath(Text::toT(path + pattern)).c_str(),
-	                               CompatibilityManager::g_find_file_level,
+		FindExInfoBasic,
 	                               &data,
 	                               FindExSearchNameMatch,
 	                               NULL,
@@ -651,8 +655,10 @@ StringList File::findFiles(const string& path, const string& pattern, bool p_app
 	else
 	{
 		dcassert(0);
+#ifndef _CONSOLE
 		const string l_error = Util::translateError();
 		LogManager::message("File::findFiles error [" + path + "] code:" + l_error);
+#endif
 	}
 	return ret;
 }
@@ -662,11 +668,11 @@ void FileFindIter::init(const tstring & path)
 	//WIN32_FIND_DATA l_init = {0};
 	//m_data = l_init;
 	m_handle = FindFirstFileEx(File::formatPath(path).c_str(),
-	                           CompatibilityManager::g_find_file_level,
+		FindExInfoBasic,
 	                           &m_data,
 	                           FindExSearchNameMatch,
 	                           NULL,
-	                           CompatibilityManager::g_find_file_flags);
+		FIND_FIRST_EX_LARGE_FETCH);
 	if (m_handle == INVALID_HANDLE_VALUE)
 	{
 		// dcassert(0);
@@ -724,11 +730,13 @@ bool FileFindIter::DirData::isDirectory() const
 	return (dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) > 0;
 }
 
+#ifndef _CONSOLE
 bool FileFindIter::DirData::isHidden() const
 {
 	return ((dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) > 0
-	        || (CompatibilityManager::isWine() && cFileName[0] == L'.'));
+		|| (CompatibilityManager::isWine() && cFileName[0] == L'.'));
 }
+#endif
 bool FileFindIter::DirData::isLink() const
 {
 	return (dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) > 0;

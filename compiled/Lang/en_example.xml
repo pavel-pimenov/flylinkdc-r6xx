@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
-<recources>
+<resources>
 	<string name="AbortEm">Abort!</string>
 	<string name="AboutLinks">Links</string>
 	<string name="AboutParticipants">The project participants</string>
@@ -1893,4 +1893,4 @@
 	<string name="DatetimeMinutes">min.</string>
 	<string name="DatetimeSecond">second</string>
 	<string name="DatetimeSeconds">sec.</string>
-</recources>
+</resources>

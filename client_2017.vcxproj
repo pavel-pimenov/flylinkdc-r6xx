@@ -55,14 +55,14 @@
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -74,13 +74,13 @@
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -507,6 +507,7 @@
     <ClCompile Include="client\AdcHub.cpp" />
     <ClCompile Include="client\AdcSupports.cpp" />
     <ClCompile Include="client\ADLSearch.cpp" />
+    <ClCompile Include="client\BaseUtil.cpp" />
     <ClCompile Include="client\BufferedSocket.cpp" />
     <ClCompile Include="client\BZUtils.cpp" />
     <ClCompile Include="client\CFlyLockProfiler.cpp" />
@@ -520,6 +521,7 @@
     <ClCompile Include="client\ConnectivityManager.cpp" />
     <ClCompile Include="client\CryptoManager.cpp" />
     <ClCompile Include="client\DCPlusPlus.cpp" />
+    <ClCompile Include="client\debug.cpp" />
     <ClCompile Include="client\DebugManager.cpp" />
     <ClCompile Include="client\DirectoryListing.cpp" />
     <ClCompile Include="client\Download.cpp" />
@@ -654,6 +656,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="client\AdcSupports.h" />
+    <ClInclude Include="client\BaseUtil.h" />
     <ClInclude Include="client\CFlyLockProfiler.h" />
     <ClInclude Include="client\CFlyMediaInfo.h" />
     <ClInclude Include="client\CFlySearchItemTTH.h" />
@@ -798,26 +801,26 @@
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Building StringDefs.cpp and en_example.xml from StringDefs.h...</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">Building StringDefs.cpp and en_example.xml from StringDefs.h...</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">Building StringDefs.cpp and en_example.xml from StringDefs.h...</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(SolutionDir)tools\MakeDefs.exe" .\client\StringDefs.h .\client\StringDefs.cpp .\compiled\Lang\en_example.xml</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">"$(SolutionDir)tools\MakeDefs.exe" .\client\StringDefs.h .\client\StringDefs.cpp .\compiled\Lang\en_example.xml</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">"$(SolutionDir)tools\MakeDefs.exe" .\client\StringDefs.h .\client\StringDefs.cpp .\compiled\Lang\en_example.xml</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(SolutionDir)MakeDefs\MakeDefs.exe" .\client\StringDefs.h .\client\StringDefs.cpp .\compiled\Lang\en_example.xml</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">"$(SolutionDir)MakeDefs\MakeDefs.exe" .\client\StringDefs.h .\client\StringDefs.cpp .\compiled\Lang\en_example.xml</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">"$(SolutionDir)MakeDefs\MakeDefs.exe" .\client\StringDefs.h .\client\StringDefs.cpp .\compiled\Lang\en_example.xml</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\client\StringDefs.cpp;%(Outputs)</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">.\client\StringDefs.cpp;%(Outputs)</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">.\client\StringDefs.cpp;%(Outputs)</Outputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building StringDefs.cpp and en_example.xml from StringDefs.h...</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">"$(SolutionDir)tools\MakeDefs.exe" .\client\StringDefs.h .\client\StringDefs.cpp .\compiled\Lang\en_example.xml</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">"$(SolutionDir)MakeDefs\MakeDefs.exe" .\client\StringDefs.h .\client\StringDefs.cpp .\compiled\Lang\en_example.xml</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.\client\StringDefs.cpp;%(Outputs)</Outputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Building StringDefs.cpp and en_example.xml from StringDefs.h...</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">Building StringDefs.cpp and en_example.xml from StringDefs.h...</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">Building StringDefs.cpp and en_example.xml from StringDefs.h...</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"$(SolutionDir)tools\MakeDefs.exe" .\client\StringDefs.h .\client\StringDefs.cpp .\compiled\Lang\en_example.xml</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">"$(SolutionDir)tools\MakeDefs.exe" .\client\StringDefs.h .\client\StringDefs.cpp .\compiled\Lang\en_example.xml</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">"$(SolutionDir)tools\MakeDefs.exe" .\client\StringDefs.h .\client\StringDefs.cpp .\compiled\Lang\en_example.xml</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"$(SolutionDir)MakeDefs\MakeDefs.exe" .\client\StringDefs.h .\client\StringDefs.cpp .\compiled\Lang\en_example.xml</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">"$(SolutionDir)MakeDefs\MakeDefs.exe" .\client\StringDefs.h .\client\StringDefs.cpp .\compiled\Lang\en_example.xml</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">"$(SolutionDir)MakeDefs\MakeDefs.exe" .\client\StringDefs.h .\client\StringDefs.cpp .\compiled\Lang\en_example.xml</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.\client\StringDefs.cpp;%(Outputs)</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">.\client\StringDefs.cpp;%(Outputs)</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">.\client\StringDefs.cpp;%(Outputs)</Outputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building StringDefs.cpp and en_example.xml from StringDefs.h...</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"$(SolutionDir)tools\MakeDefs.exe" .\client\StringDefs.h .\client\StringDefs.cpp .\compiled\Lang\en_example.xml</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"$(SolutionDir)MakeDefs\MakeDefs.exe" .\client\StringDefs.h .\client\StringDefs.cpp .\compiled\Lang\en_example.xml</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.\client\StringDefs.cpp;%(Outputs)</Outputs>
     </CustomBuild>
     <ClInclude Include="client\StringSearch.h" />

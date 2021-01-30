@@ -18,7 +18,8 @@
 
 #include "stdinc.h"
 #include <boost/algorithm/string.hpp>
-#include "Util.h"
+#include "BaseUtil.h"
+#include "Text.h"
 
 namespace Text
 {
