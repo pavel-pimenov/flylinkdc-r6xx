@@ -32,6 +32,6 @@ namespace libtorrent::aux {
 		return r;
 	}
 
-	}
+}
 
 #endif
