@@ -32,9 +32,6 @@
 #include "../lua/lua.h"
 
 class AboutDlg : public CDialogImpl<AboutDlg>
-#ifdef _DEBUG
-	, boost::noncopyable
-#endif
 {
 	public:
 		enum { IDD = IDD_ABOUTBOX };

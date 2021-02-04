@@ -108,7 +108,7 @@ void AutoUpdate::startUpdateManually()
 		
 	m_manualUpdate = true;
 	
-	SET_SETTING(AUTOUPDATE_IGNORE_VERSION, Util::emptyString);
+	SET_SETTING(AUTOUPDATE_IGNORE_VERSION, BaseUtil::emptyString);
 	
 	addTask(START_UPDATE);
 }
@@ -1007,7 +1007,7 @@ bool AutoUpdate::startupUpdate()
 			fuSearch.DeleteAll();
 		}
 		::RemoveDirectory(m_updateFolder.c_str());
-		SET_SETTING(AUTOUPDATE_PATH_WITH_UPDATE, Util::emptyString);
+		SET_SETTING(AUTOUPDATE_PATH_WITH_UPDATE, BaseUtil::emptyString);
 		m_updateFolder.clear();
 	}
 	return false;

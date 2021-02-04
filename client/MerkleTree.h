@@ -40,9 +40,6 @@ const uint64_t MIN_BLOCK_SIZE = 65536;
 
 template < class Hasher, const size_t baseBlockSize = 1024 >
 class MerkleTree
-#ifdef _DEBUG
-//	, private boost::noncopyable TODO
-#endif
 {
 	public:
 		static const size_t BITS = Hasher::BITS;

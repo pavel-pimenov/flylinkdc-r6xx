@@ -1172,7 +1172,7 @@ bool WinUtil::browseDirectory(tstring& target, HWND owner /* = NULL */)
 	return false;
 }
 
-bool WinUtil::browseFile(tstring& target, HWND owner /* = NULL */, bool save /* = true */, const tstring& initialDir /* = Util::emptyString */, const TCHAR* types /* = NULL */, const TCHAR* defExt /* = NULL */)
+bool WinUtil::browseFile(tstring& target, HWND owner /* = NULL */, bool save /* = true */, const tstring& initialDir /* = BaseUtil::emptyString */, const TCHAR* types /* = NULL */, const TCHAR* defExt /* = NULL */)
 {
 	OPENFILENAME ofn = { 0 };       // common dialog box structure
 	target = Text::toT(Util::validateFileName(Text::fromT(target)));
@@ -2307,7 +2307,7 @@ bool WinUtil::openLink(const tstring& uri)
 	
 }
 
-void WinUtil::translateLinkToextProgramm(const tstring& url, const tstring& p_Extension /*= Util::emptyStringT*/, const tstring& p_openCmd /* = Util::emptyStringT*/)
+void WinUtil::translateLinkToextProgramm(const tstring& url, const tstring& p_Extension /*= BaseUtil::emptyStringT*/, const tstring& p_openCmd /* = BaseUtil::emptyStringT*/)
 {
 	tstring x;
 	if (p_openCmd.empty())
@@ -2652,7 +2652,7 @@ bool WinUtil::parseMagnetUri(const tstring& aUrl, DefinedMagnetAction Action /* 
 void WinUtil::OpenFileList(const tstring& filename, DefinedMagnetAction Action /* = MA_DEFAULT */)
 {
 	const UserPtr u = DirectoryListing::getUserFromFilename(Text::fromT(filename));
-	DirectoryListingFrame::openWindow(filename, Util::emptyStringT, HintedUser(u, Util::emptyString), 0, Util::isDclstFile(filename));
+	DirectoryListingFrame::openWindow(filename, BaseUtil::emptyStringT, HintedUser(u, BaseUtil::emptyString), 0, Util::isDclstFile(filename));
 }
 
 int WinUtil::textUnderCursor(POINT p, CEdit& ctrl, tstring& x)
@@ -3229,7 +3229,7 @@ tstring WinUtil::getNicks(const CID& cid, const string& hintUrl)
 {
 	const auto l_nicks = ClientManager::getNicks(cid, hintUrl);
 	if (l_nicks.empty())
-		return Util::emptyStringT;
+		return BaseUtil::emptyStringT;
 	else
 		return Text::toT(Util::toString(l_nicks));
 }
@@ -3242,14 +3242,14 @@ tstring WinUtil::getNicks(const UserPtr& u, const string& hintUrl)
 		return getNicks(u->getCID(), hintUrl);
 	}
 	else
-		return Util::emptyStringT;
+		return BaseUtil::emptyStringT;
 }
 
 tstring WinUtil::getNicks(const CID& cid, const string& hintUrl, bool priv)
 {
 	const auto l_nicks = ClientManager::getNicks(cid, hintUrl, priv);
 	if (l_nicks.empty())
-		return Util::emptyStringT;
+		return BaseUtil::emptyStringT;
 	else
 		return Text::toT(Util::toString(l_nicks));
 }
@@ -3903,7 +3903,7 @@ tstring WinUtil::GetAutoRunShortCutName()
 	// CSIDL_STARTUP
 	TCHAR startupPath[MAX_PATH];
 	if (!SHGetSpecialFolderPath(NULL, startupPath, CSIDL_STARTUP, TRUE))
-		return Util::emptyStringT;
+		return BaseUtil::emptyStringT;
 		
 	tstring autoRunShortCut = startupPath;
 	AppendPathSeparator(autoRunShortCut);

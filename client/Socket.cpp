@@ -842,7 +842,7 @@ string Socket::resolve(const string& aDns)
 		host = gethostbyname(aDns.c_str());
 		if (host == NULL)
 		{
-			return Util::emptyString;
+			return BaseUtil::emptyString;
 		}
 		sock_addr.sin_addr.s_addr = *((uint32_t*)host->h_addr);
 		return inet_ntoa(sock_addr.sin_addr);
@@ -1041,7 +1041,7 @@ string Socket::getRemoteHost(const string& aIp)
 {
 	dcassert(!aIp.empty());
 	if (aIp.empty())
-		return Util::emptyString;
+		return BaseUtil::emptyString;
 		
 	const unsigned long addr = inet_addr(aIp.c_str());
 	
@@ -1049,7 +1049,7 @@ string Socket::getRemoteHost(const string& aIp)
 	dcassert(h);
 	if (h == nullptr)
 	{
-		return Util::emptyString;
+		return BaseUtil::emptyString;
 	}
 	else
 	{

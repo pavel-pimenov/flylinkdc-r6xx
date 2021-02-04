@@ -997,9 +997,6 @@ class ATL_NO_VTABLE FlatTabCtrlImpl : public CWindowImpl< T, TBase, TWinTraits>
 		
 	private:
 		class TabInfo
-#ifdef _DEBUG
-			: public boost::noncopyable
-#endif
 		{
 			public:
 				typedef vector<TabInfo*> List;

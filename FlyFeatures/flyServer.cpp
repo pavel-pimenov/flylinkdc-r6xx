@@ -2321,7 +2321,7 @@ string CFlyServerJSON::postQuery(bool p_is_set,
 	if (IpGuard::check_ip_str(Socket::resolve(l_Server.getIp()), l_reason))
 	{
 		l_fly_server_log.step(" (" + l_Server.getIp() + "): IPGuard: " + l_reason);
-		return Util::emptyString;
+		return BaseUtil::emptyString;
 	}
 	std::vector<uint8_t> l_post_compress_query;
 	string l_log_string;
@@ -2514,7 +2514,7 @@ string CFlyServerJSON::postQuery(bool p_is_set,
 	}
 	l_Server.setTimeResponse(l_fly_server_log.calcSumTime());
 	if(l_result_query.empty()) // fix AddressSanitizer (ASan) for Windows [bug?]
-		return Util::emptyString;
+		return BaseUtil::emptyString;
 	else
 	return l_result_query;
 }
@@ -3351,7 +3351,7 @@ bool getMediaInfo(const string& p_name, CFlyMediaInfo& p_media, int64_t p_size, 
 					p_media.m_bitrate = bitRate;
 				wstring sFormat = g_media_info_lib.Get(MediaInfoLib::Stream_Audio, i, _T("Format"));
 #if defined (SSA_REMOVE_NEEDLESS_WORDS_FROM_VIDEO_AUDIO_INFO)
-				Text::replace_all(sFormat, _T(" Audio"), Util::emptyStringT);
+				Text::replace_all(sFormat, _T(" Audio"), BaseUtil::emptyStringT);
 #endif
 				const wstring sBitRate = g_media_info_lib.Get(MediaInfoLib::Stream_Audio, i, _T("BitRate/String"));
 				const wstring sChannelPos = g_media_info_lib.Get(MediaInfoLib::Stream_Audio, i, _T("ChannelPositions"));
@@ -3454,8 +3454,8 @@ bool getMediaInfo(const string& p_name, CFlyMediaInfo& p_media, int64_t p_size, 
 				{
 					wstring sVFormat = g_media_info_lib.Get(MediaInfoLib::Stream_Video, i, _T("Format"));
 #if defined (SSA_REMOVE_NEEDLESS_WORDS_FROM_VIDEO_AUDIO_INFO)
-					Text::replace_all(sVFormat, _T(" Video"), Util::emptyStringT);
-					Text::replace_all(sVFormat, _T(" Visual"), Util::emptyStringT);
+					Text::replace_all(sVFormat, _T(" Video"), BaseUtil::emptyStringT);
+					Text::replace_all(sVFormat, _T(" Visual"), BaseUtil::emptyStringT);
 #endif
 					wstring sVBitrate = g_media_info_lib.Get(MediaInfoLib::Stream_Video, i, _T("BitRate/String"));
 					wstring sVFrameRate = g_media_info_lib.Get(MediaInfoLib::Stream_Video, i, _T("FrameRate/String"));

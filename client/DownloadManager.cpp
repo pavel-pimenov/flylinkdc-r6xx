@@ -694,7 +694,7 @@ void DownloadManager::noSlots(UserConnection* aSource, const string& param)
 		return;
 	}
 	
-	string extra = param.empty() ? Util::emptyString : " - " + STRING(QUEUED) + ' ' + param;
+	string extra = param.empty() ? BaseUtil::emptyString : " - " + STRING(QUEUED) + ' ' + param;
 	failDownload(aSource, STRING(NO_SLOTS_AVAILABLE) + extra);
 }
 
@@ -855,7 +855,7 @@ void DownloadManager::on(AdcCommand::STA, UserConnection* aSource, const AdcComm
 					return;
 				case AdcCommand::ERROR_SLOTS_FULL:
 					string param;
-					noSlots(aSource, cmd.getParam("QP", 0, param) ? param : Util::emptyString);
+					noSlots(aSource, cmd.getParam("QP", 0, param) ? param : BaseUtil::emptyString);
 					return;
 			}
 		case AdcCommand::SEV_SUCCESS:

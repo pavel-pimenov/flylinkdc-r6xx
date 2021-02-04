@@ -90,7 +90,7 @@ class AutoArray
 		
 		AutoArray(const AutoArray&) = delete;
 		AutoArray& operator= (const AutoArray&) = delete;
-
+		
 	private:
 		TPtr p;
 };
@@ -129,22 +129,19 @@ class LocalArray
 		LocalArray& operator= (const LocalArray&) = delete;
 };
 
-namespace Util
+class BaseUtil
 {
-	extern const tstring emptyStringT;
-	extern const string emptyString;
-	extern const wstring emptyStringW;		
-	extern const std::vector<uint8_t> emptyByteVector;
+public:
+	static const tstring emptyStringT;
+	static const string emptyString;
+	static const wstring emptyStringW;
+	static const std::vector<uint8_t> emptyByteVector;
 
-	string translateError(unsigned error);
-	inline string translateError()
+	static string translateError(DWORD error);
+	static inline string translateError()
 	{
-#ifdef _WIN32
 		return translateError(GetLastError());
-#else
-		return translateError(errno);
-#endif
 	}
-}
+};
 
 #endif // BASE_UTIL_H_

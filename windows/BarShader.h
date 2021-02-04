@@ -146,9 +146,6 @@ class OperaColors
 		
 	private:
 		struct FloodCacheItem
-#ifdef _DEBUG
-			: boost::noncopyable
-#endif
 		{
 			FloodCacheItem() : w(0), h(0), hDC(nullptr), m_bitmap(nullptr)
 			{

@@ -56,9 +56,6 @@ STANDARD_EXCEPTION(SimpleXMLException);
  * and allows easy access to each element through a "current location".
  */
 class SimpleXML
-#ifdef _DEBUG
-	: private boost::noncopyable
-#endif
 {
 	public:
 		SimpleXML() : root("BOGUSROOT", string(), NULL), current(&root), found(false)
@@ -266,9 +263,6 @@ class SimpleXML
 		static const string utf8Header;
 	private:
 		class Tag
-#ifdef _DEBUG
-			: boost::noncopyable
-#endif
 		{
 			public:
 				typedef Tag* Ptr;

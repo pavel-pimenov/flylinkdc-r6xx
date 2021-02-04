@@ -493,7 +493,7 @@ void ADLSearchManager::matchesFile(DestDirList& destDirVector, DirectoryListing:
 				try
 				{
 					QueueManager::getInstance()->add(0, currentFile->getName(),
-					                                 currentFile->getSize(), currentFile->getTTH(), getUser()/*, Util::emptyString*/);
+					                                 currentFile->getSize(), currentFile->getTTH(), getUser()/*, BaseUtil::emptyString*/);
 				}
 				catch (const Exception& e)
 				{
@@ -649,7 +649,7 @@ void ADLSearchManager::matchListing(DirectoryListing& aDirList) noexcept
 	StringMap params;
 	if (aDirList.getUser())
 	{
-		params["userNI"] = ClientManager::getNicks(aDirList.getUser()->getCID(), Util::emptyString)[0];
+		params["userNI"] = ClientManager::getNicks(aDirList.getUser()->getCID(), BaseUtil::emptyString)[0];
 		params["userCID"] = aDirList.getUser()->getCID().toBase32();
 	}
 	setUser(aDirList.getUser());

@@ -358,14 +358,14 @@ bool FavoriteManager::addUserL(const UserPtr& aUser, FavoriteMap::iterator& iUse
 	iUser = g_fav_users_map.find(aUser->getCID());
 	if (iUser == g_fav_users_map.end() && create)
 	{
-		StringList hubs = ClientManager::getHubs(aUser->getCID(), Util::emptyString);
-		StringList nicks = ClientManager::getNicks(aUser->getCID(), Util::emptyString);
+		StringList hubs = ClientManager::getHubs(aUser->getCID(), BaseUtil::emptyString);
+		StringList nicks = ClientManager::getNicks(aUser->getCID(), BaseUtil::emptyString);
 		
 		/// @todo make this an error probably...
 		if (hubs.empty())
-			hubs.push_back(Util::emptyString);
+			hubs.push_back(BaseUtil::emptyString);
 		if (nicks.empty())
-			nicks.push_back(Util::emptyString);
+			nicks.push_back(BaseUtil::emptyString);
 			
 		iUser = g_fav_users_map.insert(std::make_pair(aUser->getCID(), FavoriteUser(aUser, nicks[0], hubs[0]))).first;
 		updateEmptyStateL();
@@ -510,7 +510,7 @@ string FavoriteManager::getUserUrl(const UserPtr& aUser)
 			return fu.getUrl();
 		}
 	}
-	return Util::emptyString;
+	return BaseUtil::emptyString;
 }
 
 FavoriteHubEntry* FavoriteManager::addFavorite(const FavoriteHubEntry& aEntry, const AutoStartType p_autostart/* = NOT_CHANGE*/)

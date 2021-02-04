@@ -105,7 +105,7 @@ int64_t File::getTimeStamp(const string& aFileName)
 {
 	WIN32_FIND_DATA fd;
 	HANDLE hFind = FindFirstFileEx(Text::toT(formatPath(aFileName)).c_str(),
-		FindExInfoBasic,
+	                               FindExInfoBasic,
 	                               &fd,
 	                               FindExSearchNameMatch,
 	                               NULL,
@@ -566,7 +566,7 @@ uint64_t File::calcFilesSize(const string& path, const string& pattern)
 	uint64_t l_size = 0;
 	WIN32_FIND_DATA data;
 	HANDLE hFind = FindFirstFileEx(formatPath(Text::toT(path + pattern)).c_str(),
-		FindExInfoBasic,
+	                               FindExInfoBasic,
 	                               &data,
 	                               FindExSearchNameMatch,
 	                               NULL,
@@ -633,7 +633,7 @@ StringList File::findFiles(const string& path, const string& pattern, bool p_app
 	};
 	WIN32_FIND_DATA data;
 	HANDLE hFind = FindFirstFileEx(formatPath(Text::toT(path + pattern)).c_str(),
-		FindExInfoBasic,
+	                               FindExInfoBasic,
 	                               &data,
 	                               FindExSearchNameMatch,
 	                               NULL,
@@ -668,11 +668,11 @@ void FileFindIter::init(const tstring & path)
 	//WIN32_FIND_DATA l_init = {0};
 	//m_data = l_init;
 	m_handle = FindFirstFileEx(File::formatPath(path).c_str(),
-		FindExInfoBasic,
+	                           FindExInfoBasic,
 	                           &m_data,
 	                           FindExSearchNameMatch,
 	                           NULL,
-		FIND_FIRST_EX_LARGE_FETCH);
+	                           FIND_FIRST_EX_LARGE_FETCH);
 	if (m_handle == INVALID_HANDLE_VALUE)
 	{
 		// dcassert(0);
@@ -734,7 +734,7 @@ bool FileFindIter::DirData::isDirectory() const
 bool FileFindIter::DirData::isHidden() const
 {
 	return ((dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) > 0
-		|| (CompatibilityManager::isWine() && cFileName[0] == L'.'));
+	        || (CompatibilityManager::isWine() && cFileName[0] == L'.'));
 }
 #endif
 bool FileFindIter::DirData::isLink() const

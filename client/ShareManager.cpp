@@ -321,7 +321,7 @@ string ShareManager::toRealPath(const TTHValue& tth)
 			}
 		}
 	}
-	return Util::emptyString;
+	return BaseUtil::emptyString;
 }
 
 #ifdef _DEBUG

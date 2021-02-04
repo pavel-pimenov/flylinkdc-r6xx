@@ -48,7 +48,7 @@ bool getMediaInfo(const string& p_name, CFlyMediaInfo& p_media, int64_t p_size, 
 //=======================================================================
 struct CServerItem
 {
-	CServerItem(const string& p_ip = Util::emptyString, const uint16_t p_port = 0) : m_ip(p_ip), m_port(p_port), m_time_response(0)
+	CServerItem(const string& p_ip = BaseUtil::emptyString, const uint16_t p_port = 0) : m_ip(p_ip), m_port(p_port), m_time_response(0)
 	{
 	}
 	string getServerAndPort() const
@@ -531,9 +531,6 @@ class CFlyServerAdapter
 };
 
 class CFlyServerJSON
-#ifdef _DEBUG
-	: boost::noncopyable
-#endif
 {
 	public:
 		static bool login();

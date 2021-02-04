@@ -996,7 +996,7 @@ LRESULT MainFrame::onTimer(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOOL
 		{
 			dcassert(!ClientManager::isStartup());
 			TStringList* Stats = new TStringList();
-			Stats->push_back(Util::getAway() ? TSTRING(AWAY_STATUS) : Util::emptyStringT);
+			Stats->push_back(Util::getAway() ? TSTRING(AWAY_STATUS) : BaseUtil::emptyStringT);
 #ifdef FLYLINKDC_CALC_MEMORY_USAGE
 			const wstring l_dlstr = Util::formatBytesW(g_downdiff);
 			const wstring l_ulstr = Util::formatBytesW(g_updiff);
@@ -2654,7 +2654,7 @@ LRESULT MainFrame::OnClose(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, 
 					bool bForceStopExit = false;
 					if (AutoUpdate::getExitOnUpdate())
 					{
-						HashManager::getInstance()->stopHashing(Util::emptyString);
+						HashManager::getInstance()->stopHashing(BaseUtil::emptyString);
 					}
 					else
 					{
@@ -2935,7 +2935,7 @@ LRESULT MainFrame::onOpenFileList(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl
 		const string& l_own_list_file = ShareManager::getInstance()->getOwnListFile();
 		if (!l_own_list_file.empty())
 		{
-			DirectoryListingFrame::openWindow(Text::toT(l_own_list_file), Util::emptyStringT, HintedUser(ClientManager::getMe_UseOnlyForNonHubSpecifiedTasks(), Util::emptyString), 0);
+			DirectoryListingFrame::openWindow(Text::toT(l_own_list_file), BaseUtil::emptyStringT, HintedUser(ClientManager::getMe_UseOnlyForNonHubSpecifiedTasks(), BaseUtil::emptyString), 0);
 		}
 		return 0;
 	}
@@ -3936,7 +3936,7 @@ void MainFrame::AddFolderShareFromShell(const tstring& infolder)
 
 void MainFrame::on(UserManagerListener::OutgoingPrivateMessage, const UserPtr& to, const string& hint, const tstring& message) noexcept
 {
-	PrivateFrame::openWindow(nullptr, HintedUser(to, hint), Util::emptyString, message);
+	PrivateFrame::openWindow(nullptr, HintedUser(to, hint), BaseUtil::emptyString, message);
 }
 
 void MainFrame::on(UserManagerListener::OpenHub, const string& p_url) noexcept

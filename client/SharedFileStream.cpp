@@ -360,7 +360,7 @@ size_t SharedFileStream::flushBuffers(bool aForce)
 				return m_sfh->m_file.flushBuffers(aForce);
 			}
 		}
-		catch (const Exception& )
+		catch (const Exception&)
 		{
 			dcassert(0);
 			//LogManager::message("SharedFileStream::flush() = " + e.getError());

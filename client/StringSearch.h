@@ -32,10 +32,6 @@
  * @todo Perhaps find an algo suitable for matching multiple substrings.
  */
 class StringSearch
-#ifdef _DEBUG
-	: boost::noncopyable
-#endif
-	
 {
 	public:
 		typedef vector<StringSearch> List;

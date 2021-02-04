@@ -359,7 +359,7 @@ string Players::getMPCSpam()
 	}
 	else
 	{
-		return Util::emptyString;
+		return BaseUtil::emptyString;
 	}
 }
 
@@ -388,7 +388,7 @@ string Players::getSpotifySpam(HWND playerWnd) {
         ritem.assign("\"name\":\"([^\"]+)\",\"uri\":\"([^\"]+)");
         rname.assign("(?<=\"name\":\")([^\"]+)");
         rhash.assign("(?<=spotify:track:)([^\"]+)");
-        params["link"] = Util::emptyString;
+        params["link"] = BaseUtil::emptyString;
 
         StringList usersList = File::findFiles(path, "*");
 
@@ -426,7 +426,7 @@ string Players::getSpotifySpam(HWND playerWnd) {
         return Util::formatParams(SETTING(SPOTIFY_FORMAT), params);
     }
 
-    return Util::emptyString;
+    return BaseUtil::emptyString;
 }
 */
 
@@ -684,7 +684,7 @@ string Players::getWMPSpam(HWND playerWnd /*= NULL*/, HWND g_mainWnd /*= NULL*/)
 					}
 					else
 					{
-						params["rating"] = Util::emptyString;
+						params["rating"] = BaseUtil::emptyString;
 					}
 				}
 				
@@ -739,7 +739,7 @@ string Players::getWMPSpam(HWND playerWnd /*= NULL*/, HWND g_mainWnd /*= NULL*/)
 	}
 	else
 	{
-		return Util::emptyString;
+		return BaseUtil::emptyString;
 	}
 }
 
@@ -934,7 +934,7 @@ string Players::getWinampSpam(HWND playerWnd, int playerType)
 	}
 	else
 	{
-		return Util::emptyString;
+		return BaseUtil::emptyString;
 	}
 }
 
@@ -943,10 +943,10 @@ string Players::getJASpam()
 {
 	MainFrame* mFrame = MainFrame::getMainFrame();
 	if (!mFrame)
-		return Util::emptyString;
+		return BaseUtil::emptyString;
 	JAControl* jaControl = mFrame->getJAControl();
 	if (!jaControl || !jaControl->isJARunning())
-		return Util::emptyString;
+		return BaseUtil::emptyString;
 	StringMap params;
 	jaControl->JAUpdateAllInfo();
 	params["filepath"] = Text::acpToUtf8(jaControl->getJATrackFileName());

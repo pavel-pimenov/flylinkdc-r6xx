@@ -47,7 +47,7 @@ string Transfer::getConnectionQueueToken() const
 	}
 	else
 	{
-		return Util::emptyString;
+		return BaseUtil::emptyString;
 	}
 }
 
@@ -99,7 +99,7 @@ void Transfer::getParams(const UserConnection* aSource, StringMap& params) const
 	if (user)
 	{
 		params["userCID"] = user->getCID().toBase32();
-		params["userNI"] = !user->getLastNick().empty() ? user->getLastNick() : Util::toString(ClientManager::getNicks(user->getCID(), Util::emptyString, false));
+		params["userNI"] = !user->getLastNick().empty() ? user->getLastNick() : Util::toString(ClientManager::getNicks(user->getCID(), BaseUtil::emptyString, false));
 		params["userI4"] = aSource->getRemoteIp();
 		
 		StringList hubNames = ClientManager::getHubNames(user->getCID(), hint);

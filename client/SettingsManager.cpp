@@ -920,7 +920,7 @@ void SettingsManager::setDefaults()
 	//setDefault(PROTECT_START, false);
 	//setDefault(PROTECT_CLOSE, false);
 	//setDefault(STRIP_TOPIC, false);
-	//setDefault(SKIPLIST_SHARE, Util::emptyString);
+	//setDefault(SKIPLIST_SHARE, BaseUtil::emptyString);
 	setDefault(TB_IMAGE_SIZE, 24);
 	setDefault(TB_IMAGE_SIZE_HOT, 24);
 	//setDefault(SHOW_WINAMP_CONTROL, false);
@@ -928,7 +928,7 @@ void SettingsManager::setDefaults()
 	setDefault(PM_PREVIEW, TRUE);
 	//setDefault(FILTER_ENTER, false);
 	setDefault(HIGH_PRIO_FILES, "*.sfv;*.nfo;*sample*;*cover*;*.pls;*.m3u");
-	//setDefault(LOW_PRIO_FILES, Util::emptyString);
+	//setDefault(LOW_PRIO_FILES, BaseUtil::emptyString);
 	setDefault(POPUP_TIME, 5);
 	setDefault(POPUP_W, 200);
 	setDefault(POPUP_H, 90);
@@ -936,7 +936,7 @@ void SettingsManager::setDefaults()
 	//setDefault(AWAY_START, 0);
 	//setDefault(AWAY_END, 0);
 	//setDefault(AWAY_TIME_THROTTLE, false);
-	//setDefault(SECONDARY_AWAY_MESSAGE, Util::emptyString);
+	//setDefault(SECONDARY_AWAY_MESSAGE, BaseUtil::emptyString);
 	setDefault(PROGRESSBAR_ODC_BUMPED, TRUE);
 	setDefault(TOP_SPEED, 100);
 	setDefault(TOP_UP_SPEED, 50);
@@ -969,7 +969,7 @@ void SettingsManager::setDefaults()
 	setDefault(FORMAT_BB_CODES_COLORS, TRUE);
 #endif
 	setDefault(FORMAT_BOT_MESSAGE, TRUE);
-	//setDefault(PROT_USERS, Util::emptyString);
+	//setDefault(PROT_USERS, BaseUtil::emptyString);
 	//setDefault(MEDIA_PLAYER, 0);
 	setDefault(WMP_FORMAT, "+me playing: '%[title]' at %[bitrate] (Windows Media Player %[version]) %[magnet]");
 	setDefault(ITUNES_FORMAT, "+me listens '%[artist] - %[title]' • listened to %[percent] (%[length], %[bitrate], iTunes %[version]) %[magnet]");
@@ -1313,23 +1313,23 @@ void SettingsManager::load(const string& aFileName)
 	{
 	
 		// Formats changed, might as well remove these...
-		set(LOG_FORMAT_POST_DOWNLOAD, Util::emptyString);
-		set(LOG_FORMAT_POST_UPLOAD, Util::emptyString);
-		set(LOG_FORMAT_MAIN_CHAT, Util::emptyString);
-		set(LOG_FORMAT_PRIVATE_CHAT, Util::emptyString);
-		set(LOG_FORMAT_STATUS, Util::emptyString);
-		set(LOG_FORMAT_SYSTEM, Util::emptyString);
+		set(LOG_FORMAT_POST_DOWNLOAD, BaseUtil::emptyString);
+		set(LOG_FORMAT_POST_UPLOAD, BaseUtil::emptyString);
+		set(LOG_FORMAT_MAIN_CHAT, BaseUtil::emptyString);
+		set(LOG_FORMAT_PRIVATE_CHAT, BaseUtil::emptyString);
+		set(LOG_FORMAT_STATUS, BaseUtil::emptyString);
+		set(LOG_FORMAT_SYSTEM, BaseUtil::emptyString);
 #ifdef RIP_USE_LOG_PROTOCOL
-		set(LOG_FORMAT_PROTOCOL, Util::emptyString);
+		set(LOG_FORMAT_PROTOCOL, BaseUtil::emptyString);
 #endif
-		set(LOG_FILE_MAIN_CHAT, Util::emptyString);
-		set(LOG_FILE_STATUS, Util::emptyString);
-		set(LOG_FILE_PRIVATE_CHAT, Util::emptyString);
-		set(LOG_FILE_UPLOAD, Util::emptyString);
-		set(LOG_FILE_DOWNLOAD, Util::emptyString);
-		set(LOG_FILE_SYSTEM, Util::emptyString);
+		set(LOG_FILE_MAIN_CHAT, BaseUtil::emptyString);
+		set(LOG_FILE_STATUS, BaseUtil::emptyString);
+		set(LOG_FILE_PRIVATE_CHAT, BaseUtil::emptyString);
+		set(LOG_FILE_UPLOAD, BaseUtil::emptyString);
+		set(LOG_FILE_DOWNLOAD, BaseUtil::emptyString);
+		set(LOG_FILE_SYSTEM, BaseUtil::emptyString);
 #ifdef RIP_USE_LOG_PROTOCOL
-		set(LOG_FILE_PROTOCOL, Util::emptyString);
+		set(LOG_FILE_PROTOCOL, BaseUtil::emptyString);
 #endif
 	}
 	
@@ -2092,7 +2092,7 @@ unsigned short SettingsManager::getNewPortValue(unsigned short p_OldPortValue)
 string SettingsManager::getSoundFilename(const SettingsManager::StrSetting p_sound)
 {
 	if (getBool(SOUNDS_DISABLED, true))
-		return Util::emptyString;
+		return BaseUtil::emptyString;
 		
 	return get(p_sound, true);
 }

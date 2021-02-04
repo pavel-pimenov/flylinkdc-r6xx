@@ -247,7 +247,7 @@ string CompatibilityManager::getIncompatibleSoftwareMessage()
 		temp += ' ' + Util::getWikiLink() + "incompatiblesoftware";
 		return temp;
 	}
-	return Util::emptyString;
+	return BaseUtil::emptyString;
 }
 
 string CompatibilityManager::getFormatedOsVersion()
@@ -647,7 +647,7 @@ string CompatibilityManager::generateGlobalMemoryStatusMessage()
 		memoryInfo += "\t\tThere are\t" + Util::formatBytes(curMemoryInfo.ullAvailPhys) + " free of physical memory.\r\n";
 		return memoryInfo;
 	}
-	return Util::emptyString;
+	return BaseUtil::emptyString;
 }
 
 float CompatibilityManager::ProcSpeedCalc() // moved form WinUtil.
@@ -794,7 +794,7 @@ string CompatibilityManager::generateProgramStats() // moved form WinUtil.
 WORD CompatibilityManager::getDllPlatform(const string& fullpath)
 {
 	WORD bRet = IMAGE_FILE_MACHINE_UNKNOWN;
-	PLOADED_IMAGE imgLoad = ::ImageLoad(Text::fromUtf8(fullpath).c_str(), Util::emptyString.c_str());
+	PLOADED_IMAGE imgLoad = ::ImageLoad(Text::fromUtf8(fullpath).c_str(), BaseUtil::emptyString.c_str());
 	if (imgLoad && imgLoad->FileHeader)
 	{
 		bRet = imgLoad->FileHeader->FileHeader.Machine;

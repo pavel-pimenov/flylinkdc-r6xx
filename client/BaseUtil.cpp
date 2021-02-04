@@ -2,26 +2,26 @@
 #include "BaseUtil.h"
 #include "StrUtil.h"
 
-const string Util::emptyString;
-const wstring Util::emptyStringW;
-const tstring Util::emptyStringT;
-const vector<uint8_t> Util::emptyByteVector;
+const string BaseUtil::emptyString;
+const wstring BaseUtil::emptyStringW;
+const tstring BaseUtil::emptyStringT;
+const vector<uint8_t> BaseUtil::emptyByteVector;
 
-string Util::translateError(unsigned error)
+string BaseUtil::translateError(DWORD error)
 {
 #ifdef _WIN32
 	LPCVOID lpSource = nullptr;
 	LPTSTR lpMsgBuf = 0;
 	DWORD chars = FormatMessage(
-		FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-		lpSource,
-		error,
+	                  FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+	                  lpSource,
+	                  error,
 #if defined (_CONSOLE) || defined (_DEBUG)
-		MAKELANGID(LANG_NEUTRAL, SUBLANG_ENGLISH_US), // US
+	                  MAKELANGID(LANG_NEUTRAL, SUBLANG_ENGLISH_US), // US
 #else
-		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
+	                  MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
 #endif
-		(LPTSTR) &lpMsgBuf, 0, nullptr);
+	                  (LPTSTR) &lpMsgBuf, 0, nullptr);
 	string tmp;
 	if (chars != 0)
 	{
@@ -29,7 +29,7 @@ string Util::translateError(unsigned error)
 		// Free the buffer.
 		LocalFree(lpMsgBuf);
 		string::size_type i = 0;
-	
+		
 		while ((i = tmp.find_first_of("\r\n", i)) != string::npos)
 		{
 			tmp.erase(i, 1);
