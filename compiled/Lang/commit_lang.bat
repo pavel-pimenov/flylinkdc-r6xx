@@ -1,1 +1,0 @@
-svn commit -m"# [lang] an auto commit from localization system..."
