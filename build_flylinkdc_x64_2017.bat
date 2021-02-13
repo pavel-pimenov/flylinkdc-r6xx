@@ -18,8 +18,6 @@ if not exist .\compiled\FlylinkDC_x64.exe goto :builderror
 call src_gen_filename.bat -x64
 7z.exe a -r -t7z -m0=lzma -mx=9 -mfb=512 -md=1024m -ms=on -x@src_exclude_hard.txt  -ir@src_include_bin_x64.txt %FILE_NAME%.7z compiled/FlylinkDC_x64.exe 
 
-svn log > changelog-flylinkdc-r6xx-svn.txt
-
 for /l %%i in (1,1,20) do echo @tools\replace_str.vbs " | %%i lines" "" changelog-flylinkdc-r6xx-svn.txt
 
 call src_gen_filename.bat -debug-info

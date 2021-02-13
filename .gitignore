@@ -4,7 +4,7 @@ client.key
 *.sqlite-shm
 *.sqlite-wal
 *.sqlite-journal
-
+*.7z
 /client/StringDefs.cpp
 /compiled/*.exp
 /vc17/*
@@ -19,3 +19,4 @@ client.key
 *.vcxproj.FileListAbsolute.txt
 unsuccessfulbuild
 /compiled/GDIImage.htm
+P2PGuard.ini
