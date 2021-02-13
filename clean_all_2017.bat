@@ -5,8 +5,8 @@ del .\GdiOle\GdiOle_i.h
 del .\GdiOle\GdiOle_p.c
 del .\compiled\*.pdb
 del .\compiled\*.exp
-del .\compiled\FlylinkDC.exe
 del .\compiled\FlylinkDC_x64.exe
+del .\MakeDefs\MakeDefs.exe
 del /S /F /Q vc17
 rmdir /S /Q .\compiled\Settings\BackUp
 rmdir /S /Q .\compiled\Settings\FileLists
