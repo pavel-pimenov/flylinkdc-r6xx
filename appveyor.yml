@@ -1,10 +1,10 @@
-version: r504-master-{build}
+version: r600-master-{build}
 
 branches:
   only:
     - master
 
-image: Visual Studio 2017
+image: Visual Studio 2019
 
 clone_depth: 1
 
@@ -18,3 +18,4 @@ configuration:
 build:
   project: FlylinkDC_2017.sln
   verbosity: minimal
+  

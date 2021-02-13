@@ -1,6 +1,6 @@
 del .\compiled\FlylinkDC_x64.exe
 del .\compiled\FlylinkDC_x64.pdb
-call UpdateRevision.bat %1 %2 %3 %4
+call update_revision.bat %1 %2 %3 %4
 if errorlevel 1 goto :error
 
 call tools\ExtractVersion.bat %1 %2 %3 %4
