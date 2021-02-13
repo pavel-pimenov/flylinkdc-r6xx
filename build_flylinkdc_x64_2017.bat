@@ -8,9 +8,6 @@ if errorlevel 1 goto :error
 
 call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat"
 chcp 437
-cd MakeDefs
-"C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\MSBuild\Current\Bin\MSBuild.exe" MakeDefs.sln /m /t:Rebuild /p:COnfiguration="Release" /p:Platform="x64"
-cd ..
 "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\MSBuild\Current\Bin\MSBuild.exe" FlylinkDC_2017.sln /m /t:Rebuild /p:COnfiguration="Release" /p:Platform="x64"
 
 if not exist .\compiled\FlylinkDC_x64.exe goto :builderror

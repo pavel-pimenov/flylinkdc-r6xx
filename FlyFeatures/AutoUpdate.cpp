@@ -973,7 +973,7 @@ void AutoUpdate::runFlyUpdate()
 		}
 		else
 		{
-			const tstring l_error = TSTRING(AUTOUPDATE_ERROR_START_FLYUPDATE_FAILED) + Text::toT(Util::translateError());
+			const tstring l_error = TSTRING(AUTOUPDATE_ERROR_START_FLYUPDATE_FAILED) + Text::toT(BaseUtil::translateError());
 			CFlyServerJSON::pushError(63, Text::fromT(l_error));
 			MessageBox(nullptr, l_error.c_str(), getFlylinkDCAppCaptionWithVersionT().c_str(), MB_OK | MB_ICONERROR);
 		}

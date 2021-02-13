@@ -89,7 +89,7 @@ void File::init(const tstring& aFileName, int access, int mode, bool isAbsoluteP
 		}
 #endif
 #endif
-		throw FileException(Util::translateError());
+		throw FileException(BaseUtil::translateError());
 	}
 }
 
@@ -111,7 +111,7 @@ int64_t File::getTimeStamp(const string& aFileName)
 	                               NULL,
 	                               0);
 	if (hFind == INVALID_HANDLE_VALUE)
-		throw FileException(Util::translateError() + ": " + aFileName);
+		throw FileException(BaseUtil::translateError() + ": " + aFileName);
 	FindClose(hFind);
 	return *(int64_t*)&fd.ftLastWriteTime;
 }
@@ -120,11 +120,11 @@ void File::setTimeStamp(const string& aFileName, const uint64_t stamp)
 {
 	HANDLE hCreate = CreateFile(formatPath(Text::toT(aFileName)).c_str(), FILE_WRITE_ATTRIBUTES, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
 	if (hCreate == INVALID_HANDLE_VALUE)
-		throw FileException(Util::translateError() + ": " + aFileName);
+		throw FileException(BaseUtil::translateError() + ": " + aFileName);
 	if (!SetFileTime(hCreate, NULL, NULL, (FILETIME*)&stamp))
 	{
 		CloseHandle(hCreate);
-		throw FileException(Util::translateError() + ": " + aFileName);
+		throw FileException(BaseUtil::translateError() + ": " + aFileName);
 	}
 	CloseHandle(hCreate);
 }
@@ -208,14 +208,14 @@ void File::setPos(int64_t pos)
 	LARGE_INTEGER x = {0};
 	x.QuadPart = pos;
 	if (!::SetFilePointerEx(h, x, &x, FILE_BEGIN))
-		throw(FileException(Util::translateError()));
+		throw(FileException(BaseUtil::translateError()));
 }
 int64_t File::setEndPos(int64_t pos)
 {
 	LARGE_INTEGER x = {0};
 	x.QuadPart = pos;
 	if (!::SetFilePointerEx(h, x, &x, FILE_END))
-		throw(FileException(Util::translateError()));
+		throw(FileException(BaseUtil::translateError()));
 	return x.QuadPart;
 }
 
@@ -224,7 +224,7 @@ void File::movePos(int64_t pos)
 	LARGE_INTEGER x = {0};
 	x.QuadPart = pos;
 	if (!::SetFilePointerEx(h, x, &x, FILE_CURRENT))
-		throw(FileException(Util::translateError()));
+		throw(FileException(BaseUtil::translateError()));
 }
 
 size_t File::read(void* buf, size_t& len)
@@ -232,7 +232,7 @@ size_t File::read(void* buf, size_t& len)
 	DWORD x = 0;
 	if (!::ReadFile(h, buf, (DWORD)len, &x, NULL))
 	{
-		throw (FileException(Util::translateError()));
+		throw (FileException(BaseUtil::translateError()));
 	}
 	len = x;
 	return x;
@@ -243,7 +243,7 @@ size_t File::write(const void* buf, size_t len)
 	DWORD x = 0;
 	if (!::WriteFile(h, buf, (DWORD)len, &x, NULL))
 	{
-		throw FileException(Util::translateError());
+		throw FileException(BaseUtil::translateError());
 	}
 	if (x != len)
 	{
@@ -256,7 +256,7 @@ void File::setEOF()
 	dcassert(isOpen());
 	if (!SetEndOfFile(h))
 	{
-		throw FileException(Util::translateError());
+		throw FileException(BaseUtil::translateError());
 	}
 }
 #ifdef _DEBUG
@@ -298,7 +298,7 @@ size_t File::flushBuffers(bool aForce)
 			if (!ClientManager::isBeforeShutdown()) // fix https://drdump.com/Bug.aspx?ProblemID=135087
 			{
 				CFlyServerJSON::pushError(33, l_error);
-				throw FileException(Util::translateError());
+				throw FileException(BaseUtil::translateError());
 			}
 		}
 	}
@@ -370,7 +370,7 @@ void File::copyFile(const tstring & source, const tstring & target)
 {
 	if (!::CopyFile(formatPath(source).c_str(), formatPath(target).c_str(), FALSE))
 	{
-		throw FileException(Util::translateError());
+		throw FileException(BaseUtil::translateError());
 	}
 }
 #ifndef _CONSOLE

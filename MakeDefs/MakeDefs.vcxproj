@@ -152,6 +152,7 @@
       <DataExecutionPrevention>
       </DataExecutionPrevention>
       <ProgramDatabaseFile />
+      <OutputFile>$(SolutionDir)\MakeDefs\$(TargetName)$(TargetExt)</OutputFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -190,6 +191,7 @@
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
+      <OutputFile>$(SolutionDir)\MakeDefs\$(TargetName)$(TargetExt)</OutputFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -240,7 +242,7 @@
       </DataExecutionPrevention>
       <TargetMachine>MachineX64</TargetMachine>
       <ProgramDatabaseFile />
-      <OutputFile>$(SolutionDir)$(TargetName)$(TargetExt)</OutputFile>
+      <OutputFile>$(SolutionDir)\MakeDefs\$(TargetName)$(TargetExt)</OutputFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -277,6 +279,7 @@
       <DataExecutionPrevention>
       </DataExecutionPrevention>
       <TargetMachine>MachineX64</TargetMachine>
+      <OutputFile>$(SolutionDir)\MakeDefs\$(TargetName)$(TargetExt)</OutputFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
