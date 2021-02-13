@@ -1,5 +1,3 @@
-copy CustomLocations.bmp ..
-copy CustomLocations.ini ..
 wget -N --tries=999 http://upd.emule-security.org/ipfilter.zip
 7z.exe x ipfilter.zip -y
 del ipfilter.zip
