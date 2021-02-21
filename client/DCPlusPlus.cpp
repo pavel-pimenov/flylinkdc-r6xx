@@ -34,7 +34,6 @@
 //#include "GPGPUManager.h"
 #include "../FlyFeatures/flyServer.h"
 #include "../windows/ToolbarManager.h"
-//#include "syslog/syslog.h"
 
 #include "IpGuard.h"
 #include "PGLoader.h"
