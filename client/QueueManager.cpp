@@ -1813,6 +1813,7 @@ void QueueManager::setFile(const DownloadPtr& d)
 			if (!File::isExist(qi->getTempTarget()))
 			{
 				// When trying the download the next time, the resume pos will be reset
+                qi->setLastSize(0); // https://github.com/zipper9/blacklink/commit/b27085b74a555cce3804066b9f8e25684800c2a1
 				throw QueueException(STRING(TARGET_REMOVED));
 			}
 		}

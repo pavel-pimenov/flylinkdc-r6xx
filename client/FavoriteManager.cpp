@@ -1057,12 +1057,6 @@ void FavoriteManager::load()
 				e->setLastSeen(l_tok[4]);
 				if (l_tok.size() > 5) //-V112
 				{
-#ifdef _DEBUG
-					if (l_tok[5] == "+")
-					{
-						int a = 0;
-					}
-#endif
 					e->setOpenTab(l_tok[5]);
 				}
 			}

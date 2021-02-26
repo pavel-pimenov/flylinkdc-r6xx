@@ -157,7 +157,7 @@ void LogManager::log(const string& p_area, const string& p_msg) noexcept
 		}
 	}
 	dcassert(!l_area.empty());
-	if (l_is_new_path)
+	if (l_is_new_path && !l_area.empty())
 	{
 		File::ensureDirectory(l_area);
 	}

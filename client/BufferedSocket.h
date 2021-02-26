@@ -292,9 +292,6 @@ class BufferedSocket : public Speaker<BufferedSocketListener>, private Thread
 		void checkSocket();
 		
 		void setSocket(std::unique_ptr<Socket> && s);
-		void setOptions()
-		{
-		}
 		void shutdown();
 		void addTask(Tasks task, TaskData* data);
 		void addTaskL(Tasks task, TaskData* data);

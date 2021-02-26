@@ -136,7 +136,6 @@ uint16_t BufferedSocket::accept(const Socket& srv, bool secure, bool allowUntrus
 	auto ret = s->accept(srv);
 	
 	setSocket(move(s));
-	setOptions();
 	
 	addTask(ACCEPTED, nullptr);
 	

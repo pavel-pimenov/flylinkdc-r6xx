@@ -77,9 +77,6 @@ std::unordered_set<unsigned> CFlyServerConfig::g_exclude_error_log;
 std::unordered_set<uint16_t> CFlyServerConfig::g_guard_tcp_port;
 FastCriticalSection CFlyServerConfig::g_cs_guard_tcp_port;
 std::unordered_set<unsigned> CFlyServerConfig::g_exclude_cid_error_log;
-#ifdef FLYLINKDC_USE_SYSLOG
-std::unordered_set<unsigned> CFlyServerConfig::g_exclude_error_syslog;
-#endif
 std::vector<CServerItem> CFlyServerConfig::g_mirror_read_only_servers;
 std::vector<CServerItem> CFlyServerConfig::g_mirror_test_port_servers;
 std::vector<CServerItem> CFlyServerConfig::g_torrent_dht_servers;
@@ -234,13 +231,6 @@ bool CFlyServerConfig::isBlockIP(const string& p_ip)
 	}
 	return false;
 }
-//======================================================================================================
-#ifdef FLYLINKDC_USE_SYSLOG
-bool CFlyServerConfig::isErrorSysLog(unsigned p_error_code)
-{
-	return g_exclude_error_syslog.find(p_error_code) == g_exclude_error_syslog.end();
-}
-#endif
 //======================================================================================================
 bool CFlyServerConfig::isGuardTCPPort(uint16_t p_port)
 {
@@ -643,12 +633,6 @@ void CFlyServerConfig::loadConfig()
 					{
 						g_exclude_cid_error_log.insert(Util::toInt(n));
 					});
-#ifdef FLYLINKDC_USE_SYSLOG
-					l_xml.getChildAttribSplit("exclude_error_syslog", g_exclude_error_syslog, [this](const string & n)
-					{
-						g_exclude_error_syslog.insert(Util::toInt(n));
-					});
-#endif
 					// Достанем RO-зеркала
 					l_xml.getChildAttribSplit("mirror_read_only_server", g_mirror_read_only_servers, [this](const string & n)
 					{
@@ -1961,24 +1945,6 @@ bool CFlyServerJSON::pushTestPort(
 	return l_is_send;
 }
 //======================================================================================================
-#ifdef FLYLINKDC_USE_SYSLOG
-void CFlyServerJSON::pushSyslogError(const string& p_error)
-{
-	string l_cid;
-	string l_pid;
-	if (ClientManager::isValidInstance())
-	{
-		l_cid = ClientManager::getMyCID().toBase32();
-		l_pid = ClientManager::getMyPID().toBase32();
-	}
-	else
-	{
-		l_cid = "[CID==null]";
-	}
-	syslog(LOG_USER | LOG_INFO, "%s %s %s [%s]", l_cid.c_str(), l_pid.c_str(), p_error.c_str(), Text::fromT(g_full_user_agent).c_str());
-}
-#endif
-//======================================================================================================
 bool CFlyServerJSON::pushError(unsigned p_error_code, string p_error, bool p_is_include_disk_info /* = false*/) // Last Code = 92 (36,58,44,49,83 - устарели)
 {
 	bool l_is_send  = false;
@@ -1991,12 +1957,6 @@ bool CFlyServerJSON::pushError(unsigned p_error_code, string p_error, bool p_is_
 			l_cid = '[' + ClientManager::getMyCID().toBase32() + ']';
 		}
 		p_error = l_cid + "[" + A_REVISION_NUM_STR + "][BUG][" + Util::toString(p_error_code) + "] " + p_error;
-#ifdef FLYLINKDC_USE_SYSLOG
-		if (CFlyServerConfig::isErrorSysLog(p_error_code))
-		{
-			pushSyslogError(p_error);
-		}
-#endif
 		CFlyLock(g_cs_error_report);
 		if (CFlyServerConfig::isErrorLog(p_error_code))
 		{
