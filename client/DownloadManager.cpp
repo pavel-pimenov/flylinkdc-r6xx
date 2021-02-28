@@ -678,13 +678,13 @@ void DownloadManager::endData(UserConnection* aSource)
 	checkDownloads(aSource);
 }
 
-void DownloadManager::on(UserConnectionListener::MaxedOut, UserConnection* aSource, const string& param) noexcept
+void DownloadManager::on(UserConnectionListener::MaxedOut, UserConnection* aSource, const std::string& param) noexcept
 {
 	dcassert(!ClientManager::isBeforeShutdown());
 	noSlots(aSource, param);
 }
 
-void DownloadManager::noSlots(UserConnection* aSource, const string& param)
+void DownloadManager::noSlots(UserConnection* aSource, const std::string& param)
 {
 	dcassert(!ClientManager::isBeforeShutdown());
 	if (aSource->getState() != UserConnection::STATE_SND)
@@ -694,18 +694,18 @@ void DownloadManager::noSlots(UserConnection* aSource, const string& param)
 		return;
 	}
 	
-	string extra = param.empty() ? BaseUtil::emptyString : " - " + STRING(QUEUED) + ' ' + param;
+	const std::string extra = param.empty() ? BaseUtil::emptyString : " - " + STRING(QUEUED) + ' ' + param;
 	failDownload(aSource, STRING(NO_SLOTS_AVAILABLE) + extra);
 }
 
-void DownloadManager::onFailed(UserConnection* aSource, const string& aError)
+void DownloadManager::onFailed(UserConnection* aSource, const std::string& aError)
 {
 	// TODO dcassert(!ClientManager::isBeforeShutdown());
 	remove_idlers(aSource);
 	failDownload(aSource, aError);
 }
 
-void DownloadManager::failDownload(UserConnection* aSource, const string& p_reason)
+void DownloadManager::failDownload(UserConnection* aSource, const std::string& p_reason)
 {
 	// TODO dcassert(!ClientManager::isBeforeShutdown());
 	auto d = aSource->getDownload();
@@ -779,7 +779,7 @@ void DownloadManager::removeDownload(const DownloadPtr& d)
 			{
 #ifdef _DEBUG
 				dcassert(0);
-				LogManager::message("DownloadManager::removeDownload error =" + string(e.what()));
+				LogManager::message("DownloadManager::removeDownload error =" + std::string(e.what()));
 #endif // _DEBUG
 			}
 		}
@@ -799,7 +799,7 @@ void DownloadManager::removeDownload(const DownloadPtr& d)
 	}
 }
 
-void DownloadManager::abortDownload(const string& aTarget)
+void DownloadManager::abortDownload(const std::string& aTarget)
 {
 	dcassert(!ClientManager::isBeforeShutdown());
 	CFlyReadLock(*g_csDownload);
@@ -814,7 +814,7 @@ void DownloadManager::abortDownload(const string& aTarget)
 	}
 }
 
-void DownloadManager::on(UserConnectionListener::ListLength, UserConnection* aSource, const string& aListLength) noexcept
+void DownloadManager::on(UserConnectionListener::ListLength, UserConnection* aSource, const std::string& aListLength) noexcept
 {
 	dcassert(!ClientManager::isBeforeShutdown());
 	ClientManager::setListLength(aSource->getUser(), aListLength);
@@ -835,7 +835,7 @@ void DownloadManager::on(AdcCommand::STA, UserConnection* aSource, const AdcComm
 		return;
 	}
 	
-	const string& err = cmd.getParameters()[0];
+	const std::string err = cmd.getParameters()[0];
 	if (err.length() != 3)
 	{
 		aSource->disconnect();
@@ -854,7 +854,7 @@ void DownloadManager::on(AdcCommand::STA, UserConnection* aSource, const AdcComm
 					fileNotAvailable(aSource);
 					return;
 				case AdcCommand::ERROR_SLOTS_FULL:
-					string param;
+					std::string param;
 					noSlots(aSource, cmd.getParam("QP", 0, param) ? param : BaseUtil::emptyString);
 					return;
 			}
