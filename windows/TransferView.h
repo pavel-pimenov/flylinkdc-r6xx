@@ -75,7 +75,9 @@ class TransferView : public CWindowImpl<TransferView>, private DownloadManagerLi
 #endif
 		COMMAND_ID_HANDLER(IDC_FORCE, onForce)
 		COMMAND_ID_HANDLER(IDC_SEARCH_ALTERNATES, onSearchAlternates)
+#ifdef FLYLINKDC_USE_P2P_GUARD
 		COMMAND_ID_HANDLER(IDC_ADD_P2P_GUARD, onAddP2PGuard)
+#endif
 		COMMAND_ID_HANDLER(IDC_REMOVE_TORRENT, onRemoveTorrent);
 		COMMAND_ID_HANDLER(IDC_REMOVE_TORRENT_AND_FILE, onRemoveTorrentAndFile);
 		COMMAND_ID_HANDLER(IDC_PAUSE_TORRENT, onPauseTorrent);
@@ -163,11 +165,13 @@ class TransferView : public CWindowImpl<TransferView>, private DownloadManagerLi
 			return 0;
 		}
 		
+#ifdef FLYLINKDC_USE_P2P_GUARD
 		LRESULT onAddP2PGuard(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 		{
 			ctrlTransfers.forEachSelected(&ItemInfo::disconnectAndP2PGuard);
 			return 0;
 		}
+#endif
 		
 		LRESULT onRemoveTorrent(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 		{
@@ -343,7 +347,9 @@ class TransferView : public CWindowImpl<TransferView>, private DownloadManagerLi
 				
 				ItemInfo* parent;
 				HintedUser m_hintedUser;
+#ifdef FLYLINKDC_USE_P2P_GUARD
 				tstring m_p2p_guard_text;
+#endif
 #ifdef FLYLINKDC_USE_ANTIVIRUS_DB
 				tstring m_antivirus_text;
 #endif
@@ -379,7 +385,9 @@ class TransferView : public CWindowImpl<TransferView>, private DownloadManagerLi
 				}
 				
 				void disconnect();
+#ifdef FLYLINKDC_USE_P2P_GUARD
 				void disconnectAndP2PGuard();
+#endif
 				void removeTorrent();
 				void removeTorrentAndFile();
 				void pauseTorrentFile();

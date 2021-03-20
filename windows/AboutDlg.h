@@ -95,13 +95,14 @@ class AboutDlg : public CDialogImpl<AboutDlg>
 			SetDlgItemText(IDC_THANKS_STATIC, (TSTRING(ABOUT_PARTICIPANTS) + L':').c_str());
 			SetDlgItemText(IDC_LINKS_STATIC, (TSTRING(ABOUT_LINKS) + L':').c_str());
 			SetDlgItemText(IDC_SIDEPRO_STATIC, (TSTRING(ABOUT_SIDE_PROJECTS) + L':').c_str());
+			//extern const char zlibng_string[];
 			static const TCHAR l_Party_Software[] =
 			    _T("libtorrent ") _T(LIBTORRENT_VERSION) _T(" git-") _T(LIBTORRENT_REVISION) _T("\r\n")
 			    _T("sqlite ") _T(SQLITE_VERSION) _T("\r\n")
 			    _T("LevelDB ") _T(LEVELDB_VER) _T("\r\n")
 			    _T("boost ") _T(BOOST_LIB_VERSION) _T("\r\n")
 			    _T("bzip ") _T(BZ_VERSION) _T("\r\n")
-			    _T("zlib ") _T(ZLIB_VERSION) _T("\r\n")
+			    _T("zlib-ng ") _T(ZLIBNG_VERSION) _T("\r\n")
 			    _T("jsoncpp 1.8.3\r\n")
 			    _T("ZenLib 0.4.37\r\n")
 			    _T(OPENSSL_VERSION_TEXT) _T("\r\n")
@@ -163,4 +164,4 @@ class AboutDlg : public CDialogImpl<AboutDlg>
 		CFlyHyperLink m_PVSStudio;
 };
 
-#endif // !defined(ABOUT_DLG_H)
+#endif //

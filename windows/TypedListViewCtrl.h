@@ -252,7 +252,7 @@ class TypedListViewCtrl : public CWindowImpl<TypedListViewCtrl<T, ctrlId>, CList
 						if (1) //l_column_info.m_is_owner_draw == false || l_column_info.m_is_first_set == false) // TODO - на OwnerDraw пропускать вызов getText но если не делать SetText - глючит инфа в подсказке на юзере
 						{
 							const auto l_index = m_columnIndexes[l_sub_item];
-							const auto& l_text = ((T*)di->item.lParam)->getText(l_index);
+							const auto l_text = ((T*)di->item.lParam)->getText(l_index);
 							setText(di->item, l_text);
 							//l_column_info.m_is_first_set = true;
 							//dcdebug("!!!!!!!!!!! OWNER_DRAW - onGetDispInfo l_index = %d setText \n", int(l_sub_item));

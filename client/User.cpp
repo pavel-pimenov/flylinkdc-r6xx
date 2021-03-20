@@ -905,6 +905,7 @@ void FavoriteUser::update(const OnlineUser& info)
 
 void Identity::calcP2PGuard()
 {
+#ifdef FLYLINKDC_USE_P2P_GUARD
 	if (!m_is_p2p_guard_calc)
 	{
 		if (getIp().to_ulong() && Util::isPrivateIp(getIp().to_ulong()) == false)
@@ -914,6 +915,7 @@ void Identity::calcP2PGuard()
 			m_is_p2p_guard_calc = true;
 		}
 	}
+#endif
 }
 #ifdef FLYLINKDC_USE_ANTIVIRUS_DB
 unsigned char Identity::calcVirusType(bool p_force /* = false */)
@@ -1185,7 +1187,9 @@ void Identity::getReport(string& p_report) const
 		appendIfValueNotEmpty("DC client", getStringParam("AP"));
 		appendIfValueNotEmpty("Client version", getStringParam("VE"));
 		
+#ifdef FLYLINKDC_USE_P2P_GUARD
 		appendIfValueNotEmpty("P2P Guard", getP2PGuard());
+#endif
 #ifdef FLYLINKDC_USE_ANTIVIRUS_DB
 		appendIfValueNotEmpty("Antivirus database", getVirusDesc());
 #endif

@@ -671,7 +671,9 @@ LRESULT SearchFrame::onCreate(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*
 	ctrlResults.setColumnOwnerDraw(COLUMN_ANTIVIRUS);
 	ctrlResults.SetColumnWidth(COLUMN_ANTIVIRUS, 0);
 #endif
+#ifdef FLYLINKDC_USE_P2P_GUARD
 	ctrlResults.setColumnOwnerDraw(COLUMN_P2P_GUARD);
+#endif
 	
 	ctrlHubs.InsertColumn(0, _T("Dummy"), LVCFMT_LEFT, LVSCW_AUTOSIZE, 0);
 	SET_LIST_COLOR(ctrlHubs);
@@ -2051,7 +2053,11 @@ const tstring SearchFrame::SearchInfo::getText(uint8_t col) const
 			case COLUMN_IP:
 				return Text::toT(m_sr.getIPAsString());
 			case COLUMN_P2P_GUARD:
+#ifdef FLYLINKDC_USE_P2P_GUARD
 				return Text::toT(m_sr.getP2PGuard());
+#else
+				return BaseUtil::emptyStringT;
+#endif
 			case COLUMN_TTH:
 				return m_sr.getType() == SearchResult::TYPE_FILE ? Text::toT(m_sr.getTTH().toBase32()) : BaseUtil::emptyStringT;
 			case COLUMN_LOCATION:
@@ -4222,6 +4228,7 @@ LRESULT SearchFrame::onCustomDraw(int /*idCtrl*/, LPNMHDR pnmh, BOOL& /*bHandled
 			const auto l_column_id = ctrlResults.findColumn(cd->iSubItem);
 			if (!si->m_is_torrent)
 			{
+#ifdef FLYLINKDC_USE_P2P_GUARD
 				if (l_column_id == COLUMN_P2P_GUARD)
 				{
 					CRect rc;
@@ -4240,6 +4247,7 @@ LRESULT SearchFrame::onCustomDraw(int /*idCtrl*/, LPNMHDR pnmh, BOOL& /*bHandled
 					}
 					return CDRF_SKIPDEFAULT;
 				}
+#endif
 #ifdef FLYLINKDC_USE_ANTIVIRUS_DB
 				else if (l_column_id == COLUMN_ANTIVIRUS)
 				{
@@ -4293,12 +4301,14 @@ LRESULT SearchFrame::onCustomDraw(int /*idCtrl*/, LPNMHDR pnmh, BOOL& /*bHandled
 							l_step += 25;
 						}
 #endif
+#ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
 						const POINT p = { rc.left + l_step, top };
 						if (si->m_location.getFlagIndex() > 0)
 						{
 							g_flagImage.DrawLocation(cd->nmcd.hdc, si->m_location, p);
 							l_step += 25;
 						}
+#endif
 						top = rc.top + (rc.Height() - 15 /*WinUtil::getTextHeight(cd->nmcd.hdc)*/ - 1) / 2;
 						const auto l_desc = si->m_location.getDescription();
 						if (!l_desc.empty())

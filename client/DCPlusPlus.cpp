@@ -104,11 +104,14 @@ void startup(PROGRESSCALLBACKPROC pProgressCallbackProc, void* pProgressParam, G
 #ifdef FLYLINKDC_USE_GEO_IP
 	LOAD_STEP("Geo IP", Util::loadGeoIp());
 #endif
+#ifdef FLYLINKDC_USE_P2P_GUARD
 	LOAD_STEP("P2P Guard", Util::loadP2PGuard()); // Этот грузить всегда первым - выполняет зачистку базы
 	LOAD_STEP("iblocklist.com", Util::loadIBlockList());
+#endif
 	
+#ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
 	LOAD_STEP("Custom Locations", Util::loadCustomlocations());
-	
+#endif
 #ifdef FLYLINKDC_USE_GPU_TTH
 	LOAD_STEP("TTH on GPU", GPGPUTTHManager::newInstance());
 #endif

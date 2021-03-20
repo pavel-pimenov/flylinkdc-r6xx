@@ -1296,10 +1296,8 @@ extern TransferTreeImage g_TransferTreeImage;
 class FlagImage : public BaseImageList
 {
 	public:
-		uint8_t m_flagImageCount;
-		FlagImage() : m_flagImageCount(0)
-		{
-		}
+		uint8_t m_flagImageCount = 0;
+		FlagImage() {}
 		void init();
 		using BaseImageList::Draw;
 #ifdef FLYLINKDC_USE_GEO_IP
@@ -1311,10 +1309,12 @@ class FlagImage : public BaseImageList
 			}
 		}
 #endif
+#ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
 		void DrawLocation(HDC p_DC, const Util::CustomNetworkIndex& p_location, const POINT& p_pt)
 		{
 			Draw(p_DC, p_location.getFlagIndex() + m_flagImageCount, p_pt);
 		}
+#endif
 };
 
 extern FlagImage g_flagImage;

@@ -344,7 +344,7 @@ namespace {
 			return false;
 		}
 
-		std::time_t const mtime(dict.dict_find_int_value("mtime", 0));
+		std::time_t const mtime(static_cast<std::time_t>(dict.dict_find_int_value("mtime", 0)));
 
 		char const* pieces_root = nullptr;
 
@@ -381,7 +381,7 @@ namespace {
 			}
 		}
 
-		files.add_file_borrow(ec, name, path, file_size, file_flags, nullptr
+		files.add_file_borrow(ec, name, path, file_size, file_flags
 			, mtime, symlink_path, pieces_root);
 		return !ec;
 	}
@@ -415,7 +415,7 @@ namespace {
 			return false;
 		}
 
-		std::time_t const mtime(dict.dict_find_int_value("mtime", 0));
+		std::time_t const mtime(static_cast<std::time_t>(dict.dict_find_int_value("mtime", 0)));
 
 		std::string path = root_dir;
 		string_view filename;
@@ -497,10 +497,12 @@ namespace {
 		if (path.find("_____padding_file_") != std::string::npos)
 			file_flags |= file_storage::flag_pad_file;
 
+#if TORRENT_ABI_VERSION < 4
 		bdecode_node const fh = dict.dict_find_string("sha1");
 		char const* filehash = nullptr;
 		if (fh && fh.string_length() == 20)
 			filehash = info_buffer + (fh.string_offset() - info_offset);
+#endif
 
 		std::string symlink_path;
 		if (file_flags & file_storage::flag_symlink)
@@ -532,7 +534,10 @@ namespace {
 			filename = {};
 		}
 
-		files.add_file_borrow(ec, filename, path, file_size, file_flags, filehash
+		files.add_file_borrow(ec, filename, path, file_size, file_flags
+#if TORRENT_ABI_VERSION < 4
+			, filehash
+#endif
 			, mtime, symlink_path);
 		return !ec;
 	}
@@ -1805,8 +1810,8 @@ namespace {
 		return m_info_hash.get_best();
 	}
 
-	bool torrent_info::v1() const { return m_piece_hashes != 0; }
-	bool torrent_info::v2() const { return !m_piece_layers.empty(); }
+	bool torrent_info::v1() const { return m_info_hash.has_v1(); }
+	bool torrent_info::v2() const { return m_info_hash.has_v2(); }
 
 TORRENT_VERSION_NAMESPACE_3_END
 

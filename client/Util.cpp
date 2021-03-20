@@ -388,6 +388,7 @@ int Util::getFlagIndexByCode(uint16_t p_countryCode)
 	return 0;
 }
 //==========================================================================
+#ifdef FLYLINKDC_USE_P2P_GUARD
 void Util::loadIBlockList()
 {
 	// https://www.iblocklist.com/
@@ -545,7 +546,7 @@ void Util::loadP2PGuard()
 		LogManager::message("Error open " + fileName);
 	}
 }
-	
+#endif
 //==========================================================================
 #ifdef FLYLINKDC_USE_GEO_IP
 void Util::loadGeoIp()
@@ -613,6 +614,7 @@ void Util::loadGeoIp()
 }
 #endif
 	
+#ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
 void customLocationLog(const string& p_line, const string& p_error)
 {
 	if (BOOLSETTING(LOG_CUSTOM_LOCATION))
@@ -730,6 +732,7 @@ void Util::loadCustomlocations()
 		}
 	}
 }
+#endif
 	
 void Util::migrate(const string& p_file)
 {
@@ -2133,7 +2136,7 @@ string Util::getRandomNick(size_t iNickLength /*= 20*/)
 	return name;
 }
 //======================================================================================================================================
-tstring Util::CustomNetworkIndex::getCountry() const
+tstring Util::CountryIndex::getCountry() const
 {
 #ifdef FLYLINKDC_USE_GEO_IP
 	if (m_country_cache_index > 0)
@@ -2149,25 +2152,43 @@ tstring Util::CustomNetworkIndex::getCountry() const
 	}
 }
 //======================================================================================================================================
+#ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
+//======================================================================================================================================
 tstring Util::CustomNetworkIndex::getDescription() const
 {
-	if (m_location_cache_index > 0)
-	{
-		const CFlyLocationDesc l_res =  CFlylinkDBManager::getInstance()->get_location_from_cache(m_location_cache_index);
-		return l_res.m_description;
-	}
 #ifdef FLYLINKDC_USE_GEO_IP
-	else if (m_country_cache_index > 0)
+	if (m_country_cache_index > 0)
 	{
-		const CFlyLocationDesc l_res =  CFlylinkDBManager::getInstance()->get_country_from_cache(m_country_cache_index);
+		const CFlyLocationDesc l_res = CFlylinkDBManager::getInstance()->get_country_from_cache(m_country_cache_index);
 		return l_res.m_description;
 	}
 	else
 #endif
-	{
-		return BaseUtil::emptyStringT;
-	}
+		if (m_location_cache_index > 0)
+		{
+			const CFlyLocationDesc l_res = CFlylinkDBManager::getInstance()->get_location_from_cache(m_location_cache_index);
+			return l_res.m_description;
+		}
+		{
+			return BaseUtil::emptyStringT;
+		}
 }
+#else
+//======================================================================================================================================
+tstring Util::CountryIndex::getDescription() const
+{
+#ifdef FLYLINKDC_USE_GEO_IP
+	if (m_country_cache_index > 0)
+	{
+		const CFlyLocationDesc l_res = CFlylinkDBManager::getInstance()->get_country_from_cache(m_country_cache_index);
+		return l_res.m_description;
+	}
+#endif
+	return BaseUtil::emptyStringT;
+}
+#endif
+//======================================================================================================================================
+#ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
 //======================================================================================================================================
 int32_t Util::CustomNetworkIndex::getFlagIndex() const
 {
@@ -2180,9 +2201,10 @@ int32_t Util::CustomNetworkIndex::getFlagIndex() const
 		return 0;
 	}
 }
+#endif
 //======================================================================================================================================
 #ifdef FLYLINKDC_USE_GEO_IP
-int16_t Util::CustomNetworkIndex::getCountryIndex() const
+int16_t Util::CountryIndex::getCountryIndex() const
 {
 	if (m_country_cache_index > 0)
 	{
@@ -2200,13 +2222,15 @@ Util::CustomNetworkIndex Util::getIpCountry(uint32_t p_ip, bool p_is_use_only_ca
 	if (p_ip && p_ip != INADDR_NONE)
 	{
 		uint16_t l_country_index = 0;
-		uint32_t  l_location_index = uint32_t(-1);
+		uint32_t l_location_index = uint32_t(-1);
 		CFlylinkDBManager::getInstance()->get_country_and_location(p_ip, l_country_index, l_location_index, p_is_use_only_cache);
+#ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
 		if (l_location_index > 0)
 		{
 			const CustomNetworkIndex l_index(l_location_index, l_country_index);
 			return l_index;
 		}
+#endif
 #ifdef FLYLINKDC_USE_MEDIAINFO_SERVER_COLLECT_LOST_LOCATION
 		else
 		{
@@ -2218,7 +2242,11 @@ Util::CustomNetworkIndex Util::getIpCountry(uint32_t p_ip, bool p_is_use_only_ca
 #endif //FLYLINKDC_USE_MEDIAINFO_SERVER_COLLECT_LOST_LOCATION
 		if (l_country_index)
 		{
+#ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
 			const CustomNetworkIndex l_index(l_location_index, l_country_index);
+#else
+			const CustomNetworkIndex l_index(l_country_index);
+#endif
 			return l_index;
 		}
 	}
@@ -2227,7 +2255,12 @@ Util::CustomNetworkIndex Util::getIpCountry(uint32_t p_ip, bool p_is_use_only_ca
 		dcdebug(string("Invalid IP on Util::getIpCountry: " + Util::toString(p_ip) + '\n').c_str());
 		dcassert(!p_ip);
 	}
+#ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
 	static const CustomNetworkIndex g_unknownLocationIndex(0, 0);
+#else
+	static const CustomNetworkIndex g_unknownLocationIndex(0);
+#endif
+	
 	return g_unknownLocationIndex;
 }
 //======================================================================================================================================
@@ -2277,7 +2310,7 @@ string Util::getIETFLang()
 	Text::replace_all(l_lang, ".xml", "");
 	return l_lang;
 }
-
+	
 	
 TCHAR* Util::strstr(const TCHAR *str1, const TCHAR *str2, int *pnIdxFound)
 {
@@ -2310,9 +2343,11 @@ TCHAR* Util::strstr(const TCHAR *str1, const TCHAR *str2, int *pnIdxFound)
 	
 int Util::DefaultSort(const wchar_t *a, const wchar_t *b, bool noCase /*=  true*/)
 {
-	{
 		return noCase ? lstrcmpi(a, b) : lstrcmp(a, b);
-	}
+}
+int Util::DefaultSort(const tstring& a, const tstring& b, bool noCase /*=  true*/)
+{
+	return noCase ? lstrcmpi(a.c_str(), b.c_str()) : lstrcmp(a.c_str(), b.c_str());
 }
 void Util::setLimiter(bool aLimiter)
 {

@@ -77,15 +77,17 @@ LRESULT RangesPage::onInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lPar
 
 void  RangesPage::loadManualP2PGuard()
 {
+#ifdef FLYLINKDC_USE_P2P_GUARD
 	m_ManualP2PGuard = CFlylinkDBManager::getInstance()->load_manual_p2p_guard();
 	StringTokenizer<string> l_lines(m_ManualP2PGuard, "\r\n");
 	for (auto i = 0; i < l_lines.getTokens().size(); ++i)
 	{
 		m_list_box.AddString(Text::toT(l_lines.getTokens()[i]).c_str());
 	}
-	
+#endif
 }
 
+#ifdef FLYLINKDC_USE_P2P_GUARD
 LRESULT RangesPage::onRemoveP2PManual(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
 	int n = m_list_box.GetSelCount();
@@ -110,6 +112,7 @@ LRESULT RangesPage::onRemoveP2PManual(WORD /*wNotifyCode*/, WORD wID, HWND /*hWn
 	loadManualP2PGuard();
 	return 0;
 }
+#endif
 
 LRESULT RangesPage::onItemchangedDirectories(int /*idCtrl*/, LPNMHDR pnmh, BOOL& /*bHandled*/)
 {

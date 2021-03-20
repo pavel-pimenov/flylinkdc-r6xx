@@ -217,11 +217,14 @@ class Util : public BaseUtil
 		static const tstring m_dot_dotT;
 		static NUMBERFMT g_nf;
 		static void initialize();
+#ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
 		static void loadCustomlocations();
+#endif
 		static void loadGeoIp();
+#ifdef FLYLINKDC_USE_P2P_GUARD
 		static void loadP2PGuard();
 		static void loadIBlockList();
-		
+#endif
 		static bool isNmdc(const tstring& p_HubURL);
 		static bool isNmdcS(const tstring& p_HubURL);
 		static bool isAdc(const tstring& p_HubURL);
@@ -387,7 +390,7 @@ class Util : public BaseUtil
 		}
 		
 		static string getIETFLang();
-	
+		
 		static TCHAR* strstr(const TCHAR *str1, const TCHAR *str2, int *pnIdxFound);
 		
 		static time_t getStartTime()
@@ -909,7 +912,7 @@ class Util : public BaseUtil
 		static wstring::size_type findSubString(const wstring& aString, const wstring& aSubString, wstring::size_type start = 0) noexcept;
 		
 		static int DefaultSort(const wchar_t* a, const wchar_t* b, bool noCase = true);
-		
+		static int DefaultSort(const tstring& a, const tstring& b, bool noCase /*=  true*/);
 		static bool getAway()
 		{
 			return g_away;
@@ -1060,36 +1063,55 @@ class Util : public BaseUtil
 		static const tstring getModuleFileName();
 		static const string getModuleCustomFileName(const string& p_file_name);
 		
-		struct CustomNetworkIndex
+		class CountryIndex
 		{
 			public:
-				explicit CustomNetworkIndex() :
-					m_location_cache_index(-1),
-					m_country_cache_index(-1)
-				{
-				}
-				explicit CustomNetworkIndex(int32_t p_location_cache_index, int16_t p_country_cache_index) :
-					m_location_cache_index(p_location_cache_index),
+				explicit CountryIndex() {}
+				explicit CountryIndex(int16_t p_country_cache_index) :
 					m_country_cache_index(p_country_cache_index)
 				{
 				}
 				bool isNew() const
 				{
-					return m_location_cache_index == -1 && m_country_cache_index == -1;
+					return m_country_cache_index == -1;
 				}
 				bool isKnown() const
 				{
-					return m_location_cache_index >= 0 || m_country_cache_index >= 0 ;
+					return m_country_cache_index >= 0;
+				}
+				tstring getCountry() const;
+				int16_t getCountryIndex() const;
+				tstring getDescription() const;
+		protected:
+				int16_t m_country_cache_index = -1;
+		};
+#ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
+
+		class CustomNetworkIndex : public CountryIndex
+		{
+			public:
+				explicit CustomNetworkIndex() {}
+				explicit CustomNetworkIndex(int32_t p_location_cache_index, int16_t p_country_cache_index) : CountryIndex(p_country_cache_index)
+					, m_location_cache_index(p_location_cache_index)
+				{
+				}
+				bool isNew() const
+				{
+					return CountryIndex::isNew() && m_location_cache_index == -1;
+				}
+				bool isKnown() const
+				{
+					return CountryIndex::isKnown() && m_location_cache_index >= 0;
 				}
 				tstring getDescription() const;
-				tstring getCountry() const;
 				int32_t getFlagIndex() const;
-				int16_t getCountryIndex() const;
 			private:
-				int16_t m_country_cache_index;
-				int32_t m_location_cache_index;
+				int32_t m_location_cache_index = -1;
 		};
-		
+#else
+		typedef  CountryIndex CustomNetworkIndex;
+#endif
+
 		static CustomNetworkIndex getIpCountry(uint32_t p_ip, bool p_is_use_only_cache = false);
 		static CustomNetworkIndex getIpCountry(const string& p_ip, bool p_is_use_only_cache = false);
 		

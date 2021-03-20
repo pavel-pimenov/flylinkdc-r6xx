@@ -6,7 +6,7 @@ boost
 wtl
 bzip2
 res
-zlib
+zlib-ng
 XMLParser
 Tools
 Tools\*.exe
@@ -34,7 +34,6 @@ FlyUpdate.rc
 *.vcxproj
 *.vcxproj.filters
 revision.h
-FlylinkDCExt.h
 version.h
 changelog*
 compiled\Settings\custom_menu.xml

@@ -450,7 +450,9 @@ LRESULT TransferView::onContextMenu(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam,
 #ifdef FLYLINKDC_USE_DROP_SLOW
 				transferMenu.AppendMenu(MF_STRING, IDC_MENU_SLOWDISCONNECT, CTSTRING(SETCZDC_DISCONNECTING_ENABLE));
 #endif
+#ifdef FLYLINKDC_USE_P2P_GUARD
 				transferMenu.AppendMenu(MF_STRING, IDC_ADD_P2P_GUARD, CTSTRING(CLOSE_CONNECTION_AND_ADD_IP_GUARD));
+#endif
 				transferMenu.AppendMenu(MF_STRING, IDC_REMOVE, CTSTRING(CLOSE_CONNECTION));
 				transferMenu.AppendMenu(MF_SEPARATOR);
 				if (!main && (i = ctrlTransfers.GetNextItem(i, LVNI_SELECTED)) != -1)
@@ -973,6 +975,7 @@ LRESULT TransferView::onCustomDraw(int /*idCtrl*/, LPNMHDR pnmh, BOOL& bHandled)
 					return CDRF_SKIPDEFAULT;
 				}
 			}
+#ifdef FLYLINKDC_USE_P2P_GUARD
 			else if (colIndex == COLUMN_P2P_GUARD) // TODO
 			{
 				ItemInfo* jj = (ItemInfo*)cd->nmcd.lItemlParam;
@@ -992,6 +995,7 @@ LRESULT TransferView::onCustomDraw(int /*idCtrl*/, LPNMHDR pnmh, BOOL& bHandled)
 				}
 				return CDRF_SKIPDEFAULT;
 			}
+#endif
 #ifdef FLYLINKDC_USE_ANTIVIRUS_DB
 			else if (colIndex == COLUMN_ANTIVIRUS)
 			{
@@ -1067,12 +1071,14 @@ LRESULT TransferView::onCustomDraw(int /*idCtrl*/, LPNMHDR pnmh, BOOL& bHandled)
 						l_step += 25;
 					}
 #endif
+#ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
 					const POINT p = { rc2.left + l_step, top };
 					if (ii->m_location.getFlagIndex()  > 0)
 					{
 						g_flagImage.DrawLocation(cd->nmcd.hdc, ii->m_location, p);
 						l_step += 25;
 					}
+#endif
 					top = rc2.top + (rc2.Height() - 15 /*WinUtil::getTextHeight(cd->nmcd.hdc)*/ - 1) / 2;
 					const auto& l_desc = ii->m_location.getDescription();
 					if (!l_desc.empty())
@@ -1681,10 +1687,12 @@ void TransferView::ItemInfo::update(const UpdateInfo& ui)
 		if (m_transfer_ip.empty())
 		{
 			m_transfer_ip = ui.m_ip;
+#ifdef FLYLINKDC_USE_P2P_GUARD
 			if (!m_transfer_ip.empty())
 			{
 				m_p2p_guard_text = Text::toT(CFlylinkDBManager::getInstance()->is_p2p_guard(Socket::convertIP4(Text::fromT(m_transfer_ip))));
 			}
+#endif
 #ifdef FLYLINKDC_USE_COLUMN_RATIO
 			m_ratio_as_text = ui.m_hintedUser.user->getUDratio();
 #endif
@@ -2046,8 +2054,10 @@ const tstring TransferView::ItemInfo::getText(uint8_t col) const
 			return m_hintedUser.user ? Util::formatBytesW(m_hintedUser.user->getBytesShared()) : BaseUtil::emptyStringT;
 		case COLUMN_SLOTS:
 			return m_hintedUser.user ? Util::toStringW(m_hintedUser.user->getSlots()) : BaseUtil::emptyStringT;
+#ifdef FLYLINKDC_USE_P2P_GUARD
 		case COLUMN_P2P_GUARD:
 			return m_p2p_guard_text;
+#endif
 #ifdef FLYLINKDC_USE_ANTIVIRUS_DB
 		case COLUMN_ANTIVIRUS:
 			return m_antivirus_text;
@@ -2361,6 +2371,7 @@ void TransferView::ItemInfo::removeTorrent()
 #endif
 }
 
+#ifdef FLYLINKDC_USE_P2P_GUARD
 void TransferView::ItemInfo::disconnectAndP2PGuard()
 {
 	CFlyP2PGuardArray l_sqlite_array;
@@ -2373,6 +2384,7 @@ void TransferView::ItemInfo::disconnectAndP2PGuard()
 	}
 	disconnect();
 }
+#endif
 
 void TransferView::ItemInfo::disconnect()
 {

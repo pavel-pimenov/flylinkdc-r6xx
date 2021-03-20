@@ -328,6 +328,9 @@ namespace {
 #else
 		ios.run();
 #endif
+		if (st.ec) {
+			ec = st.ec;
+		}
 	}
 
 	create_torrent::~create_torrent() = default;
@@ -396,7 +399,7 @@ namespace {
 		}
 
 		m_files.set_piece_length(piece_size);
-		if (!(flags & v1_only))
+		if (!(flags & v1_only) || (flags & canonical_files))
 			m_files.canonicalize();
 		m_files.set_num_pieces(aux::calc_num_pieces(m_files));
 		TORRENT_ASSERT(m_files.piece_length() > 0);

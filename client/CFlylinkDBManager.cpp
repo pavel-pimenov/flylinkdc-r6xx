@@ -345,7 +345,9 @@ CFlylinkDBManager::CFlylinkDBManager()
 	m_is_load_global_ratio = false;
 #endif
 	m_count_json_stat = 1; // Первый раз думаем, что в таблице что-то есть
+#ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
 	m_count_fly_location_ip_record = -1;
+#endif
 	m_last_path_id = -1;
 	m_convert_ftype_stop_key = 0;
 	m_queue_id = 0;
@@ -1465,7 +1467,6 @@ void CFlylinkDBManager::save_lost_location(const string& p_ip)
 		}
 	}
 }
-#endif
 //========================================================================================================
 void CFlylinkDBManager::save_location(const CFlyLocationIPArray& p_geo_ip)
 {
@@ -1499,6 +1500,7 @@ void CFlylinkDBManager::save_location(const CFlyLocationIPArray& p_geo_ip)
 		errorDB("SQLite - save_location: " + e.getError());
 	}
 }
+#endif
 #ifdef FLYLINKDC_USE_GEO_IP
 //========================================================================================================
 __int64 CFlylinkDBManager::get_dic_country_id(const string& p_country)
@@ -1532,6 +1534,7 @@ bool CFlylinkDBManager::find_cache_country(uint32_t p_ip, uint16_t& p_index)
 	return false;
 }
 //========================================================================================================
+#ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
 bool CFlylinkDBManager::find_cache_location(uint32_t p_ip, uint32_t& p_location_index, uint16_t& p_flag_location_index)
 {
 	CFlyFastLock(m_cache_location_cs);
@@ -1556,23 +1559,37 @@ bool CFlylinkDBManager::find_cache_location(uint32_t p_ip, uint32_t& p_location_
 	}
 	return false;
 }
+#endif
 //========================================================================================================
 void CFlylinkDBManager::get_country_and_location(uint32_t p_ip, uint16_t& p_country_index, uint32_t& p_location_index, bool p_is_use_only_cache)
 {
 	dcassert(p_ip);
-	uint16_t l_flag_location_index = 0; // TODO ?
 	const bool l_is_find_country   = Util::isPrivateIp(p_ip) || find_cache_country(p_ip, p_country_index);
+#ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
+	uint16_t l_flag_location_index = 0;
 	const bool l_is_find_location = find_cache_location(p_ip, p_location_index, l_flag_location_index);
+#else
+	const bool l_is_find_location = true;
+#endif
 	if (p_is_use_only_cache == false)
 	{
-		if (l_is_find_country == false || l_is_find_location == false)
+		if (l_is_find_country == false || l_is_find_location == false
+		   )
 		{
-			load_country_locations_p2p_guard_from_db(p_ip, p_location_index, p_country_index);
+			load_country_locations_p2p_guard_from_db(p_ip, p_country_index
+#ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
+			                                         , p_location_index
+#endif
+			                                        );
 		}
 	}
 }
 //========================================================================================================
-string CFlylinkDBManager::load_country_locations_p2p_guard_from_db(uint32_t p_ip, uint32_t& p_location_cache_index, uint16_t& p_country_cache_index)
+string CFlylinkDBManager::load_country_locations_p2p_guard_from_db(uint32_t p_ip, uint16_t& p_country_cache_index
+#ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
+                                                                   , uint32_t& p_location_cache_index
+#endif
+                                                                  )
 {
 	dcassert(p_ip);
 	CFlyLock(m_cs); // Без этого падает почему-то
@@ -1589,37 +1606,47 @@ string CFlylinkDBManager::load_country_locations_p2p_guard_from_db(uint32_t p_ip
 		                                   "select country,flag_index,start_ip,stop_ip,0 from "
 		                                   "(select country,flag_index,start_ip,stop_ip from location_db.fly_country_ip where start_ip <=? order by start_ip desc limit 1) "
 		                                   "where stop_ip >=?"
+#ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
 		                                   "\nunion all\n"
 		                                   "select location,flag_index,start_ip,stop_ip,1 from "
 		                                   "(select location,flag_index,start_ip,stop_ip from location_db.fly_location_ip where start_ip <=? order by start_ip desc limit 1) "
 		                                   "where stop_ip >=?"
+#endif
+#ifdef FLYLINKDC_USE_P2P_GUARD
 		                                   "\nunion all\n"
 		                                   "select note,0,start_ip,stop_ip,2 from "
 		                                   "(select note,start_ip,stop_ip from location_db.fly_p2pguard_ip where start_ip <=? order by start_ip desc limit 1) "
-		                                   "where stop_ip >=?");
+		                                   "where stop_ip >=?"
+#endif
+		                                  );
 		m_select_country_and_location->bind(1, p_ip);
 		m_select_country_and_location->bind(2, p_ip);
+#ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
 		m_select_country_and_location->bind(3, p_ip);
 		m_select_country_and_location->bind(4, p_ip);
+#endif
+#ifdef FLYLINKDC_USE_P2P_GUARD
 		m_select_country_and_location->bind(5, p_ip);
 		m_select_country_and_location->bind(6, p_ip);
+#endif
 		sqlite3_reader l_q = m_select_country_and_location->executereader();
 		CFlyLocationDesc l_location;
+#ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
 		p_location_cache_index = 0;
+#endif
 		p_country_cache_index = 0;
 		l_location.m_flag_index = 0;
 		unsigned l_count_country = 0;
-		CFlyCacheIPInfo* l_ip_cahe_item = nullptr;
+		CFlyCacheIPInfo* l_ip_cache_item = nullptr;
 		{
 			CFlyFastLock(m_cache_location_cs);
-			l_ip_cahe_item = &m_ip_info_cache[p_ip];
+			l_ip_cache_item = &m_ip_info_cache[p_ip];
 		}
 		while (l_q.read())
 		{
 			const unsigned l_id = l_q.getint(4);
 			dcassert(l_id < 3)
-			const string l_description = l_q.getstring(0);
-			l_location.m_description = Text::toT(l_description);
+			l_location.m_description = Text::toT(l_q.getstring(0));
 			l_location.m_flag_index = l_q.getint(1);
 			l_location.m_start_ip = l_q.getint(2);
 			l_location.m_stop_ip = l_q.getint(3);
@@ -1632,25 +1659,28 @@ string CFlylinkDBManager::load_country_locations_p2p_guard_from_db(uint32_t p_ip
 						CFlyFastLock(m_cache_location_cs);
 						m_country_cache.push_back(l_location);
 						p_country_cache_index = uint16_t(m_country_cache.size());
-						l_ip_cahe_item->m_country_cache_index = p_country_cache_index;
-						l_ip_cahe_item->m_flag_location_index = l_location.m_flag_index;
+						l_ip_cache_item->m_country_cache_index = p_country_cache_index;
+						l_ip_cache_item->m_flag_location_index = l_location.m_flag_index;
 					}
 					break;
 				}
+#ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
 				case 1:
 				{
 					CFlyFastLock(m_cache_location_cs);
 					m_location_cache_array.push_back(l_location);
 					p_location_cache_index = m_location_cache_array.size();
-					l_ip_cahe_item->m_location_cache_index = p_location_cache_index;
-					l_ip_cahe_item->m_flag_location_index = l_location.m_flag_index;
+					l_ip_cache_item->m_location_cache_index = p_location_cache_index;
+					l_ip_cache_item->m_flag_location_index = l_location.m_flag_index;
 					break;
 				}
+#endif
+#ifdef FLYLINKDC_USE_P2P_GUARD
 				case 2:
 				{
 					{
 						CFlyFastLock(m_cache_location_cs);
-						l_ip_cahe_item->m_description_p2p_guard = l_description;
+						l_ip_cache_item->m_description_p2p_guard = l_description;
 					}
 					if (!l_p2p_guard_text.empty())
 					{
@@ -1659,6 +1689,7 @@ string CFlylinkDBManager::load_country_locations_p2p_guard_from_db(uint32_t p_ip
 					l_p2p_guard_text += l_description;
 					continue;
 				}
+#endif
 				default:
 					dcassert(0);
 			}
@@ -1689,6 +1720,7 @@ bool CFlylinkDBManager::is_avdb_guard(const string& p_nick, int64_t p_share, con
 }
 #endif
 //========================================================================================================
+#ifdef FLYLINKDC_USE_P2P_GUARD
 string CFlylinkDBManager::is_p2p_guard(const uint32_t& p_ip)
 {
 	// dcassert(Util::isPrivateIp(p_ip) == false);
@@ -1703,12 +1735,20 @@ string CFlylinkDBManager::is_p2p_guard(const uint32_t& p_ip)
 				return l_p2p->second.m_description_p2p_guard;
 		}
 		uint16_t l_country_index;
+#ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
 		uint32_t l_location_index;
-		l_p2p_guard_text = load_country_locations_p2p_guard_from_db(p_ip, l_location_index, l_country_index);
+#endif
+		l_p2p_guard_text = load_country_locations_p2p_guard_from_db(p_ip, l_country_index
+#ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
+		                                                            , l_location_index
+#endif
+		                                                           );
 	}
 	return l_p2p_guard_text;
 }
+#endif
 //========================================================================================================
+#ifdef FLYLINKDC_USE_P2P_GUARD
 void CFlylinkDBManager::remove_manual_p2p_guard(const string& p_ip)
 {
 	try
@@ -1784,6 +1824,7 @@ void CFlylinkDBManager::save_p2p_guard(const CFlyP2PGuardArray& p_p2p_guard_ip, 
 		errorDB("SQLite - save_p2p_guard: " + e.getError());
 	}
 }
+#endif
 //========================================================================================================
 void CFlylinkDBManager::save_geoip(const CFlyLocationIPArray& p_geo_ip)
 {
@@ -3485,27 +3526,11 @@ uint32_t CFlylinkDBManager::get_dic_hub_id(const string& p_hub)
 }
 //========================================================================================================
 #endif // FLYLINKDC_USE_LASTIP_AND_USER_RATIO
+#ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
 __int64 CFlylinkDBManager::get_dic_location_id(const string& p_location)
 {
 	CFlyLock(m_cs);
 	return get_dic_idL(p_location, e_DIC_LOCATION, true);
-}
-#if 0
-//========================================================================================================
-void CFlylinkDBManager::clear_dic_cache_location()
-{
-	clear_dic_cache(e_DIC_LOCATION);
-}
-//========================================================================================================
-void CFlylinkDBManager::clear_dic_cache_country()
-{
-	clear_dic_cache(e_DIC_COUNTRY);
-}
-//========================================================================================================
-void CFlylinkDBManager::clear_dic_cache(const eTypeDIC p_DIC)
-{
-	CFlyLock(m_cs);
-	m_DIC[p_DIC - 1].clear();
 }
 #endif
 //========================================================================================================
@@ -4957,9 +4982,11 @@ CFlylinkDBManager::~CFlylinkDBManager()
 		dcdebug("CFlylinkDBManager::m_country_cache size = %d\n", m_country_cache.size());
 	}
 #endif
+#ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
 	{
 		dcdebug("CFlylinkDBManager::m_location_cache_array size = %d\n", m_location_cache_array.size());
 	}
+#endif
 #endif // _DEBUG
 }
 //========================================================================================================

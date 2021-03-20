@@ -98,7 +98,7 @@
 #include <cstring>
 #include <cmath>
 #include <algorithm>
-#include <zlib.h>
+#include <zlib-ng.h>
 #include "ThirdParty/base64/base64.h"
 #if MEDIAINFO_EVENTS
     #include "MediaInfo/MediaInfo_Events_Internal.h"
@@ -2218,12 +2218,12 @@ bool File_Mk::Rawcooked_Compressed_Start(rawcookedtrack::mask* Mask, bool UseMas
         Element_Offset=Element_Offset_Save;
 
         //Sizes
-        unsigned long Source_Size=(unsigned long)(Element_Size-Element_Offset);
-        unsigned long Dest_Size=(unsigned long)Rawcooked_Compressed_Save_Element_Size;
+        size_t Source_Size=(unsigned long)(Element_Size-Element_Offset);
+        size_t Dest_Size=(unsigned long)Rawcooked_Compressed_Save_Element_Size;
 
         //Uncompressing
         int8u* Dest=new int8u[(Mask && UseMask && Mask->Size>Dest_Size)?Mask->Size:Dest_Size];
-        if (uncompress((Bytef*)Dest, &Dest_Size, (const Bytef*)Buffer+Buffer_Offset+(size_t)Element_Offset, Source_Size)<0)
+        if (zng_uncompress((Bytef*)Dest, &Dest_Size, (const Bytef*)Buffer+Buffer_Offset+(size_t)Element_Offset, Source_Size)<0)
         {
             delete[] Dest; //Dest=NULL;
             Param_Info("Problem during the decompression");

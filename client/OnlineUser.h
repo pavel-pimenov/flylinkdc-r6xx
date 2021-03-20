@@ -111,7 +111,9 @@ class Identity
 		Identity()
 		{
 			memzero(&m_bits_info, sizeof(m_bits_info));
+#ifdef FLYLINKDC_USE_P2P_GUARD
 			m_is_p2p_guard_calc = false;
+#endif
 			m_is_real_user_ip_from_hub = false;
 			m_bytes_shared = 0;
 			m_is_ext_json = false;
@@ -122,7 +124,9 @@ class Identity
 		Identity(const UserPtr& ptr, uint32_t aSID) : user(ptr)
 		{
 			memzero(&m_bits_info, sizeof(m_bits_info));
+#ifdef FLYLINKDC_USE_P2P_GUARD
 			m_is_p2p_guard_calc = false;
+#endif
 			m_is_real_user_ip_from_hub = false;
 			m_bytes_shared = 0;
 			m_is_ext_json = false;
@@ -162,7 +166,9 @@ class Identity
 #ifdef FLYLINKDC_USE_ANTIVIRUS_DB
 			m_virus_type = rhs.m_virus_type;
 #endif
+#ifdef FLYLINKDC_USE_P2P_GUARD
 			m_is_p2p_guard_calc = rhs.m_is_p2p_guard_calc;
+#endif
 			m_is_real_user_ip_from_hub = rhs.m_is_real_user_ip_from_hub;
 			m_bytes_shared = rsh.m_bytes_shared;
 			m_is_ext_json = rhs.m_is_ext_json;
@@ -276,7 +282,9 @@ class Identity
 		int64_t m_bytes_shared;
 	public:
 		bool m_is_real_user_ip_from_hub;
-		bool m_is_p2p_guard_calc;
+#ifdef FLYLINKDC_USE_P2P_GUARD
+		bool m_is_p2p_guard_calc = false;
+#endif
 #ifdef FLYLINKDC_USE_ANTIVIRUS_DB
 		unsigned char m_virus_type;
 		void setVirusType(unsigned char p_virus_type_mask)

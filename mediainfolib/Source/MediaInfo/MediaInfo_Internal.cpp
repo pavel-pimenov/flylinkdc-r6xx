@@ -46,7 +46,7 @@
 #include "MediaInfo/Multiple/File_Dxw.h"
 #ifdef MEDIAINFO_COMPRESS
     #include "ThirdParty/base64/base64.h"
-    #include "zlib.h"
+    #include "zlib-ng.h"
 #endif //MEDIAINFO_COMPRESS
 #include <cmath>
 #ifdef MEDIAINFO_DEBUG_WARNING_GET
@@ -58,10 +58,10 @@
 #endif //MEDIAINFO_DEBUG_BUFFER
 #if MEDIAINFO_ADVANCED
     #include <iostream>
-    #ifdef WINDOWS
+    #if defined(WINDOWS) && !defined(WINDOWS_UWP) && !defined(__BORLANDC__)
         #include <fcntl.h>
         #include <io.h>
-    #endif
+    #endif //defined(WINDOWS) && !defined(WINDOWS_UWP) && !defined(__BORLANDC__)
 #endif //MEDIAINFO_ADVANCED
 using namespace ZenLib;
 using namespace std;
@@ -1209,10 +1209,10 @@ void MediaInfo_Internal::Entry()
     #endif //MEDIAINFO_FILE_YES
     #if MEDIAINFO_ADVANCED
         else if (Config.File_Names[0]==__T("-")
-            #ifdef WINDOWS
+            #if defined(WINDOWS) && !defined(WINDOWS_UWP) && !defined(__BORLANDC__)
                 //&& WaitForSingleObject(GetStdHandle(STD_INPUT_HANDLE), 0) == WAIT_OBJECT_0 //Check if there is something is stdin
                 && _setmode(_fileno(stdin), _O_BINARY) != -1 //Force binary mode
-            #endif
+            #endif //defined(WINDOWS) && !defined(WINDOWS_UWP) && !defined(__BORLANDC__)
             )
         {
             static const size_t Read_Size=24000; //TODO: tweak this value
@@ -1424,13 +1424,13 @@ std::bitset<32> MediaInfo_Internal::Open_Buffer_Continue (const int8u* ToAdd, si
             }
             if (zlib)
             {
-                uLongf Output_Size_Max = ToAdd_Size;
+                size_t Output_Size_Max = ToAdd_Size;
                 while (Output_Size_Max)
                 {
                     Output_Size_Max *=16;
                     int8u* Output = new int8u[Output_Size_Max];
-                    uLongf Output_Size = Output_Size_Max;
-                    if (uncompress((Bytef*)Output, &Output_Size, (const Bytef*)ToAdd, (uLong)ToAdd_Size)>=0)
+                    size_t Output_Size = Output_Size_Max;
+                    if (zng_uncompress((Bytef*)Output, &Output_Size, (const Bytef*)ToAdd, (uLong)ToAdd_Size)>=0)
                     {
                         ToAdd=Output;
                         ToAdd_Size=Output_Size;
@@ -2187,9 +2187,9 @@ String MediaInfo_Internal::Option (const String &Option, const String &Value)
             #if MEDIAINFO_COMPRESS
                 if (Value.find(__T("zlib"))==0)
                 {
-                    uLongf Compressed_Size=(uLongf)(Inform_Cache.size() + 16);
+                    size_t Compressed_Size=(uLongf)(Inform_Cache.size() + 16);
                     Bytef* Compressed=new Bytef[Inform_Cache.size()+16];
-                    if (compress(Compressed, &Compressed_Size, (const Bytef*)Inform_Cache.c_str(), (uLong)Inform_Cache.size()) < 0)
+                    if (zng_compress(Compressed, &Compressed_Size, (const Bytef*)Inform_Cache.c_str(), (uLong)Inform_Cache.size()) < 0)
                     {
                         delete[] Compressed;
                         return __T("Error during zlib compression");
@@ -2483,9 +2483,9 @@ Ztring MediaInfo_Internal::Inform(std::vector<MediaInfo_Internal*>& Info)
             string Inform_Cache = Result.To_UTF8();
             if (zlib)
             {
-                uLongf Compressed_Size=(uLongf)(Inform_Cache.size() + 16);
+                size_t Compressed_Size=(uLongf)(Inform_Cache.size() + 16);
                 Bytef* Compressed=new Bytef[Inform_Cache.size()+16];
-                if (compress(Compressed, &Compressed_Size, (const Bytef*)Inform_Cache.c_str(), (uLong)Inform_Cache.size()) < 0)
+                if (zng_compress(Compressed, &Compressed_Size, (const Bytef*)Inform_Cache.c_str(), (uLong)Inform_Cache.size()) < 0)
                 {
                     delete[] Compressed;
                     return __T("Error during zlib compression");

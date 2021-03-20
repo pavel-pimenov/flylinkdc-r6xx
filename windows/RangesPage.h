@@ -29,7 +29,9 @@ class RangesPage : public CPropertyPage<IDD_RANGES_PAGE>, public PropPage
 		MESSAGE_HANDLER(WM_INITDIALOG, onInitDialog)
 		COMMAND_ID_HANDLER(IDC_ENABLE_IPGUARD, onFixControls)
 		COMMAND_ID_HANDLER(IDC_ENABLE_IPTRUST, onFixControls)
+#ifdef FLYLINKDC_USE_P2P_GUARD
 		COMMAND_ID_HANDLER(IDC_FLYLINK_MANUAL_P2P_GUARD_IP_LIST_REMOVE_BUTTON, onRemoveP2PManual)
+#endif
 		CHAIN_MSG_MAP(PropPage)
 		END_MSG_MAP()
 		
@@ -37,7 +39,9 @@ class RangesPage : public CPropertyPage<IDD_RANGES_PAGE>, public PropPage
 		
 		LRESULT onItemchangedDirectories(int /*idCtrl*/, LPNMHDR /*pnmh*/, BOOL& /*bHandled*/);
 		LRESULT onKeyDown(int /*idCtrl*/, LPNMHDR pnmh, BOOL& bHandled);
+#ifdef FLYLINKDC_USE_P2P_GUARD
 		LRESULT onRemoveP2PManual(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
+#endif
 		LRESULT onFixControls(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 		{
 			fixControls();

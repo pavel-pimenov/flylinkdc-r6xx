@@ -83,7 +83,11 @@ int UserInfo::compareItems(const UserInfo* a, const UserInfo* b, int col)
 		{
 			const_cast<UserInfo*>(a)->calcP2PGuard();
 			const_cast<UserInfo*>(b)->calcP2PGuard();
+#ifdef FLYLINKDC_USE_P2P_GUARD
 			return compare(a->getIdentity().getP2PGuard(), b->getIdentity().getP2PGuard());
+#else
+			return 0;
+#endif
 		}
 #ifdef FLYLINKDC_USE_ANTIVIRUS_DB
 		case COLUMN_ANTIVIRUS:
@@ -95,6 +99,8 @@ int UserInfo::compareItems(const UserInfo* a, const UserInfo* b, int col)
 #endif
 		case COLUMN_IP:
 		{
+			const_cast<UserInfo*>(a)->calcLocation();
+			const_cast<UserInfo*>(b)->calcLocation();
 			return compare(a->getIdentity().getIp(), b->getIdentity().getIp());
 		}
 		case COLUMN_GEO_LOCATION:
@@ -187,7 +193,8 @@ tstring UserInfo::getText(int p_col) const
 		}
 		case COLUMN_P2P_GUARD:
 		{
-			return Text::toT(getIdentity().getP2PGuard());
+			return BaseUtil::emptyStringT;
+			//UText::toT(getIdentity().getP2PGuard());
 		}
 #ifdef FLYLINKDC_USE_ANTIVIRUS_DB
 		case COLUMN_ANTIVIRUS:
@@ -363,17 +370,21 @@ void UserInfo::calcVirusType()
 
 void UserInfo::calcLocation()
 {
-	const auto& l_location = getLocation();
-	if (l_location.isNew() || m_ou->getIdentity().is_ip_change_and_clear()) // https://drdump.com/Problem.aspx?ProblemID=248526
+	const auto l_location = getLocation();
+	if (l_location.isNew() || m_ou->getIdentity().is_ip_change_and_clear())
 	{
-		const auto& l_ip = getIp();
+		const auto l_ip = getIp();
 		if (!l_ip.is_unspecified())
 		{
 			setLocation(Util::getIpCountry(l_ip.to_ulong())); // TODO - отдать бустовский объект?
 		}
 		else
 		{
-			setLocation(Util::CustomNetworkIndex(0, 0));
+#ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
+			setLocation(Util::CustomNetworkIndex(0,0));
+#else
+			setLocation(Util::CustomNetworkIndex(0));
+#endif
 		}
 	}
 }

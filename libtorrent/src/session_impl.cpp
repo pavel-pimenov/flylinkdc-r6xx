@@ -2470,10 +2470,6 @@ namespace {
 #endif
 			m_utp_socket_manager;
 
-		auto listen_socket = ls.lock();
-		if (listen_socket)
-			listen_socket->incoming_connection = true;
-
 		for (;;)
 		{
 			aux::array<udp_socket::packet, 50> p;
@@ -2506,6 +2502,7 @@ namespace {
 					// socket
 					bool handled = false;
 #ifndef TORRENT_DISABLE_DHT
+					auto listen_socket = ls.lock();
 					if (m_dht && buf.size() > 20
 						&& buf.front() == 'd'
 						&& buf.back() == 'e'
@@ -2695,7 +2692,8 @@ namespace {
 
 		// don't accept any connections from our local sockets if we're using a
 		// proxy
-		if (m_settings.get_int(settings_pack::proxy_type) != settings_pack::none)
+		if (m_settings.get_int(settings_pack::proxy_type) != settings_pack::none
+			&& m_settings.get_bool(settings_pack::proxy_peer_connections))
 			return;
 
 		auto listen = std::find_if(m_listen_sockets.begin(), m_listen_sockets.end()
@@ -2826,6 +2824,12 @@ namespace {
 			return;
 		}
 
+		// don't accept any connections from our local sockets if we're using a
+		// proxy
+		if (m_settings.get_int(settings_pack::proxy_type) != settings_pack::none
+			&& m_settings.get_bool(settings_pack::proxy_peer_connections))
+			return;
+
 		if (m_paused)
 		{
 #ifndef TORRENT_DISABLE_LOGGING
@@ -2877,7 +2881,7 @@ namespace {
 
 		// if there are outgoing interfaces specified, verify this
 		// peer is correctly bound to one of them
-		if (!m_settings.get_str(settings_pack::outgoing_interfaces).empty())
+		if (!m_outgoing_interfaces.empty())
 		{
 			tcp::endpoint local = s.local_endpoint(ec);
 			if (ec)
@@ -5430,7 +5434,8 @@ namespace {
 			return std::uint16_t(sock->tcp_external_port());
 		}
 
-		if (m_settings.get_int(settings_pack::proxy_type) != settings_pack::none)
+		if (m_settings.get_int(settings_pack::proxy_type) != settings_pack::none
+			&& m_settings.get_bool(settings_pack::proxy_peer_connections))
 			return 0;
 
 		for (auto const& s : m_listen_sockets)

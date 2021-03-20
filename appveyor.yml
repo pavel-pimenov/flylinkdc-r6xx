@@ -18,4 +18,3 @@ configuration:
 build:
   project: FlylinkDC_2017.sln
   verbosity: minimal
-  

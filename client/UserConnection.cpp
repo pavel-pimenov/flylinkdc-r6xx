@@ -91,6 +91,7 @@ bool UserConnection::isIPGuard(ResourceManager::Strings p_id_string, bool p_is_d
 #ifdef FLYLINKDC_USE_IPFILTER
 	l_is_ip_guard = PGLoader::check(l_ip4);
 	string l_p2p_guard;
+#ifdef FLYLINKDC_USE_P2P_GUARD
 	if (BOOLSETTING(ENABLE_P2P_GUARD) && p_is_download_connection == false)
 	{
 		l_p2p_guard = CFlylinkDBManager::getInstance()->is_p2p_guard(l_ip4);
@@ -109,6 +110,7 @@ bool UserConnection::isIPGuard(ResourceManager::Strings p_id_string, bool p_is_d
 			}
 		}
 	}
+#endif
 	string l_avdb_guard;
 #ifdef FLYLINKDC_USE_ANTIVIRUS_DB
 	if (BOOLSETTING(AVDB_BLOCK_CONNECTIONS))

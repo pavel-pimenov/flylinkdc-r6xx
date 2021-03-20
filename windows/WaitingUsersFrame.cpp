@@ -678,11 +678,13 @@ LRESULT WaitingUsersFrame::onCustomDraw(int /*idCtrl*/, LPNMHDR pnmh, BOOL& bHan
 					if ((top - rc2.top) < 2)
 						top = rc2.top + 1;
 						
+#ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
 					const POINT p = { rc2.left, top };
 					if (ii->m_location.isKnown())
 					{
 						g_flagImage.DrawLocation(cd->nmcd.hdc, ii->m_location, p);
 					}
+#endif
 					top = rc2.top + (rc2.Height() - 15 /*WinUtil::getTextHeight(cd->nmcd.hdc)*/ - 1) / 2;
 					if (!l_text.empty())
 					{

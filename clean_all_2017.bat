@@ -1,3 +1,4 @@
+del msbuild.log
 del *.sdf
 del *.suo
 del .\GdiOle\GdiOle_i.c

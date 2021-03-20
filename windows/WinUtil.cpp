@@ -631,6 +631,8 @@ void FlagImage::init()
 	dcassert(m_flagImageCount);
 	dcassert(m_images.GetImageCount() <= 255); // „тобы не превысить 8 бит
 	
+#ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
+	
 	if (!CompatibilityManager::isWine()) // под линуксом пока падаем http://flylinkdc.blogspot.com/2010/08/customlocationsbmp-wine.html
 	{
 		CBitmap UserLocations;
@@ -641,6 +643,7 @@ void FlagImage::init()
 		                                                                   ) + "CustomLocations.bmp").c_str(), IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE))
 			m_images.Add(UserLocations, RGB(77, 17, 77));
 	}
+#endif
 }
 
 void WinUtil::init(HWND hWnd)

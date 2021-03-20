@@ -268,8 +268,10 @@ enum eTypeSegment
 	e_MergeCounterAntivirusDB = 14,
 	// 15 - устаревший e_TimeStampP2PGuard
 	e_TimeStampAntivirusDB = 16,
+#ifdef FLYLINKDC_USE_P2P_GUARD
 	e_TimeStampIBlockListCom = 17,
 	e_TimeStampP2PGuard = 18,
+#endif
 	e_autoAddSupportHub = 19,
 	e_autoAddFirstSupportHub = 20,
 	e_LastShareSize = 21,
@@ -495,10 +497,12 @@ class CFlylinkDBManager : public Singleton<CFlylinkDBManager>
 		void add_file(__int64 p_path_id, const string& p_file_name, int64_t p_time_stamp, const TigerTree& p_tth, int64_t p_size, CFlyMediaInfo& p_out_media);
 		
 		void save_geoip(const CFlyLocationIPArray& p_geo_ip);
+#ifdef FLYLINKDC_USE_P2P_GUARD
 		void save_p2p_guard(const CFlyP2PGuardArray& p_p2p_guard_ip, const string&  p_manual_marker, int p_type);
 		string load_manual_p2p_guard();
 		void remove_manual_p2p_guard(const string& p_ip);
 		string is_p2p_guard(const uint32_t& p_ip);
+#endif
 #ifdef FLYLINKDC_USE_ANTIVIRUS_DB
 		bool is_avdb_guard(const string& p_nick, int64_t p_share, const uint32_t& p_ip4);
 #endif
@@ -516,7 +520,7 @@ class CFlylinkDBManager : public Singleton<CFlylinkDBManager>
 			CFlyFastLock(m_cache_location_cs);
 			return m_country_cache[p_index - 1];
 		}
-#endif
+#ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
 		uint16_t get_location_index_from_cache(int32_t p_index)
 		{
 			dcassert(p_index > 0);
@@ -529,19 +533,28 @@ class CFlylinkDBManager : public Singleton<CFlylinkDBManager>
 			CFlyFastLock(m_cache_location_cs);
 			return m_location_cache_array[p_index - 1];
 		}
+#endif
+#endif // FLYLINKDC_USE_GEO_IP
 	private:
 #ifdef FLYLINKDC_USE_GEO_IP
-		string load_country_locations_p2p_guard_from_db(uint32_t p_ip, uint32_t& p_location_cache_index, uint16_t& p_country_cache_index);
+		string load_country_locations_p2p_guard_from_db(uint32_t p_ip, uint16_t& p_country_cache_index
+#ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
+		                                                , uint32_t& p_location_cache_index
+#endif
+		                                               );
 		bool find_cache_country(uint32_t p_ip, uint16_t& p_index);
-		bool find_cache_location(uint32_t p_ip, uint32_t& p_location_index, uint16_t& p_flag_index);
 		__int64 get_dic_country_id(const string& p_country);
+#ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
+		bool find_cache_location(uint32_t p_ip, uint32_t& p_location_index, uint16_t& p_flag_index);
 		void clear_dic_cache_country();
+#endif
 #endif
 	public:
 	
+#ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
 		void save_location(const CFlyLocationIPArray& p_geo_ip);
 		__int64 get_dic_location_id(const string& p_location);
-		//void clear_dic_cache_location();
+#endif
 		
 #ifdef FLYLINKDC_USE_MEDIAINFO_SERVER_COLLECT_LOST_LOCATION
 		void save_lost_location(const string& p_ip);
@@ -722,24 +735,30 @@ class CFlylinkDBManager : public Singleton<CFlylinkDBManager>
 		CFlySQLCommand m_delete_registry;
 		
 		FastCriticalSection m_cache_location_cs;
+#ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
 		vector<CFlyLocationDesc> m_location_cache_array;
-		struct CFlyCacheIPInfo
-		{
-			string m_description_p2p_guard;
-			uint32_t m_location_cache_index;
-			uint16_t m_country_cache_index;
-			uint16_t m_flag_location_index;
-			CFlyCacheIPInfo() : m_location_cache_index(0), m_country_cache_index(0), m_flag_location_index(0)
-			{
-			}
-		};
-		std::unordered_map<uint32_t, CFlyCacheIPInfo> m_ip_info_cache;
-		
 		int m_count_fly_location_ip_record;
 		bool is_fly_location_ip_valid() const
 		{
 			return m_count_fly_location_ip_record > 5000;
 		}
+#endif
+		struct CFlyCacheIPInfo
+		{
+#ifdef FLYLINKDC_USE_P2P_GUARD
+			string m_description_p2p_guard;
+#endif
+			uint16_t m_country_cache_index = 0;
+			uint16_t m_flag_location_index = 0;
+#ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
+			uint32_t m_location_cache_index = 0;
+#endif
+			CFlyCacheIPInfo()
+			{
+			}
+		};
+		std::unordered_map<uint32_t, CFlyCacheIPInfo> m_ip_info_cache;
+		
 		CFlySQLCommand m_insert_location;
 		CFlySQLCommand m_delete_location;
 		
@@ -759,10 +778,12 @@ class CFlylinkDBManager : public Singleton<CFlylinkDBManager>
 #ifdef _DEBUG
 		std::unordered_map<uint32_t, unsigned> m_count_ip_sql_query_guard;
 #endif
+#ifdef FLYLINKDC_USE_P2P_GUARD
 		CFlySQLCommand m_select_manual_p2p_guard;
 		CFlySQLCommand m_delete_manual_p2p_guard;
 		CFlySQLCommand m_delete_p2p_guard;
 		CFlySQLCommand m_insert_p2p_guard;
+#endif
 		
 #ifdef FLYLINKDC_USE_GATHER_STATISTICS
 		CFlySQLCommand m_select_statistic_json;
@@ -773,7 +794,6 @@ class CFlylinkDBManager : public Singleton<CFlylinkDBManager>
 #ifdef FLYLINKDC_USE_COLLECT_STAT
 		CFlySQLCommand m_insert_statistic_dc_command;
 		CFlySQLCommand m_select_statistic_dc_command;
-		
 		CFlySQLCommand m_insert_event_stat;
 #endif
 		

@@ -124,7 +124,7 @@
 #include "MediaInfo/Multiple/File_Mpeg4_TimeCode.h"
 #include "ZenLib/FileName.h"
 #include "ThirdParty/base64/base64.h"
-#include <zlib.h>
+#include <zlib-ng.h>
 #include <algorithm>
 #include <cmath>
 #include <cfloat>
@@ -2979,12 +2979,12 @@ void File_Mpeg4::moov_cmov_cmvd_zlib()
 
     FILLING_BEGIN();
         //Sizes
-        unsigned long Source_Size=(unsigned long)(Element_Size-Element_Offset);
-        unsigned long Dest_Size=Dest_Size32;
+    size_t Source_Size=(unsigned long)(Element_Size-Element_Offset);
+        size_t Dest_Size=Dest_Size32;
 
         //Uncompressing
         int8u* Dest=new int8u[Dest_Size];
-        if (uncompress((Bytef*)Dest, &Dest_Size, (const Bytef*)Buffer+Buffer_Offset+4, Source_Size)<0)
+        if (zng_uncompress((Bytef*)Dest, &Dest_Size, (const Bytef*)Buffer+Buffer_Offset+4, Source_Size)<0)
         {
             Skip_XX(Element_Size,                               "Problem during the decompression");
             delete[] Dest; //Dest=NULL;
@@ -8076,7 +8076,6 @@ void File_Mpeg4::moov_trak_udta_xxxx()
 void File_Mpeg4::moov_udta()
 {
     Element_Name("User Data");
-    Skip_XX(Element_TotalSize_Get(), "XXX");
 
     moov_trak_tkhd_TrackID=(int32u)-1;
 }

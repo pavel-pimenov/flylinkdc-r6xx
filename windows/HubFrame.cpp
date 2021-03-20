@@ -373,15 +373,17 @@ void HubFrame::updateColumnsInfo(const FavoriteHubEntry *p_fhe)
 			const int fmt = (j == COLUMN_SHARED || j == COLUMN_EXACT_SHARED || j == COLUMN_SLOTS) ? LVCFMT_RIGHT : LVCFMT_LEFT;
 			m_ctrlUsers->InsertColumn(j, TSTRING_I(g_columnNames[j]), fmt, g_columnSizes[j], j); //-V107
 		}
-		m_ctrlUsers->setColumnOwnerDraw(COLUMN_GEO_LOCATION);
-		m_ctrlUsers->setColumnOwnerDraw(COLUMN_IP);
+		//m_ctrlUsers->setColumnOwnerDraw(COLUMN_GEO_LOCATION);
+		//m_ctrlUsers->setColumnOwnerDraw(COLUMN_IP);
 		m_ctrlUsers->setColumnOwnerDraw(COLUMN_UPLOAD);
 		m_ctrlUsers->setColumnOwnerDraw(COLUMN_DOWNLOAD);
 		m_ctrlUsers->setColumnOwnerDraw(COLUMN_MESSAGES);
 #ifdef FLYLINKDC_USE_ANTIVIRUS_DB
 		m_ctrlUsers->setColumnOwnerDraw(COLUMN_ANTIVIRUS);
 #endif
+#ifdef FLYLINKDC_USE_P2P_GUARD
 		m_ctrlUsers->setColumnOwnerDraw(COLUMN_P2P_GUARD);
+#endif
 #ifdef FLYLINKDC_USE_EXT_JSON
 #ifdef FLYLINKDC_USE_LOCATION_DIALOG
 		//m_ctrlUsers->setColumnOwnerDraw(COLUMN_FLY_HUB_COUNTRY);
@@ -1862,7 +1864,9 @@ LRESULT HubFrame::onSpeaker(UINT /*uMsg*/, WPARAM /* wParam */, LPARAM /* lParam
 #ifdef FLYLINKDC_USE_ANTIVIRUS_DB
 						ui->calcVirusType();
 #endif
+#ifdef FLYLINKDC_USE_P2P_GUARD
 						ui->calcP2PGuard();
+#endif
 					}
 				}
 				break;
@@ -4289,10 +4293,12 @@ bool HubFrame::matchFilter(UserInfo& ui, int sel, bool doSizeCompare, FilterMode
 					ui.calcVirusType();
 				}
 #endif
+#ifdef FLYLINKDC_USE_P2P_GUARD
 				else if (sel == COLUMN_P2P_GUARD)
 				{
 					ui.calcP2PGuard();
 				}
+#endif
 				const tstring s = ui.getText(static_cast<uint8_t>(sel));
 				if (regex_search(s.begin(), s.end(), reg))
 					insert = true;
@@ -4609,7 +4615,8 @@ LRESULT HubFrame::onCustomDraw(int /*idCtrl*/, LPNMHDR pnmh, BOOL& bHandled)
 #ifdef FLYLINKDC_USE_ANTIVIRUS_DB
 				        || l_column_id == COLUMN_ANTIVIRUS
 #endif
-				        || l_column_id == COLUMN_P2P_GUARD)
+				        || l_column_id == COLUMN_P2P_GUARD
+				   )
 				{
 					m_ctrlUsers->GetSubItemRect((int)cd->nmcd.dwItemSpec, cd->iSubItem, LVIR_BOUNDS, rc);
 					m_ctrlUsers->SetItemFilled(cd, rc, cd->clrText, cd->clrText);
@@ -4731,13 +4738,14 @@ LRESULT HubFrame::onCustomDraw(int /*idCtrl*/, LPNMHDR pnmh, BOOL& bHandled)
 							l_step += 25;
 						}
 #endif
+#ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
 						const POINT p = { rc.left + l_step, top };
 						if (l_location.getFlagIndex() > 0)
 						{
 							g_flagImage.DrawLocation(cd->nmcd.hdc, l_location, p);
 							l_step += 25;
 						}
-						// ~TODO: move this to FlagImage and cleanup!
+#endif
 						top = rc.top + (rc.Height() - 15 /*WinUtil::getTextHeight(cd->nmcd.hdc)*/ - 1) / 2;
 						const auto& l_desc = l_location.getDescription();
 						if (!l_desc.empty())
@@ -4760,14 +4768,7 @@ LRESULT HubFrame::onCustomDraw(int /*idCtrl*/, LPNMHDR pnmh, BOOL& bHandled)
 					ui->m_owner_draw = 1;
 					speak(ASYNC_LOAD_PG_AND_GEI_IP, ui->getOnlineUser());
 				}
-				/*
-				ui->calcLocation();
-				#ifdef FLYLINKDC_USE_ANTIVIRUS_DB
-				                ui->calcVirusType();
-				#endif
-				                ui->calcP2PGuard();
-				*/
-				
+			
 				Colors::getUserColor(m_client->isOp(), ui->getUser(), cd->clrText, cd->clrTextBk, ui->m_flag_mask, ui->getOnlineUser());
 			}
 #ifdef FLYLINKDC_USE_LIST_VIEW_MATTRESS

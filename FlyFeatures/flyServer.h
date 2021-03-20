@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 FlylinkDC++ Team http://flylinkdc.com
+ * Copyright (C) 2011-2021 FlylinkDC++ Team http://flylinkdc.com
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,13 +32,12 @@
 #include "../client/Util.h"
 #include "../client/SettingsManager.h"
 #include "../client/LogManager.h"
-#include "../zlib/zlib.h"
+#include "../zlib-ng/zlib-ng.h"
 #include "libtorrent/sha1_hash.hpp"
-//#include "selene.h"
+
 namespace sel {
 	class State;
 }
-
 
 class SearchResult;
 
