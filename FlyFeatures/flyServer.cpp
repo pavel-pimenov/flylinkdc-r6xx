@@ -182,7 +182,7 @@ const std::vector<CServerItem> CFlyServerConfig::getMirrorTestPortServerArray()
 	dcassert(!g_mirror_test_port_servers.empty() || !g_local_test_server.getIp().empty());
 	if (g_mirror_test_port_servers.empty())
 	{
-		// Если определен локальны тест-сервер - кидаемся на него
+		// Если определен локальный тест-сервер - используем на него
 		if (!g_local_test_server.getIp().empty())
 		{
 			g_mirror_test_port_servers.push_back(g_local_test_server);

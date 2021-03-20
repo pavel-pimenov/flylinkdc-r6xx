@@ -34,10 +34,64 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="zlib-ng\adler32.c" />
+    <ClCompile Include="zlib-ng\chunkset.c" />
+    <ClCompile Include="zlib-ng\compare258.c" />
+    <ClCompile Include="zlib-ng\compress.c" />
+    <ClCompile Include="zlib-ng\crc32.c" />
+    <ClCompile Include="zlib-ng\crc32_comb.c" />
+    <ClCompile Include="zlib-ng\deflate.c" />
+    <ClCompile Include="zlib-ng\deflate_fast.c" />
+    <ClCompile Include="zlib-ng\deflate_medium.c" />
+    <ClCompile Include="zlib-ng\deflate_quick.c" />
+    <ClCompile Include="zlib-ng\deflate_slow.c" />
+    <ClCompile Include="zlib-ng\functable.c" />
+    <ClCompile Include="zlib-ng\gzlib.c" />
+    <ClCompile Include="zlib-ng\gzread.c" />
+    <ClCompile Include="zlib-ng\gzwrite.c" />
+    <ClCompile Include="zlib-ng\infback.c" />
+    <ClCompile Include="zlib-ng\inffast.c" />
+    <ClCompile Include="zlib-ng\inflate.c" />
+    <ClCompile Include="zlib-ng\inftrees.c" />
+    <ClCompile Include="zlib-ng\insert_string.c" />
+    <ClCompile Include="zlib-ng\trees.c" />
+    <ClCompile Include="zlib-ng\uncompr.c" />
+    <ClCompile Include="zlib-ng\zutil.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="zlib-ng\adler32_p.h" />
+    <ClInclude Include="zlib-ng\chunkset_tpl.h" />
+    <ClInclude Include="zlib-ng\crc32_comb_tbl.h" />
+    <ClInclude Include="zlib-ng\crc32_p.h" />
+    <ClInclude Include="zlib-ng\crc32_tbl.h" />
+    <ClInclude Include="zlib-ng\deflate.h" />
+    <ClInclude Include="zlib-ng\deflate_p.h" />
+    <ClInclude Include="zlib-ng\fallback_builtins.h" />
+    <ClInclude Include="zlib-ng\functable.h" />
+    <ClInclude Include="zlib-ng\gzguts.h" />
+    <ClInclude Include="zlib-ng\inffast.h" />
+    <ClInclude Include="zlib-ng\inffixed_tbl.h" />
+    <ClInclude Include="zlib-ng\inflate.h" />
+    <ClInclude Include="zlib-ng\inflate_p.h" />
+    <ClInclude Include="zlib-ng\inftrees.h" />
+    <ClInclude Include="zlib-ng\insert_string_tpl.h" />
+    <ClInclude Include="zlib-ng\match_tpl.h" />
+    <ClInclude Include="zlib-ng\trees.h" />
+    <ClInclude Include="zlib-ng\trees_emit.h" />
+    <ClInclude Include="zlib-ng\trees_tbl.h" />
+    <ClInclude Include="zlib-ng\zbuild.h" />
+    <ClInclude Include="zlib-ng\zconf-ng.h" />
+    <ClInclude Include="zlib-ng\zconf.h" />
+    <ClInclude Include="zlib-ng\zendian.h" />
+    <ClInclude Include="zlib-ng\zlib-ng.h" />
+    <ClInclude Include="zlib-ng\zutil.h" />
+    <ClInclude Include="zlib-ng\zutil_p.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{DFBBE42A-45F4-4188-89C2-17F5DFE50673}</ProjectGuid>
-    <RootNamespace>zlib</RootNamespace>
-    <ProjectName>zlib</ProjectName>
+    <RootNamespace>zlib-ng</RootNamespace>
+    <ProjectName>zlib-ng</ProjectName>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <WindowsSDKDesktopARMSupport>true</WindowsSDKDesktopARMSupport>
     <WindowsSDKDesktopARM64Support>true</WindowsSDKDesktopARM64Support>
@@ -485,31 +539,6 @@
       <LinkTimeCodeGeneration>true</LinkTimeCodeGeneration>
     </Lib>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="zlib\adler32.c" />
-    <ClCompile Include="zlib\compress.c" />
-    <ClCompile Include="zlib\crc32.c" />
-    <ClCompile Include="zlib\deflate.c" />
-    <ClCompile Include="zlib\inffast.c" />
-    <ClCompile Include="zlib\inflate.c" />
-    <ClCompile Include="zlib\inftrees.c" />
-    <ClCompile Include="zlib\trees.c" />
-    <ClCompile Include="zlib\uncompr.c" />
-    <ClCompile Include="zlib\zutil.c" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="zlib\crc32.h" />
-    <ClInclude Include="zlib\deflate.h" />
-    <ClInclude Include="zlib\gzguts.h" />
-    <ClInclude Include="zlib\inffast.h" />
-    <ClInclude Include="zlib\inffixed.h" />
-    <ClInclude Include="zlib\inflate.h" />
-    <ClInclude Include="zlib\inftrees.h" />
-    <ClInclude Include="zlib\trees.h" />
-    <ClInclude Include="zlib\zconf.h" />
-    <ClInclude Include="zlib\zlib.h" />
-    <ClInclude Include="zlib\zutil.h" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
