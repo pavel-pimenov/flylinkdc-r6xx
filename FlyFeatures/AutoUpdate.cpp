@@ -496,7 +496,7 @@ void AutoUpdate::startUpdateThisThread()
 										try 
 										{
 											{
-												File f(flagName, File::WRITE, File::CREATE | File::TRUNCATE); // [1] https://www.box.net/shared/75247d259e1ee4eab670
+												File f(flagName, File::WRITE, File::CREATE | File::TRUNCATE);
 												f.close();
 											}
 											SET_SETTING(AUTOUPDATE_PATH_WITH_UPDATE, g_tempFolder);

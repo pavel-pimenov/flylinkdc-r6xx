@@ -142,9 +142,9 @@ crash_rpt::CrashRpt g_crashRpt(
 
 #endif
 
-#ifdef FLYLINKDC_BETA
-bool g_UseCSRecursionLog = false;
-#endif
+//#ifdef FLYLINKDC_BETA
+//bool g_UseCSRecursionLog = false;
+//#endif
 bool g_UseStrongDCTag = false;
 
 CAppModule _Module;
@@ -538,7 +538,7 @@ static int Run(LPTSTR /*lpstrCmdLine*/ = NULL, int nCmdShow = SW_SHOWDEFAULT)
 			
 			loadingAfterGuiFlyFeatures(wndMain, l_guiDelegate);
 			
-			nRet = theLoop.Run(); // [2] https://www.box.net/shared/e198e9df5044db2a40f4
+			nRet = theLoop.Run();
 			
 			_Module.RemoveMessageLoop();
 		}
@@ -596,7 +596,6 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
 	extern bool g_UseWALJournal;
 	extern bool g_EnableSQLtrace;
 	extern bool g_UseSynchronousOff;
-	extern bool g_UseCSRecursionLog;
 	extern bool g_UseStrongDCTag;
 	extern bool g_DisableUserStat;
 	if (_tcsstr(lpstrCmdLine, _T("/nowal")) != NULL)
@@ -638,8 +637,6 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
 #ifdef FLYLINKDC_BETA
 	if (_tcsstr(lpstrCmdLine, _T("/strongdc")) != NULL)
 		g_UseStrongDCTag = true;
-	//if (_tcsstr(lpstrCmdLine, _T("/critical_section_log")) != NULL)
-	//  g_UseCSRecursionLog = true;
 	if (_tcsstr(lpstrCmdLine, _T("/crash-test-doctor-dump")) != NULL)
 	{
 		crash_test_doctor_dump();

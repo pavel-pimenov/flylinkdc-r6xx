@@ -200,7 +200,7 @@ class SearchResult : public SearchResultCore
 		bool m_is_tth_queue = false;
 		unsigned m_torrent_page = 0;
 		
-		mutable uint8_t m_virus_level;
+		mutable uint8_t m_virus_level = 0;
 		const string& getP2PGuard() const
 		{
 #ifdef FLYLINKDC_USE_P2P_GUARD

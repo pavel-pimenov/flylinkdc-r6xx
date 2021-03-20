@@ -970,7 +970,7 @@ void HubFrame::processFrameCommand(const tstring& fullMessageText, const tstring
 			OnSwitchedPanels();
 	}
 #endif
-// SSA_SAVE_LAST_NICK_MACROS
+
 	else if (stricmp(cmd.c_str(), _T("nick")) == 0 || stricmp(cmd.c_str(), _T("n")) == 0)
 	{
 		tstring sayMessage;
@@ -981,7 +981,6 @@ void HubFrame::processFrameCommand(const tstring& fullMessageText, const tstring
 		sendMessage(sayMessage);
 		clearMessageWindow();
 	}
-// ~SSA_SAVE_LAST_NICK_MACROS
 	else
 	{
 		if (BOOLSETTING(SEND_UNKNOWN_COMMANDS))
@@ -1277,11 +1276,11 @@ LRESULT HubFrame::onDoubleClickUsers(int /*idCtrl*/, LPNMHDR pnmh, BOOL& /*bHand
 			switch (SETTING(USERLIST_DBLCLICK))
 			{
 				case 0:
-					l_ui->getList(); // [35] https://www.box.net/shared/b210d30d5247da9035f1
+					l_ui->getList();
 					break;
 				case 1:
 				{
-					m_lastUserName = l_ui->getNickT(); // SSA_SAVE_LAST_NICK_MACROS
+					m_lastUserName = l_ui->getNickT();
 					appendNickToChat(m_lastUserName);
 					break;
 				}
@@ -2612,10 +2611,9 @@ void HubFrame::clearUserList()
 	}
 	{
 		CFlyWriteLock(*m_userMapCS);
-		//CFlyLock(m_userMapCS);
 		for (auto i = m_userMap.cbegin(); i != m_userMap.cend(); ++i)
 		{
-			delete i->second; //[2] https://www.box.net/shared/202f89c842ee60bdecb9
+			delete i->second; 
 		}
 		m_userMap.clear();
 	}
@@ -2704,7 +2702,7 @@ LRESULT HubFrame::onLButton(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, BOOL& b
 					}
 					case 1:
 					{
-						m_lastUserName = ui->getText(COLUMN_NICK); // SSA_SAVE_LAST_NICK_MACROS
+						m_lastUserName = ui->getText(COLUMN_NICK);
 						appendNickToChat(m_lastUserName);
 						break;
 					}
@@ -4433,21 +4431,21 @@ LRESULT HubFrame::onAddNickToChat(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWn
 	{
 		if (getSelectedUser())
 		{
-			m_lastUserName = getSelectedUser()->getIdentity().getNickT();// SSA_SAVE_LAST_NICK_MACROS
+			m_lastUserName = getSelectedUser()->getIdentity().getNickT();
 		}
 		else
 		{
-			m_lastUserName.clear(); // SSA_SAVE_LAST_NICK_MACROS
+			m_lastUserName.clear();
 			int i = -1;
 			while ((i = m_ctrlUsers->GetNextItem(i, LVNI_SELECTED)) != -1)
 			{
-				if (!m_lastUserName.empty())// SSA_SAVE_LAST_NICK_MACROS
-					m_lastUserName += _T(", ");// SSA_SAVE_LAST_NICK_MACROS
+				if (!m_lastUserName.empty())
+					m_lastUserName += _T(", ");
 					
-				m_lastUserName += m_ctrlUsers->getItemData(i)->getNickT();// SSA_SAVE_LAST_NICK_MACROS
+				m_lastUserName += m_ctrlUsers->getItemData(i)->getNickT();
 			}
 		}
-		appendNickToChat(m_lastUserName); // SSA_SAVE_LAST_NICK_MACROS
+		appendNickToChat(m_lastUserName);
 	}
 	return 0;
 }

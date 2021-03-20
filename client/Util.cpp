@@ -1715,7 +1715,7 @@ string Util::formatParams(const string& msg, const StringMap& params, bool filte
 		l_find_alcohol = true;
 		if (c < result.length() - 1)
 		{
-			if (g_goodchars.find(result[c + 1], 0) == string::npos) // [6] https://www.box.net/shared/68bcb4f96c1b5c39f12d
+			if (g_goodchars.find(result[c + 1], 0) == string::npos)
 			{
 				result.replace(c, 1, "%%");
 				c++;

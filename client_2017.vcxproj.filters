@@ -247,9 +247,6 @@
     <ClCompile Include="jsoncpp\jsoncpp.cpp">
       <Filter>Source Files\jsoncpp</Filter>
     </ClCompile>
-    <ClCompile Include="client\zip\zip.c">
-      <Filter>Source Files\mzip</Filter>
-    </ClCompile>
     <ClCompile Include="client\webrtc\rtc_base\synchronization\rw_lock_win.cc">
       <Filter>Source Files\webrtc</Filter>
     </ClCompile>
@@ -744,12 +741,6 @@
     <ClInclude Include="selene\include\selene\util.h">
       <Filter>Header Files\selene</Filter>
     </ClInclude>
-    <ClInclude Include="client\zip\miniz.h">
-      <Filter>Header Files\zip</Filter>
-    </ClInclude>
-    <ClInclude Include="client\zip\zip.h">
-      <Filter>Header Files\zip</Filter>
-    </ClInclude>
     <ClInclude Include="client\webrtc\rtc_base\synchronization\rw_lock_win.h">
       <Filter>Source Files\webrtc</Filter>
     </ClInclude>
@@ -811,12 +802,6 @@
     </Filter>
     <Filter Include="Header Files\selene">
       <UniqueIdentifier>{b769fbea-470d-4491-9a00-40028bb8cc41}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\mzip">
-      <UniqueIdentifier>{84096e6f-60b6-4f0c-939d-d548ac07cd87}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\zip">
-      <UniqueIdentifier>{84323aa5-4f68-4fa2-bdee-e193b3129271}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header Files\idna">
       <UniqueIdentifier>{21e47374-4f41-47f1-b223-45719142797d}</UniqueIdentifier>

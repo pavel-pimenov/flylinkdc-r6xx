@@ -272,7 +272,7 @@ class CriticalSection
 		
 		void log(const char* p_add_info)
 		{
-#ifdef FLYLINKDC_BETA
+#if 0
 			extern bool g_UseCSRecursionLog;
 			if (g_UseCSRecursionLog)
 			{

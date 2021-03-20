@@ -618,16 +618,6 @@
     <ClCompile Include="client\webrtc\rtc_base\synchronization\rw_lock_winxp_win.cc" />
     <ClCompile Include="client\webrtc\rtc_base\synchronization\rw_lock_wrapper.cc" />
     <ClCompile Include="client\webrtc\talk\base\winfirewall.cc" />
-    <ClCompile Include="client\zip\zip.c">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
-    </ClCompile>
     <ClCompile Include="client\ZUtils.cpp" />
     <ClCompile Include="client\CFlylinkDBManager.cpp" />
     <ClCompile Include="client\sqlite\sqlite3.c">
@@ -750,8 +740,6 @@
     <ClInclude Include="client\webrtc\talk\base\winfirewall.h" />
     <ClInclude Include="client\WildcardsReg.h" />
     <ClInclude Include="client\w_flylinkdc.h" />
-    <ClInclude Include="client\zip\miniz.h" />
-    <ClInclude Include="client\zip\zip.h" />
     <ClInclude Include="jsoncpp\include\json\json.h" />
     <ClInclude Include="revision.h" />
     <ClInclude Include="client\SearchManager.h" />

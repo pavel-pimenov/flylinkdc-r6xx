@@ -1595,7 +1595,7 @@ LRESULT TransferView::onSpeaker(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lPara
 				dcassert(0);
 				break;
 		};
-		delete i->second;  // [1] https://www.box.net/shared/307aa981b9cef05fc096
+		delete i->second;
 	}
 	if (m_is_need_resort && !MainFrame::isAppMinimized())
 	{
@@ -2168,7 +2168,6 @@ void TransferView::on(DownloadManagerListener::Status, const UserConnection* p_c
 {
 	if (!ClientManager::isBeforeShutdown())
 	{
-		// dcassert(const_cast<UserConnection*>(uc)->getDownload()); // TODO при окончании закачки это поле уже пустое https://www.box.net/shared/4cknwlue3njzksmciu63
 		UpdateInfo* ui = new UpdateInfo(p_conn->getHintedUser(), true);
 		ui->setStatus(ItemInfo::STATUS_WAITING);
 		ui->setStatusString(Text::toT(aReason));
@@ -2852,7 +2851,7 @@ LRESULT TransferView::onRemoveAll(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWn
 {
 	UINT checkState = BOOLSETTING(CONFIRM_DELETE) ? BST_UNCHECKED : BST_CHECKED;
 	if (checkState == BST_CHECKED || ::MessageBox(NULL, CTSTRING(REALLY_REMOVE), getFlylinkDCAppCaptionWithVersionT().c_str(), CTSTRING(DONT_ASK_AGAIN), MB_YESNO | MB_ICONQUESTION | MB_DEFBUTTON1, checkState) == IDYES)
-		ctrlTransfers.forEachSelected(&ItemInfo::removeAll); // [6] https://www.box.net/shared/4eed8e2e275210b6b654
+		ctrlTransfers.forEachSelected(&ItemInfo::removeAll); 
 	// Let's update the setting unchecked box means we bug user again...
 	SET_SETTING(CONFIRM_DELETE, checkState != BST_CHECKED);
 	return 0;

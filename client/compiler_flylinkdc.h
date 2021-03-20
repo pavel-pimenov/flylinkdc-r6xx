@@ -312,9 +312,6 @@ typedef unsigned __int64 uint64_t;
 
 //#define USE_OFFLINE_ICON_FOR_FILELIST  Нужна доработка. // not yet implemented, don't turn on
 
-// SSA_SAVE_LAST_NICK_MACROS нигде не юзается
-// #define SSA_SAVE_LAST_NICK_MACROS //
-
 #define SSA_REMOVE_NEEDLESS_WORDS_FROM_VIDEO_AUDIO_INFO
 #define SSA_NEW_WINAMP_PROC_FOR_TITLE_AND_FILENAME
 // #define SSA_DONT_SHOW_MAGNET_ON_NO_FILE_IN_SHARE

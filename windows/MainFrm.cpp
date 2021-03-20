@@ -647,7 +647,7 @@ LRESULT MainFrame::OnCreate(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/,
 	ToolbarManager::applyTo(m_rebar, "MainToolBar");
 	
 	m_ctrlStatus.Attach(m_hWndStatusBar);
-	m_ctrlStatus.SetSimple(FALSE); // https://www.box.net/shared/6d96012d9690dc892187
+	m_ctrlStatus.SetSimple(FALSE); 
 	int w[STATUS_PART_LAST - 1] = {0};
 	m_ctrlStatus.SetParts(STATUS_PART_LAST - 1, w);
 	m_statusSizes[0] = WinUtil::getTextWidth(TSTRING(AWAY_STATUS), m_ctrlStatus.m_hWnd);
@@ -1904,7 +1904,7 @@ void MainFrame::parseCommandLine(const tstring& cmdLine)
 	}
 	if ((j = l_cmdLine.find(_T("magnet:?"), i)) != string::npos)
 	{
-		WinUtil::parseMagnetUri(l_cmdLine.substr(j)); // [1] https://www.box.net/shared/6e7a194cff59e3057d5d
+		WinUtil::parseMagnetUri(l_cmdLine.substr(j)); 
 	}
 	else if ((j = l_cmdLine.find(_T("dchub://"), i)) != string::npos ||
 	         (j = l_cmdLine.find(_T("nmdcs://"), i)) != string::npos ||
@@ -3814,7 +3814,7 @@ UINT MainFrame::ShowSetupWizard()
 	}
 	catch (Exception & e)
 	{
-		::MessageBox(NULL, Text::toT(e.getError()).c_str(), getFlylinkDCAppCaptionWithVersionT().c_str(), MB_OK | MB_ICONERROR); // [1] https://www.box.net/shared/tsdgrjdhgdfjrsz168r7
+		::MessageBox(NULL, Text::toT(e.getError()).c_str(), getFlylinkDCAppCaptionWithVersionT().c_str(), MB_OK | MB_ICONERROR); 
 		return IDCLOSE;
 	}
 }

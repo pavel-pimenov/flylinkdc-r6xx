@@ -157,7 +157,7 @@ void VideoPreview::clear()
 	SocketProcessorSIter i = _socketProcessors.begin();
 	while (i != _socketProcessors.end())
 	{
-		if ((*i)->IsInProcess()) // [2] https://www.box.net/shared/6sfnyx7a7wg6ig9a8uly
+		if ((*i)->IsInProcess())
 		{
 			(*i)->setServerIsDie();
 			(*i)->join();
@@ -252,7 +252,7 @@ void VideoPreview::_StopServer()
 		_serverStarted = false;
 		LogManager::message("Stopped PreviewServer");
 #ifdef _DEBUG
-		VideoPreview::getInstance()->AddLogInfo("Stopped PreviewServer"); // [20] https://www.box.net/shared/qzotdk8odzsct74kxzgg
+		VideoPreview::getInstance()->AddLogInfo("Stopped PreviewServer");
 #endif
 	}
 	clear();

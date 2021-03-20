@@ -1452,7 +1452,7 @@ std::bitset<32> MediaInfo_Internal::Open_Buffer_Continue (const int8u* ToAdd, si
     #endif //MEDIAINFO_COMPRESS
     Info->Open_Buffer_Continue(ToAdd, ToAdd_Size);
 
-    if (Info_IsMultipleParsing && Info->Status[File__Analyze::IsAccepted]) // [crash count = 1] https://www.box.net/shared/a26329f786eca7289a75
+    if (Info_IsMultipleParsing && Info->Status[File__Analyze::IsAccepted])
     {
         //Found
         File__Analyze* Info_ToDelete=Info;

@@ -891,7 +891,6 @@ void ClientManager::send(AdcCommand& cmd, const CID& cid)
 	}
 	if (l_is_send)
 	{
-		l_is_send = true;
 		u->getClient().send(cmd);
 	}
 	if (l_port && !l_ip.empty())
@@ -1635,7 +1634,7 @@ Identity ClientManager::getIdentity(const UserPtr& user)
 	CFlyReadLock(*g_csOnlineUsers);
 	const OnlineUser* ou = getOnlineUserL(user);
 	if (ou)
-		return  ou->getIdentity(); // https://www.box.net/shared/1w3v80olr2oro7s1gqt4
+		return  ou->getIdentity();
 	else
 		return Identity();
 }
