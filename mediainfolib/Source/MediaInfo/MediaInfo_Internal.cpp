@@ -2181,6 +2181,7 @@ String MediaInfo_Internal::Option (const String &Option, const String &Value)
         }
     #endif //MEDIAINFO_TRACE
     #if MEDIAINFO_ADVANCED
+      #ifdef FLYLINKDC_MEDIAINFO_USE_ZLIB
         if (OptionLower.find(__T("file_inform_stringpointer")) == 0)
         {
             Inform_Cache = Inform(this).To_UTF8();
@@ -2203,6 +2204,7 @@ String MediaInfo_Internal::Option (const String &Option, const String &Value)
             #endif //MEDIAINFO_COMPRESS
             return Ztring::ToZtring((int64u)Inform_Cache.data()) + __T(':') + Ztring::ToZtring((int64u)Inform_Cache.size());
         }
+       #endif // #ifdef FLYLINKDC_MEDIAINFO_USE_ZLIB
     #endif //MEDIAINFO_ADVANCED
     else if (OptionLower.find(__T("reset"))==0)
     {
@@ -2277,13 +2279,13 @@ void MediaInfo_Internal::Event_Prepare (struct MediaInfo_Event_Generic* Event, i
 #endif // MEDIAINFO_EVENTS
 
 //---------------------------------------------------------------------------
+#ifdef FLYLINKDC_USE_MEDIAINFO_INFORM
 Ztring MediaInfo_Internal::Inform(MediaInfo_Internal* Info)
 {
     std::vector<MediaInfoLib::MediaInfo_Internal*> Info2;
     Info2.push_back(Info);
     return MediaInfoLib::MediaInfo_Internal::Inform(Info2);
 }
-
 //---------------------------------------------------------------------------
 Ztring MediaInfo_Internal::Inform(std::vector<MediaInfo_Internal*>& Info)
 {
@@ -2476,6 +2478,7 @@ Ztring MediaInfo_Internal::Inform(std::vector<MediaInfo_Internal*>& Info)
     }
 
     #if MEDIAINFO_COMPRESS
+       #ifdef FLYLINKDC_MEDIAINFO_USE_ZLIB
         bool zlib=MediaInfoLib::Config.FlagsX_Get(Flags_Inform_zlib);
         bool base64=MediaInfoLib::Config.FlagsX_Get(Flags_Inform_base64);
         if (zlib || base64)
@@ -2498,9 +2501,11 @@ Ztring MediaInfo_Internal::Inform(std::vector<MediaInfo_Internal*>& Info)
             }
             Result.From_UTF8(Inform_Cache);
         }
+      #endif // FLYLINKDC_MEDIAINFO_USE_ZLIB
     #endif //MEDIAINFO_COMPRESS
 
     return Result.c_str();
 }
+#endif
 
 } //NameSpace

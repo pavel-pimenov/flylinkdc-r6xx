@@ -3024,7 +3024,6 @@ void File_Mpeg_Descriptors::Descriptor_7F_19()
     {
         Element_Begin1("preselection");
         Descriptor_7F_19_Info& Info=Infos[p];
-        int8u preselection_id;
         bool language_code_present, text_label_present, multi_stream_info_present, future_extension;
         Get_S1 (5, Info.preselection_id,                        "preselection_id");
         Get_S1 (3, Info.audio_rendering_indication,             "audio_rendering_indication");
