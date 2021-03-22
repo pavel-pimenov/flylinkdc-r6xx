@@ -133,9 +133,6 @@ crash_rpt::CrashRpt g_crashRpt(
 
 #endif
 
-//#ifdef FLYLINKDC_BETA
-//bool g_UseCSRecursionLog = false;
-//#endif
 bool g_UseStrongDCTag = false;
 
 CAppModule _Module;

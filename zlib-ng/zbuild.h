@@ -10,22 +10,20 @@
 #  endif
 #endif
 
-#undef ZLIB_COMPAT //[+] FlylinkDC++
-
-//#if defined(ZLIB_COMPAT)
-//#  define PREFIX(x) x
-//#  define PREFIX2(x) ZLIB_ ## x
-//#  define PREFIX3(x) z_ ## x
-//#  define PREFIX4(x) x ## 64
-//#  define zVersion zlibVersion
-//#  define z_size_t unsigned long
-//#else
+#if defined(ZLIB_COMPAT)
+#  define PREFIX(x) x
+#  define PREFIX2(x) ZLIB_ ## x
+#  define PREFIX3(x) z_ ## x
+#  define PREFIX4(x) x ## 64
+#  define zVersion zlibVersion
+#  define z_size_t unsigned long
+#else
 #  define PREFIX(x) zng_ ## x
 #  define PREFIX2(x) ZLIBNG_ ## x
 #  define PREFIX3(x) zng_ ## x
 #  define PREFIX4(x) zng_ ## x
 #  define zVersion zlibng_version
 #  define z_size_t size_t
-//#endif
+#endif
 
 #endif

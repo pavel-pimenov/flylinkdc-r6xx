@@ -632,7 +632,6 @@ void FlagImage::init()
 	dcassert(m_images.GetImageCount() <= 255); // „тобы не превысить 8 бит
 	
 #ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
-	
 	if (!CompatibilityManager::isWine()) // под линуксом пока падаем http://flylinkdc.blogspot.com/2010/08/customlocationsbmp-wine.html
 	{
 		CBitmap UserLocations;
@@ -1395,7 +1394,7 @@ tstring WinUtil::getCommandsList()
 	       _T("\n/shutdown \t\t\t\t") + TSTRING(CMD_SHUTDOWN) +
 	       _T("\n/me \t\t\t\t\t") + TSTRING(CMD_ME) +
 	       _T("\n/winamp, /w (/wmp, /itunes, /mpc, /ja) \t") + TSTRING(CMD_WINAMP) +
-	       _T("\n/n \t\t\t\t\t") + TSTRING(CMD_REPLACE_WITH_LAST_INSERTED_NICK) + 
+	       _T("\n/n \t\t\t\t\t") + TSTRING(CMD_REPLACE_WITH_LAST_INSERTED_NICK) +
 	       _T("\n------------------------------------------------------------------------------------------------------------------------------------------------------------\n") +
 	       TSTRING(CMD_HELP_INFO) +
 	       _T("\n------------------------------------------------------------------------------------------------------------------------------------------------------------\n")

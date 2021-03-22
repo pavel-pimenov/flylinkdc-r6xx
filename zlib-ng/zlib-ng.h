@@ -50,7 +50,6 @@ extern "C" {
 #define ZLIBNG_VER_MINOR 0
 #define ZLIBNG_VER_REVISION 1
 #define ZLIBNG_VER_SUBREVISION 0
-#define WITH_GZFILEOP
 
 /*
     The 'zlib' compression library provides in-memory compression and

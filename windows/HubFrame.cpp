@@ -970,7 +970,6 @@ void HubFrame::processFrameCommand(const tstring& fullMessageText, const tstring
 			OnSwitchedPanels();
 	}
 #endif
-
 	else if (stricmp(cmd.c_str(), _T("nick")) == 0 || stricmp(cmd.c_str(), _T("n")) == 0)
 	{
 		tstring sayMessage;
@@ -2613,7 +2612,7 @@ void HubFrame::clearUserList()
 		CFlyWriteLock(*m_userMapCS);
 		for (auto i = m_userMap.cbegin(); i != m_userMap.cend(); ++i)
 		{
-			delete i->second; 
+			delete i->second;
 		}
 		m_userMap.clear();
 	}
@@ -4766,7 +4765,7 @@ LRESULT HubFrame::onCustomDraw(int /*idCtrl*/, LPNMHDR pnmh, BOOL& bHandled)
 					ui->m_owner_draw = 1;
 					speak(ASYNC_LOAD_PG_AND_GEI_IP, ui->getOnlineUser());
 				}
-			
+				
 				Colors::getUserColor(m_client->isOp(), ui->getUser(), cd->clrText, cd->clrTextBk, ui->m_flag_mask, ui->getOnlineUser());
 			}
 #ifdef FLYLINKDC_USE_LIST_VIEW_MATTRESS
