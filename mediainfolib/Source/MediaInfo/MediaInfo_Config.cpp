@@ -457,6 +457,8 @@ void MediaInfo_Config::Init(bool Force)
     Trace_Format=Trace_Format_Tree;
     Language_Raw=false;
     ReadByHuman=true;
+    Inform_Version=false;
+    Inform_Timestamp=false;
     Legacy=false;
     LegacyStreamDisplay=false;
     SkipBinaryData=false;
@@ -1001,6 +1003,24 @@ Ztring MediaInfo_Config::Option (const String &Option, const String &Value_Raw)
     if (Option_Lower==__T("inform_replace_get"))
     {
         return Inform_Get();
+    }
+    if (Option_Lower==__T("inform_version"))
+    {
+        Inform_Version_Set(Value.To_int8u()?true:false);
+        return Ztring();
+    }
+    if (Option_Lower==__T("inform_version_get"))
+    {
+        return Inform_Version_Get()?__T("1"):__T("0");
+    }
+    if (Option_Lower==__T("inform_timestamp"))
+    {
+        Inform_Timestamp_Set(Value.To_int8u()?true:false);
+        return Ztring();
+    }
+    if (Option_Lower==__T("inform_timestamp_get"))
+    {
+        return Inform_Timestamp_Get()?__T("1"):__T("0");
     }
     #if MEDIAINFO_ADVANCED
         if (Option_Lower==__T("cover_data"))
@@ -2434,6 +2454,32 @@ ZtringListList MediaInfo_Config::Inform_Replace_Get_All ()
 {
     CriticalSectionLocker CSL(CS);
     return Custom_View_Replace;
+}
+
+//---------------------------------------------------------------------------
+void MediaInfo_Config::Inform_Version_Set (bool NewValue)
+{
+    CriticalSectionLocker CSL(CS);
+    Inform_Version=NewValue;
+}
+
+bool MediaInfo_Config::Inform_Version_Get ()
+{
+    CriticalSectionLocker CSL(CS);
+    return Inform_Version;
+}
+
+//---------------------------------------------------------------------------
+void MediaInfo_Config::Inform_Timestamp_Set (bool NewValue)
+{
+    CriticalSectionLocker CSL(CS);
+    Inform_Timestamp=NewValue;
+}
+
+bool MediaInfo_Config::Inform_Timestamp_Get ()
+{
+    CriticalSectionLocker CSL(CS);
+    return Inform_Timestamp;
 }
 
 //---------------------------------------------------------------------------

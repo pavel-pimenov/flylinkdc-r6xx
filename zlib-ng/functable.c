@@ -134,7 +134,7 @@ extern uint32_t longest_match_unaligned_avx2(deflate_state *const s, Pos cur_mat
 #endif
 #endif
 
-//[-]FlylinkDC++ Z_INTERNAL Z_TLS struct functable_s functable;
+Z_INTERNAL Z_TLS struct functable_s functable;
 
 Z_INTERNAL void cpu_check_features(void)
 {
