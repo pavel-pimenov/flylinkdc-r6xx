@@ -1,10 +1,10 @@
 /*
 
-Copyright (c) 2003-2011, 2013-2020, Arvid Norberg
-Copyright (c) 2004, Magnus Jonsson
-Copyright (c) 2016-2018, 2020, Alden Torres
-Copyright (c) 2016, Markus
 Copyright (c) 2017, Pavel Pimenov
+Copyright (c) 2003-2011, 2013-2021, Arvid Norberg
+Copyright (c) 2004, Magnus Jonsson
+Copyright (c) 2016-2018, 2020-2021, Alden Torres
+Copyright (c) 2016, Markus
 Copyright (c) 2017-2019, Steven Siloti
 Copyright (c) 2017, 2019, Andrei Kurushin
 Copyright (c) 2019, Amir Abrams
@@ -477,6 +477,7 @@ TORRENT_VERSION_NAMESPACE_3
 
 		// internal
 		bool v2_piece_hashes_verified() const { return bool(m_flags & v2_has_piece_hashes); }
+		void set_piece_layers(aux::vector<aux::vector<char>, file_index_t> pl);
 
 		// returns the piece size of file with ``index``. This will be the same as piece_length(),
 		// except for the last piece, which may be shorter.

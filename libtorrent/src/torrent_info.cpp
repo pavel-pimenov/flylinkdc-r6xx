@@ -1,10 +1,10 @@
 /*
 
-Copyright (c) 2003-2020, Arvid Norberg
+Copyright (c) 2003-2021, Arvid Norberg
 Copyright (c) 2016-2017, Pavel Pimenov
 Copyright (c) 2016-2019, Steven Siloti
-Copyright (c) 2016-2018, Alden Torres
 Copyright (c) 2016, 2019, Andrei Kurushin
+Copyright (c) 2016-2018, 2020-2021, Alden Torres
 All rights reserved.
 
 You may use, distribute and modify this code under the terms of the BSD license,
@@ -1032,6 +1032,13 @@ namespace {
 	{}
 
 	torrent_info::~torrent_info() = default;
+
+	// internal
+	void torrent_info::set_piece_layers(aux::vector<aux::vector<char>, file_index_t> pl)
+	{
+		m_piece_layers = pl;
+		m_flags |= v2_has_piece_hashes;
+	}
 
 	sha1_hash torrent_info::hash_for_piece(piece_index_t const index) const
 	{ return sha1_hash(hash_for_piece_ptr(index)); }

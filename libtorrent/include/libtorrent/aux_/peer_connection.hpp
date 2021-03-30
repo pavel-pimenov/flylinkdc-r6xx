@@ -1,9 +1,9 @@
 /*
 
 Copyright (c) 2016, Falcosc
-Copyright (c) 2003-2020, Arvid Norberg
+Copyright (c) 2003-2021, Arvid Norberg
 Copyright (c) 2004, Magnus Jonsson
-Copyright (c) 2016-2018, 2020, Alden Torres
+Copyright (c) 2016-2018, 2020-2021, Alden Torres
 Copyright (c) 2017-2018, Steven Siloti
 Copyright (c) 2017, Pavel Pimenov
 All rights reserved.
@@ -397,7 +397,7 @@ namespace libtorrent::aux {
 #endif
 
 		void set_upload_only(bool);
-		bool upload_only() const { return m_upload_only; }
+		bool upload_only() const { return m_upload_only || is_seed() || m_have_all; }
 
 		void set_holepunch_mode() override;
 
@@ -1113,7 +1113,9 @@ namespace libtorrent::aux {
 		bool m_share_mode:1;
 #endif
 
-		// set to true when this peer is only uploading
+		// set to true when this peer has told us explicitly that it is only
+		// uploading. A seed is *implicitly* upload only, so this is not
+		// necessarily true.
 		bool m_upload_only:1;
 
 		// this is set to true once the bitfield is received

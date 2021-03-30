@@ -1,6 +1,6 @@
 /*
 
-Copyright (c) 2016-2020, Arvid Norberg
+Copyright (c) 2016-2021, Arvid Norberg
 Copyright (c) 2016-2018, Alden Torres
 Copyright (c) 2017, Falcosc
 All rights reserved.
@@ -88,6 +88,9 @@ namespace libtorrent {
 
 		for (int i = 1; i < words + 1; ++i)
 		{
+#if defined __GNUC__ || defined __clang__
+			ret += __builtin_popcountl(m_buf[i]);
+#else
 			std::uint32_t const v = m_buf[i];
 			// from:
 			// http://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetParallel
@@ -101,6 +104,7 @@ namespace libtorrent {
 			c = ((c >> S[4]) + c) & B[4];
 			ret += c;
 			TORRENT_ASSERT(ret <= size());
+#endif
 		}
 
 		TORRENT_ASSERT(ret <= size());

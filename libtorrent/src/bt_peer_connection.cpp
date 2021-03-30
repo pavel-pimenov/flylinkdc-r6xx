@@ -1,9 +1,9 @@
 /*
 
-Copyright (c) 2006-2020, Arvid Norberg
+Copyright (c) 2006-2021, Arvid Norberg
 Copyright (c) 2007, Un Shyam
 Copyright (c) 2015, Mikhail Titov
-Copyright (c) 2016-2020, Alden Torres
+Copyright (c) 2016-2021, Alden Torres
 Copyright (c) 2016-2018, Pavel Pimenov
 Copyright (c) 2016-2017, Andrei Kurushin
 Copyright (c) 2016-2020, Steven Siloti
@@ -1144,7 +1144,7 @@ namespace {
 
 		if (!peer_info_struct()->protocol_v2)
 		{
-			disconnect(errors::invalid_message, operation_t::bittorrent);
+			disconnect(errors::invalid_message, operation_t::bittorrent, peer_error);
 			return;
 		}
 
@@ -1206,7 +1206,7 @@ namespace {
 
 		if (!peer_info_struct()->protocol_v2)
 		{
-			disconnect(errors::invalid_message, operation_t::bittorrent);
+			disconnect(errors::invalid_message, operation_t::bittorrent, peer_error);
 			return;
 		}
 
@@ -1299,7 +1299,7 @@ namespace {
 
 		if (!peer_info_struct()->protocol_v2)
 		{
-			disconnect(errors::invalid_message, operation_t::bittorrent);
+			disconnect(errors::invalid_message, operation_t::bittorrent, peer_error);
 			return;
 		}
 
@@ -2130,7 +2130,7 @@ namespace {
 				}
 #endif
 				received_bytes(0, received);
-				disconnect(errors::invalid_message, operation_t::bittorrent);
+				disconnect(errors::invalid_message, operation_t::bittorrent, peer_error);
 				return m_recv_buffer.packet_finished();
 			}
 		}

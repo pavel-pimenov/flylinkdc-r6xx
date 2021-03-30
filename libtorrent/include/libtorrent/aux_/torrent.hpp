@@ -1,9 +1,9 @@
 /*
 
-Copyright (c) 2003-2020, Arvid Norberg
+Copyright (c) 2003-2021, Arvid Norberg
 Copyright (c) 2003, Daniel Wallin
 Copyright (c) 2004, Magnus Jonsson
-Copyright (c) 2016-2020, Alden Torres
+Copyright (c) 2016-2021, Alden Torres
 Copyright (c) 2017, Falcosc
 Copyright (c) 2017, Pavel Pimenov
 Copyright (c) 2017, AllSeeingEyeTolledEweSew
@@ -12,6 +12,7 @@ Copyright (c) 2018, d-komarov
 Copyright (c) 2019, ghbplayer
 Copyright (c) 2020, Viktor Elofsson
 Copyright (c) 2020, Paul-Louis Ageneau
+Copyright (c) 2021, AdvenT
 All rights reserved.
 
 You may use, distribute and modify this code under the terms of the BSD license,
@@ -257,7 +258,7 @@ namespace libtorrent::aux {
 		bool m_upload_mode:1;
 
 		// this is set to false as long as the connections
-		// of this torrent hasn't been initialized. If we
+		// of this torrent haven't been initialized. If we
 		// have metadata from the start, connections are
 		// initialized immediately, if we didn't have metadata,
 		// they are initialized right after files_checked().
@@ -1041,7 +1042,9 @@ namespace libtorrent::aux {
 		void hashes_rejected(hash_request const& req);
 		void verify_block_hashes(piece_index_t index);
 
-		std::shared_ptr<const torrent_info> get_torrent_copy();
+		std::shared_ptr<const torrent_info> get_torrent_file() const;
+
+		std::shared_ptr<torrent_info> get_torrent_copy_with_hashes() const;
 
 		std::vector<std::vector<sha256_hash>> get_piece_layers() const;
 

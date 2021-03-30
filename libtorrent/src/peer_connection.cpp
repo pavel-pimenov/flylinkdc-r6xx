@@ -1,10 +1,10 @@
 /*
 
 Copyright (c) 2016, tnextday
-Copyright (c) 2003-2020, Arvid Norberg
+Copyright (c) 2003-2021, Arvid Norberg
 Copyright (c) 2004, Magnus Jonsson
 Copyright (c) 2015, Mikhail Titov
-Copyright (c) 2016-2018, 2020, Alden Torres
+Copyright (c) 2016-2018, 2020-2021, Alden Torres
 Copyright (c) 2016-2018, Steven Siloti
 Copyright (c) 2016, Andrei Kurushin
 Copyright (c) 2018, Pavel Pimenov
@@ -761,7 +761,6 @@ namespace {
 			// if this is a web seed. we don't have a peer_info struct
 			t->set_seed(m_peer_info, true);
 			TORRENT_ASSERT(is_seed());
-			m_upload_only = true;
 
 			t->peer_has_all(this);
 
@@ -2002,6 +2001,7 @@ namespace {
 				, static_cast<void*>(m_peer_info));
 #endif
 
+			TORRENT_ASSERT(t->ready_for_connections());
 			TORRENT_ASSERT(m_have_piece.all_set());
 			TORRENT_ASSERT(m_have_piece.count() == m_have_piece.size());
 			TORRENT_ASSERT(m_have_piece.size() == t->torrent_file().num_pieces());
@@ -2009,7 +2009,6 @@ namespace {
 			t->seen_complete();
 			t->set_seed(m_peer_info, true);
 			TORRENT_ASSERT(is_seed());
-			m_upload_only = true;
 
 #if TORRENT_USE_INVARIANT_CHECKS
 			if (t && t->has_picker())
@@ -2218,7 +2217,6 @@ namespace {
 #endif
 
 			t->set_seed(m_peer_info, true);
-			m_upload_only = true;
 
 			m_have_piece.set_all();
 			m_num_pieces = num_pieces;
@@ -2277,7 +2275,7 @@ namespace {
 		if (t->share_mode()) return false;
 #endif
 
-		if (m_upload_only && t->is_upload_only()
+		if (upload_only() && t->is_upload_only()
 			&& can_disconnect(errors::upload_upload_connection))
 		{
 #ifndef TORRENT_DISABLE_LOGGING
@@ -2287,7 +2285,7 @@ namespace {
 			return true;
 		}
 
-		if (m_upload_only
+		if (upload_only()
 			&& !m_interesting
 			&& m_bitfield_received
 			&& t->are_files_checked()
@@ -3325,8 +3323,6 @@ namespace {
 #endif
 
 		t->set_seed(m_peer_info, true);
-		TORRENT_ASSERT(is_seed());
-		m_upload_only = true;
 		m_bitfield_received = true;
 
 		// if we don't have metadata yet
@@ -4601,7 +4597,7 @@ namespace {
 		get_specific_peer_info(p);
 
 		if (m_snubbed) p.flags |= peer_info::snubbed;
-		if (m_upload_only) p.flags |= peer_info::upload_only;
+		if (upload_only()) p.flags |= peer_info::upload_only;
 		if (m_endgame_mode) p.flags |= peer_info::endgame_mode;
 		if (m_holepunch_mode) p.flags |= peer_info::holepunched;
 		if (peer_info_struct())
@@ -6631,14 +6627,14 @@ namespace {
 
 			// make sure upload only peers are disconnected
 			if (t->is_upload_only()
-				&& m_upload_only
+				&& upload_only()
 				&& !m_need_interest_update
 				&& t->valid_metadata()
 				&& has_metadata()
 				&& ok_to_disconnect)
 				TORRENT_ASSERT(m_disconnect_started || t->graceful_pause() || t->has_error());
 
-			if (m_upload_only
+			if (upload_only()
 				&& !m_interesting
 				&& !m_need_interest_update
 				&& m_bitfield_received
@@ -6656,7 +6652,7 @@ namespace {
 			if (t->is_upload_only() && !m_need_interest_update)
 				TORRENT_ASSERT(!m_interesting || t->graceful_pause() || t->has_error());
 			if (is_seed())
-				TORRENT_ASSERT(m_upload_only);
+				TORRENT_ASSERT(upload_only());
 		}
 
 #ifdef TORRENT_EXPENSIVE_INVARIANT_CHECKS
@@ -6784,10 +6780,6 @@ namespace {
 	{
 		TORRENT_ASSERT(is_single_thread());
 
-		// if the peer told us it has all pieces, it doesn't matter whether we
-		// have the metadata or not, this peer is a seed.
-		if (m_have_all) return true;
-
 		// if m_num_pieces == 0, we probably don't have the
 		// metadata yet.
 		auto t = m_torrent.lock();
@@ -6809,10 +6801,6 @@ namespace {
 	void peer_connection::set_upload_only(bool u)
 	{
 		TORRENT_ASSERT(is_single_thread());
-		// if the peer is a seed, don't allow setting
-		// upload_only to false
-		if (m_upload_only && is_seed()) return;
-
 		m_upload_only = u;
 		disconnect_if_redundant();
 	}

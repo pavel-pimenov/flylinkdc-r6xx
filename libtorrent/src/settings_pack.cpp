@@ -1,8 +1,8 @@
 /*
 
-Copyright (c) 2014-2020, Arvid Norberg
+Copyright (c) 2014-2021, Arvid Norberg
 Copyright (c) 2015, Thomas Yuan
-Copyright (c) 2016-2018, Alden Torres
+Copyright (c) 2016-2018, 2020, Alden Torres
 Copyright (c) 2017, Steven Siloti
 Copyright (c) 2017, Andrei Kurushin
 Copyright (c) 2020, Paul-Louis Ageneau
@@ -108,7 +108,7 @@ namespace libtorrent {
 		SET(proxy_username, "", &session_impl::update_proxy),
 		SET(proxy_password, "", &session_impl::update_proxy),
 		SET(i2p_hostname, "", &session_impl::update_i2p_bridge),
-		SET(peer_fingerprint, "-LT2020-", nullptr),
+		SET(peer_fingerprint, "-LT2030-", nullptr),
 		SET(dht_bootstrap_nodes, "dht.libtorrent.org:25401", &session_impl::update_dht_bootstrap_nodes),
 		SET(webtorrent_stun_server, "stun.l.google.com:19302", nullptr)
 	}});

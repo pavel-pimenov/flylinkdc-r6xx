@@ -1,25 +1,25 @@
 /*
 
-Copyright (c) 2003-2020, Arvid Norberg
+Copyright (c) 2003-2021, Arvid Norberg
 Copyright (c) 2003, Daniel Wallin
 Copyright (c) 2004, Magnus Jonsson
 Copyright (c) 2008, Andrew Resch
 Copyright (c) 2015, Mikhail Titov
 Copyright (c) 2015-2020, Steven Siloti
 Copyright (c) 2016, Jonathan McDougall
-Copyright (c) 2016-2020, Alden Torres
+Copyright (c) 2016-2021, Alden Torres
 Copyright (c) 2016-2018, Pavel Pimenov
 Copyright (c) 2016-2017, Andrei Kurushin
 Copyright (c) 2017, Falcosc
 Copyright (c) 2017, 2020, AllSeeingEyeTolledEweSew
 Copyright (c) 2017, ximply
-Copyright (c) 2017, AllSeeingEyeTolledEweSew
-Copyright (c) 2018, d-komarov
 Copyright (c) 2018, Fernando Rodriguez
+Copyright (c) 2018, d-komarov
 Copyright (c) 2018, airium
 Copyright (c) 2020, Viktor Elofsson
 Copyright (c) 2020, Rosen Penev
 Copyright (c) 2020, Paul-Louis Ageneau
+Copyright (c) 2021, AdvenT
 All rights reserved.
 
 You may use, distribute and modify this code under the terms of the BSD license,
@@ -1752,7 +1752,14 @@ bool is_downloading_state(int const st)
 		// in case file priorities were passed in via the add_torrent_params
 		// and also in the case of share mode, we need to update the priorities
 		// this has to be applied before piece priority
-		if (!m_file_priority.empty()) update_piece_priorities(m_file_priority);
+		if (!m_file_priority.empty())
+		{
+			// m_file_priority was loaded from the resume data, this doesn't
+			// alter any state that needs to be saved in the resume data
+			bool const ns = m_need_save_resume_data;
+			update_piece_priorities(m_file_priority);
+			m_need_save_resume_data = ns;
+		}
 
 		if (m_add_torrent_params)
 		{
@@ -1857,7 +1864,7 @@ bool is_downloading_state(int const st)
 				// complete and just look at those
 				if (!t->is_seed()) continue;
 
-				res.match(t->get_torrent_copy(), t->save_path());
+				res.match(t->get_torrent_file(), t->save_path());
 			}
 			for (auto const& c : m_torrent_file->collections())
 			{
@@ -1870,7 +1877,7 @@ bool is_downloading_state(int const st)
 					// complete and just look at those
 					if (!t->is_seed()) continue;
 
-					res.match(t->get_torrent_copy(), t->save_path());
+					res.match(t->get_torrent_file(), t->save_path());
 				}
 			}
 
@@ -5320,9 +5327,12 @@ namespace {
 	{
 		m_outstanding_file_priority = false;
 		COMPLETE_ASYNC("file_priority");
+
 		if (m_file_priority != prios)
 		{
+			update_piece_priorities(prios);
 			m_file_priority = std::move(prios);
+			set_need_save_resume();
 #ifndef TORRENT_DISABLE_SHARE_MODE
 			if (m_share_mode)
 				recalc_share_mode();
@@ -5338,8 +5348,13 @@ namespace {
 
 			set_error(err.ec, err.file());
 			pause();
+			return;
 		}
-		else if (!m_deferred_file_priorities.empty() && !m_abort)
+
+		if (alerts().should_post<file_prio_alert>())
+			alerts().emplace_alert<file_prio_alert>(get_handle());
+
+		if (!m_deferred_file_priorities.empty() && !m_abort)
 		{
 			auto new_priority = m_file_priority;
 			// resize the vector if we have to. The last item in the map has the
@@ -5368,6 +5383,8 @@ namespace {
 		auto new_priority = fix_priorities(std::move(files)
 			, valid_metadata() ? &m_torrent_file->files() : nullptr);
 
+		m_deferred_file_priorities.clear();
+
 		// storage may be NULL during shutdown
 		if (m_storage)
 		{
@@ -5376,7 +5393,6 @@ namespace {
 			// updated immediately. If, on the off-chance, there's a disk failure, the
 			// piece priorities still stay the same, but the file priorities are
 			// possibly not fully updated.
-			update_piece_priorities(new_priority);
 
 			m_outstanding_file_priority = true;
 			ADD_OUTSTANDING_ASYNC("file_priority");
@@ -5389,6 +5405,7 @@ namespace {
 		else
 		{
 			m_file_priority = std::move(new_priority);
+			set_need_save_resume();
 		}
 	}
 
@@ -5426,12 +5443,6 @@ namespace {
 		// storage may be nullptr during shutdown
 		if (m_storage)
 		{
-			// the update of m_file_priority is deferred until the disk job comes
-			// back, but to preserve sanity and consistency, the piece priorities are
-			// updated immediately. If, on the off-chance, there's a disk failure, the
-			// piece priorities still stay the same, but the file priorities are
-			// possibly not fully updated.
-			update_piece_priorities(new_priority);
 			m_outstanding_file_priority = true;
 			ADD_OUTSTANDING_ASYNC("file_priority");
 			m_ses.disk_thread().async_set_file_priority(m_storage
@@ -5443,6 +5454,7 @@ namespace {
 		else
 		{
 			m_file_priority = std::move(new_priority);
+			set_need_save_resume();
 		}
 	}
 
@@ -6742,10 +6754,33 @@ namespace {
 		m_hash_picker->verify_block_hashes(index);
 	}
 
-	std::shared_ptr<const torrent_info> torrent::get_torrent_copy()
+	std::shared_ptr<const torrent_info> torrent::get_torrent_file() const
 	{
 		if (!m_torrent_file->is_valid()) return {};
 		return m_torrent_file;
+	}
+
+	std::shared_ptr<torrent_info> torrent::get_torrent_copy_with_hashes() const
+	{
+		if (!m_torrent_file->is_valid()) return {};
+		auto ret = std::make_shared<torrent_info>(*m_torrent_file);
+
+		if (ret->v2())
+		{
+			aux::vector<aux::vector<char>, file_index_t> v2_hashes;
+			for (auto const& tree : m_merkle_trees)
+			{
+				auto const& layer = tree.get_piece_layer();
+				std::vector<char> out_layer;
+				out_layer.reserve(layer.size() * sha256_hash::size());
+				for (auto const& h : layer)
+					out_layer.insert(out_layer.end(), h.data(), h.data() + sha256_hash::size());
+				v2_hashes.emplace_back(std::move(out_layer));
+			}
+			ret->set_piece_layers(std::move(v2_hashes));
+		}
+
+		return ret;
 	}
 
 	std::vector<std::vector<sha256_hash>> torrent::get_piece_layers() const
@@ -8628,7 +8663,6 @@ namespace {
 				if (p.peer_info_struct()->seed)
 				{
 					++seeds;
-					TORRENT_ASSERT(!p.m_bitfield_received || p.is_seed());
 				}
 				else
 				{

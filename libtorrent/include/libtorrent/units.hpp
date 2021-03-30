@@ -1,6 +1,6 @@
 /*
 
-Copyright (c) 2016-2020, Arvid Norberg
+Copyright (c) 2016-2021, Arvid Norberg
 Copyright (c) 2016-2017, Alden Torres
 Copyright (c) 2019, Steven Siloti
 Copyright (c) 2020, Silver Zachara
@@ -25,6 +25,15 @@ namespace libtorrent {
 namespace aux {
 	template <typename Tag>
 	struct difference_tag;
+
+#if TORRENT_USE_IOSTREAM
+	template <typename T>
+	struct type_to_print_as
+	{
+		using type = typename std::conditional<sizeof(T) < sizeof(int), int, T>::type;
+	};
+#endif
+
 
 	template<typename UnderlyingType, typename Tag
 		, typename Cond = typename std::enable_if<std::is_integral<UnderlyingType>::value>::type>
@@ -74,7 +83,7 @@ namespace aux {
 
 #if TORRENT_USE_IOSTREAM
 		friend std::ostream& operator<<(std::ostream& os, strong_typedef val)
-		{ return os << static_cast<UnderlyingType>(val); }
+		{ return os << static_cast<typename type_to_print_as<UnderlyingType>::type>(static_cast<UnderlyingType>(val)); }
 #endif
 
 	private:
