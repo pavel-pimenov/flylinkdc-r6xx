@@ -95,7 +95,6 @@ class AboutDlg : public CDialogImpl<AboutDlg>
 			SetDlgItemText(IDC_THANKS_STATIC, (TSTRING(ABOUT_PARTICIPANTS) + L':').c_str());
 			SetDlgItemText(IDC_LINKS_STATIC, (TSTRING(ABOUT_LINKS) + L':').c_str());
 			SetDlgItemText(IDC_SIDEPRO_STATIC, (TSTRING(ABOUT_SIDE_PROJECTS) + L':').c_str());
-			//extern const char zlibng_string[];
 			static const TCHAR l_Party_Software[] =
 			    _T("libtorrent ") _T(LIBTORRENT_VERSION) _T(" git-") _T(LIBTORRENT_REVISION) _T("\r\n")
 			    _T("sqlite ") _T(SQLITE_VERSION) _T("\r\n")
