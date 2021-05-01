@@ -22,6 +22,8 @@
 #ifndef DCPLUSPLUS_DCPP_TYPEDEFS_H_
 #define DCPLUSPLUS_DCPP_TYPEDEFS_H_
 
+#include "boost/variant.hpp"
+
 #include <unordered_map>
 #include <unordered_set>
 #include <string>
@@ -43,5 +45,7 @@ typedef std::vector<uint8_t> ByteVector;
 
 typedef std::unordered_map<string, string> StringMap;
 typedef std::unordered_set<string> StringSet;
+
+typedef std::unordered_map<string, boost::variant<string, std::function<string()>>> ParamMap;
 
 #endif /* TYPEDEFS_H_ */

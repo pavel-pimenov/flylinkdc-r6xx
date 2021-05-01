@@ -68,10 +68,6 @@
 #include <string>
 #include <vector>
 
-#ifdef _DEBUG
-#include <boost/noncopyable.hpp>
-#endif
-
 using std::vector;
 using std::string;
 using std::wstring;

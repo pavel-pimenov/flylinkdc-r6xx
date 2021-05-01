@@ -545,7 +545,7 @@ class SearchFrame : public MDITabChildWindowImpl < SearchFrame, RGB(127, 127, 25
 				{
 					return columns[COLUMN_TTH];
 				}
-				Util::CustomNetworkIndex m_location;
+				std::string m_location;
 				bool m_is_flush_ip_to_sqlite;
 				SearchResult m_sr;
 				tstring columns[COLUMN_LAST];

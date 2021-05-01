@@ -39,7 +39,6 @@ class UserInfoBase
 		void checkList();
 #endif
 		void matchQueue();
-		
 		void doReport(const string& hubHint);
 		
 #ifdef FLYLINKDC_USE_SQL_EXPLORER
@@ -69,7 +68,6 @@ class UserInfoBase
 		{
 			return 0;
 		}
-		
 };
 
 struct FavUserTraits

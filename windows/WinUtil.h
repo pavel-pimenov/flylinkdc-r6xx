@@ -30,6 +30,7 @@
 #include "../client/DCPlusPlus.h"
 #include "../client/HintedUser.h"
 #include "../client/CompatibilityManager.h"
+
 #include "UserInfoSimple.h"
 #include "OMenu.h"
 #include "HIconWrapper.h"
@@ -1200,7 +1201,7 @@ struct FileImage : public BaseImageList
 			if (nameFile.length() == 12)
 			{
 				//static const string video_ts = "VIDEO_TS";
-				if (nameFile[0] == 'V' ) // טלÿ פאיכא // && nameFile.compare(0, video_ts.size(), video_ts) == 0
+				if (nameFile[0] == 'V')  // טלÿ פאיכא // && nameFile.compare(0, video_ts.size(), video_ts) == 0
 				{
 					static const string bup = "BUP";
 					static const string ifo = "IFO";
@@ -1300,11 +1301,13 @@ class FlagImage : public BaseImageList
 		void init();
 		using BaseImageList::Draw;
 #ifdef FLYLINKDC_USE_GEO_IP
-		void DrawCountry(HDC p_DC, const Util::CustomNetworkIndex& p_country, const POINT& p_pt)
+		uint8_t getflagIndex(const string& aIP) noexcept;
+		void DrawCountry(HDC p_DC, const std::string& p_ip, const POINT& p_pt)
 		{
-			if (p_country.getCountryIndex() > 0)
+			const auto l_image_id = getflagIndex(p_ip);
+			if (l_image_id > 0)
 			{
-				Draw(p_DC, p_country.getCountryIndex(), p_pt);
+				Draw(p_DC, l_image_id, p_pt);
 			}
 		}
 #endif
@@ -1525,7 +1528,7 @@ class WinUtil
 #else
 		static std::unique_ptr<HIconWrapper> g_HubVirusIcon;
 #endif
-		static std::unique_ptr<HIconWrapper> g_HubFlylinkDCIconVIP[22]; // VIP_ICON
+		static std::unique_ptr<HIconWrapper> g_HubFlylinkDCIconVIP[24]; // VIP_ICON
 		
 		static void initThemeIcons();
 		

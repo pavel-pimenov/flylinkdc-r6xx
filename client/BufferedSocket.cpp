@@ -291,9 +291,13 @@ bool BufferedSocket::all_search_parser(const string::size_type p_pos_next_separa
 		const
 #endif
 		string l_line_item = p_line.substr(0, p_pos_next_separator);
+#ifdef _DEBUG
+		//l_line_item = "$Search 176.100.102.17:6817 F?T?0?9?TTH:QMBSPUHEM2G6KNUCMFLYKVONBLIRH5KEP46GEOI\t\t";
+#endif
 		auto l_marker_tth = l_line_item.find("?0?9?TTH:");
 		// TODO научиться обрабатывать лимит по размеру вида
 		// "x.x.x.x:yyy T?F?57671680?9?TTH:A3VSWSWKCVC4N6EP2GX47OEMGT5ZL52BOS2LAHA"
+		// "$Search 176.100.102.17:6817 F?T?0?9?TTH:QMBSPUHEM2G6KNUCMFLYKVONBLIRH5KEP46GEOI\t\t"
 		if (l_marker_tth != string::npos &&
 		        l_marker_tth > 5 &&
 		        l_line_item[l_marker_tth - 4] == ' ' &&
@@ -310,6 +314,7 @@ bool BufferedSocket::all_search_parser(const string::size_type p_pos_next_separa
 			const string l_tth_str = l_line_item.substr(l_marker_tth + 13, 39);
 			const TTHValue l_tth_orig(l_tth_str);
 			unsigned l_count_tth = 0;
+			if (DebugManager::g_isCMDDebug)
 			{
 				CFlyFastLock(g_stat_cs);
 				l_count_tth = ++g_tth_count[l_tth_orig];

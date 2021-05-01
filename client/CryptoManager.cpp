@@ -41,6 +41,42 @@ bool CryptoManager::certsLoaded = false;
 ByteVector CryptoManager::keyprint;
 static CriticalSection g_cs;
 
+#if defined(_MSC_VER) && (defined(_M_IX86) || defined(_M_X64))
+#include <intrin.h>
+static inline void mcpuid(int function, int subfunction, int cpuInfo[4]) {
+	__cpuidex(cpuInfo, function, subfunction);
+}
+#elif (defined(__clang__) || defined(__GNUC__)) && (defined(__i386__) || defined(__x86_64__))
+#include <cpuid.h>
+static inline void mcpuid(int function, int subfunction, int cpuInfo[4]) {
+	__cpuid_count(function, subfunction, cpuInfo[0], cpuInfo[1], cpuInfo[2], cpuInfo[3]);
+}
+#else
+static inline void mcpuid(int function, int subfunction, int cpuInfo[4]) {
+	cpuInfo[0] = 0;
+	cpuInfo[1] = 0;
+	cpuInfo[2] = 0;
+	cpuInfo[3] = 0;
+}
+#endif
+
+static bool hardware_gcm(void) {
+	int cpuInfo[4], maxcpuid;
+	mcpuid(0, 0, cpuInfo);
+	maxcpuid = cpuInfo[0];
+	if (maxcpuid >= 1) {
+		mcpuid(1, 0, cpuInfo);
+		if ((cpuInfo[2] & (1 << 1 | 1 << 25)) == (1 << 1 | 1 << 25))
+			return true;
+	}
+	if (maxcpuid >= 7) {
+		mcpuid(7, 0, cpuInfo);
+		if ((cpuInfo[2] & (1 << 10 | 1 << 9)) == (1 << 10 | 1 << 9))
+			return true;
+	}
+	return false;
+}
+
 static const char g_ciphersuites[] =
     "ECDHE-ECDSA-AES128-GCM-SHA256:"
     "ECDHE-RSA-AES128-GCM-SHA256:"
@@ -141,7 +177,8 @@ void CryptoManager::setContextOptions(SSL_CTX* aCtx, bool aServer) {
 	// https://github.com/pavel-pimenov/flylinkdc-r5xx/issues/1737
 	const char ciphersuitesTls13[] =
 	    "TLS_AES_128_GCM_SHA256:"
-	    "TLS_AES_256_GCM_SHA384";
+	    "TLS_AES_256_GCM_SHA384:"
+	    "TLS_CHACHA20_POLY1305_SHA256";
 	    
 	SSL_CTX_set_ciphersuites(aCtx, ciphersuitesTls13);
 #endif
@@ -301,7 +338,7 @@ void CryptoManager::generateCertificate() {
 void CryptoManager::sslRandCheck() {
 	if (!RAND_status()) {
 #ifdef _WIN32
-		RAND_screen();
+		RAND_poll();
 #endif
 	}
 }
@@ -543,8 +580,7 @@ bool CryptoManager::checkCertificate(int minValidityDays) noexcept {
 	
 	ASN1_TIME* t = X509_get_notAfter(x509);
 	if (t) {
-		time_t minValid = GET_TIME() + 60 * 60 * 24 * minValidityDays;
-		if (X509_cmp_time(t, &minValid) < 0) {
+		if (X509_cmp_current_time(t) < 0) {
 			return false;
 		}
 	}
@@ -686,7 +722,7 @@ int CryptoManager::verify_callback(int preverify_ok, X509_STORE_CTX *ctx) {
 					// After the store has been updated, perform a recheck of the current certificate, the existing context can be in mid recursion, so hands off!
 					X509_STORE_CTX* vrfy_ctx = X509_STORE_CTX_new();
 					
-					if (vrfy_ctx && X509_STORE_CTX_init(vrfy_ctx, store, cert, NULL)) {
+					if (vrfy_ctx && X509_STORE_CTX_init(vrfy_ctx, store, cert, X509_STORE_CTX_get_chain(ctx))) {
 						X509_STORE_CTX_set_ex_data(vrfy_ctx, SSL_get_ex_data_X509_STORE_CTX_idx(), ssl);
 						X509_STORE_CTX_set_verify_cb(vrfy_ctx, SSL_CTX_get_verify_callback(ssl_ctx));
 						

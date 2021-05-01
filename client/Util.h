@@ -220,7 +220,6 @@ class Util : public BaseUtil
 #ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
 		static void loadCustomlocations();
 #endif
-		static void loadGeoIp();
 #ifdef FLYLINKDC_USE_P2P_GUARD
 		static void loadP2PGuard();
 		static void loadIBlockList();
@@ -567,6 +566,9 @@ class Util : public BaseUtil
 		static wstring formatSecondsW(int64_t aSec, bool supressHours = false);
 		static string formatSeconds(int64_t aSec, bool supressHours = false);
 		static string formatParams(const string& msg, const StringMap& params, bool filter, const time_t p_t = time(NULL));
+		// Set aTime to 0 to avoid formating of time variable
+		typedef string(*FilterF)(const string&);
+		static string formatParams(const string& msg, const ParamMap& params, FilterF filter = nullptr, time_t aTime = time(NULL)) noexcept;
 		static string formatTime(const string& msg, const time_t p_t);
 		static string formatTime(uint64_t rest, const bool withSecond = true);
 		static string formatDigitalClockGMT(const time_t& p_t);
@@ -1058,62 +1060,9 @@ class Util : public BaseUtil
 		static time_t g_awayTime;
 		static const time_t g_startTime;
 		
-		
 	public:
 		static const tstring getModuleFileName();
 		static const string getModuleCustomFileName(const string& p_file_name);
-		
-		class CountryIndex
-		{
-			public:
-				explicit CountryIndex() {}
-				explicit CountryIndex(int16_t p_country_cache_index) :
-					m_country_cache_index(p_country_cache_index)
-				{
-				}
-				bool isNew() const
-				{
-					return m_country_cache_index == -1;
-				}
-				bool isKnown() const
-				{
-					return m_country_cache_index >= 0;
-				}
-				tstring getCountry() const;
-				int16_t getCountryIndex() const;
-				tstring getDescription() const;
-		protected:
-				int16_t m_country_cache_index = -1;
-		};
-#ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
-
-		class CustomNetworkIndex : public CountryIndex
-		{
-			public:
-				explicit CustomNetworkIndex() {}
-				explicit CustomNetworkIndex(int32_t p_location_cache_index, int16_t p_country_cache_index) : CountryIndex(p_country_cache_index)
-					, m_location_cache_index(p_location_cache_index)
-				{
-				}
-				bool isNew() const
-				{
-					return CountryIndex::isNew() && m_location_cache_index == -1;
-				}
-				bool isKnown() const
-				{
-					return CountryIndex::isKnown() && m_location_cache_index >= 0;
-				}
-				tstring getDescription() const;
-				int32_t getFlagIndex() const;
-			private:
-				int32_t m_location_cache_index = -1;
-		};
-#else
-		typedef  CountryIndex CustomNetworkIndex;
-#endif
-
-		static CustomNetworkIndex getIpCountry(uint32_t p_ip, bool p_is_use_only_cache = false);
-		static CustomNetworkIndex getIpCountry(const string& p_ip, bool p_is_use_only_cache = false);
 		
 	private:
 	

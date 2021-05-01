@@ -36,6 +36,7 @@
 #endif
 
 #include "../client/DownloadManager.h"
+#include "../client/GeoManager.h"
 #include "MagnetDlg.h"
 // AirDC++
 #include "winamp.h"
@@ -111,7 +112,7 @@ HIconWrapper WinUtil::g_hClockIcon(IDR_ICON_CLOCK);
 std::unique_ptr<HIconWrapper> WinUtil::g_HubOnIcon;
 std::unique_ptr<HIconWrapper> WinUtil::g_HubOffIcon;
 std::unique_ptr<HIconWrapper> WinUtil::g_HubFlylinkDCIcon;
-std::unique_ptr<HIconWrapper> WinUtil::g_HubFlylinkDCIconVIP[22]; // VIP_ICON
+std::unique_ptr<HIconWrapper> WinUtil::g_HubFlylinkDCIconVIP[24]; // VIP_ICON
 std::unique_ptr<HIconWrapper> WinUtil::g_HubDDoSIcon;
 HIconWrapper WinUtil::g_hThermometerIcon(IDR_ICON_THERMOMETR_BAG);
 #ifdef FLYLINKDC_USE_ANTIVIRUS_DB
@@ -499,6 +500,9 @@ void WinUtil::initThemeIcons()
 	g_HubFlylinkDCIconVIP[19] = std::unique_ptr<HIconWrapper>(new HIconWrapper(IDR_VIP_KCAHDER));
 	g_HubFlylinkDCIconVIP[20] = std::unique_ptr<HIconWrapper>(new HIconWrapper(IDR_VIP_OZERKI));
 	g_HubFlylinkDCIconVIP[21] = std::unique_ptr<HIconWrapper>(new HIconWrapper(IDR_VIP_SWALKA));
+	g_HubFlylinkDCIconVIP[22] = std::unique_ptr<HIconWrapper>(new HIconWrapper(IDR_VIP_ICO_RANETKA));
+	g_HubFlylinkDCIconVIP[23] = std::unique_ptr<HIconWrapper>(new HIconWrapper(IDR_VIP_ICO_VOSTOKHUB));
+	
 	
 	
 	g_HubDDoSIcon = std::unique_ptr<HIconWrapper>(new HIconWrapper(IDR_ICON_MEDICAL_BAG));
@@ -643,6 +647,17 @@ void FlagImage::init()
 			m_images.Add(UserLocations, RGB(77, 17, 77));
 	}
 #endif
+}
+
+uint8_t FlagImage::getflagIndex(const string& p_ip) noexcept {
+	uint8_t flagIndex = 0;
+	if (!p_ip.empty()) {
+		const auto l_id_country = dcpp::GeoManager::getInstance()->getCountry(p_ip);
+		if (!l_id_country.empty()) {
+			flagIndex = Util::getFlagIndexByCode(*reinterpret_cast<const uint16_t*>(l_id_country.c_str()));
+		}
+	}
+	return flagIndex;
 }
 
 void WinUtil::init(HWND hWnd)
@@ -830,18 +845,15 @@ void WinUtil::init(HWND hWnd)
 #endif
 	
 	g_flagImage.init();
-	
 	g_userImage.init();
 	g_userStateImage.init();
 	g_trackerImage.init();
 	g_genderImage.init();
 	
 	Colors::init();
-	
 	Fonts::init();
 	
 	Util::setRegistryValueString(_T("ApplicationPath"), Util::getModuleFileName());
-	
 	
 	if (BOOLSETTING(URL_HANDLER))
 	{

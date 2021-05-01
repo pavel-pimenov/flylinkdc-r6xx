@@ -2965,6 +2965,10 @@ IDR_ONLINE_ICO          ICON                    "res\\online.ico"
 
 IDR_VIP_ICO_SCALOLAZ    ICON                    "res\\vip_scalolaz.ico"
 
+IDR_VIP_ICO_RANETKA   ICON                      "res\\vip_ranetka.ico"
+
+IDR_VIP_ICO_VOSTOKHUB   ICON                    "res\\vip_vostokhub.ico"
+
 IDR_VIP_ICO_MILENAHUB   ICON                    "res\\vip_milenahub.ico"
 
 IDR_VIP_HMN_PP          ICON                    "res\\vip_hmn_pp.ico"

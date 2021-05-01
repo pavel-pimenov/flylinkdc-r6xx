@@ -142,8 +142,6 @@ enum eTypeDIC
 	e_DIC_HUB = 1,
 	e_DIC_NICK = 2,
 	e_DIC_IP = 3,
-	e_DIC_COUNTRY = 4,
-	e_DIC_LOCATION = 5,
 	e_DIC_LAST
 };
 struct CFlyIPRange
@@ -158,6 +156,7 @@ struct CFlyIPRange
 	}
 };
 
+#ifdef FLYLINKDC_USE_P2P_GUARD
 struct CFlyP2PGuardIP : public CFlyIPRange
 {
 	string m_note;
@@ -169,7 +168,7 @@ struct CFlyP2PGuardIP : public CFlyIPRange
 	{
 	}
 };
-
+#endif
 struct CFlyLocationIP : public CFlyIPRange
 {
 	uint16_t m_flag_index;
@@ -182,12 +181,9 @@ struct CFlyLocationIP : public CFlyIPRange
 	{
 	}
 };
-struct CFlyLocationDesc : public CFlyLocationIP
-{
-	tstring m_description;
-};
-typedef std::vector<CFlyLocationIP> CFlyLocationIPArray;
+#ifdef FLYLINKDC_USE_P2P_GUARD
 typedef std::vector<CFlyP2PGuardIP> CFlyP2PGuardArray;
+#endif
 
 struct CFlyTransferHistogram
 {
@@ -496,7 +492,6 @@ class CFlylinkDBManager : public Singleton<CFlylinkDBManager>
 #endif
 		void add_file(__int64 p_path_id, const string& p_file_name, int64_t p_time_stamp, const TigerTree& p_tth, int64_t p_size, CFlyMediaInfo& p_out_media);
 		
-		void save_geoip(const CFlyLocationIPArray& p_geo_ip);
 #ifdef FLYLINKDC_USE_P2P_GUARD
 		void save_p2p_guard(const CFlyP2PGuardArray& p_p2p_guard_ip, const string&  p_manual_marker, int p_type);
 		string load_manual_p2p_guard();
@@ -506,61 +501,8 @@ class CFlylinkDBManager : public Singleton<CFlylinkDBManager>
 #ifdef FLYLINKDC_USE_ANTIVIRUS_DB
 		bool is_avdb_guard(const string& p_nick, int64_t p_share, const uint32_t& p_ip4);
 #endif
-#ifdef FLYLINKDC_USE_GEO_IP
-		void get_country_and_location(uint32_t p_ip, uint16_t& p_country_index, uint32_t& p_location_index, bool p_is_use_only_cache);
-		uint16_t get_country_index_from_cache(int16_t p_index)
-		{
-			dcassert(p_index > 0);
-			CFlyFastLock(m_cache_location_cs);
-			return m_country_cache[p_index - 1].m_flag_index;
-		}
-		CFlyLocationDesc get_country_from_cache(uint16_t p_index)
-		{
-			dcassert(p_index > 0);
-			CFlyFastLock(m_cache_location_cs);
-			return m_country_cache[p_index - 1];
-		}
-#ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
-		uint16_t get_location_index_from_cache(int32_t p_index)
-		{
-			dcassert(p_index > 0);
-			CFlyFastLock(m_cache_location_cs);
-			return m_location_cache_array[p_index - 1].m_flag_index;
-		}
-		CFlyLocationDesc get_location_from_cache(int32_t p_index)
-		{
-			dcassert(p_index > 0);
-			CFlyFastLock(m_cache_location_cs);
-			return m_location_cache_array[p_index - 1];
-		}
-#endif
-#endif // FLYLINKDC_USE_GEO_IP
-	private:
-#ifdef FLYLINKDC_USE_GEO_IP
-		string load_country_locations_p2p_guard_from_db(uint32_t p_ip, uint16_t& p_country_cache_index
-#ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
-		                                                , uint32_t& p_location_cache_index
-#endif
-		                                               );
-		bool find_cache_country(uint32_t p_ip, uint16_t& p_index);
-		__int64 get_dic_country_id(const string& p_country);
-#ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
-		bool find_cache_location(uint32_t p_ip, uint32_t& p_location_index, uint16_t& p_flag_index);
-		void clear_dic_cache_country();
-#endif
-#endif
 	public:
 	
-#ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
-		void save_location(const CFlyLocationIPArray& p_geo_ip);
-		__int64 get_dic_location_id(const string& p_location);
-#endif
-		
-#ifdef FLYLINKDC_USE_MEDIAINFO_SERVER_COLLECT_LOST_LOCATION
-		void save_lost_location(const string& p_ip);
-		void get_lost_location(std::vector<std::string>& p_lost_ip_array);
-#endif
-		
 #ifdef FLYLINKDC_USE_COLLECT_STAT
 		void push_dc_command_statistic(const std::string& p_hub, const std::string& p_command,
 		                               const string& p_server, const string& p_port, const string& p_sender_nick);
@@ -734,33 +676,6 @@ class CFlylinkDBManager : public Singleton<CFlylinkDBManager>
 		CFlySQLCommand m_update_registry;
 		CFlySQLCommand m_delete_registry;
 		
-		FastCriticalSection m_cache_location_cs;
-#ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
-		vector<CFlyLocationDesc> m_location_cache_array;
-		int m_count_fly_location_ip_record;
-		bool is_fly_location_ip_valid() const
-		{
-			return m_count_fly_location_ip_record > 5000;
-		}
-#endif
-		struct CFlyCacheIPInfo
-		{
-#ifdef FLYLINKDC_USE_P2P_GUARD
-			string m_description_p2p_guard;
-#endif
-			uint16_t m_country_cache_index = 0;
-			uint16_t m_flag_location_index = 0;
-#ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
-			uint32_t m_location_cache_index = 0;
-#endif
-			CFlyCacheIPInfo()
-			{
-			}
-		};
-		std::unordered_map<uint32_t, CFlyCacheIPInfo> m_ip_info_cache;
-		
-		CFlySQLCommand m_insert_location;
-		CFlySQLCommand m_delete_location;
 		
 #ifdef FLYLINKDC_USE_MEDIAINFO_SERVER_COLLECT_LOST_LOCATION
 		CFlySQLCommand m_select_count_location;
@@ -768,12 +683,6 @@ class CFlylinkDBManager : public Singleton<CFlylinkDBManager>
 		CFlySQLCommand m_update_location_lost;
 		CFlySQLCommand m_insert_location_lost;
 		std::unordered_set<string> m_lost_location_cache;
-#endif
-#ifdef FLYLINKDC_USE_GEO_IP
-		CFlySQLCommand m_select_country_and_location;
-		CFlySQLCommand m_insert_geoip;
-		CFlySQLCommand m_delete_geoip;
-		vector<CFlyLocationDesc> m_country_cache;
 #endif
 #ifdef _DEBUG
 		std::unordered_map<uint32_t, unsigned> m_count_ip_sql_query_guard;

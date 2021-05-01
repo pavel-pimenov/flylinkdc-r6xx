@@ -1056,18 +1056,18 @@ LRESULT TransferView::onCustomDraw(int /*idCtrl*/, LPNMHDR pnmh, BOOL& bHandled)
 				LONG top = rc2.top + (rc2.Height() - 15) / 2;
 				if ((top - rc2.top) < 2)
 					top = rc2.top + 1;
-				if (ii->m_location.isNew() && !ii->m_transfer_ip.empty())
-				{
-					ii->m_location = Util::getIpCountry(Text::fromT(ii->m_transfer_ip));
-				}
-				if (ii->m_location.isKnown())
+				//if (ii->m_location.isNew() && !ii->m_transfer_ip.empty())
+				//{
+				//  ii->m_location = Util::getIpCountry(Text::fromT(ii->m_transfer_ip));
+				//}
+				//if (ii->m_location.isKnown())
 				{
 					int l_step = 0;
 #ifdef FLYLINKDC_USE_GEO_IP
 					if (BOOLSETTING(ENABLE_COUNTRYFLAG))
 					{
 						const POINT ps = { rc2.left, top };
-						g_flagImage.DrawCountry(cd->nmcd.hdc, ii->m_location, ps);
+						g_flagImage.DrawCountry(cd->nmcd.hdc, Text::fromT(ii->m_transfer_ip), ps);
 						l_step += 25;
 					}
 #endif
@@ -1079,12 +1079,12 @@ LRESULT TransferView::onCustomDraw(int /*idCtrl*/, LPNMHDR pnmh, BOOL& bHandled)
 						l_step += 25;
 					}
 #endif
-					top = rc2.top + (rc2.Height() - 15 /*WinUtil::getTextHeight(cd->nmcd.hdc)*/ - 1) / 2;
-					const auto& l_desc = ii->m_location.getDescription();
-					if (!l_desc.empty())
-					{
-						::ExtTextOut(cd->nmcd.hdc, rc2.left + l_step + 5, top + 1, ETO_CLIPPED, rc2, l_desc.c_str(), l_desc.length(), nullptr);
-					}
+					//top = rc2.top + (rc2.Height() - 15 /*WinUtil::getTextHeight(cd->nmcd.hdc)*/ - 1) / 2;
+					//const auto& l_desc = ii->m_location.getDescription();
+					//if (!l_desc.empty())
+					//{
+					//  ::ExtTextOut(cd->nmcd.hdc, rc2.left + l_step + 5, top + 1, ETO_CLIPPED, rc2, l_desc.c_str(), l_desc.length(), nullptr);
+					//}
 				}
 				return CDRF_SKIPDEFAULT;
 			}
@@ -1890,10 +1890,12 @@ void TransferView::on(ConnectionManagerListener::FailedDownload, const HintedUse
 			{
 				l_status += " [IPGuard.ini]";
 			}
+#ifdef FLYLINKDC_USE_P2P_GUARD
 			if (ui->m_hintedUser.user->isSet(User::PG_P2PGUARD_BLOCK))
 			{
 				l_status += " [P2PGuard.ini]";
 			}
+#endif
 #ifdef FLYLINKDC_USE_ANTIVIRUS_DB
 			if (ui->m_hintedUser.user->isSet(User::PG_AVDB_BLOCK))
 			{
@@ -2064,10 +2066,10 @@ const tstring TransferView::ItemInfo::getText(uint8_t col) const
 #endif
 		case COLUMN_LOCATION:
 		{
-			if (m_location.isKnown())
-				return m_location.getDescription();
-			else
-				return BaseUtil::emptyStringT;
+			//if (m_location.isKnown())
+			//  return m_location.getDescription();
+			//else
+			//  return BaseUtil::emptyStringT;
 		}
 		default:
 			return BaseUtil::emptyStringT;
@@ -2851,7 +2853,7 @@ LRESULT TransferView::onRemoveAll(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWn
 {
 	UINT checkState = BOOLSETTING(CONFIRM_DELETE) ? BST_UNCHECKED : BST_CHECKED;
 	if (checkState == BST_CHECKED || ::MessageBox(NULL, CTSTRING(REALLY_REMOVE), getFlylinkDCAppCaptionWithVersionT().c_str(), CTSTRING(DONT_ASK_AGAIN), MB_YESNO | MB_ICONQUESTION | MB_DEFBUTTON1, checkState) == IDYES)
-		ctrlTransfers.forEachSelected(&ItemInfo::removeAll); 
+		ctrlTransfers.forEachSelected(&ItemInfo::removeAll);
 	// Let's update the setting unchecked box means we bug user again...
 	SET_SETTING(CONFIRM_DELETE, checkState != BST_CHECKED);
 	return 0;

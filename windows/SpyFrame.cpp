@@ -22,6 +22,7 @@
 #include "MainFrm.h"
 
 #include "../client/ConnectionManager.h"
+#include "../client/GeoManager.h"
 
 int SpyFrame::columnSizes[] = { 305, 70, 90, 120, 20 };
 int SpyFrame::columnIndexes[] = { COLUMN_STRING, COLUMN_COUNT, COLUMN_USERS, COLUMN_TIME, COLUMN_SHARE_HIT };
@@ -279,11 +280,11 @@ LRESULT SpyFrame::onSpeaker(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/,
 								const string l_ip = l_searh_item.m_seekers[k].substr(0, l_twopt);
 								if (!l_ip.empty() && l_ip[0] != 'H')
 								{
-									const auto l_country = Util::getIpCountry(l_ip).getCountry();
+									const auto l_country = dcpp::GeoManager::getInstance()->getCountry(l_ip);
 									l_SeekersNames += Text::toT(l_searh_item.m_seekers[k]);
 									if (!l_country.empty())
 									{
-										l_SeekersNames += _T(" [") + l_country + _T("] ");
+										l_SeekersNames += _T(" [") + Text::toT(l_country) + _T("] ");
 									}
 								}
 								else

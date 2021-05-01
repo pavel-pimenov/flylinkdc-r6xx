@@ -32,6 +32,8 @@
 #include "UserManager.h"
 #include "ThrottleManager.h"
 //#include "GPGPUManager.h"
+#include "GeoManager.h"
+
 #include "../FlyFeatures/flyServer.h"
 #include "../windows/ToolbarManager.h"
 
@@ -102,8 +104,9 @@ void startup(PROGRESSCALLBACKPROC pProgressCallbackProc, void* pProgressParam, G
 #endif
 	
 #ifdef FLYLINKDC_USE_GEO_IP
-	LOAD_STEP("Geo IP", Util::loadGeoIp());
+//	LOAD_STEP("Geo IP", Util::loadGeoIp());
 #endif
+
 #ifdef FLYLINKDC_USE_P2P_GUARD
 	LOAD_STEP("P2P Guard", Util::loadP2PGuard()); // Этот грузить всегда первым - выполняет зачистку базы
 	LOAD_STEP("iblocklist.com", Util::loadIBlockList());
@@ -128,6 +131,7 @@ void startup(PROGRESSCALLBACKPROC pProgressCallbackProc, void* pProgressParam, G
 	ConnectionManager::newInstance();
 	DownloadManager::newInstance();
 	UploadManager::newInstance();
+	GeoManager::newInstance();
 	
 	LOAD_STEP("Ensure list path", QueueManager::newInstance());
 	LOAD_STEP("Create empty share", ShareManager::newInstance());
@@ -160,6 +164,8 @@ void startup(PROGRESSCALLBACKPROC pProgressCallbackProc, void* pProgressParam, G
 	
 	LOAD_STEP_L(SHARED_FILES, ShareManager::getInstance()->refresh_share(true, false));
 	
+	GeoManager::getInstance()->init();
+	
 	
 #undef LOAD_STEP
 #undef LOAD_STEP_L
@@ -183,6 +189,7 @@ void preparingCoreToShutdown()
 		QueueManager::getInstance()->shutdown();
 		ClientManager::clear();
 		CFlylinkDBManager::getInstance()->flush();
+		GeoManager::getInstance()->close();
 	}
 }
 

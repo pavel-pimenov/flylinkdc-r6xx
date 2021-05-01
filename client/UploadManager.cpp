@@ -1638,15 +1638,15 @@ void UploadQueueItem::update()
 	setText(COLUMN_SHARE, Util::formatBytesW(getUser()->getBytesShared()));
 	setText(COLUMN_SLOTS, Util::toStringW(getUser()->getSlots()));
 	
-	if (m_location.isNew() && !getUser()->getIP().is_unspecified())
+	if (!getUser()->getIP().is_unspecified())
 	{
-		m_location = Util::getIpCountry(getUser()->getIP().to_ulong());
+		//m_location = Util::getIpCountry(getUser()->getIP().to_ulong());
 		setText(COLUMN_IP, Text::toT(getUser()->getIPAsString()));
 	}
-	if (m_location.isKnown())
-	{
-		setText(COLUMN_LOCATION, m_location.getDescription());
-	}
+	//if (m_location.isKnown())
+	//{
+	//  setText(COLUMN_LOCATION, m_location.getDescription());
+	//}
 #ifdef FLYLINKDC_USE_DNS
 	
 	if (m_dns.empty())

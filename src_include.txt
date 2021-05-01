@@ -15,8 +15,7 @@ FlyFeatures
 openssl
 MediaInfoLib
 Zenlib
-miniupnpc
-natpmp
+maxminddb
 flyupdate
 jsoncpp
 doctor-dump

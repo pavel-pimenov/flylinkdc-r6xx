@@ -99,14 +99,10 @@ int UserInfo::compareItems(const UserInfo* a, const UserInfo* b, int col)
 #endif
 		case COLUMN_IP:
 		{
-			const_cast<UserInfo*>(a)->calcLocation();
-			const_cast<UserInfo*>(b)->calcLocation();
 			return compare(a->getIdentity().getIp(), b->getIdentity().getIp());
 		}
 		case COLUMN_GEO_LOCATION:
 		{
-			const_cast<UserInfo*>(a)->calcLocation();
-			const_cast<UserInfo*>(b)->calcLocation();
 			return Util::DefaultSort(a->getText(col).c_str(), b->getText(col).c_str());
 		}
 		case COLUMN_FLY_HUB_GENDER:
@@ -194,7 +190,6 @@ tstring UserInfo::getText(int p_col) const
 		case COLUMN_P2P_GUARD:
 		{
 			return BaseUtil::emptyStringT;
-			//UText::toT(getIdentity().getP2PGuard());
 		}
 #ifdef FLYLINKDC_USE_ANTIVIRUS_DB
 		case COLUMN_ANTIVIRUS:
@@ -230,7 +225,7 @@ tstring UserInfo::getText(int p_col) const
 		}
 		case COLUMN_GEO_LOCATION:
 		{
-			return getLocation().getDescription();
+			return Text::toT(getIdentity().getCountry());
 		}
 		case COLUMN_EMAIL:
 		{
@@ -368,23 +363,3 @@ void UserInfo::calcVirusType()
 }
 #endif
 
-void UserInfo::calcLocation()
-{
-	const auto l_location = getLocation();
-	if (l_location.isNew() || m_ou->getIdentity().is_ip_change_and_clear())
-	{
-		const auto l_ip = getIp();
-		if (!l_ip.is_unspecified())
-		{
-			setLocation(Util::getIpCountry(l_ip.to_ulong())); // TODO - отдать бустовский объект?
-		}
-		else
-		{
-#ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
-			setLocation(Util::CustomNetworkIndex(0,0));
-#else
-			setLocation(Util::CustomNetworkIndex(0));
-#endif
-		}
-	}
-}

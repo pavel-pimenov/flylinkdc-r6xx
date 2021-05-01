@@ -19,6 +19,7 @@
 #include "stdafx.h"
 #include "BaseChatFrame.h"
 #include "../client/QueueManager.h"
+#include "../client/GeoManager.h"
 #include "../FlyFeatures/flyServer.h"
 
 LRESULT BaseChatFrame::OnCreate(HWND p_hWnd, RECT &rcDefault)
@@ -717,20 +718,21 @@ tstring BaseChatFrame::getIpCountry(const string& ip, bool ts, bool p_ipInChat, 
 		}
 		if (p_countryInChat || p_ISPInChat)
 		{
-			const Util::CustomNetworkIndex& l_location = Util::getIpCountry(ip);
-			if (p_countryInChat && !l_location.getCountry().empty())
+			const auto l_country = dcpp::GeoManager::getInstance()->getCountry(ip);
+			//const Util::CustomNetworkIndex& l_location = Util::getIpCountry(ip);
+			if (p_countryInChat && !l_country.empty())
 			{
-				l_result += (p_ipInChat ? _T(" | ") : _T("")) + l_location.getCountry();
+				l_result += (p_ipInChat ? _T(" | ") : _T("")) + Text::toT(l_country);
 			}
 			else
 				p_countryInChat = false;
 				
-			if (p_ISPInChat && !l_location.getDescription().empty())
-			{
-				l_result += ((p_countryInChat || p_ipInChat) ? _T(" | ") : _T("")) + l_location.getDescription();
-			}
-			else
-				p_ISPInChat = false;
+			//if (p_ISPInChat && !l_location.getDescription().empty())
+			//{
+			//  l_result += ((p_countryInChat || p_ipInChat) ? _T(" | ") : _T("")) + l_location.getDescription();
+			//}
+			//else
+			//  p_ISPInChat = false;
 		}
 		if (!p_countryInChat && !p_ISPInChat)
 			l_result += _T(" ");  // Fix Right Click Menu on IP without space after IP

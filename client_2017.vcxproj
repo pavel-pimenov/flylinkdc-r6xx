@@ -57,7 +57,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(SolutionDir)\boost;$(SolutionDir)\bzip2;$(SolutionDir)\wtl;$(SolutionDir)\zlib-ng;$(SolutionDir)\openssl\include;$(SolutionDir)\MediaInfoLib\Source;$(SolutionDir)\Zenlib\Source;$(SolutionDir)\leveldb;$(SolutionDir)\leveldb\include;$(SolutionDir)\leveldb\port\win;$(SolutionDir)\jsoncpp\include\;$(SolutionDir)\client;$(SolutionDir)\client\webrtc;$(SolutionDir)\libtorrent\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\boost;$(SolutionDir)\bzip2;$(SolutionDir)\wtl;$(SolutionDir)\zlib-ng;$(SolutionDir)\openssl\include;$(SolutionDir)\MediaInfoLib\Source;$(SolutionDir)\Zenlib\Source;$(SolutionDir)\leveldb;$(SolutionDir)\leveldb\include;$(SolutionDir)\leveldb\port\win;$(SolutionDir)\jsoncpp\include\;$(SolutionDir)\client;$(SolutionDir)\client\webrtc;$(SolutionDir)\libtorrent\include;$(SolutionDir)\maxminddb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <StringPooling>true</StringPooling>
       <ExceptionHandling>Sync</ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -104,7 +104,7 @@
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>false</OmitFramePointers>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
-      <AdditionalIncludeDirectories>$(SolutionDir)\boost;$(SolutionDir)\bzip2;$(SolutionDir)\wtl;$(SolutionDir)\zlib-ng;$(SolutionDir)\openssl\include;$(SolutionDir)\MediaInfoLib\Source;$(SolutionDir)\Zenlib\Source;$(SolutionDir)\leveldb;$(SolutionDir)\leveldb\include;$(SolutionDir)\leveldb\port\win;$(SolutionDir)\jsoncpp\include\;$(SolutionDir)\client;$(SolutionDir)\client\webrtc;$(SolutionDir)\libtorrent\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\boost;$(SolutionDir)\bzip2;$(SolutionDir)\wtl;$(SolutionDir)\zlib-ng;$(SolutionDir)\openssl\include;$(SolutionDir)\MediaInfoLib\Source;$(SolutionDir)\Zenlib\Source;$(SolutionDir)\leveldb;$(SolutionDir)\leveldb\include;$(SolutionDir)\leveldb\port\win;$(SolutionDir)\jsoncpp\include\;$(SolutionDir)\client;$(SolutionDir)\client\webrtc;$(SolutionDir)\libtorrent\include;$(SolutionDir)\maxminddb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <StringPooling>true</StringPooling>
       <ExceptionHandling>Sync</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -172,6 +172,8 @@
     <ClCompile Include="client\File.cpp" />
     <ClCompile Include="client\FinishedManager.cpp" />
     <ClCompile Include="client\FsUtils.cpp" />
+    <ClCompile Include="client\GeoIP.cpp" />
+    <ClCompile Include="client\GeoManager.cpp" />
     <ClCompile Include="client\GPGPUManager.cpp" />
     <ClCompile Include="client\HashBloom.cpp" />
     <ClCompile Include="client\HashManager.cpp" />
@@ -247,6 +249,14 @@
     <ClCompile Include="client\sqlite\sqlite3x_reader.cpp" />
     <ClCompile Include="client\sqlite\sqlite3x_transaction.cpp" />
     <ClCompile Include="jsoncpp\jsoncpp.cpp" />
+    <ClCompile Include="maxminddb\data-pool.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="maxminddb\maxminddb.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="client\AdcSupports.h" />
@@ -260,6 +270,8 @@
     <ClInclude Include="client\ConnectivityManager.h" />
     <ClInclude Include="client\cperformance.h" />
     <ClInclude Include="client\dcformat.h" />
+    <ClInclude Include="client\GeoIP.h" />
+    <ClInclude Include="client\GeoManager.h" />
     <ClInclude Include="client\GPGPUManager.h" />
     <ClInclude Include="client\HintedUser.h" />
     <ClInclude Include="client\idna\idna.h" />
@@ -345,6 +357,10 @@
     <ClInclude Include="client\WildcardsReg.h" />
     <ClInclude Include="client\w_flylinkdc.h" />
     <ClInclude Include="jsoncpp\include\json\json.h" />
+    <ClInclude Include="maxminddb\data-pool.h" />
+    <ClInclude Include="maxminddb\maxminddb-compat-util.h" />
+    <ClInclude Include="maxminddb\maxminddb.h" />
+    <ClInclude Include="maxminddb\maxminddb_config.h" />
     <ClInclude Include="revision.h" />
     <ClInclude Include="client\SearchManager.h" />
     <ClInclude Include="client\SearchManagerListener.h" />

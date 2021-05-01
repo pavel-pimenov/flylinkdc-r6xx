@@ -271,6 +271,18 @@
     <ClCompile Include="client\debug.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="client\GeoIP.cpp">
+      <Filter>Source Files\GeoIP</Filter>
+    </ClCompile>
+    <ClCompile Include="client\GeoManager.cpp">
+      <Filter>Source Files\GeoIP</Filter>
+    </ClCompile>
+    <ClCompile Include="maxminddb\data-pool.c">
+      <Filter>Source Files\maxminddb</Filter>
+    </ClCompile>
+    <ClCompile Include="maxminddb\maxminddb.c">
+      <Filter>Source Files\maxminddb</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="client\AdcCommand.h">
@@ -765,6 +777,24 @@
     <ClInclude Include="client\BaseUtil.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="client\GeoIP.h">
+      <Filter>Header Files\GeoIP</Filter>
+    </ClInclude>
+    <ClInclude Include="client\GeoManager.h">
+      <Filter>Header Files\GeoIP</Filter>
+    </ClInclude>
+    <ClInclude Include="maxminddb\maxminddb-compat-util.h">
+      <Filter>Header Files\maxminddb</Filter>
+    </ClInclude>
+    <ClInclude Include="maxminddb\maxminddb_config.h">
+      <Filter>Header Files\maxminddb</Filter>
+    </ClInclude>
+    <ClInclude Include="maxminddb\maxminddb.h">
+      <Filter>Header Files\maxminddb</Filter>
+    </ClInclude>
+    <ClInclude Include="maxminddb\data-pool.h">
+      <Filter>Header Files\maxminddb</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">
@@ -808,6 +838,18 @@
     </Filter>
     <Filter Include="Source Files\webrtc\winfirewall">
       <UniqueIdentifier>{0a9b9c7d-d2b4-46c9-bb4a-e950fda8eeaa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\GeoIP">
+      <UniqueIdentifier>{50e97ddb-93d0-464c-9af6-8047fe009b01}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\GeoIP">
+      <UniqueIdentifier>{9fe6ab9d-ce14-44c6-895f-89668362e321}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\maxminddb">
+      <UniqueIdentifier>{5515be33-464c-4272-a2d2-c5e0ebef96da}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\maxminddb">
+      <UniqueIdentifier>{e60f94cf-0188-4aee-892a-7c19c193e09f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

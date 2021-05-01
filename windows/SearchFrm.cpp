@@ -26,7 +26,6 @@
 #include "MainFrm.h"
 #include "BarShader.h"
 
-//#include "../client/QueueManager.h"
 #include "../client/SearchQueue.h"
 #include "../client/ClientManager.h"
 #include "../client/DownloadManager.h"
@@ -42,6 +41,8 @@
 #ifdef FLYLINKDC_USE_ZMQ
 #include "../zmq/include/zmq.h"
 #endif
+
+#include "../client/GeoManager.h"
 
 std::list<wstring> SearchFrame::g_lastSearches;
 HIconWrapper SearchFrame::g_purge_icon(IDR_PURGE);
@@ -3506,7 +3507,7 @@ void SearchFrame::addSearchResult(SearchInfo* si)
 	//}
 	//catch (std::bad_alloc&)
 	//{
-	//	ShareManager::tryFixBadAlloc();
+	//  ShareManager::tryFixBadAlloc();
 	//}
 }
 HTREEITEM SearchFrame::add_category(const std::string p_search, const std::string p_group, SearchInfo* p_si,
@@ -4198,13 +4199,13 @@ LRESULT SearchFrame::onCustomDraw(int /*idCtrl*/, LPNMHDR pnmh, BOOL& /*bHandled
 					if (!si->columns[COLUMN_FLY_SERVER_RATING].empty())
 						cd->clrTextBk = OperaColors::brightenColor(cd->clrTextBk, -0.02f);
 					si->m_sr.calcHubName();
-					if (si->m_location.isNew())
+					//if (si->m_location.isNew())
 					{
-						auto ip = si->getText(COLUMN_IP);
+						const auto ip = si->getText(COLUMN_IP);
 						if (!ip.empty())
 						{
 							const string l_str_ip = Text::fromT(ip);
-							si->m_location = Util::getIpCountry(l_str_ip);
+							si->m_location = dcpp::GeoManager::getInstance()->getCountry(l_str_ip);
 #ifdef FLYLINKDC_USE_LASTIP_AND_USER_RATIO
 							if (si->m_is_flush_ip_to_sqlite == false &&
 							        m_storeIP &&
@@ -4297,15 +4298,18 @@ LRESULT SearchFrame::onCustomDraw(int /*idCtrl*/, LPNMHDR pnmh, BOOL& /*bHandled
 					LONG top = rc.top + (rc.Height() - 15) / 2;
 					if ((top - rc.top) < 2)
 						top = rc.top + 1;
-					if (si->m_location.isKnown())
 					{
 						int l_step = 0;
 #ifdef FLYLINKDC_USE_GEO_IP
 						if (BOOLSETTING(ENABLE_COUNTRYFLAG))
 						{
-							const POINT ps = { rc.left, top };
-							g_flagImage.DrawCountry(cd->nmcd.hdc, si->m_location, ps);
-							l_step += 25;
+							SearchInfo* si = reinterpret_cast<SearchInfo*>(cd->nmcd.lItemlParam);
+							if (si)
+							{
+								const POINT ps = { rc.left, top };
+								g_flagImage.DrawCountry(cd->nmcd.hdc, Text::fromT(si->columns[COLUMN_IP]), ps);
+								l_step += 25;
+							}
 						}
 #endif
 #ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
@@ -4316,11 +4320,10 @@ LRESULT SearchFrame::onCustomDraw(int /*idCtrl*/, LPNMHDR pnmh, BOOL& /*bHandled
 							l_step += 25;
 						}
 #endif
-						top = rc.top + (rc.Height() - 15 /*WinUtil::getTextHeight(cd->nmcd.hdc)*/ - 1) / 2;
-						const auto l_desc = si->m_location.getDescription();
-						if (!l_desc.empty())
+						top = rc.top + (rc.Height() - 16) / 2;
+						if (!si->m_location.empty())
 						{
-							::ExtTextOut(cd->nmcd.hdc, rc.left + l_step + 5, top + 1, ETO_CLIPPED, rc, l_desc.c_str(), l_desc.length(), nullptr);
+							::ExtTextOutA(cd->nmcd.hdc, rc.left + l_step + 5, top + 1, ETO_CLIPPED, rc, si->m_location.c_str(), si->m_location.length(), nullptr);
 						}
 					}
 					return CDRF_SKIPDEFAULT;

@@ -27,6 +27,7 @@
 #include "ShareManager.h"
 #include "idna/idna.h"
 #include "MD5Calc.h"
+#include "GeoManager.h"
 
 const string g_tth = "TTH:";
 const time_t Util::g_startTime = time(NULL);
@@ -544,72 +545,6 @@ void Util::loadP2PGuard()
 	catch (const FileException&)
 	{
 		LogManager::message("Error open " + fileName);
-	}
-}
-#endif
-//==========================================================================
-#ifdef FLYLINKDC_USE_GEO_IP
-void Util::loadGeoIp()
-{
-	{
-		CFlyLog l_log("[GeoIP]");
-		// This product includes GeoIP data created by MaxMind, available from http://maxmind.com/
-		// Updates at http://www.maxmind.com/app/geoip_country
-		const string fileName = getConfigPath(
-#ifndef USE_SETTINGS_PATH_TO_UPDATA_DATA
-		                            true
-#endif
-		                        ) + "GeoIPCountryWhois.csv";
-	
-		try
-		{
-			const uint64_t l_timeStampFile  = File::getSafeTimeStamp(fileName);
-			const uint64_t l_timeStampDb = CFlylinkDBManager::getInstance()->get_registry_variable_int64(e_TimeStampGeoIP);
-			if (l_timeStampFile != l_timeStampDb)
-			{
-				const string data = File(fileName, File::READ, File::OPEN).read();
-				l_log.step("read:" + fileName);
-				const char* start = data.c_str();
-				size_t linestart = 0;
-				size_t lineend = 0;
-				uint32_t startIP = 0, stopIP = 0;
-				uint16_t flagIndex = 0;
-				CFlyLocationIPArray l_sqlite_array;
-				l_sqlite_array.reserve(100000);
-				while (true)
-				{
-					auto pos = data.find(',', linestart);
-					if (pos == string::npos) break;
-					pos = data.find(',', pos + 6); // тут можно прибавлять не 1 а 6 т.к. минимальная длина IP в виде текста равна 7 символам "1.1.1.1"
-					if (pos == string::npos) break;
-					startIP = toUInt32(start + pos + 2);
-	
-					pos = data.find(',', pos + 7); // тут можно прибавлять не 1 а 7 т.к. минимальная длина IP в виде числа равна 8 символам 1.0.0.0 = 16777216
-					if (pos == string::npos) break;
-					stopIP = toUInt32(start + pos + 2);
-	
-					pos = data.find(',', pos + 7); // тут можно прибавлять не 1 а 7 т.к. минимальная длина IP в виде числа равна 8 символам 1.0.0.0 = 16777216
-					if (pos == string::npos) break;
-					flagIndex = getFlagIndexByCode(*reinterpret_cast<const uint16_t*>(start + pos + 2));
-					pos = data.find(',', pos + 1);
-					if (pos == string::npos) break;
-					lineend = data.find('\n', pos);
-					if (lineend == string::npos) break;
-					pos += 2;
-					l_sqlite_array.push_back(CFlyLocationIP(data.substr(pos, lineend - 1 - pos), startIP, stopIP, flagIndex));
-					linestart = lineend + 1;
-				}
-				{
-					CFlyLog l_geo_log_sqlite("[GeoIP-sqlite]");
-					CFlylinkDBManager::getInstance()->save_geoip(l_sqlite_array);
-				}
-				CFlylinkDBManager::getInstance()->set_registry_variable_int64(e_TimeStampGeoIP, l_timeStampFile);
-			}
-		}
-		catch (const FileException&)
-		{
-			LogManager::message("Error open " + fileName);
-		}
 	}
 }
 #endif
@@ -1694,6 +1629,63 @@ string Util::encodeURI(const string& aString, bool reverse)
 	}
 	return tmp;
 }
+// used to parse the boost::variant params of the formatParams function.
+struct GetString : boost::static_visitor<string> {
+	string operator()(const string& s) const noexcept {
+		return s;
+	}
+	string operator()(const std::function<string()>& f) const noexcept {
+		return f();
+	}
+};
+	
+/**
+ * This function takes a string and a set of parameters and transforms them according to
+ * a simple formatting rule, similar to strftime. In the message, every parameter should be
+ * represented by %[name]. It will then be replaced by the corresponding item in
+ * the params stringmap. After that, the string is passed through strftime with the current
+ * date/time and then finally written to the log file. If the parameter is not present at all,
+ * it is removed from the string completely...
+ */
+	
+string Util::formatParams(const string& aMsg, const ParamMap& aParams, FilterF aFilter, time_t aTime) noexcept {
+	string result = aMsg;
+	
+	string::size_type i, j, k;
+	i = 0;
+	while ((j = result.find("%[", i)) != string::npos) {
+		if ((result.size() < j + 2) || ((k = result.find(']', j + 2)) == string::npos)) {
+			break;
+		}
+	
+		auto param = aParams.find(result.substr(j + 2, k - j - 2));
+	
+		if (param == aParams.end()) {
+			result.erase(j, k - j + 1);
+			i = j;
+	
+		}
+		else {
+			auto replacement = boost::apply_visitor(GetString(), param->second);
+	
+			// replace all % in params with %% for strftime
+			replace("%", "%%", replacement);
+	
+			if (aFilter) {
+				replacement = aFilter(replacement);
+			}
+	
+			result.replace(j, k - j + 1, replacement);
+			i = j + replacement.size();
+		}
+	}
+	
+	if (aTime > 0) {
+		result = formatTime(result, aTime);
+	}
+	
+	return result;
+}
 	
 /**
  * This function takes a string and a set of parameters and transforms them according to
@@ -2136,140 +2128,6 @@ string Util::getRandomNick(size_t iNickLength /*= 20*/)
 	return name;
 }
 //======================================================================================================================================
-tstring Util::CountryIndex::getCountry() const
-{
-#ifdef FLYLINKDC_USE_GEO_IP
-	if (m_country_cache_index > 0)
-	{
-		const CFlyLocationDesc l_res = CFlylinkDBManager::getInstance()->get_country_from_cache(m_country_cache_index);
-		return Text::toT(Util::getCountryShortName(l_res.m_flag_index - 1));
-		//return l_res.m_description;
-	}
-	else
-#endif
-	{
-		return BaseUtil::emptyStringT;
-	}
-}
-//======================================================================================================================================
-#ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
-//======================================================================================================================================
-tstring Util::CustomNetworkIndex::getDescription() const
-{
-#ifdef FLYLINKDC_USE_GEO_IP
-	if (m_country_cache_index > 0)
-	{
-		const CFlyLocationDesc l_res = CFlylinkDBManager::getInstance()->get_country_from_cache(m_country_cache_index);
-		return l_res.m_description;
-	}
-	else
-#endif
-		if (m_location_cache_index > 0)
-		{
-			const CFlyLocationDesc l_res = CFlylinkDBManager::getInstance()->get_location_from_cache(m_location_cache_index);
-			return l_res.m_description;
-		}
-		{
-			return BaseUtil::emptyStringT;
-		}
-}
-#else
-//======================================================================================================================================
-tstring Util::CountryIndex::getDescription() const
-{
-#ifdef FLYLINKDC_USE_GEO_IP
-	if (m_country_cache_index > 0)
-	{
-		const CFlyLocationDesc l_res = CFlylinkDBManager::getInstance()->get_country_from_cache(m_country_cache_index);
-		return l_res.m_description;
-	}
-#endif
-	return BaseUtil::emptyStringT;
-}
-#endif
-//======================================================================================================================================
-#ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
-//======================================================================================================================================
-int32_t Util::CustomNetworkIndex::getFlagIndex() const
-{
-	if (m_location_cache_index > 0)
-	{
-		return CFlylinkDBManager::getInstance()->get_location_index_from_cache(m_location_cache_index);
-	}
-	else
-	{
-		return 0;
-	}
-}
-#endif
-//======================================================================================================================================
-#ifdef FLYLINKDC_USE_GEO_IP
-int16_t Util::CountryIndex::getCountryIndex() const
-{
-	if (m_country_cache_index > 0)
-	{
-		return CFlylinkDBManager::getInstance()->get_country_index_from_cache(m_country_cache_index);
-	}
-	else
-	{
-		return 0;
-	}
-}
-#endif
-//======================================================================================================================================
-Util::CustomNetworkIndex Util::getIpCountry(uint32_t p_ip, bool p_is_use_only_cache)
-{
-	if (p_ip && p_ip != INADDR_NONE)
-	{
-		uint16_t l_country_index = 0;
-		uint32_t l_location_index = uint32_t(-1);
-		CFlylinkDBManager::getInstance()->get_country_and_location(p_ip, l_country_index, l_location_index, p_is_use_only_cache);
-#ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
-		if (l_location_index > 0)
-		{
-			const CustomNetworkIndex l_index(l_location_index, l_country_index);
-			return l_index;
-		}
-#endif
-#ifdef FLYLINKDC_USE_MEDIAINFO_SERVER_COLLECT_LOST_LOCATION
-		else
-		{
-			if (g_fly_server_config.isCollectLostLocation() && BOOLSETTING(AUTOUPDATE_CUSTOMLOCATION) && AutoUpdate::getInstance()->isUpdate())
-			{
-				CFlylinkDBManager::getInstance()->save_lost_location(p_ip);
-			}
-		}
-#endif //FLYLINKDC_USE_MEDIAINFO_SERVER_COLLECT_LOST_LOCATION
-		if (l_country_index)
-		{
-#ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
-			const CustomNetworkIndex l_index(l_location_index, l_country_index);
-#else
-			const CustomNetworkIndex l_index(l_country_index);
-#endif
-			return l_index;
-		}
-	}
-	else
-	{
-		dcdebug(string("Invalid IP on Util::getIpCountry: " + Util::toString(p_ip) + '\n').c_str());
-		dcassert(!p_ip);
-	}
-#ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
-	static const CustomNetworkIndex g_unknownLocationIndex(0, 0);
-#else
-	static const CustomNetworkIndex g_unknownLocationIndex(0);
-#endif
-	
-	return g_unknownLocationIndex;
-}
-//======================================================================================================================================
-Util::CustomNetworkIndex Util::getIpCountry(const string& p_ip, bool p_is_use_only_cache)
-{
-	const uint32_t l_ipNum = Socket::convertIP4(p_ip);
-	return getIpCountry(l_ipNum, p_is_use_only_cache);
-}
-//======================================================================================================================================
 string Util::toAdcFile(const string& file)
 {
 	if (file == "files.xml.bz2" || file == "files.xml")
@@ -2343,7 +2201,7 @@ TCHAR* Util::strstr(const TCHAR *str1, const TCHAR *str2, int *pnIdxFound)
 	
 int Util::DefaultSort(const wchar_t *a, const wchar_t *b, bool noCase /*=  true*/)
 {
-		return noCase ? lstrcmpi(a, b) : lstrcmp(a, b);
+	return noCase ? lstrcmpi(a, b) : lstrcmp(a, b);
 }
 int Util::DefaultSort(const tstring& a, const tstring& b, bool noCase /*=  true*/)
 {

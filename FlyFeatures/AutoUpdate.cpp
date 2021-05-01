@@ -46,6 +46,8 @@ static const string UPDATE_FILE_DOWNLOAD_R = "Update6.xml";
 static const string UPDATE_SIGN_FILE_DOWNLOAD_R = "Update6.sign";
 static const string UPDATE_DESCRIPTION_R = "Update6.rtf";
 
+static string UPDATE_NODE_NAME = "Update6";
+
 #ifdef IRAINMAN_AUTOUPDATE_ALL_USERS_DATA
 static const string UPDATE_AU_URL = "http://update.fly-server.ru/update/alluser";
 static const string UPDATE_UPDATE_FILE = "UpdateAU.xml";
@@ -54,6 +56,13 @@ static const string UPDATE_DESCRIPTION_FILE = "UpdateAU.rtf";
 #endif
 
 bool AutoUpdate::g_exitOnUpdate = false;
+
+
+AutoUpdate::AutoUpdate() : m_isUpdateStarted(0), m_isUpdate(false), m_manualUpdate(false), m_mainFrameHWND(nullptr), m_guiDelegate(nullptr)
+{
+	g_exitOnUpdate = false;
+}
+
 void AutoUpdate::initialize(HWND p_mainFrameHWND, AutoUpdateGUIMethod* p_guiDelegate)
 {
 	m_mainFrameHWND = p_mainFrameHWND;
@@ -162,7 +171,7 @@ int64_t AutoUpdate::checkFilesToNeedsUpdate(AutoUpdateFiles& p_files4Update, Aut
 }
 string AutoUpdate::getUpdateFilesList(const string& p_componentName,
                                       string  p_serverUrl,
-                                      const char*   p_rootNode,
+									  const string& p_rootNode,
                                       const string& p_file,
                                       const string& p_descr,
                                       unique_ptr<AutoUpdateObject>& p_autoUpdateObject,
@@ -179,19 +188,19 @@ string AutoUpdate::getUpdateFilesList(const string& p_componentName,
 		message(STRING(AUTOUPDATE_DOWNLOAD_SUCCESS) + l_log_url_info);
 		XMLParser::XMLResults xRes;
 		// Try to parse data
-		XMLParser::XMLNode xRootNode = XMLParser::XMLNode::parseString(p_autoUpdateObject->m_update_xml.c_str(), 0, &xRes);
+		const XMLParser::XMLNode xRootNode = XMLParser::XMLNode::parseString(p_autoUpdateObject->m_update_xml.c_str(), 0, &xRes);
 		if (xRes.error == XMLParser::eXMLErrorNone)
 		{
-			XMLParser::XMLNode update6Node = xRootNode.getChildNode(p_rootNode);
-			dcassert(!update6Node.isEmpty());
-			if (!update6Node.isEmpty())
+			const XMLParser::XMLNode updateNode = xRootNode.getChildNode(p_rootNode.c_str());
+			dcassert(!updateNode.isEmpty());
+			if (!updateNode.isEmpty())
 			{
-				p_autoUpdateObject->m_sVersion = update6Node.getAttributeOrDefault("Version");
-				p_autoUpdateObject->m_sUpdateDate = update6Node.getAttributeOrDefault("UpdateDate");
+				p_autoUpdateObject->m_sVersion = updateNode.getAttributeOrDefault("Version");
+				p_autoUpdateObject->m_sUpdateDate = updateNode.getAttributeOrDefault("UpdateDate");
 				// Let's asks for updater....
 				{
 					int i = 0;
-					XMLParser::XMLNode uNode = update6Node.getChildNode("Updater", &i);
+					XMLParser::XMLNode uNode = updateNode.getChildNode("Updater", &i);
 					if (!uNode.isEmpty())
 					{
 						int j = 0;
@@ -205,7 +214,7 @@ string AutoUpdate::getUpdateFilesList(const string& p_componentName,
 				}
 				{
 					int i = 0;
-					XMLParser::XMLNode moduleNode = update6Node.getChildNode("Module", &i);
+					XMLParser::XMLNode moduleNode = updateNode.getChildNode("Module", &i);
 					while (!moduleNode.isEmpty())
 					{
 						AutoUpdateModule module;
@@ -221,13 +230,13 @@ string AutoUpdate::getUpdateFilesList(const string& p_componentName,
 						}
 						p_autoUpdateObject->m_Modules.push_back(module);
 						
-						moduleNode = update6Node.getChildNode("Module", &i);
+						moduleNode = updateNode.getChildNode("Module", &i);
 					}
 				}
 			}
 			else
 			{
-				const string l_error = "update6Node.isEmpty() - send error - ppa74@ya.ru (p_rootNode = [" + string(p_rootNode) + "]";
+				const string l_error = "updateNode.isEmpty() (p_rootNode = [" + string(p_rootNode) + "] " + g_dev_error;
 				CFlyServerJSON::pushError(63, l_error);
 				::MessageBox(m_mainFrameHWND, Text::toT(l_error).c_str(), getFlylinkDCAppCaptionWithVersionT().c_str(), MB_OK | MB_ICONERROR);
 			}
@@ -258,14 +267,16 @@ void AutoUpdate::startUpdateThisThread()
 #endif
 		const string l_serverURL = getAUTOUPDATE_SERVER_URL();
 		const string l_serverURL_AU = UPDATE_AU_URL;
-		// TODO - в случае ошибки сделать итерацию и пройтись по зеркалам
 		string l_base_update_url;
 		string l_base_updateAU_url;
 		if (Util::isHttpLink(l_serverURL))
 		{
-			const string programUpdateDescription = getUpdateFilesList(STRING(PROGRAM_FILES), l_serverURL, "Update6",
-			                                                           UPDATE_FILE_DOWNLOAD(), UPDATE_DESCRIPTION(), l_autoUpdateObject,
-			                                                           l_base_update_url);
+			const string programUpdateDescription = getUpdateFilesList(STRING(PROGRAM_FILES),
+				l_serverURL, UPDATE_NODE_NAME,
+			    UPDATE_FILE_DOWNLOAD(), 
+				UPDATE_DESCRIPTION(), 
+				l_autoUpdateObject,
+			    l_base_update_url);
 #ifdef IRAINMAN_AUTOUPDATE_ALL_USERS_DATA
 			// TODO - результат не юзаетс€ const string basesUpdateDescription =
 			getUpdateFilesList(STRING(PROGRAM_DATA), l_serverURL_AU, "UpdateAU",
@@ -514,28 +525,6 @@ void AutoUpdate::startUpdateThisThread()
 											message(STRING(AUTOUPDATE_ERROR_UPDATE_FILE) + ' ' + Text::fromT(flagName) + g_dev_error);
 										}
 									}
-#if defined(IRAINMAN_AUTOUPDATE_ALL_USERS_DATA) && defined (ALLOW_RELOAD_INTERNALBD_IN_RUNTIME)
-									if (needsUpdateBases && !m_exitOnUpdate)
-									{
-										// TODO: use module name here (create list and use it).
-										bool l_reloadGeoIP = false;
-										for (size_t i = 0; i < l_files4UpdateInAllUsersSettings.size(); ++i)
-										{
-											const string& l_name = l_files4UpdateInAllUsersSettings[i].m_sName;
-											// TODO - убрать имена зашитые в код!
-											if (!l_reloadGeoIP && (l_name == "CustomLocations.bmp" || l_name == "CustomLocations.ini" || l_name == "GeoIPCountryWhois.csv" || l_name == "P2PGuard.ini" || l_name == "iblocklist-com.ini"))
-											{
-												l_reloadGeoIP = true;
-											}
-										}
-										if (l_reloadGeoIP)
-										{
-											message(_T("Reload GeoIP in progressЕ"));
-											Util::loadGeoIp(true);
-											message(_T("Reload GeoIP done"));
-										}
-									}
-#endif // IRAINMAN_AUTOUPDATE_ALL_USERS_DATA && ALLOW_RELOAD_INTERNALBD_IN_RUNTIME
 								}
 								else
 								{

@@ -30,7 +30,6 @@
 
 #ifdef _DEBUG
 #include <set>
-#include <boost/noncopyable.hpp>
 #endif
 
 #include "Exception.h"

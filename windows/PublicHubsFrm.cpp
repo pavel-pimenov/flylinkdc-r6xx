@@ -104,13 +104,6 @@ LRESULT PublicHubsFrame::onCreate(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lPa
 	
 	m_ctrlHubs.SetImageList(g_flagImage.getIconList(), LVSIL_SMALL);
 	
-	/*  extern HIconWrapper g_hOfflineIco;
-	  extern HIconWrapper g_hOnlineIco;
-	    m_onlineStatusImg.Create(16, 16, ILC_COLOR32 | ILC_MASK,  0, 2);
-	    m_onlineStatusImg.AddIcon(g_hOnlineIco);
-	    m_onlineStatusImg.AddIcon(g_hOfflineIco);
-	  m_ctrlHubs.SetImageList(m_onlineStatusImg, LVSIL_SMALL);
-	*/
 	ClientManager::getOnlineClients(m_onlineHubs);
 	
 	m_ctrlHubs.SetFocus();

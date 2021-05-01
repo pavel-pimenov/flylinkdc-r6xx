@@ -55,8 +55,8 @@ void UserInfoSimple::addSummaryMenu()
 		if (!l_params.m_ip.empty())
 		{
 			UserInfoGuiTraits::userSummaryMenu.AppendMenu(MF_STRING | MF_DISABLED, IDC_NONE, l_params.getTagIP().c_str());
-			const Util::CustomNetworkIndex l_location = Util::getIpCountry(l_params.m_ip, true); // Не обращаемся в базу данных
-			const tstring loc = TSTRING(COUNTRY) + _T(": ") + l_location.getCountry() + _T(", ") + l_location.getDescription();
+			//const Util::CustomNetworkIndex l_location = Util::getIpCountry(l_params.m_ip, true); // Не обращаемся в базу данных
+			const tstring loc; // = TSTRING(COUNTRY) + _T(": ") + l_location.getCountry() + _T(", ") + l_location.getDescription();
 			UserInfoGuiTraits::userSummaryMenu.AppendMenu(MF_STRING | MF_DISABLED, IDC_NONE, loc.c_str());
 		}
 		else

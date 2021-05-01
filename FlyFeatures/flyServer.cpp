@@ -386,7 +386,6 @@ void CFlyServerConfig::loadConfig()
 #ifdef USE_FLYSERVER_LOCAL_FILE
 		const string l_url_config_file = "file://C:/vc17/flylinkdc-update/etc/flylinkdc-config-r6xx.xml";
 		g_debug_fly_server_url = "localhost";
-		//g_debug_fly_server_url = "192.168.1.234";
 		
 #else
 		const string l_url_config_file = "http://etc.fly-server.ru/etc/flylinkdc-config-r6xx.xml";
@@ -1517,7 +1516,7 @@ void CFlyServerAdapter::post_message_for_update_mediainfo(const HWND p_hMediaWnd
 		const string l_json_result = CFlyServerJSON::connect(l_copy_array, false); 
 		// TODO - сохранить m_GetFlyServerArray в другом месте?
 		dcassert(::IsWindow(p_hMediaWnd));
-        dcassert(!ClientManager::isBeforeShutdown());
+		dcassert(!ClientManager::isBeforeShutdown());
         if (!ClientManager::isBeforeShutdown() && !l_json_result.empty() && ::IsWindow(p_hMediaWnd))
 		{
 			Json::Value* l_root = new Json::Value;
@@ -2291,7 +2290,7 @@ string CFlyServerJSON::postQuery(bool p_is_set,
 		{
 			auto l_dest_length = zng_compressBound(p_body.length()) + 2;
 			l_post_compress_query.resize(l_dest_length);
-			const int l_zlib_result = zng_compress2(l_post_compress_query.data(), &l_dest_length,
+			const auto l_zlib_result = zng_compress2(l_post_compress_query.data(), &l_dest_length,
 			                                    (uint8_t*)p_body.data(),
 			                                    p_body.length(), g_fly_server_config.getZlibCompressLevel());
 			// На клиенте пока жмем по максимуму - нагрузка мелкая.

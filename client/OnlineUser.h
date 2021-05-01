@@ -274,6 +274,7 @@ class Identity
 		{
 			return !m_ip.is_unspecified();
 		}
+		string getCountry() const;
 		string getIpAsString() const;
 	private:
 		string m_user_nick;

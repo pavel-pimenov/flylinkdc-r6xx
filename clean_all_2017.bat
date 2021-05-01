@@ -25,7 +25,6 @@ del /S /F /Q *.tlog
 del /S /F /Q *.cpp.orig
 del /S /F /Q *.h.orig
 del .\compiled\*.ilk
-del /S /F /Q ipch\*.ipch
 del /S /F /Q compiled\update\*.bz2
 del /S /F /Q compiled\update\*.xml
 del /S /F /Q compiled\update\*.rtf

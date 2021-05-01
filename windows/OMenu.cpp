@@ -209,25 +209,6 @@ LRESULT OMenu::onDrawItem(HWND /*hWnd*/, UINT /*uMsg*/, WPARAM wParam, LPARAM lP
 					CSelectFont l_font(dc, Fonts::g_boldFont); //-V808
 					dc.DrawText(mi->m_text.c_str(), mi->m_text.length(), rc, DT_CENTER | DT_NOPREFIX | DT_SINGLELINE | DT_VCENTER);
 				}
-				
-				{
-				
-					/*                  HICON hIcon = g_flagImage.getIconList().GetIcon(0);
-					                    SIZE l_szBitmap;
-					                    g_flagImage.getIconList().GetIconSize(l_szBitmap);
-					                    CBrush brush;
-					                    const bool bOver = false;
-					                    brush.CreateSolidBrush(bOver ? HLS_TRANSFORM(::GetSysColor(COLOR_HIGHLIGHT), +50, -66) : HLS_TRANSFORM(::GetSysColor(COLOR_3DFACE), -27, 0));
-					                    dc.DrawState(CPoint(rc.left + (bOver ? 4 : 3), rc.top + (bOver ? 5 : 4)),
-					                        CSize(l_szBitmap.cx, l_szBitmap.cx), hIcon, DSS_MONO, brush);
-					                    DestroyIcon(hIcon);
-					                    */
-					// TODO - нарисовать иконки
-					//bool bSelected = false;
-					//bool bChecked  = false;
-					//::ImageList_Draw(g_flagImage.getIconList(), 1, dc.m_hDC,
-					//                  rc.left + ((bSelected && !bChecked) ? 2 : 3), rc.top + ((bSelected && !bChecked) ? 3 : 4), ILD_TRANSPARENT);
-				}
 				dc.Detach();
 				return TRUE;
 			}

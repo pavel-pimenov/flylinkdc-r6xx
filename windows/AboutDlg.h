@@ -163,4 +163,4 @@ class AboutDlg : public CDialogImpl<AboutDlg>
 		CFlyHyperLink m_PVSStudio;
 };
 
-#endif //
+#endif // !defined(ABOUT_DLG_H)

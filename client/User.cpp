@@ -20,11 +20,13 @@
 
 #include "AdcHub.h"
 #include "ClientManager.h"
+#include "GeoManager.h"
 #include "UserCommand.h"
 #include "CFlylinkDBManager.h"
 #include "Wildcards.h"
 #include "UserConnection.h"
 #include "../FlyFeatures/flyServer.h"
+
 
 std::unique_ptr<webrtc::RWLockWrapper> Identity::g_rw_cs = std::unique_ptr<webrtc::RWLockWrapper> (webrtc::RWLockWrapper::CreateRWLock());
 
@@ -1029,8 +1031,8 @@ string Identity::formatIpString(const string& value)
 		{
 			ret +=  l_dns + " - ";
 		}
-		const auto l_location = Util::getIpCountry(value);
-		ret += Text::fromT(l_location.getDescription()) + ")";
+		//const auto l_location = Util::getIpCountry(value);
+		//ret += Text::fromT(l_location.getDescription()) + ")";
 		return ret;
 	}
 	else
@@ -1224,6 +1226,11 @@ string Identity::getSupports() const
 		tmp += AdcSupports::getSupports(*this);
 	}
 	return tmp;
+}
+
+string Identity::getCountry() const  {
+	const auto l_country =  dcpp::GeoManager::getInstance()->getCountry(m_ip.to_string());
+	return l_country;
 }
 
 string Identity::getIpAsString() const

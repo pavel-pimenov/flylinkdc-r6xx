@@ -19,7 +19,6 @@
 #include "stdafx.h"
 #include <regex>
 
-//#include "HubFrame.h"
 #include "SearchFrm.h"
 #include "PrivateFrame.h"
 #include "BarShader.h"
@@ -34,6 +33,7 @@
 #endif
 #include "FavHubProperties.h"
 #include "../client/MappingManager.h"
+#include "../client/GeoManager.h"
 
 HubFrame::FrameMap HubFrame::g_frames;
 CriticalSection HubFrame::g_frames_cs;
@@ -1199,7 +1199,7 @@ LRESULT HubFrame::onCopyUserInfo(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*
 				break;
 			case IDC_COPY_GEO_LOCATION:
 			{
-				sCopy += Text::fromT(Util::getIpCountry(id.getIp().to_ulong()).getDescription());
+				sCopy += dcpp::GeoManager::getInstance()->getCountry(id.getIp().to_string());
 				break;
 			}
 			case IDC_COPY_IP:
@@ -1215,10 +1215,9 @@ LRESULT HubFrame::onCopyUserInfo(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*
 			}
 			case IDC_COPY_ALL:
 			{
-				// TODO translate
 				sCopy += "User info:\r\n"
 				         "\t" + STRING(NICK) + ": " + id.getNick() + "\r\n" +
-				         "\tLocation: " + Text::fromT(Util::getIpCountry(id.getIp().to_ulong()).getDescription()) + "\r\n" +
+				         "\tLocation: " + dcpp::GeoManager::getInstance()->getCountry(id.getIp().to_string()) + "\r\n" +
 				         "\tNicks: " + Util::toString(ClientManager::getNicks(u->getCID(), BaseUtil::emptyString)) + "\r\n" +
 				         "\tTag: " + id.getTag() + "\r\n" +
 				         "\t" + STRING(HUBS) + ": " + Util::toString(ClientManager::getHubs(u->getCID(), BaseUtil::emptyString)) + "\r\n" +
@@ -1858,7 +1857,6 @@ LRESULT HubFrame::onSpeaker(UINT /*uMsg*/, WPARAM /* wParam */, LPARAM /* lParam
 					if (ui)
 					{
 						ui->m_owner_draw = 2;
-						ui->calcLocation();
 #ifdef FLYLINKDC_USE_ANTIVIRUS_DB
 						ui->calcVirusType();
 #endif
@@ -4280,10 +4278,6 @@ bool HubFrame::matchFilter(UserInfo& ui, int sel, bool doSizeCompare, FilterMode
 			}
 			else
 			{
-				if (sel == COLUMN_GEO_LOCATION)
-				{
-					ui.calcLocation();
-				}
 #ifdef FLYLINKDC_USE_ANTIVIRUS_DB
 				else if (sel == COLUMN_ANTIVIRUS)
 				{
@@ -4661,7 +4655,7 @@ LRESULT HubFrame::onCustomDraw(int /*idCtrl*/, LPNMHDR pnmh, BOOL& bHandled)
 				}
 				else if (l_column_id == COLUMN_IP)
 				{
-					const tstring& l_ip = ui->getText(COLUMN_IP);
+					const tstring l_ip = ui->getText(COLUMN_IP);
 					if (!l_ip.empty())
 					{
 						const bool l_is_fantom_ip = ui->getOnlineUser()->getIdentity().isFantomIP();
@@ -4718,21 +4712,22 @@ LRESULT HubFrame::onCustomDraw(int /*idCtrl*/, LPNMHDR pnmh, BOOL& bHandled)
 					{
 						m_ctrlUsers->SetItemFilled(cd, rc, cd->clrText, cd->clrText);
 					}
-					const auto& l_location = ui->getLocation();
-					if (l_location.isKnown())
 					{
 						rc.left += 2;
 						LONG top = rc.top + (rc.Height() - 15) / 2;
 						if ((top - rc.top) < 2)
 							top = rc.top + 1;
-						// TODO: move this to FlagImage and cleanup!
 						int l_step = 0;
 #ifdef FLYLINKDC_USE_GEO_IP
 						if (BOOLSETTING(ENABLE_COUNTRYFLAG))
 						{
-							const POINT ps = { rc.left, top };
-							g_flagImage.DrawCountry(cd->nmcd.hdc, l_location, ps);
-							l_step += 25;
+							const UserInfo* ui = (UserInfo*)cd->nmcd.lItemlParam;
+							if (ui)
+							{
+								const POINT ps = { rc.left, top };
+								g_flagImage.DrawCountry(cd->nmcd.hdc, ui->getIpAsString(), ps);  // TODO image
+								l_step += 25;
+							}
 						}
 #endif
 #ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS
@@ -4743,12 +4738,12 @@ LRESULT HubFrame::onCustomDraw(int /*idCtrl*/, LPNMHDR pnmh, BOOL& bHandled)
 							l_step += 25;
 						}
 #endif
-						top = rc.top + (rc.Height() - 15 /*WinUtil::getTextHeight(cd->nmcd.hdc)*/ - 1) / 2;
-						const auto& l_desc = l_location.getDescription();
-						if (!l_desc.empty())
-						{
-							::ExtTextOut(cd->nmcd.hdc, rc.left + l_step + 5, top + 1, ETO_CLIPPED, rc, l_desc.c_str(), l_desc.length(), nullptr);
-						}
+						top = rc.top + (rc.Height() - 16) / 2;
+						//const auto l_desc = ui->m_l_location.getDescription();
+						//if (!l_desc.empty())
+						//{
+						//  ::ExtTextOut(cd->nmcd.hdc, rc.left + l_step + 5, top + 1, ETO_CLIPPED, rc, l_desc.c_str(), l_desc.length(), nullptr);
+						//
 					}
 					return CDRF_SKIPDEFAULT;
 				}

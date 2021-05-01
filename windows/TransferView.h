@@ -371,7 +371,6 @@ class TransferView : public CWindowImpl<TransferView>, private DownloadManagerLi
 				tstring m_hubs;
 				string  m_token;
 				
-				mutable Util::CustomNetworkIndex m_location;
 				
 #ifdef FLYLINKDC_USE_COLUMN_RATIO
 				tstring m_ratio_as_text;

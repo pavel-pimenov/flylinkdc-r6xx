@@ -84,7 +84,6 @@ class UserInfo : public UserInfoBase
 {
 	private:
 		const OnlineUserPtr m_ou;
-		Util::CustomNetworkIndex m_location;
 	public:
 		unsigned short m_flag_mask;
 		char m_owner_draw;
@@ -123,15 +122,6 @@ class UserInfo : public UserInfoBase
 #ifdef FLYLINKDC_USE_ANTIVIRUS_DB
 		void calcVirusType();
 #endif
-		const Util::CustomNetworkIndex& getLocation() const
-		{
-			return m_location;
-		}
-		void calcLocation();
-		void setLocation(const Util::CustomNetworkIndex& p_location)
-		{
-			m_location = p_location;
-		}
 		const string getNick() const
 		{
 			return m_ou->getIdentity().getNick();

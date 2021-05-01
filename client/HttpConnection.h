@@ -61,9 +61,6 @@ class HttpConnectionListener
 };
 
 class HttpConnection : BufferedSocketListener, public Speaker<HttpConnectionListener>
-#ifdef _DEBUG
-	, boost::noncopyable // [+] IRainman fix.
-#endif
 {
 	public:
 		void downloadFile(const string& aUrl, const string& aUserAgent = Util::emptyString);
