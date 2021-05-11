@@ -8,3 +8,5 @@ rem p2pguard_convert.exe
 rem del P2PGuard.ini
 rem ren P2PGuard_flylink.ini P2PGuard.ini
 rem copy P2PGuard.ini ..
+rem TODO - get country_ip_db.mmdb
+
