@@ -9,7 +9,7 @@ message(STATUS "Using CMake version ${CMAKE_VERSION}")
 set(CMAKE_MACOSX_RPATH 1)
 
 # If not specified on the command line, enable C99 as the default
-# Configuration items that affect the global compiler envirionment standards
+# Configuration items that affect the global compiler environment standards
 # should be issued before the "project" command.
 if(NOT CMAKE_C_STANDARD)
     set(CMAKE_C_STANDARD 99)          # The C standard whose features are requested to build this target
@@ -134,8 +134,8 @@ if(WITH_GZFILEOP)
     add_definitions(-DWITH_GZFILEOP)
 endif()
 
-if("${CMAKE_C_COMPILER}" MATCHES "icc" OR "${CMAKE_C_COMPILER}" MATCHES "icpc" OR "${CMAKE_C_COMPILER}" MATCHES "icl")
-    if(CMAKE_HOST_UNIX OR APPLE)
+if(CMAKE_C_COMPILER_ID MATCHES "Intel")
+    if(CMAKE_HOST_UNIX)
         set(WARNFLAGS "-w3")
         set(WARNFLAGS_MAINTAINER "-w3 -Wcheck -Wremarks")
         set(WARNFLAGS_DISABLE "")
