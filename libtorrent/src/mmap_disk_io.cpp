@@ -1,6 +1,6 @@
 /*
 
-Copyright (c) 2007-2012, 2014-2020, Arvid Norberg
+Copyright (c) 2007-2012, 2014-2021, Arvid Norberg
 Copyright (c) 2016-2019, Steven Siloti
 Copyright (c) 2016-2018, 2020-2021, Alden Torres
 Copyright (c) 2018, gubatron
@@ -412,6 +412,19 @@ TORRENT_EXPORT std::unique_ptr<disk_interface> mmap_disk_io_constructor(
 		DLOG("destructing mmap_disk_io\n");
 		TORRENT_ASSERT(m_magic == 0x1337);
 		m_magic = 0xdead;
+
+		TORRENT_ASSERT(m_generic_threads.num_threads() == 0);
+		TORRENT_ASSERT(m_hash_threads.num_threads() == 0);
+		if (!m_generic_io_jobs.m_queued_jobs.empty())
+		{
+			for (auto i = m_generic_io_jobs.m_queued_jobs.iterate(); i.get(); i.next())
+				std::printf("generic job: %d\n", int(i.get()->action.index()));
+		}
+		if (!m_hash_io_jobs.m_queued_jobs.empty())
+		{
+			for (auto i = m_hash_io_jobs.m_queued_jobs.iterate(); i.get(); i.next())
+				std::printf("hash job: %d\n", int(i.get()->action.index()));
+		}
 		TORRENT_ASSERT(m_generic_io_jobs.m_queued_jobs.empty());
 		TORRENT_ASSERT(m_hash_io_jobs.m_queued_jobs.empty());
 	}

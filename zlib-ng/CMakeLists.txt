@@ -331,7 +331,6 @@ endif()
 #
 # Check for standard/system includes
 #
-check_include_file(stdarg.h    HAVE_STDARG_H)
 check_include_file(sys/sdt.h   HAVE_SYS_SDT_H)
 if(HAVE_SYS_SDT_H)
     add_definitions(-DHAVE_SYS_SDT_H)
@@ -651,16 +650,16 @@ if(WITH_OPTIM)
         add_definitions(-DARM_FEATURES)
         if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
             if(NOT "${ARCH}" MATCHES "aarch64")
-            check_c_source_compiles(
-                "#include <sys/auxv.h>
-                int main() {
-                    return (getauxval(AT_HWCAP2) & HWCAP2_CRC32);
-                }"
-                ARM_AUXV_HAS_CRC32
-            )
-            if(ARM_AUXV_HAS_CRC32)
-                add_definitions(-DARM_AUXV_HAS_CRC32)
-            else()
+                check_c_source_compiles(
+                    "#include <sys/auxv.h>
+                    int main() {
+                        return (getauxval(AT_HWCAP2) & HWCAP2_CRC32);
+                    }"
+                    ARM_AUXV_HAS_CRC32
+                )
+                if(ARM_AUXV_HAS_CRC32)
+                    add_definitions(-DARM_AUXV_HAS_CRC32)
+                else()
                     check_c_source_compiles(
                         "#include <sys/auxv.h>
                         #include <asm/hwcap.h>
@@ -672,8 +671,8 @@ if(WITH_OPTIM)
                     if (ARM_HWCAP_HAS_CRC32)
                         add_definitions(-DARM_AUXV_HAS_CRC32 -DARM_ASM_HWCAP)
                     else()
-                message(STATUS "HWCAP2_CRC32 not present in sys/auxv.h; cannot detect support at runtime.")
-            endif()
+                        message(STATUS "HWCAP2_CRC32 not present in sys/auxv.h; cannot detect support at runtime.")
+                    endif()
                 endif()
             else()
                 check_c_source_compiles(
@@ -703,13 +702,13 @@ if(WITH_OPTIM)
                     check_c_source_compiles(
                         "#include <sys/auxv.h>
                         int main() {
-                      return (getauxval(AT_HWCAP) & HWCAP_NEON);
-                    }"
-                    ARM_AUXV_HAS_NEON
-                )
-                if(ARM_AUXV_HAS_NEON)
-                    add_definitions(-DARM_AUXV_HAS_NEON)
-                else()
+                          return (getauxval(AT_HWCAP) & HWCAP_NEON);
+                        }"
+                        ARM_AUXV_HAS_NEON
+                    )
+                    if (ARM_AUXV_HAS_NEON)
+                        add_definitions(-DARM_AUXV_HAS_NEON)
+                    else()
                         message(STATUS "Neither HWCAP_ARM_NEON or HWCAP_NEON present in sys/auxv.h; cannot detect support at runtime.")
                     endif()
                 endif()
@@ -836,7 +835,6 @@ macro(generate_cmakein input output)
     file(STRINGS ${input} _lines)
     foreach(_line IN LISTS _lines)
         string(REGEX REPLACE "#ifdef HAVE_UNISTD_H.*" "@ZCONF_UNISTD_LINE@" _line "${_line}")
-        string(REGEX REPLACE "#ifdef HAVE_STDARG_H.*" "@ZCONF_STDARG_LINE@" _line "${_line}")
         string(REGEX REPLACE "#ifdef NEED_PTRDIFF_T.*" "@ZCONF_PTRDIFF_LINE@" _line "${_line}")
         if(NEED_PTRDIFF_T)
             string(REGEX REPLACE "typedef PTRDIFF_TYPE" "typedef @PTRDIFF_TYPE@" _line "${_line}")
@@ -945,13 +943,13 @@ set(ZLIB_GZFILE_SRCS
     gzwrite.c
 )
 
-if(NOT MINGW AND NOT MSYS)
+if(NOT MINGW AND NOT MSYS AND NOT CYGWIN)
     set(ZLIB_DLL_SRCS
         win32/zlib${SUFFIX}1.rc # If present will override custom build rule below.
     )
 endif()
 
-if(MINGW OR MSYS)
+if(MINGW OR MSYS OR CYGWIN)
     # This gets us DLL resource information when compiling on MinGW.
     if(NOT CMAKE_RC_COMPILER)
         set(CMAKE_RC_COMPILER windres.exe)
@@ -994,7 +992,24 @@ foreach(ZLIB_INSTALL_LIBRARY ${ZLIB_INSTALL_LIBRARIES})
 endforeach()
 
 if(WIN32)
-    set_target_properties(${ZLIB_INSTALL_LIBRARIES} PROPERTIES OUTPUT_NAME zlib${SUFFIX})
+    # Shared library
+    if(NOT DEFINED BUILD_SHARED_LIBS OR BUILD_SHARED_LIBS)
+        set_target_properties(zlib PROPERTIES OUTPUT_NAME zlib${SUFFIX})
+    endif()
+    # Static library
+    if(NOT DEFINED BUILD_SHARED_LIBS)
+        if(MSVC)
+            set_target_properties(zlibstatic PROPERTIES OUTPUT_NAME zlibstatic${SUFFIX})
+        else()
+            set_target_properties(zlibstatic PROPERTIES OUTPUT_NAME z${SUFFIX})
+        endif()
+    elseif(NOT BUILD_SHARED_LIBS)
+        if(MSVC)
+            set_target_properties(zlib PROPERTIES OUTPUT_NAME zlibstatic${SUFFIX})
+        else()
+            set_target_properties(zlib PROPERTIES OUTPUT_NAME z${SUFFIX})
+        endif()
+    endif()
 else()
     # On unix-like platforms the library is almost always called libz
     set_target_properties(${ZLIB_INSTALL_LIBRARIES} PROPERTIES OUTPUT_NAME z${SUFFIX})
@@ -1033,7 +1048,8 @@ if(NOT DEFINED BUILD_SHARED_LIBS OR BUILD_SHARED_LIBS)
             # Match configure/make's behavior (i.e. don't use @rpath on mac).
             set_target_properties(zlib PROPERTIES INSTALL_NAME_DIR "${LIB_INSTALL_DIR}")
         endif()
-    elseif(MSYS)
+    endif()
+    if(MSYS OR CYGWIN)
         # Suppress version number from shared library name
         set(CMAKE_SHARED_LIBRARY_NAME_WITH_VERSION 0)
     elseif(WIN32)
@@ -1046,15 +1062,10 @@ if(NOT DEFINED BUILD_SHARED_LIBS OR BUILD_SHARED_LIBS)
     endif()
 endif()
 
-if(HAVE_STDARG_H)
-  SET(ZCONF_STDARG_LINE "#if 1    /* was set to #if 1 by configure/cmake/etc */")
-else()
-  SET(ZCONF_STDARG_LINE "#ifdef HAVE_STDARG_H    /* may be set to #if 1 by configure/cmake/etc */")
-endif()
 if(HAVE_UNISTD_H)
   SET(ZCONF_UNISTD_LINE "#if 1    /* was set to #if 1 by configure/cmake/etc */")
 else()
-  SET(ZCONF_UNISTD_LINE "#ifdef HAVE_UNISTD_H    /* may be set to #if 1 by configure/cmake/etc */")
+  SET(ZCONF_UNISTD_LINE "#if 0    /* was set to #if 0 by configure/cmake/etc */")
 endif()
 if(NEED_PTRDIFF_T)
     SET(ZCONF_PTRDIFF_LINE "#if 1    /* was set to #if 1 by configure/cmake/etc */")

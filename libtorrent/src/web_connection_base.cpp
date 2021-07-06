@@ -1,6 +1,6 @@
 /*
 
-Copyright (c) 2010, 2013-2017, 2019-2020, Arvid Norberg
+Copyright (c) 2010, 2013-2017, 2019-2021, Arvid Norberg
 Copyright (c) 2016, Andrei Kurushin
 Copyright (c) 2017, Steven Siloti
 Copyright (c) 2019-2021, Alden Torres
@@ -69,6 +69,7 @@ namespace libtorrent::aux {
 			m_basic_auth = base64encode(m_basic_auth);
 
 		m_server_string = m_host;
+		aux::verify_encoding(m_server_string);
 	}
 
 	int web_connection_base::timeout() const

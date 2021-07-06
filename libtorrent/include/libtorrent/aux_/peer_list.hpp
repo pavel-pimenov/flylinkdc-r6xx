@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2016, Steven Siloti
-Copyright (c) 2003-2005, 2007-2009, 2011-2012, 2014-2020, Arvid Norberg
+Copyright (c) 2003-2005, 2007-2009, 2011-2012, 2014-2021, Arvid Norberg
 Copyright (c) 2004, Magnus Jonsson
 Copyright (c) 2009, Daniel Wallin
 Copyright (c) 2015, Mikhail Titov
@@ -44,7 +44,6 @@ namespace libtorrent::aux {
 	// the peer_list type not depend on the torrent type directly.
 	struct torrent_state
 	{
-		bool is_paused = false;
 		bool is_finished = false;
 		bool allow_multiple_connections_per_ip = false;
 
@@ -190,10 +189,6 @@ namespace libtorrent::aux {
 			, pex_flags_t flags, tcp::endpoint const& remote);
 		bool insert_peer(torrent_peer* p, iterator iter
 			, pex_flags_t flags, torrent_state* state);
-
-		bool compare_peer_erase(torrent_peer const& lhs, torrent_peer const& rhs) const;
-		bool compare_peer(torrent_peer const* lhs, torrent_peer const* rhs
-			, aux::external_ip const& external, int external_port) const;
 
 		void find_connect_candidates(std::vector<torrent_peer*>& peers
 			, int session_time, torrent_state* state);

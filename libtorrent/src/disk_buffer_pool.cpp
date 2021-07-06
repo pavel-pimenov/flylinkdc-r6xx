@@ -1,6 +1,6 @@
 /*
 
-Copyright (c) 2011, 2013-2020, Arvid Norberg
+Copyright (c) 2011, 2013-2021, Arvid Norberg
 Copyright (c) 2016, Steven Siloti
 Copyright (c) 2016, 2018, 2020, Alden Torres
 All rights reserved.
@@ -32,7 +32,7 @@ see LICENSE file.
 namespace libtorrent {
 namespace aux {
 
-	namespace {
+namespace {
 
 	// this is posted to the network thread
 	void watermark_callback(std::vector<std::weak_ptr<disk_observer>> const& cbs)
@@ -44,7 +44,7 @@ namespace aux {
 		}
 	}
 
-	} // anonymous namespace
+} // anonymous namespace
 
 	disk_buffer_pool::disk_buffer_pool(io_context& ios)
 		: m_in_use(0)

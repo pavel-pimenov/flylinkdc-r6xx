@@ -1,6 +1,6 @@
 /*
 
-Copyright (c) 2006-2020, Arvid Norberg
+Copyright (c) 2006-2021, Arvid Norberg
 Copyright (c) 2014-2019, Steven Siloti
 Copyright (c) 2015, Thomas
 Copyright (c) 2015-2021, Alden Torres
@@ -1318,7 +1318,7 @@ namespace aux {
 			// message in-flight at any given time.
 			bool m_pending_auto_manage = false;
 
-			// this is also set to true when triggering an auto-manage
+			// this is set to true when triggering an auto-manage
 			// of the torrents. However, if the normal auto-manage
 			// timer comes along and executes the auto-management,
 			// this is set to false, which means the triggered event

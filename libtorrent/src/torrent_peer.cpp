@@ -1,6 +1,6 @@
 /*
 
-Copyright (c) 2014-2017, 2019-2020, Arvid Norberg
+Copyright (c) 2014-2017, 2019-2021, Arvid Norberg
 Copyright (c) 2016-2017, 2020-2021, Alden Torres
 Copyright (c) 2018, Steven Siloti
 Copyright (c) 2020, Paul-Louis Ageneau
@@ -121,6 +121,7 @@ namespace libtorrent::aux {
 		, connectable(conn)
 		, optimistically_unchoked(false)
 		, seed(false)
+		, maybe_upload_only(false)
 		, fast_reconnects(0)
 		, trust_points(0)
 		, source(static_cast<std::uint8_t>(src))

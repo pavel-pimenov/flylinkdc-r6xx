@@ -1,6 +1,6 @@
 /*
 
-Copyright (c) 2011-2012, 2014-2015, 2017-2020, Arvid Norberg
+Copyright (c) 2011-2012, 2014-2015, 2017-2021, Arvid Norberg
 Copyright (c) 2016, 2019, 2021, Alden Torres
 Copyright (c) 2017, 2019, Andrei Kurushin
 All rights reserved.
@@ -151,7 +151,22 @@ namespace libtorrent::aux {
 #ifdef BOOST_NO_CXX11_THREAD_LOCAL
 		std::lock_guard<std::mutex> l(rng_mutex);
 #endif
-		return std::uniform_int_distribution<std::uint32_t>(0, max)(aux::random_engine());
+#ifdef TORRENT_BUILD_SIMULATOR
+		std::uint32_t mask = max | (max >> 16);
+		mask |= mask >> 8;
+		mask |= mask >> 4;
+		mask |= mask >> 2;
+		mask |= mask >> 1;
+		auto& rng = aux::random_engine();
+		std::uint32_t ret;
+		do
+		{
+			ret = rng() & mask;
+		} while (ret > max);
+#else
+		auto const ret = std::uniform_int_distribution<std::uint32_t>(0, max)(aux::random_engine());
+#endif
+		return ret;
 	}
 
 }

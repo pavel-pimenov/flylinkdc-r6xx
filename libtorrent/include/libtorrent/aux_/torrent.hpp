@@ -13,6 +13,7 @@ Copyright (c) 2019, ghbplayer
 Copyright (c) 2020, Viktor Elofsson
 Copyright (c) 2020, Paul-Louis Ageneau
 Copyright (c) 2021, AdvenT
+Copyright (c) 2021, Mark Scott
 All rights reserved.
 
 You may use, distribute and modify this code under the terms of the BSD license,
@@ -238,6 +239,10 @@ namespace libtorrent::aux {
 		// TODO: make this a raw pointer. perhaps keep the shared_ptr
 		// around further down the object to maintain an owner
 		std::shared_ptr<torrent_info> m_torrent_file;
+
+		// This is the sum of all non-pad file sizes. In the next major version
+		// this is stored in file_storage and no longer need to be kept here.
+		std::int64_t m_size_on_disk = 0;
 
 		// a back reference to the session
 		// this torrent belongs to.
@@ -527,7 +532,7 @@ namespace libtorrent::aux {
 
 		time_point32 started() const { return m_started; }
 		void step_session_time(int seconds);
-		void do_pause(pause_flags_t flags = torrent_handle::clear_disk_cache);
+		void do_pause(pause_flags_t flags = torrent_handle::clear_disk_cache, bool was_paused = false);
 		void do_resume();
 
 		seconds32 finished_time() const;
@@ -1108,7 +1113,7 @@ namespace libtorrent::aux {
 		bool are_files_checked() const
 		{ return m_files_checked; }
 
-		void initialize_merkle_trees();
+		error_code initialize_merkle_trees();
 
 		// parses the info section from the given
 		// bencoded tree and moves the torrent
@@ -1280,6 +1285,9 @@ namespace libtorrent::aux {
 		std::int64_t m_total_uploaded = 0;
 		std::int64_t m_total_downloaded = 0;
 
+		// the number of bytes of pad files
+		std::int64_t m_padding_bytes = 0;
+
 		// this is a handle that keeps the storage object in the disk io subsystem
 		// alive, as well as the index referencing the storage/torrent in the disk
 		// I/O. When this destructs, the torrent will be removed from the disk
@@ -1439,17 +1447,12 @@ namespace libtorrent::aux {
 		// bias towards keeping seeding torrents that
 		// recently was started, to avoid oscillation
 		// this is specified at a second granularity
-		// in session-time. see session_impl for details.
-		// the reference point is stepped forward every 4
-		// hours to keep the timestamps fit in 16 bits
 		time_point32 m_started = aux::time_now32();
 
-		// if we're a seed, this is the session time
-		// timestamp of when we became one
+		// if we're a seed, this is the timestamp of when we became one
 		time_point32 m_became_seed = aux::time_now32();
 
-		// if we're finished, this is the session time
-		// timestamp of when we finished
+		// if we're finished, this is the timestamp of when we finished
 		time_point32 m_became_finished = aux::time_now32();
 
 		// when checking, this is the first piece we have not
@@ -1513,8 +1516,8 @@ namespace libtorrent::aux {
 		// 8 bits after each one
 		// ==============================
 
-		// the session time timestamp of when we entered upload mode
-		// if we're currently in upload-mode
+		// if we're currently in upload-mode this is the time timestamp of when
+		// we entered it
 		time_point32 m_upload_mode_time = aux::time_now32();
 
 		// true when this torrent should announce to
@@ -1646,10 +1649,6 @@ namespace libtorrent::aux {
 		bool m_v2_piece_layers_validated:1;
 
 // ----
-
-		// the number of (16kiB) blocks that fall entirely in pad files
-		// i.e. blocks that we consider we have on start-up
-		std::uint16_t m_padding_blocks = 0;
 
 		// this is set to the connect boost quota for this torrent.
 		// After having received this many priority peer connection attempts, it

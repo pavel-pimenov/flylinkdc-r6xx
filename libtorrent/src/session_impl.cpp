@@ -1028,12 +1028,14 @@ bool ssl_server_name_callback(ssl::stream_handle_type stream_handle, std::string
 		m_lsd_announce_timer.cancel();
 
 #ifdef TORRENT_SSL_PEERS
-		for (auto const& s : m_incoming_sockets)
 		{
-			s->close(ec);
-			TORRENT_ASSERT(!ec);
+			auto const sockets = std::move(m_incoming_sockets);
+			for (auto const& s : sockets)
+			{
+				s->close(ec);
+				TORRENT_ASSERT(!ec);
+			}
 		}
-		m_incoming_sockets.clear();
 #endif
 
 #if TORRENT_USE_I2P
@@ -3667,8 +3669,12 @@ namespace {
 	void session_impl::add_dht_node(udp::endpoint const& n)
 	{
 		TORRENT_ASSERT(is_single_thread());
-		if (m_dht) m_dht->add_node(n);
-		else m_dht_nodes.push_back(n);
+		if (m_dht)
+			m_dht->add_node(n);
+		else if (m_dht_nodes.size() >= 200)
+			m_dht_nodes[random(std::uint32_t(m_dht_nodes.size() - 1))] = n;
+		else
+			m_dht_nodes.push_back(n);
 	}
 
 	bool session_impl::has_dht() const
@@ -4989,8 +4995,16 @@ namespace {
 			l.reserve(num_torrents + 1);
 		}
 
-		torrent_ptr = std::make_shared<torrent>(*this, m_paused, std::move(params));
-		torrent_ptr->set_queue_position(m_download_queue.end_index());
+		try
+		{
+			torrent_ptr = std::make_shared<torrent>(*this, m_paused, std::move(params));
+			torrent_ptr->set_queue_position(m_download_queue.end_index());
+		}
+		catch (system_error const& e)
+		{
+			ec = e.code();
+			return ret_t{ptr_t(), params.info_hashes, false};
+		}
 
 		// it's fine to copy this moved-from info_hash_t object, since its move
 		// construction is just a copy.
