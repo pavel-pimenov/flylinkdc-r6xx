@@ -1967,9 +1967,9 @@ void File_Mpeg4::mdat_xxxx()
         #endif //MEDIAINFO_DEMUX
         Element_Show();
 
-        #if MEDIAINFO_DEMUX
             if (!Stream_Temp.IsFilled && Stream_Temp.Parsers[Pos]->Status[IsFilled])
             {
+            #if MEDIAINFO_DEMUX
                 if (Stream_Temp.StreamKind==Stream_Other) //If this is a TimeCode track
                 {
                     if (((File_Mpeg4_TimeCode*)Stream_Temp.Parsers[Pos])->Pos!=(int32u)-1)
@@ -1982,6 +1982,7 @@ void File_Mpeg4::mdat_xxxx()
                             }
                     }
                 }
+            #endif //MEDIAINFO_DEMUX
 
                 Stream_Temp.IsFilled=true;
 
@@ -2021,7 +2022,6 @@ void File_Mpeg4::mdat_xxxx()
                         mdat_Pos_Temp=mdat_Pos_Max;
                 }
             }
-        #endif //MEDIAINFO_DEMUX
 
         //Multiple parsers
         if (Stream_Temp.Parsers.size()>1)
