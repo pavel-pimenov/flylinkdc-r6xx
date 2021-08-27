@@ -20,3 +20,8 @@ client.key
 unsuccessfulbuild
 /compiled/GDIImage.htm
 P2PGuard.ini
+*.pdb
+compiled/flylinkdc_x64.lib
+compiled/FlylinkDC_x64.exe
+flylinkdc_2017.vcxproj.user
+MakeDefs/MakeDefs.exe
