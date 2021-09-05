@@ -24,10 +24,6 @@
 #  define Z_REGISTER
 #endif
 
-#ifndef Z_TLS
-#  define Z_TLS
-#endif
-
 #include <stddef.h>
 #include <string.h>
 #include <stdlib.h>
@@ -70,9 +66,12 @@ extern z_const char * const PREFIX(z_errmsg)[10]; /* indexed by 2-zlib_error */
 #define DYN_TREES    2
 /* The three kinds of block type */
 
-#define MIN_MATCH  3
-#define MAX_MATCH  258
-/* The minimum and maximum match lengths */
+#define STD_MIN_MATCH  3
+#define STD_MAX_MATCH  258
+/* The minimum and maximum match lengths mandated by the deflate standard */
+
+#define WANT_MIN_MATCH  4
+/* The minimum wanted match length, affects deflate_quick, deflate_fast, deflate_medium and deflate_slow  */
 
 #define PRESET_DICT 0x20 /* preset dictionary flag in zlib header */
 
@@ -204,14 +203,14 @@ void Z_INTERNAL   zng_cfree(void *opaque, void *ptr);
 #  define ZSWAP32(q) ((((q) >> 24) & 0xff) + (((q) >> 8) & 0xff00) + \
                      (((q) & 0xff00) << 8) + (((q) & 0xff) << 24))
 #  define ZSWAP64(q)                           \
-          ((q & 0xFF00000000000000u) >> 56u) | \
+         (((q & 0xFF00000000000000u) >> 56u) | \
           ((q & 0x00FF000000000000u) >> 40u) | \
           ((q & 0x0000FF0000000000u) >> 24u) | \
           ((q & 0x000000FF00000000u) >> 8u)  | \
           ((q & 0x00000000FF000000u) << 8u)  | \
           ((q & 0x0000000000FF0000u) << 24u) | \
           ((q & 0x000000000000FF00u) << 40u) | \
-          ((q & 0x00000000000000FFu) << 56u)
+          ((q & 0x00000000000000FFu) << 56u))
 #endif
 
 /* Only enable likely/unlikely if the compiler is known to support it */
@@ -253,6 +252,8 @@ void Z_INTERNAL   zng_cfree(void *opaque, void *ptr);
 #  include "arch/arm/arm.h"
 #elif defined(POWER_FEATURES)
 #  include "arch/power/power.h"
+#elif defined(S390_FEATURES)
+#  include "arch/s390/s390.h"
 #endif
 
 #endif /* ZUTIL_H_ */

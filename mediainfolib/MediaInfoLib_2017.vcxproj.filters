@@ -93,6 +93,9 @@
     <Filter Include="ThirdParty\sha2-gladman">
       <UniqueIdentifier>{44a4d7fd-e473-4816-a8ed-27fc9c7258d0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ThirdParty\tfsxml">
+      <UniqueIdentifier>{4f92a948-5ddc-49f2-9f5e-b59b41be4d6a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\MediaInfo\File__Analyze.cpp">
@@ -770,6 +773,15 @@
     <ClCompile Include="Source\MediaInfo\Video\File_CineForm.cpp">
       <Filter>Source Files\Video</Filter>
     </ClCompile>
+    <ClCompile Include="Source\MediaInfo\Audio\File_Adm.cpp">
+      <Filter>Source Files\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\MediaInfo\Export\Export_Graph.cpp">
+      <Filter>Source Files\Export</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ThirdParty\tfsxml\tfsxml.c">
+      <Filter>ThirdParty\tfsxml</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\MediaInfo\File__Analyse_Automatic.h">
@@ -1434,6 +1446,18 @@
     </ClInclude>
     <ClInclude Include="Source\MediaInfo\Video\File_CineForm.h">
       <Filter>Header Files\Video</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\MediaInfo\Audio\File_Adm.h">
+      <Filter>Header Files\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\MediaInfo\Export\Export_Graph.h">
+      <Filter>Header Files\Export</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\MediaInfo\Export\Export_Graph_gvc_Include.h">
+      <Filter>Header Files\Export</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ThirdParty\tfsxml\tfsxml.h">
+      <Filter>ThirdParty\tfsxml</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
