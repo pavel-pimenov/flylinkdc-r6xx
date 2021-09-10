@@ -76,6 +76,7 @@ extern z_const char * const PREFIX(z_errmsg)[10]; /* indexed by 2-zlib_error */
 #define PRESET_DICT 0x20 /* preset dictionary flag in zlib header */
 
 #define ADLER32_INITIAL_VALUE 1 /* initial adler-32 hash value */
+#define CRC32_INITIAL_VALUE   0 /* initial crc-32 hash value */
 
         /* target dependencies */
 
@@ -250,7 +251,7 @@ void Z_INTERNAL   zng_cfree(void *opaque, void *ptr);
 #  include "arch/x86/x86.h"
 #elif defined(ARM_FEATURES)
 #  include "arch/arm/arm.h"
-#elif defined(POWER_FEATURES)
+#elif defined(PPC_FEATURES) || defined(POWER_FEATURES)
 #  include "arch/power/power.h"
 #elif defined(S390_FEATURES)
 #  include "arch/s390/s390.h"

@@ -44,7 +44,11 @@ extern Pos quick_insert_string_acle(deflate_state *const s, const uint32_t str);
 void slide_hash_sse2(deflate_state *s);
 #elif defined(ARM_NEON_SLIDEHASH)
 void slide_hash_neon(deflate_state *s);
-#elif defined(POWER8_VSX_SLIDEHASH)
+#endif
+#if defined(PPC_VMX_SLIDEHASH)
+void slide_hash_vmx(deflate_state *s);
+#endif
+#if defined(POWER8_VSX_SLIDEHASH)
 void slide_hash_power8(deflate_state *s);
 #endif
 #ifdef X86_AVX2
@@ -56,6 +60,9 @@ extern uint32_t adler32_c(uint32_t adler, const unsigned char *buf, size_t len);
 #ifdef ARM_NEON_ADLER32
 extern uint32_t adler32_neon(uint32_t adler, const unsigned char *buf, size_t len);
 #endif
+#ifdef PPC_VMX_ADLER32
+extern uint32_t adler32_vmx(uint32_t adler, const unsigned char *buf, size_t len);
+#endif
 #ifdef X86_SSSE3_ADLER32
 extern uint32_t adler32_ssse3(uint32_t adler, const unsigned char *buf, size_t len);
 #endif
@@ -64,6 +71,17 @@ extern uint32_t adler32_avx2(uint32_t adler, const unsigned char *buf, size_t le
 #endif
 #ifdef POWER8_VSX_ADLER32
 extern uint32_t adler32_power8(uint32_t adler, const unsigned char* buf, size_t len);
+#endif
+
+/* CRC32 folding */
+extern uint32_t crc32_fold_reset_c(crc32_fold *crc);
+extern void     crc32_fold_copy_c(crc32_fold *crc, uint8_t *dst, const uint8_t *src, size_t len);
+extern uint32_t crc32_fold_final_c(crc32_fold *crc);
+
+#ifdef X86_PCLMULQDQ_CRC
+extern uint32_t crc32_fold_reset_pclmulqdq(crc32_fold *crc);
+extern void     crc32_fold_copy_pclmulqdq(crc32_fold *crc, uint8_t *dst, const uint8_t *src, size_t len);
+extern uint32_t crc32_fold_final_pclmulqdq(crc32_fold *crc);
 #endif
 
 /* memory chunking */
@@ -111,6 +129,8 @@ Z_INTERNAL uint32_t crc32_generic(uint32_t, const unsigned char *, uint64_t);
 
 #ifdef ARM_ACLE_CRC_HASH
 extern uint32_t crc32_acle(uint32_t, const unsigned char *, uint64_t);
+#elif defined(POWER8_VSX_CRC32)
+extern uint32_t crc32_power8(uint32_t, const unsigned char *, uint64_t);
 #endif
 #ifdef S390_CRC32_VX
 extern uint32_t s390_crc32_vx(uint32_t, const unsigned char *, uint64_t);
@@ -175,7 +195,7 @@ Z_INTERNAL void cpu_check_features(void)
     x86_check_features();
 #elif defined(ARM_FEATURES)
     arm_check_features();
-#elif defined(POWER_FEATURES)
+#elif defined(PPC_FEATURES) || defined(POWER_FEATURES)
     power_check_features();
 #elif defined(S390_FEATURES)
     s390_check_features();
@@ -252,6 +272,10 @@ Z_INTERNAL void slide_hash_stub(deflate_state *s) {
     if (x86_cpu_has_avx2)
         functable.slide_hash = &slide_hash_avx2;
 #endif
+#ifdef PPC_VMX_SLIDEHASH
+    if (power_cpu_has_altivec)
+        functable.slide_hash = &slide_hash_vmx;
+#endif
 #ifdef POWER8_VSX_SLIDEHASH
     if (power_cpu_has_arch_2_07)
         functable.slide_hash = &slide_hash_power8;
@@ -279,12 +303,46 @@ Z_INTERNAL uint32_t adler32_stub(uint32_t adler, const unsigned char *buf, size_
     if (x86_cpu_has_avx2)
         functable.adler32 = &adler32_avx2;
 #endif
+#ifdef PPC_VMX_ADLER32
+    if (power_cpu_has_altivec)
+        functable.adler32 = &adler32_vmx;
+#endif
 #ifdef POWER8_VSX_ADLER32
     if (power_cpu_has_arch_2_07)
         functable.adler32 = &adler32_power8;
 #endif
 
     return functable.adler32(adler, buf, len);
+}
+
+Z_INTERNAL uint32_t crc32_fold_reset_stub(crc32_fold *crc) {
+    functable.crc32_fold_reset = crc32_fold_reset_c;
+    cpu_check_features();
+#ifdef X86_PCLMULQDQ_CRC
+    if (x86_cpu_has_pclmulqdq)
+        functable.crc32_fold_reset = crc32_fold_reset_pclmulqdq;
+#endif
+    return functable.crc32_fold_reset(crc);
+}
+
+Z_INTERNAL void crc32_fold_copy_stub(crc32_fold *crc, uint8_t *dst, const uint8_t *src, size_t len) {
+    functable.crc32_fold_copy = crc32_fold_copy_c;
+    cpu_check_features();
+#ifdef X86_PCLMULQDQ_CRC
+    if (x86_cpu_has_pclmulqdq)
+        functable.crc32_fold_copy = crc32_fold_copy_pclmulqdq;
+#endif
+    functable.crc32_fold_copy(crc, dst, src, len);
+}
+
+Z_INTERNAL uint32_t crc32_fold_final_stub(crc32_fold *crc) {
+    functable.crc32_fold_final = crc32_fold_final_c;
+    cpu_check_features();
+#ifdef X86_PCLMULQDQ_CRC
+    if (x86_cpu_has_pclmulqdq)
+        functable.crc32_fold_final = crc32_fold_final_pclmulqdq;
+#endif
+    return functable.crc32_fold_final(crc);
 }
 
 Z_INTERNAL uint32_t chunksize_stub(void) {
@@ -452,6 +510,7 @@ Z_INTERNAL uint32_t crc32_stub(uint32_t crc, const unsigned char *buf, uint64_t 
            "crc32_z takes size_t but internally we have a uint64_t len");
     /* return a function pointer for optimized arches here after a capability test */
 
+    functable.crc32 = &crc32_generic;
     cpu_check_features();
 
     if (use_byfour) {
@@ -470,9 +529,11 @@ Z_INTERNAL uint32_t crc32_stub(uint32_t crc, const unsigned char *buf, uint64_t 
 #else
 #  error No endian defined
 #endif
-    } else {
-        functable.crc32 = crc32_generic;
     }
+#if defined(POWER8_VSX_CRC32)
+    if (power_cpu_has_arch_2_07)
+        functable.crc32 = crc32_power8;
+#endif
 
     return functable.crc32(crc, buf, len);
 }
@@ -559,6 +620,9 @@ Z_INTERNAL Z_TLS struct functable_s functable = {
     quick_insert_string_stub,
     adler32_stub,
     crc32_stub,
+    crc32_fold_reset_stub,
+    crc32_fold_copy_stub,
+    crc32_fold_final_stub,
     slide_hash_stub,
     compare258_stub,
     longest_match_stub,
