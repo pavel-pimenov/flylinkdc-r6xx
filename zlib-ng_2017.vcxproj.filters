@@ -84,6 +84,9 @@
     <ClCompile Include="zlib-ng\insert_string_roll.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="zlib-ng\crc32_fold.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="zlib-ng\adler32_p.h">

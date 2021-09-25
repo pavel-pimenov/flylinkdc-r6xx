@@ -17,6 +17,7 @@
     <ClCompile Include="zlib-ng\compress.c" />
     <ClCompile Include="zlib-ng\crc32.c" />
     <ClCompile Include="zlib-ng\crc32_comb.c" />
+    <ClCompile Include="zlib-ng\crc32_fold.c" />
     <ClCompile Include="zlib-ng\deflate.c" />
     <ClCompile Include="zlib-ng\deflate_fast.c" />
     <ClCompile Include="zlib-ng\deflate_huff.c" />
