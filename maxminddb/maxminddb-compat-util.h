@@ -43,8 +43,7 @@
  * SUCH DAMAGE.
  */
 static void *
-mmdb_memmem(const void *l, size_t l_len, const void *s, size_t s_len)
-{
+mmdb_memmem(const void *l, size_t l_len, const void *s, size_t s_len) {
 	register char *cur, *last;
 	const char *cl = (const char *)l;
 	const char *cs = (const char *)s;
@@ -97,9 +96,7 @@ mmdb_memmem(const void *l, size_t l_len, const void *s, size_t s_len)
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-static size_t
-mmdb_strnlen(const char *s, size_t maxlen)
-{
+static size_t mmdb_strnlen(const char *s, size_t maxlen) {
 	size_t len;
 
 	for (len = 0; len < maxlen; len++, s++) {
@@ -138,9 +135,7 @@ mmdb_strnlen(const char *s, size_t maxlen)
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-static char *
-mmdb_strdup(const char *str)
-{
+static char *mmdb_strdup(const char *str) {
 	size_t len;
 	char *copy;
 
@@ -151,9 +146,7 @@ mmdb_strdup(const char *str)
 	return (copy);
 }
 
-static char *
-mmdb_strndup(const char *str, size_t n)
-{
+static char *mmdb_strndup(const char *str, size_t n) {
 	size_t len;
 	char *copy;
 

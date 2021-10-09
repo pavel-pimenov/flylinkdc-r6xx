@@ -101,10 +101,10 @@ struct element_details
         static void get_hexa_from_deci_limited_by_bits(std::string& val, int8u bits, int8u default_bits);
 
     private:
-        Value               val;
+        Value               val = {};
         int8u               type; //Value_Type
         int8u               format_out; //Value_Output_Format
-        int8u               Option; // float: count of valid digits after comma; int: count of valid bits; chars: count of valid chars
+        int8u               Option = 0; // float: count of valid digits after comma; int: count of valid bits; chars: count of valid chars
 
         Element_Node_Data(const Element_Node_Data&);
     };
