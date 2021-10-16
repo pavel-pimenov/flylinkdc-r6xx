@@ -23,6 +23,7 @@
 #include "../client/LogManager.h"
 #include "../client/CompatibilityManager.h"
 #include "../client/ClientManager.h"
+#include "../client/GeoManager.h"
 #include "../client/file.h"
 #include "fuSearch.h"
 #include "ZUtils.h"
@@ -367,7 +368,6 @@ void AutoUpdate::startUpdateThisThread()
 							CFlyServerJSON::pushError(63, l_error);
 							::MessageBox(m_mainFrameHWND, Text::toT(l_error).c_str(), getFlylinkDCAppCaptionWithVersionT().c_str(), MB_OK | MB_ICONERROR);
 							return;
-							//continue;
 						}
 					}
 					// Create TempFolder
@@ -403,22 +403,10 @@ void AutoUpdate::startUpdateThisThread()
 						{
 							// Download RTF file from Server
 							string programRtfData;
-#ifdef IRAINMAN_AUTOUPDATE_ALL_USERS_DATA
-							//string basesRtfData;
-#endif
 							size_t l_dataRTFSize = Util::getDataFromInetSafe(true, programUpdateDescription, programRtfData);
-							// l_programRtfData.resize(dataRTFSize); // TODO - зачем это?
-#ifdef IRAINMAN_AUTOUPDATE_ALL_USERS_DATA
-							//dataRTFSize = Util::getDataFromInetSafe(basesUpdateDescription, basesRtfData);
-							//basesRtfData.resize(dataRTFSize);
-#endif
 							if (m_guiDelegate && !ClientManager::isBeforeShutdown())
 							{
-								idResult = UpdateResult(m_guiDelegate->ShowDialogUpdate(l_message, programRtfData, l_files4Description
-#ifdef IRAINMAN_AUTOUPDATE_ALL_USERS_DATA
-								                                                        //+ basesRtfData
-#endif
-								                                                       ));
+								idResult = UpdateResult(m_guiDelegate->ShowDialogUpdate(l_message, programRtfData, l_files4Description));
 							}
 						}
 						else
@@ -444,11 +432,7 @@ void AutoUpdate::startUpdateThisThread()
 						needToUpdate = idResult == UPDATE_NOW;
 						if (!needToUpdate)
 						{
-							const string l_versionToIgnore = ' ' + l_autoUpdateObject->m_sVersion + " (" + l_autoUpdateObject->m_sUpdateDate + ')'
-#ifdef IRAINMAN_AUTOUPDATE_ALL_USERS_DATA
-							                                 // + "\nBases" + autoUpdateObjectAU->m_sVersion + " (" + autoUpdateObjectAU->m_sUpdateDate + ')'
-#endif
-							                                 ;
+							const string l_versionToIgnore = ' ' + l_autoUpdateObject->m_sVersion + " (" + l_autoUpdateObject->m_sUpdateDate + ')';
 							if (idResult == UPDATE_IGNORE)
 							{
 								message(STRING(AUTOUPDATE_IGNORED) + l_versionToIgnore);
@@ -462,6 +446,10 @@ void AutoUpdate::startUpdateThisThread()
 					}
 					if (needToUpdate)
 					{
+						if (dcpp::GeoManager::getInstance())
+						{
+							dcpp::GeoManager::getInstance()->close();
+						}
 						// Start file Uploading
 						InetDownloadReporter::getInstance()->ReportResultWait(l_totalSize);
 						string l_errorFileName;

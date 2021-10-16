@@ -9,7 +9,6 @@ res
 zlib-ng
 XMLParser
 Tools
-Tools\*.exe
 GdiOle
 FlyFeatures
 openssl

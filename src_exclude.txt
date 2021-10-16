@@ -17,6 +17,7 @@
 Thumbs.db
 *tmp*.*00*
 *.pdb
+vc1??.pdb
 *.sfl
 *.hmx
 *.ncb

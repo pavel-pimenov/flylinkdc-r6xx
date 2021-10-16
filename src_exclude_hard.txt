@@ -8,10 +8,11 @@ CustomLocations.7z
 Customlocations-5.rar
 FlyUpdate.exe
 UpdateMaker.exe
+MakeDefs.exe
 test-console.pdb
 FlyUpdate.pdb
 UpdateMaker.pdb
-vc1?0.pdb
+vc1??.pdb
 vc17
 FlylinkDCShellExt*.pdb
 FlylinkDC_Debug*.pdb
@@ -27,3 +28,5 @@ merge-vendors.bat
 flylinkdc-search-engine.lua
 sign-flylinkdc.bat
 aaaaaaaaaaaaa*
+GdiOleps.def
+GdiOle.def

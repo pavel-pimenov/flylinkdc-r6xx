@@ -48,7 +48,7 @@ string GeoManager::getCountry(const string& ip) const {
 }
 
 string GeoManager::getDbPath() {
-	return Util::getConfigPath() + "country_ip_db.mmdb";
+	return Util::getConfigPath() + "GeoLite2-Country.mmdb";
 }
 
 } // namespace dcpp
