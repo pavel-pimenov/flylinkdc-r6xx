@@ -163,10 +163,6 @@
     <None Include="GDIImage.bmp" />
     <None Include="GDIImage.rgs" />
     <None Include="GdiOle.rgs" />
-    <None Include="GDIImage.htm">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="GdiOle.idl" />

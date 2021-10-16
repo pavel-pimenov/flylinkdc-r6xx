@@ -39,8 +39,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="GdiOle.def" />
-    <None Include="GDIImage.htm" />
-    <None Include="ReadMe.txt" />
     <None Include="GDIImage.bmp">
       <Filter>Resource Files</Filter>
     </None>

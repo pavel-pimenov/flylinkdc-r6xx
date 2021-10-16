@@ -1629,7 +1629,7 @@ void File_Ac4::Streams_Fill()
         //Info from group
         bool b_channel_coded=false;
         bool b_de_data_present=false;
-        int8u de_max_gain, de_channel_config;
+        int8u de_max_gain=0, de_channel_config=0;
         for (size_t i=0; i <Groups.size(); i++)
         {
             for (size_t j=0; j<Groups[i].Substreams.size(); j++)
@@ -1652,7 +1652,7 @@ void File_Ac4::Streams_Fill()
                     else if (GroupInfo.b_ajoc || GroupInfo.n_objects_code!=(int8u)-1)
                     {
                         //Object based
-                        int8u n_objects;
+                        int8u n_objects=0;
                         if (!GroupInfo.b_ajoc)
                         {
                             n_objects=objs_to_n_objects(GroupInfo.n_objects_code, GroupInfo.b_lfe);
@@ -3361,7 +3361,7 @@ void File_Ac4::ac4_substream(size_t substream_index)
 
     //Looks for corresponding group info (we take the last one found)
     size_t Group_Pos=(size_t)-1;
-    size_t SubStream_Pos;
+    size_t SubStream_Pos=0;
     for (size_t i=0; i <Groups.size(); i++)
     {
         for (size_t j=0; j<Groups[i].Substreams.size(); j++)
@@ -3413,7 +3413,7 @@ void File_Ac4::ac4_substream(size_t substream_index)
     }
     AudioSubstream.Buffer_Index=0;
 
-    int64u Save_Element_Size;
+    int64u Save_Element_Size=0;
     if (AudioSubstream.Buffer.Data)
     {
         //Using AudioSubstream.Buffer as temporary save
@@ -3648,7 +3648,7 @@ void File_Ac4::metadata(audio_substream& AudioSubstream, size_t Substream_Index)
 {
     //Looks for corresponding group info (we take the last one found)
     size_t Group_Pos=(size_t)-1;
-    size_t SubStream_Pos;
+    size_t SubStream_Pos=0;
     for (size_t i=0; i <Groups.size(); i++)
     {
         for (size_t j=0; j<Groups[i].Substreams.size(); j++)
@@ -3737,7 +3737,7 @@ void File_Ac4::metadata(audio_substream& AudioSubstream, size_t Substream_Index)
             Get_SB (b_discard_unknown_payload,                  "b_discard_unknown_payload");
             if (!b_discard_unknown_payload)
             {
-                bool b_payload_frame_aligned;
+                bool b_payload_frame_aligned=false;
                 if (!b_smpoffst)
                 {
                     TEST_SB_GET(b_payload_frame_aligned,        "b_payload_frame_aligned");
@@ -5141,7 +5141,7 @@ void File_Ac4::Get_V4(const variable_size* Bits, int8u &Info, const char* Name)
     int8u TotalSize=Bits[0].AddedSize;
     Bits++;
     int8u BitSize=0;
-    int16u Temp;
+    int16u Temp=0;
     for (int8u i=0; i<TotalSize; i++)
     {
         int8u AddedSize=Bits[i].AddedSize;

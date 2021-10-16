@@ -67,7 +67,7 @@ class ATL_NO_VTABLE CGDIImageOle :
 		                       OLEMISC_SETCLIENTSITEFIRST
 		                      )
 		                      
-		DECLARE_REGISTRY_RESOURCEID(IDR_GDIIMAGE)
+		//DECLARE_REGISTRY_RESOURCEID(IDR_GDIIMAGE)
 		
 		
 		BEGIN_COM_MAP(CGDIImageOle)
@@ -224,6 +224,6 @@ class ATL_NO_VTABLE CGDIImageOle :
 		static HWND g_ActiveMDIWindow;
 };
 
-OBJECT_ENTRY_AUTO(__uuidof(GDIImage), CGDIImageOle)
+// OBJECT_ENTRY_AUTO(__uuidof(GDIImage), CGDIImageOle)
 
 #endif //IRAINMAN_INCLUDE_GDI_OLE

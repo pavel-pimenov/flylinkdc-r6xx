@@ -1010,7 +1010,7 @@ void File__Analyze::Streams_Finish_StreamOnly_Audio(size_t Pos)
         int64u StreamSize_Encoded=Retrieve(Stream_Audio, Pos, Audio_StreamSize_Encoded).To_int64u();
         for (size_t i=Pos+1; i<Count_Get(Stream_Audio);)
         {
-            size_t OtherID_Count;
+            size_t OtherID_Count=0;
             Ztring OtherID;
             Ztring OtherID_String;
             if (Retrieve_Const(Stream_Audio, i, Audio_Format)==__T("Dolby ED2"))

@@ -185,8 +185,8 @@ void File__Analyze::dvcC(bool has_dependency_pid, std::map<std::string, Ztring>*
     Element_Name("Dolby Vision Configuration");
 
     //Parsing
-    int8u  dv_version_major, dv_version_minor, dv_profile, dv_level, dv_bl_signal_compatibility_id;
-    bool rpu_present_flag, el_present_flag, bl_present_flag;
+    int8u  dv_version_major = 0, dv_version_minor = 0, dv_profile = 0, dv_level = 0, dv_bl_signal_compatibility_id=0;
+    bool rpu_present_flag=false, el_present_flag = false, bl_present_flag = false;
     Get_B1 (dv_version_major,                                   "dv_version_major");
     if (dv_version_major && dv_version_major<=2) //Spec says nothing, we hope that a minor version change means that the stream is backward compatible
     {

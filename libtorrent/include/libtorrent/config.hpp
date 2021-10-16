@@ -20,6 +20,8 @@ see LICENSE file.
 
 // [+]FlylinkDC++
 
+#pragma warning(disable: 4996)
+
 #ifndef TORRENT_USE_OPENSSL
 #define TORRENT_USE_OPENSSL
 #endif

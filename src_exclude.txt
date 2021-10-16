@@ -119,3 +119,10 @@ XMLdocTemplate.xsl
 merge-vendors.bat
 flylinkdc-search-engine.lua
 *.i-????????
+GdiOle.rgs
+GDIImage.rgs
+GDIImage.htm
+GdiOleps.def
+GdiOle.def
+MakeDefs.exe
+unrar

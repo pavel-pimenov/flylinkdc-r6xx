@@ -29,7 +29,7 @@ LANGUAGE LANG_RUSSIAN, SUBLANG_DEFAULT
 // REGISTRY
 //
 
-IDR_GDIIMAGE            REGISTRY                "GDIImage.rgs"
+//IDR_GDIIMAGE            REGISTRY                "GDIImage.rgs"
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -82,17 +82,17 @@ END
 // REGISTRY
 //
 
-IDR_GdiOle            REGISTRY                "GdiOle.rgs"
+//IDR_GdiOle            REGISTRY                "GdiOle.rgs"
 
 /////////////////////////////////////////////////////////////////////////////
 //
 // String Table
 //
 
-STRINGTABLE 
-BEGIN
-    IDS_PROJNAME            "GdiOle"
-END
+//STRINGTABLE 
+//BEGIN
+//    IDS_PROJNAME            "GdiOle"
+//END
 
 #endif    // English (U.S.) resources
 /////////////////////////////////////////////////////////////////////////////

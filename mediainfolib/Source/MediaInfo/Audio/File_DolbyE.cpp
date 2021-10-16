@@ -1959,10 +1959,10 @@ void File_DolbyE::metadata_segment()
 void File_DolbyE::guard_band()
 {
     int8u* NewBuffer=NULL;
-    size_t Buffer_Offset_Save;
-    size_t Buffer_Size_Save;
-    int64u Element_Offset_Save;
-    int64u Element_Size_Save;
+    size_t Buffer_Offset_Save=0;
+    size_t Buffer_Size_Save=0;
+    int64u Element_Offset_Save=0;
+    int64u Element_Size_Save=0;
 
     Element_Begin1("guard_band (with data)");
     int16u element_length;

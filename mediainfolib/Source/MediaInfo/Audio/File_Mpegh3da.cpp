@@ -1765,7 +1765,7 @@ void File_Mpegh3da::mae_Description(MaeDataType type)
     for (int8u Pos=0; Pos<mae_bsNumDescriptionBlocks; Pos++)
     {
         Element_Begin1("mae_descriptionGroup");
-        int8u ID;
+        int8u ID=0;
         switch (type)
         {
             case ID_MAE_GROUP_DESCRIPTION:
