@@ -1935,6 +1935,7 @@ void File_DolbyE::metadata_segment()
 
     {
         //CRC test
+        /*
         size_t Pos_End=Buffer_Offset*8+(size_t)Element_Size*8-Data_BS_Remain();
         size_t Pos_Begin=Pos_End-(metadata_segment_size+1)*bit_depth; //+1 for CRC
         int8u BitSkip_Begin=Pos_Begin%8;
@@ -1950,6 +1951,7 @@ void File_DolbyE::metadata_segment()
             // CRC is wrong
             Param_Info1("metadata_crc NOK");
         }
+        */
     }
 
     Element_End0();
@@ -2039,6 +2041,7 @@ void File_DolbyE::guard_band()
     Skip_B2(                                                    "crc");
     {
         //CRC test
+        /*
         size_t Pos_End=Buffer_Offset+Element_Offset;
         size_t Pos_Begin=Pos_End-(element_length+2); //+2 for CRC
 
@@ -2048,6 +2051,7 @@ void File_DolbyE::guard_band()
             // CRC is wrong
             Param_Info1("crc NOK");
         }
+        */
         Element_End0();
         int64u RemainingBytes=Element_Size-Element_Offset;
         if (RemainingBytes && RemainingBytes<bit_depth/4)
@@ -3154,6 +3158,7 @@ void File_DolbyE::audio_segment()
 
             #if MEDIAINFO_TRACE
                 //CRC test
+                /*
                 size_t Pos_End=Buffer_Offset*8+(size_t)Element_Size*8-Data_BS_Remain();
                 int8u BitSkip_Begin=Pos_Begin%8;
                 Pos_Begin/=8;
@@ -3168,6 +3173,7 @@ void File_DolbyE::audio_segment()
                     //CRC is wrong
                     Param_Info1("NOK");
                 }
+                */
             #endif //MEDIAINFO_TRACE
         }
     }
@@ -3246,6 +3252,7 @@ void File_DolbyE::metadata_extension_segment()
 
     #if MEDIAINFO_TRACE
         //CRC test
+        /*
         size_t Pos_End=Buffer_Offset*8+(size_t)Element_Size*8-Data_BS_Remain();
         int8u BitSkip_Begin=Pos_Begin%8;
         Pos_Begin/=8;
@@ -3260,6 +3267,7 @@ void File_DolbyE::metadata_extension_segment()
             //CRC is wrong
             Param_Info1("NOK");
         }
+        */
     #endif //MEDIAINFO_TRACE
 
     Element_End0();
@@ -3326,6 +3334,7 @@ void File_DolbyE::audio_extension_segment()
 
             #if MEDIAINFO_TRACE
                 //CRC test
+                /*
                 size_t Pos_End=Buffer_Offset*8+(size_t)Element_Size*8-Data_BS_Remain();
                 int8u BitSkip_Begin=Pos_Begin%8;
                 Pos_Begin/=8;
@@ -3340,6 +3349,7 @@ void File_DolbyE::audio_extension_segment()
                     //CRC is wrong
                     Param_Info1("NOK");
                 }
+                */
             #endif //MEDIAINFO_TRACE
         }
     }
@@ -3392,6 +3402,7 @@ void File_DolbyE::meter_segment()
 
     #if MEDIAINFO_TRACE
         //CRC test
+        /*
         size_t Pos_End=Buffer_Offset*8+(size_t)Element_Size*8-Data_BS_Remain();
         size_t Pos_Begin=Pos_End-(meter_segment_size+1)*bit_depth; //+1 for CRC
         int8u BitSkip_Begin=Pos_Begin%8;
@@ -3407,6 +3418,7 @@ void File_DolbyE::meter_segment()
             //CRC is wrong
             Param_Info1("NOK");
         }
+        */
     #endif //MEDIAINFO_TRACE
 
     Element_End0();

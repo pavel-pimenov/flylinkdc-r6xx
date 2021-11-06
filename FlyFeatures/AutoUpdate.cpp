@@ -446,7 +446,7 @@ void AutoUpdate::startUpdateThisThread()
 					}
 					if (needToUpdate)
 					{
-						if (dcpp::GeoManager::getInstance())
+						if (dcpp::GeoManager::isValidInstance())
 						{
 							dcpp::GeoManager::getInstance()->close();
 						}
