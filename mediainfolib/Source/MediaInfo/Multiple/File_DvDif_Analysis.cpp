@@ -28,6 +28,10 @@
 #include <fstream>
 //---------------------------------------------------------------------------
 
+//---------------------------------------------------------------------------
+using namespace std;
+//---------------------------------------------------------------------------
+
 namespace MediaInfoLib
 {
 
@@ -764,9 +768,9 @@ void File_DvDif::Errors_Stats_Update()
                             }
                             else
                             {
-                            Event.Width=0;
-                            Event.Height=0;
-            }
+                                Event.Width=0;
+                                Event.Height=0;
+                            }
             }
             if (video_source_stype!=(int8u)-1)
             {
