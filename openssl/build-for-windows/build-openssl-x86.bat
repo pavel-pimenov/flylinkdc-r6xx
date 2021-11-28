@@ -8,10 +8,11 @@ del /S /F /Q tmp32dll\*
 del /S /F /Q out32dll\*
 
 rem call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat"
-call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Auxiliary\Build\vcvars64.bat"
+rem call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Auxiliary\Build\vcvars64.bat"
+call "C:\Program Files\Microsoft Visual Studio\2022\Preview\VC\Auxiliary\Build\vcvars64.bat"
                                                
 perl Configure VC-WIN32 no-asm no-shared --prefix=c:\openssl-build-x86
 call ms\do_ms
-"C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\nmake.exe" -f ms\nt.mak
+"C:\Program Files\Microsoft Visual Studio\2022\Preview\VC\Tools\MSVC\14.31.30818\bin\Hostx64\x64\nmake.exe" -f ms\nt.mak
 
 

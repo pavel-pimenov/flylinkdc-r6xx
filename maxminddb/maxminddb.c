@@ -18,7 +18,7 @@
 #define UNICODE
 #endif
 #include <windows.h>
-#include <ws2ipdef.h>
+//[-] FlylinkDC++ #include <ws2ipdef.h>
 #else
 #include <arpa/inet.h>
 #include <sys/mman.h>
@@ -259,8 +259,8 @@ int MMDB_open(const char *const filename, uint32_t flags, MMDB_s *const mmdb) {
     }
 
 #ifdef _WIN32
-    WSADATA wsa;
-    WSAStartup(MAKEWORD(2, 2), &wsa);
+   //[-] FlylinkDC++ WSADATA wsa;
+   //[-] FlylinkDC++ WSAStartup(MAKEWORD(2, 2), &wsa);
 #endif
 
     uint32_t metadata_size = 0;

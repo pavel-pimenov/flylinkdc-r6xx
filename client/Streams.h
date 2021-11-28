@@ -98,7 +98,10 @@ class MemoryInputStream : public InputStream
 		explicit MemoryInputStream(const string& src) : m_pos(0), m_buf_size(src.size()), m_buf(src.size() ? new uint8_t[src.size()] : nullptr)
 		{
 			dcassert(src.size());
-			memcpy(m_buf, src.data(), src.size());
+			if (m_buf) // warning C6387: 'm_buf' could be '0':  this does not adhere to the specification for the function 'memcpy'.
+			{
+				memcpy(m_buf, src.data(), src.size());
+			}
 		}
 		
 		~MemoryInputStream()

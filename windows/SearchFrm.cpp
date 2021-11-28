@@ -1404,6 +1404,7 @@ void SearchFrame::on(SearchManagerListener::SR, const std::unique_ptr<SearchResu
 						CFlyServerJSON::addAntivirusCounter(*aResult, l_count, l_virus_level);
 					}
 				}
+#if 0				
 				// TODO - ¬ключить блокировку поисковой выдачи return;
 				// Level 2
 				l_count = check_antivirus_level(make_pair(aResult->getTTH(), "."), *aResult, 2);
@@ -1412,6 +1413,7 @@ void SearchFrame::on(SearchManagerListener::SR, const std::unique_ptr<SearchResu
 					const int l_virus_level = 2;
 					// TODO - ¬ключить блокировку поисковой выдачи return;
 				}
+#endif
 			}
 			// https://github.com/pavel-pimenov/flylinkdc-r5xx/issues/18
 			const Search::TypeModes l_local_filter[] =

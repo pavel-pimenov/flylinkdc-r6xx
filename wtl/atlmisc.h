@@ -628,7 +628,7 @@ public:
 	{
 		ATLASSERT(m_hFind != NULL);
 
-		ATL::CString strResult("file://");
+		ATL::CString strResult(_T("file://"));
 		strResult += GetFilePath();
 		return strResult;
 	}
