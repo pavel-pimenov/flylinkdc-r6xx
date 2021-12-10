@@ -4,7 +4,6 @@
 
 #include "stdinc.h"
 
-
 #include <cassert>
 #include <cstdio>
 #include <cstdlib>

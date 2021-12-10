@@ -62,22 +62,16 @@ static inline uint64_t load_64_bits(const unsigned char *in, unsigned bits) {
       requires strm->avail_out >= 258 for each loop to avoid checking for
       output space.
  */
-void Z_INTERNAL zng_inflate_fast(PREFIX3(stream) *strm, unsigned long start) {
-    /* start: inflate()'s starting value for strm->avail_out */
+void Z_INTERNAL zng_inflate_fast(PREFIX3(stream) *strm) {
     struct inflate_state *state;
     z_const unsigned char *in;  /* local strm->next_in */
     const unsigned char *last;  /* have enough input while in < last */
     unsigned char *out;         /* local strm->next_out */
-    unsigned char *beg;         /* inflate()'s initial strm->next_out */
     unsigned char *end;         /* while out < end, enough space available */
-    unsigned char *safe;        /* can use chunkcopy provided out < safe */
 #ifdef INFLATE_STRICT
     unsigned dmax;              /* maximum distance from zlib header */
 #endif
     unsigned wsize;             /* window size or zero if not using window */
-    unsigned whave;             /* valid bytes in the window */
-    unsigned wnext;             /* window write index */
-    unsigned char *window;      /* allocated sliding window, if wsize != 0 */
 
     /* hold is a local copy of strm->hold. By default, hold satisfies the same
        invariants that strm->hold does, namely that (hold >> bits) == 0. This
@@ -112,6 +106,193 @@ void Z_INTERNAL zng_inflate_fast(PREFIX3(stream) *strm, unsigned long start) {
        Note that we therefore write that load operation as "hold |= etc" and not
        "hold += etc".
 
+       Outside that loop, at the end of the function, hold is bitwise and'ed
+       with (1<<bits)-1 to drop those excess bits so that, on function exit, we
+       keep the invariant that (state->hold >> state->bits) == 0.
+    */
+    uint64_t hold;              /* local strm->hold */
+    unsigned bits;              /* local strm->bits */
+    code const *lcode;          /* local strm->lencode */
+    code const *dcode;          /* local strm->distcode */
+    unsigned lmask;             /* mask for first level of length codes */
+    unsigned dmask;             /* mask for first level of distance codes */
+    const code *here;           /* retrieved table entry */
+    unsigned op;                /* code bits, operation, extra bits, or */
+                                /*  window position, window bytes to copy */
+    unsigned len;               /* match length, unused bytes */
+    unsigned dist;              /* match distance */
+
+    /* copy state to local variables */
+    state = (struct inflate_state *)strm->state;
+    in = strm->next_in;
+    last = in + (strm->avail_in - (INFLATE_FAST_MIN_HAVE - 1));
+    wsize = state->wsize;
+    out = state->window + wsize + state->wnext;
+    end = state->window + (wsize * 2) - (INFLATE_FAST_MIN_LEFT - 1);
+#ifdef INFLATE_STRICT
+    dmax = state->dmax;
+#endif
+    hold = state->hold;
+    bits = state->bits;
+    lcode = state->lencode;
+    dcode = state->distcode;
+    lmask = (1U << state->lenbits) - 1;
+    dmask = (1U << state->distbits) - 1;
+
+    /* decode literals and length/distances until end-of-block or not enough
+       input data or output space */
+    do {
+        if (bits < 15) {
+            hold |= load_64_bits(in, bits);
+            in += 6;
+            bits += 48;
+        }
+        if (out >= end) {
+            state->wnext = (uint32_t)(out - (state->window + wsize));
+            window_output_flush(strm);
+            out = state->window + state->wsize + state->wnext;
+            if (strm->avail_out == 0)
+                break;
+        }
+        here = lcode + (hold & lmask);
+      dolen:
+        DROPBITS(here->bits);
+        op = here->op;
+        if (op == 0) {                          /* literal */
+            Tracevv((stderr, here->val >= 0x20 && here->val < 0x7f ?
+                    "inflate:         literal '%c'\n" :
+                    "inflate:         literal 0x%02x\n", here->val));
+            *out++ = (unsigned char)(here->val);
+        } else if (op & 16) {                     /* length base */
+            len = here->val;
+            op &= 15;                           /* number of extra bits */
+            if (bits < op) {
+                hold |= load_64_bits(in, bits);
+                in += 6;
+                bits += 48;
+            }
+            len += BITS(op);
+            DROPBITS(op);
+            Tracevv((stderr, "inflate:         length %u\n", len));
+            if (bits < 15) {
+                hold |= load_64_bits(in, bits);
+                in += 6;
+                bits += 48;
+            }
+            here = dcode + (hold & dmask);
+          dodist:
+            DROPBITS(here->bits);
+            op = here->op;
+            if (op & 16) {                      /* distance base */
+                dist = here->val;
+                op &= 15;                       /* number of extra bits */
+                if (bits < op) {
+                    hold |= load_64_bits(in, bits);
+                    in += 6;
+                    bits += 48;
+                }
+                dist += BITS(op);
+#ifdef INFLATE_STRICT
+                if (dist > dmax) {
+                    SET_BAD("invalid distance too far back");
+                    break;
+                }
+#endif
+                DROPBITS(op);
+                Tracevv((stderr, "inflate:         distance %u\n", dist));
+
+                if (out - dist < ((state->window + state->wsize) - state->whave)) {
+                    if (state->sane) {
+                        SET_BAD("invalid distance too far back");
+                        break;
+                    }
+                }
+
+                if (len > dist || dist < state->chunksize) {
+                    out = functable.chunkmemset(out, dist, len);
+                } else {
+                    out = functable.chunkcopy(out, out - dist, len);
+                }
+            } else if ((op & 64) == 0) {          /* 2nd level distance code */
+                here = dcode + here->val + BITS(op);
+                goto dodist;
+            } else {
+                SET_BAD("invalid distance code");
+                break;
+            }
+        } else if ((op & 64) == 0) {              /* 2nd level length code */
+            here = lcode + here->val + BITS(op);
+            goto dolen;
+        } else if (op & 32) {                     /* end-of-block */
+            Tracevv((stderr, "inflate:         end of block\n"));
+            state->mode = TYPE;
+            break;
+        } else {
+            SET_BAD("invalid literal/length code");
+            break;
+        }
+    } while (in < last);
+
+    /* return unused bytes (on entry, bits < 8, so in won't go too far back) */
+    len = bits >> 3;
+    in -= len;
+    bits -= len << 3;
+    hold &= (UINT64_C(1) << bits) - 1;
+
+    /* update state and return */
+    strm->next_in = in;
+    strm->avail_in = (unsigned)(in < last ? (INFLATE_FAST_MIN_HAVE - 1) + (last - in)
+                                          : (INFLATE_FAST_MIN_HAVE - 1) - (in - last));
+
+    state->wnext = (uint32_t)(out - (state->window + state->wsize));
+    Assert(bits <= 32, "Remaining bits greater than 32");
+    state->hold = (uint32_t)hold;
+    state->bits = bits;
+    return;
+}
+void Z_INTERNAL zng_inflate_fast_back(PREFIX3(stream) *strm, unsigned long start) {
+    /* start: inflate()'s starting value for strm->avail_out */
+    struct inflate_state *state;
+    z_const unsigned char *in;  /* local strm->next_in */
+    const unsigned char *last;  /* have enough input while in < last */
+    unsigned char *out;         /* local strm->next_out */
+    unsigned char *beg;         /* inflate()'s initial strm->next_out */
+    unsigned char *end;         /* while out < end, enough space available */
+    unsigned char *safe;        /* can use chunkcopy provided out < safe */
+#ifdef INFLATE_STRICT
+    unsigned dmax;              /* maximum distance from zlib header */
+#endif
+    unsigned wsize;             /* window size or zero if not using window */
+    unsigned whave;             /* valid bytes in the window */
+    unsigned wnext;             /* window write index */
+    unsigned char *window;      /* allocated sliding window, if wsize != 0 */
+
+    /* hold is a local copy of strm->hold. By default, hold satisfies the same
+       invariants that strm->hold does, namely that (hold >> bits) == 0. This
+       invariant is kept by loading bits into hold one byte at a time, like:
+       hold |= next_byte_of_input << bits; in++; bits += 8;
+       If we need to ensure that bits >= 15 then this code snippet is simply
+       repeated. Over one iteration of the outermost do/while loop, this
+       happens up to six times (48 bits of input), as described in the NOTES
+       above.
+       However, on some little endian architectures, it can be significantly
+       faster to load 64 bits once instead of 8 bits six times:
+       if (bits <= 16) {
+         hold |= next_8_bytes_of_input << bits; in += 6; bits += 48;
+       }
+       Unlike the simpler one byte load, shifting the next_8_bytes_of_input
+       by bits will overflow and lose those high bits, up to 2 bytes' worth.
+       The conservative estimate is therefore that we have read only 6 bytes
+       (48 bits). Again, as per the NOTES above, 48 bits is sufficient for the
+       rest of the iteration, and we will not need to load another 8 bytes.
+       Inside this function, we no longer satisfy (hold >> bits) == 0, but
+       this is not problematic, even if that overflow does not land on an 8 bit
+       byte boundary. Those excess bits will eventually shift down lower as the
+       Huffman decoder consumes input, and when new input bits need to be loaded
+       into the bits variable, the same input bits will be or'ed over those
+       existing bits. A bitwise or is idempotent: (a | b | b) equals (a | b).
+       Note that we therefore write that load operation as "hold |= etc" and not
+       "hold += etc".
        Outside that loop, at the end of the function, hold is bitwise and'ed
        with (1<<bits)-1 to drop those excess bits so that, on function exit, we
        keep the invariant that (state->hold >> state->bits) == 0.
