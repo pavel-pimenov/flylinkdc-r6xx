@@ -1230,7 +1230,7 @@ Ztring File::Modified_Get()
                 FILETIME TimeFT;
                 if (GetFileTime(File_Handle, NULL, NULL, &TimeFT))
                 {
-                    int64u Time64=0x100000000ULL*TimeFT.dwHighDateTime+TimeFT.dwLowDateTime;
+                    const int64u Time64=0x100000000ULL*TimeFT.dwHighDateTime+TimeFT.dwLowDateTime;
                     Ztring Time; Time.Date_From_Milliseconds_1601(Time64/10000);
                     return Time;
                 }
@@ -1413,9 +1413,9 @@ bool File::Exists(const Ztring &File_Name)
                 return false;
             #else
                 #ifdef UNICODE
-                    DWORD FileAttributes=GetFileAttributesW(File_Name.c_str());
+                    const DWORD FileAttributes=GetFileAttributesW(File_Name.c_str());
                 #else
-                    DWORD FileAttributes=GetFileAttributes(File_Name.c_str());
+                    const DWORD FileAttributes=GetFileAttributes(File_Name.c_str());
                 #endif //UNICODE
 
                 ZENLIB_DEBUG2(      "File Exists",

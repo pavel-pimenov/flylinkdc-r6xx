@@ -7143,13 +7143,14 @@ namespace {
 			pi.piece_state = partial_piece_info::none;
 #endif
 			TORRENT_ASSERT(counter * blocks_per_piece + pi.blocks_in_piece <= int(blk.size()));
-			pi.blocks = &blk[std::size_t(counter * blocks_per_piece)];
+			block_info* blocks = &blk[std::size_t(counter * blocks_per_piece)];
+			pi.blocks = blocks;
 			int const piece_size = torrent_file().piece_size(i->index);
 			int idx = -1;
 			for (auto const& info : m_picker->blocks_for_piece(*i))
 			{
 				++idx;
-				block_info& bi = pi.blocks[idx];
+				block_info& bi = blocks[idx];
 				bi.state = info.state;
 				bi.block_size = idx < pi.blocks_in_piece - 1
 					? aux::numeric_cast<std::uint32_t>(block_size())
@@ -7195,7 +7196,7 @@ namespace {
 					}
 				}
 
-				pi.blocks[idx].num_peers = info.num_peers;
+				bi.num_peers = info.num_peers;
 			}
 			pi.piece_index = i->index;
 			queue->push_back(pi);
@@ -11886,11 +11887,9 @@ namespace {
 					debug_log("*** increment tracker fail count [ep: %s url: %s %d]"
 						, print_endpoint(aep->local_endpoint).c_str(), r.url.c_str(), a.fails);
 #endif
-					// don't try to announce from this endpoint again
-					if (ec == boost::system::errc::address_family_not_supported
-						|| ec == boost::system::errc::host_unreachable
-						|| ec == lt::errors::announce_skipped)
+					if (ec == boost::system::errc::address_family_not_supported)
 					{
+					// don't try to announce from this endpoint again
 						aep->enabled = false;
 #ifndef TORRENT_DISABLE_LOGGING
 						debug_log("*** disabling endpoint [ep: %s url: %s ]"

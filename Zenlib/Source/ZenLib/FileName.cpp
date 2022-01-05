@@ -46,7 +46,7 @@ Ztring FileName::Path_Get() const
         return FN.GetPath().c_str();
     #else //ZENLIB_USEWX
         //Path limit
-        size_t Pos_Path=rfind(FileName_PathSeparator);
+        const size_t Pos_Path=rfind(FileName_PathSeparator);
         if (Pos_Path==Ztring::npos)
             return Ztring(); //Not found
         else
@@ -139,7 +139,7 @@ Ztring FileName::Extension_Get() const
         if (Pos_Path==Ztring::npos)
             Pos_Path=0; //Not found
         //Extension limit
-        size_t Pos_Ext=rfind(__T('.'));
+        const size_t Pos_Ext=rfind(__T('.'));
         if (Pos_Ext==Ztring::npos || Pos_Ext<Pos_Path)
             return Ztring(); //Not found
         else

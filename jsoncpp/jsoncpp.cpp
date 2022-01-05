@@ -250,6 +250,7 @@ Iter fixZerosInTheEnd(Iter begin, Iter end, unsigned int precision) {
 #endif // if !defined(JSON_IS_AMALGAMATION)
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <cstring>
 #include <iostream>
 #include <istream>
@@ -838,9 +839,15 @@ bool Reader::decodeDouble(Token& token, Value& decoded) {
   double value = 0;
   String buffer(token.start_, token.end_);
   IStringStream is(buffer);
-  if (!(is >> value))
+  if (!(is >> value)) {
+    if (value == std::numeric_limits<double>::max())
+      value = std::numeric_limits<double>::infinity();
+    else if (value == std::numeric_limits<double>::lowest())
+      value = -std::numeric_limits<double>::infinity();
+    else if (!std::isinf(value))
     return addError(
         "'" + String(token.start_, token.end_) + "' is not a number.", token);
+  }
   decoded = value;
   return true;
 }
@@ -1845,7 +1852,7 @@ bool OurReader::decodeNumber(Token& token, Value& decoded) {
     const auto digit(static_cast<Value::UInt>(c - '0'));
     if (value >= threshold) {
       // We've hit or exceeded the max value divided by 10 (rounded down). If
-      // a) we've only just touched the limit, meaing value == threshold,
+      // a) we've only just touched the limit, meaning value == threshold,
       // b) this is the last digit, or
       // c) it's small enough to fit in that rounding delta, we're okay.
       // Otherwise treat this number as a double to avoid overflow.
@@ -1885,6 +1892,11 @@ bool OurReader::decodeDouble(Token& token, Value& decoded) {
   const String buffer(token.start_, token.end_);
   IStringStream is(buffer);
   if (!(is >> value)) {
+    if (value == std::numeric_limits<double>::max())
+      value = std::numeric_limits<double>::infinity();
+    else if (value == std::numeric_limits<double>::lowest())
+      value = -std::numeric_limits<double>::infinity();
+    else if (!std::isinf(value))
     return addError(
         "'" + String(token.start_, token.end_) + "' is not a number.", token);
   }
