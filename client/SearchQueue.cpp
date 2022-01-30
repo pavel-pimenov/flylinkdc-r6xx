@@ -160,7 +160,7 @@ bool SearchQueue::cancelSearch(void* aOwner)
 	for (auto i = m_searchQueue.begin(); i != m_searchQueue.end(); ++i)
 	{
 	
-		auto &l_owners = i->m_owners; // [!] PVS V807 Decreased performance. Consider creating a reference to avoid using the 'i->owners' expression repeatedly. searchqueue.cpp 135
+		auto &l_owners = i->m_owners;
 		const auto j = l_owners.find(aOwner);
 		if (j != l_owners.end())
 		{

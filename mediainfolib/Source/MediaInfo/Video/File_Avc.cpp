@@ -554,17 +554,34 @@ File_Avc::avcintra_header File_Avc::AVC_Intra_Headers_Data(int32u CodecID)
 }
 
 //---------------------------------------------------------------------------
-int32u File_Avc::AVC_Intra_CodecID_FromMeta(int32u Height, int32u Fields, int32u SampleDuration, int32u TimeScale, int32u SizePerFrame)
+int32u File_Avc::AVC_Intra_CodecID_FromMeta(int32u Width, int32u Height, int32u Fields, int32u SampleDuration, int32u TimeScale, int32u SizePerFrame)
 {
     // Computing bitrate
-    int64u BitRate=((int64u)SizePerFrame)*8*TimeScale/SampleDuration;
-    int64u SampleRate=float64_int64s(((float64)TimeScale)/SampleDuration);
-    int32u Class=BitRate<=75000000?50:100; //Arbitrary choosen. TODO: check real maximumm bitrate, check class 200
+    int64u BitRate=SampleDuration?(((int64u)SizePerFrame)*8*TimeScale/SampleDuration):0;
+    int64u SampleRate=SampleDuration?(float64_int64s(((float64)TimeScale)/SampleDuration)):0;
+    int32u Class;
+    switch (Width)
+    {
+    case 1920:
+        Class=100;
+        break;
+    case 1440:
+    case 1280:
+    case 960:
+        Class=50;
+        break;
+    default:
+        if (!BitRate)
+            return 0x4156696E; //AVin (neutral)
+        Class=BitRate<=75000000?50:100; //Arbitrary choosen. TODO: check real maximumm bitrate, check class 200
+        break;
+    }
     switch (Class)
     {
         case 100 : 
                     switch (Height)
                     {
+                        case 1088 :
                         case 1080 :
                                     switch (Fields)
                                     {
@@ -603,6 +620,7 @@ int32u File_Avc::AVC_Intra_CodecID_FromMeta(int32u Height, int32u Fields, int32u
         case  50 : 
                     switch (Height)
                     {
+                        case 1088 :
                         case 1080 :
                                     switch (Fields)
                                     {
@@ -979,10 +997,10 @@ void File_Avc::Streams_Fill(std::vector<seq_parameter_set_struct*>::iterator seq
         }
     }
 
-    if (maximum_content_light_level)
-        Fill(Stream_Video, 0, "MaxCLL", Ztring::ToZtring(maximum_content_light_level) + __T(" cd/m2"));
-    if (maximum_frame_average_light_level)
-        Fill(Stream_Video, 0, "MaxFALL", Ztring::ToZtring(maximum_frame_average_light_level) + __T(" cd/m2"));
+    if (!maximum_content_light_level.empty())
+        Fill(Stream_Video, 0, Video_MaxCLL, maximum_content_light_level);
+    if (!maximum_frame_average_light_level.empty())
+        Fill(Stream_Video, 0, Video_MaxFALL, maximum_frame_average_light_level);
 }
 
 //---------------------------------------------------------------------------
@@ -2158,7 +2176,7 @@ void File_Avc::slice_header()
 
         //Saving some info
         int32s TemporalReferences_Offset_pic_order_cnt_lsb_Diff=0;
-        if ((*seq_parameter_set_Item)->pic_order_cnt_type!=1 && first_mb_in_slice==0 && (Element_Code!=0x14 || seq_parameter_sets.empty())) //Not slice_layer_extension except if MVC only
+        if ((*seq_parameter_set_Item)->pic_order_cnt_type!=1 && first_mb_in_slice==0 && (Element_Code!=0x14 || seq_parameter_sets.empty()) && TemporalReferences_Reserved) //Not slice_layer_extension except if MVC only
         {
             if (field_pic_flag)
             {
@@ -3502,8 +3520,7 @@ void File_Avc::sei_message_light_level()
     Element_Info1("light_level");
 
     //Parsing
-    Get_B2(maximum_content_light_level, "maximum_content_light_level");
-    Get_B2(maximum_frame_average_light_level, "maximum_frame_average_light_level");
+    Get_LightLevel(maximum_content_light_level, maximum_frame_average_light_level);
 }
 
 //---------------------------------------------------------------------------

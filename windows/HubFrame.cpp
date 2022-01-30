@@ -1166,8 +1166,8 @@ LRESULT HubFrame::onCopyUserInfo(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*
 	const auto su = getSelectedUser();
 	if (su)
 	{
-		const auto& id = su->getIdentity();
-		const auto u = su->getUser();
+		const auto id = su->getIdentity();
+		const auto u  = su->getUser();
 		string sCopy;
 		switch (wID)
 		{
@@ -1564,69 +1564,7 @@ LRESULT HubFrame::OnSpeakerRange(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& 
 		return 0;
 	switch (uMsg)
 	{
-#ifdef FLYLINKDC_UPDATE_USER_JOIN_USE_WIN_MESSAGES_Q
-		case WM_SPEAKER_UPDATE_USER_JOIN:
-		{
-			unique_ptr<OnlineUserPtr> l_ou(reinterpret_cast<OnlineUserPtr*>(wParam));
-			if (!ClientManager::isBeforeShutdown())
-			{
-				if (updateUser(*l_ou))
-				{
-					const Identity& id    = (*l_ou)->getIdentity();
-					const UserPtr& user   = (*l_ou)->getUser();
-					const bool isFavorite = !FavoriteManager::isNoFavUserOrUserBanUpload(user); // [!] TODO: в ядро!
-					if (isFavorite)
-					{
-						PLAY_SOUND(SOUND_FAVUSER);
-						SHOW_POPUP(POPUP_FAVORITE_CONNECTED, id.getNickT() + _T(" - ") + Text::toT(m_client->getHubName()), TSTRING(FAVUSER_ONLINE));
-					}
-					
-					if (!id.isBotOrHub())
-					{
-						if (m_showJoins || (m_favShowJoins && isFavorite))
-						{
-							BaseChatFrame::addLine(_T("*** ") + TSTRING(JOINS) + _T(' ') + id.getNickT(), Colors::g_ChatTextSystem);
-						}
-					}
-					m_needsUpdateStats = true;
-				}
-			}
-		}
-		break;
-#endif // FLYLINKDC_UPDATE_USER_JOIN_USE_WIN_MESSAGES_Q
-#ifdef FLYLINKDC_REMOVE_USER_WIN_MESSAGES_Q
-		case WM_SPEAKER_REMOVE_USER:
-		{
-			unique_ptr<OnlineUserPtr> l_ou(reinterpret_cast<OnlineUserPtr*>(wParam));
-			dcassert(!ClientManager::isBeforeShutdown());
-			if (!ClientManager::isBeforeShutdown())
-			{
-				const UserPtr& user = (*l_ou)->getUser();
-				const Identity& id = (*l_ou)->getIdentity();
-				
-				if (!id.isBotOrHub())
-				{
-					const bool isFavorite = !FavoriteManager::isNoFavUserOrUserBanUpload(user);
-					
-					const tstring& l_userNick = id.getNickT();
-					if (isFavorite)
-					{
-						PLAY_SOUND(SOUND_FAVUSER_OFFLINE);
-						SHOW_POPUP(POPUP_FAVORITE_DISCONNECTED, l_userNick + _T(" - ") + Text::toT(m_client->getHubName()), TSTRING(FAVUSER_OFFLINE));
-					}
-					
-					if (m_showJoins || (m_favShowJoins && isFavorite))
-					{
-						BaseChatFrame::addLine(_T("*** ") + TSTRING(PARTS) + _T(' ') + l_userNick, Colors::g_ChatTextSystem);
-					}
-				}
-			}
-			removeUser(*l_ou);
-			m_needsUpdateStats = true;
-		}
-		break;
-#endif
-		
+	
 #ifdef FLYLINKDC_ADD_CHAT_LINE_USE_WIN_MESSAGES_Q
 		case WM_SPEAKER_ADD_CHAT_LINE:
 		{
@@ -1634,7 +1572,7 @@ LRESULT HubFrame::OnSpeakerRange(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& 
 			unique_ptr<ChatMessage> msg(reinterpret_cast<ChatMessage*>(wParam));
 			if (msg->m_from)
 			{
-				const Identity& from    = msg->m_from->getIdentity();
+				const Identity from    = msg->m_from->getIdentity();
 				const bool myMess       = ClientManager::isMe(msg->m_from);
 				addLine(from, myMess, msg->thirdPerson, Text::toT(msg->format()), Colors::g_ChatTextGeneral);
 				auto& l_user = msg->m_from->getUser();
@@ -1666,10 +1604,10 @@ LRESULT HubFrame::OnSpeakerRange(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& 
 			dcassert(!ClientManager::isBeforeShutdown());
 			unique_ptr<ChatMessage> pm(reinterpret_cast<ChatMessage*>(wParam));
 			{
-				const Identity& from = pm->from->getIdentity();
+				const Identity from = pm->from->getIdentity();
 				const bool myPM = ClientManager::isMe(pm->replyTo);
-				const Identity& replyTo = pm->replyTo->getIdentity();
-				const Identity& to = pm->to->getIdentity();
+				const Identity replyTo = pm->replyTo->getIdentity();
+				const Identity to = pm->to->getIdentity();
 				const tstring text = Text::toT(pm->format());
 				const auto& id = myPM ? to : replyTo;
 				const bool isOpen = PrivateFrame::isOpen(id.getUser());
@@ -1733,7 +1671,7 @@ void HubFrame::updateUserJoin(const OnlineUserPtr& p_ou)
 	{
 		if (updateUser(p_ou, -1))
 		{
-			const Identity& id = p_ou->getIdentity();
+			const auto id = p_ou->getIdentity();
 			if (m_client->is_all_my_info_loaded())
 			{
 				dcassert(!id.getNickT().empty());
@@ -1866,7 +1804,7 @@ LRESULT HubFrame::onSpeaker(UINT /*uMsg*/, WPARAM /* wParam */, LPARAM /* lParam
 					}
 				}
 				break;
-#ifndef FLYLINKDC_UPDATE_USER_JOIN_USE_WIN_MESSAGES_Q
+				
 				case UPDATE_USER_JOIN:
 				{
 					if (!ClientManager::isBeforeShutdown() && isConnected())
@@ -1876,8 +1814,7 @@ LRESULT HubFrame::onSpeaker(UINT /*uMsg*/, WPARAM /* wParam */, LPARAM /* lParam
 					}
 				}
 				break;
-#endif // FLYLINKDC_UPDATE_USER_JOIN_USE_WIN_MESSAGES_Q
-#ifndef FLYLINKDC_UPDATE_USER_JOIN_USE_WIN_MESSAGES_Q
+				
 				case REMOVE_USER:
 				{
 					const OnlineUserTask& u = static_cast<const OnlineUserTask&>(*i->second);
@@ -1887,12 +1824,11 @@ LRESULT HubFrame::onSpeaker(UINT /*uMsg*/, WPARAM /* wParam */, LPARAM /* lParam
 					{
 						if (!ClientManager::isBeforeShutdown())
 						{
-							const UserPtr& user = u.m_ou->getUser();
-							const Identity& id = u.m_ou->getIdentity();
+							const auto id = u.m_ou->getIdentity();
 							
 							if (!id.isBotOrHub())
 							{
-								const bool isFavorite = !FavoriteManager::isNoFavUserOrUserBanUpload(user);
+								const bool isFavorite = !FavoriteManager::isNoFavUserOrUserBanUpload(u.m_ou->getUser());
 								
 								const tstring& l_userNick = id.getNickT();
 								if (isFavorite)
@@ -1912,7 +1848,7 @@ LRESULT HubFrame::onSpeaker(UINT /*uMsg*/, WPARAM /* wParam */, LPARAM /* lParam
 					}
 				}
 				break;
-#endif // FLYLINKDC_UPDATE_USER_JOIN_USE_WIN_MESSAGES_Q
+				
 #ifndef FLYLINKDC_ADD_CHAT_LINE_USE_WIN_MESSAGES_Q
 				case ADD_CHAT_LINE:
 				{
@@ -1940,7 +1876,7 @@ LRESULT HubFrame::onSpeaker(UINT /*uMsg*/, WPARAM /* wParam */, LPARAM /* lParam
 							const Identity& from = msg->m_from->getIdentity();
 							const bool myMess = ClientManager::isMe(msg->m_from);
 							addLine(from, myMess, msg->thirdPerson, Text::toT(msg->format()), 0, Colors::g_ChatTextGeneral);
-							auto& l_user = msg->m_from->getUser();
+							auto l_user = msg->m_from->getUser();
 							l_user->incMessagesCount();
 							m_client->incMessagesCount();
 							speak(UPDATE_COLUMN_MESSAGE, msg->m_from);
@@ -3596,16 +3532,7 @@ void HubFrame::on(ClientListener::UserUpdatedMyINFO, const OnlineUserPtr& user) 
 {
 	if (!isClosedOrShutdown())
 	{
-#ifdef FLYLINKDC_UPDATE_USER_JOIN_USE_WIN_MESSAGES_Q
-		const auto l_ou_ptr = new OnlineUserPtr(user);
-		if (PostMessage(WM_SPEAKER_UPDATE_USER_JOIN, WPARAM(l_ou_ptr)) == FALSE)
-		{
-			dcassert(0);
-			delete l_ou_ptr;
-		}
-#else
 		speak(UPDATE_USER_JOIN, user);
-#endif
 #ifdef _DEBUG
 //		LogManager::message("[single OnlineUserPtr] void HubFrame::on(ClientListener::UserUpdatedMyINFO nick = " + user->getUser()->getLastNick() + " this = " + Util::toString(__int64(this)));
 #endif
@@ -3637,12 +3564,7 @@ void HubFrame::on(ClientListener::UserRemoved, const Client*, const OnlineUserPt
 	dcassert(!isClosedOrShutdown());
 	if (isClosedOrShutdown())
 		return;
-#ifdef FLYLINKDC_REMOVE_USER_WIN_MESSAGES_Q
-	const auto l_ou_ptr = new OnlineUserPtr(user);
-	PostMessage(WM_SPEAKER_REMOVE_USER, WPARAM(l_ou_ptr));
-#else
 	speak(REMOVE_USER, user);
-#endif
 }
 
 void HubFrame::on(Redirect, const Client*, const string& line) noexcept
@@ -4798,7 +4720,7 @@ void HubFrame::addDupeUsersToSummaryMenu(ClientManager::UserParams& p_param)
 			{
 				if (frame->isClosedOrShutdown())
 					continue;
-				const auto& l_id = i->second->getIdentity(); // [!] PVS V807 Decreased performance. Consider creating a reference to avoid using the 'i->second->getIdentity()' expression repeatedly. hubframe.cpp 3673
+				const auto& l_id = i->second->getIdentity();
 				const auto l_cur_ip = l_id.getUser()->getLastIPfromRAM().to_string();
 				if ((p_param.m_bytesShared && l_id.getBytesShared() == p_param.m_bytesShared) ||
 				        (p_param.m_nick == l_id.getNick()) ||

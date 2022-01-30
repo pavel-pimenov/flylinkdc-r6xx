@@ -41,8 +41,6 @@ see LICENSE file.
 #include "libtorrent/write_resume_data.hpp"
 #endif
 
-#include "libtorrent/aux_/escape_string.hpp" // for convert_from_native
-
 namespace libtorrent {
 
 	alert::alert() : m_timestamp(clock_type::now()) {}
@@ -172,7 +170,7 @@ namespace libtorrent {
 		{
 			std::snprintf(msg, sizeof(msg), "%s: read_piece %d failed: %s"
 				, torrent_alert::message().c_str() , static_cast<int>(piece)
-				, convert_from_native(error.message()).c_str());
+				, error.message().c_str());
 		}
 		else
 		{
@@ -262,7 +260,7 @@ namespace libtorrent {
 		std::snprintf(msg, sizeof(msg), ": failed to rename file %d: "
 			, static_cast<int>(index));
 		ret.append(msg);
-		ret.append(convert_from_native(error.message()));
+		ret.append(error.message());
 		return ret;
 #endif
 	}
@@ -361,7 +359,7 @@ namespace libtorrent {
 		char ret[400];
 		std::snprintf(ret, sizeof(ret), "%s %s \"%s\" (%d)"
 			, tracker_alert::message().c_str()
-			, convert_from_native(error.message()).c_str(), error_message()
+			, error.message().c_str(), error_message()
 			, times_in_row);
 		return ret;
 #endif
@@ -421,7 +419,7 @@ namespace libtorrent {
 		: tracker_alert(alloc, h, ep, u)
 		, error(e)
 #if TORRENT_ABI_VERSION == 1
-		, msg(convert_from_native(e.message()))
+		, msg(e.message())
 #endif
 	{
 		TORRENT_ASSERT(!u.empty());
@@ -815,7 +813,7 @@ namespace libtorrent {
 #else
 		return torrent_alert::message() + " storage move failed. "
 			+ operation_name(op) + " (" + file_path() + "): "
-			+ convert_from_native(error.message());
+			+ error.message();
 #endif
 	}
 
@@ -844,7 +842,7 @@ namespace libtorrent {
 		, error(e)
 		, info_hashes(ih)
 #if TORRENT_ABI_VERSION == 1
-		, msg(convert_from_native(error.message()))
+		, msg(error.message())
 #endif
 	{
 #if TORRENT_ABI_VERSION < 3
@@ -858,7 +856,7 @@ namespace libtorrent {
 		return {};
 #else
 		return torrent_alert::message() + " torrent deletion failed: "
-			+ convert_from_native(error.message());
+			+ error.message();
 #endif
 	}
 
@@ -890,7 +888,7 @@ namespace libtorrent {
 		: torrent_alert(alloc, h)
 		, error(e)
 #if TORRENT_ABI_VERSION == 1
-		, msg(convert_from_native(error.message()))
+		, msg(error.message())
 #endif
 	{
 	}
@@ -901,7 +899,7 @@ namespace libtorrent {
 		return {};
 #else
 		return torrent_alert::message() + " resume data was not generated: "
-			+ convert_from_native(error.message());
+			+ error.message();
 #endif
 	}
 
@@ -1125,7 +1123,7 @@ namespace {
 			, listen_interface()
 			, operation_name(op)
 			, socket_type_name(socket_type)
-			, convert_from_native(error.message()).c_str());
+			, error.message().c_str());
 		return ret;
 #endif
 	}
@@ -1174,7 +1172,7 @@ namespace {
 #ifdef TORRENT_DISABLE_ALERT_MSG
 		return {};
 #else
-		return "UDP error: " + convert_from_native(error.message())
+		return "UDP error: " + error.message()
 			+ " from: " + endpoint.address().to_string()
 			+ " op: " + operation_name(operation);
 #endif
@@ -1246,7 +1244,7 @@ namespace {
 		, error(e)
 #if TORRENT_ABI_VERSION == 1
 		, map_type(static_cast<int>(t))
-		, msg(convert_from_native(error.message()))
+		, msg(error.message())
 #endif
 	{}
 
@@ -1258,7 +1256,7 @@ namespace {
 		return std::string("could not map port using ")
 			+ nat_type_str[static_cast<int>(map_transport)]
 			+ "[" + local_address.to_string() + "]: "
-			+ convert_from_native(error.message());
+			+ error.message();
 #endif
 	}
 
@@ -1334,7 +1332,7 @@ namespace {
 #if TORRENT_ABI_VERSION == 1
 		, operation(operation_name(op_))
 		, file(f)
-		, msg(convert_from_native(error.message()))
+		, msg(error.message())
 #endif
 	{
 	}
@@ -1346,7 +1344,7 @@ namespace {
 #else
 		return torrent_alert::message() + " fast resume rejected. "
 			+ operation_name(op) + "(" + file_path() + "): "
-			+ convert_from_native(error.message());
+			+ error.message();
 #endif
 	}
 
@@ -1593,7 +1591,7 @@ namespace {
 		if (error)
 		{
 			std::snprintf(msg, sizeof(msg), " ERROR: (%d %s) %s"
-				, error.value(), convert_from_native(error.message()).c_str()
+				, error.value(), error.message().c_str()
 				, filename());
 		}
 		else
@@ -1730,7 +1728,7 @@ namespace {
 		{
 			std::snprintf(msg, sizeof(msg), "failed to add torrent \"%s\": [%s] %s"
 				, torrent_name, error.category().name()
-				, convert_from_native(error.message()).c_str());
+				, error.message().c_str());
 		}
 		else
 		{
@@ -1768,7 +1766,7 @@ namespace {
 #else
 		char msg[600];
 		std::snprintf(msg, sizeof(msg), "mmap cache failed: (%d) %s", error.value()
-			, convert_from_native(error.message()).c_str());
+			, error.message().c_str());
 		return msg;
 #endif
 	}
@@ -1853,7 +1851,7 @@ namespace {
 		, error(e)
 #if TORRENT_ABI_VERSION == 1
 		, operation(static_cast<int>(op_))
-		, msg(convert_from_native(error.message()))
+		, msg(error.message())
 #endif
 	{}
 
@@ -1866,7 +1864,7 @@ namespace {
 		std::snprintf(buf, sizeof(buf), "%s peer error [%s] [%s]: %s"
 			, peer_alert::message().c_str()
 			, operation_name(op), error.category().name()
-			, convert_from_native(error.message()).c_str());
+			, error.message().c_str());
 		return buf;
 #endif
 	}
@@ -1882,7 +1880,7 @@ namespace {
 		, reason(r)
 #if TORRENT_ABI_VERSION == 1
 		, operation(static_cast<int>(op))
-		, msg(convert_from_native(error.message()))
+		, msg(error.message())
 #endif
 	{}
 
@@ -1896,7 +1894,7 @@ namespace {
 			, peer_alert::message().c_str()
 			, socket_type_name(socket_type)
 			, operation_name(op), error.category().name()
-			, convert_from_native(error.message()).c_str()
+			, error.message().c_str()
 			, int(reason));
 		return buf;
 #endif
@@ -1922,7 +1920,7 @@ namespace {
 		std::snprintf(msg, sizeof(msg), "DHT error [%s] (%d) %s"
 			, operation_name(op)
 			, error.value()
-			, convert_from_native(error.message()).c_str());
+			, error.message().c_str());
 		return msg;
 #endif
 	}
@@ -2030,7 +2028,7 @@ namespace {
 #else
 		char msg[600];
 		std::snprintf(msg, sizeof(msg), "i2p_error: [%s] %s"
-			, error.category().name(), convert_from_native(error.message()).c_str());
+			, error.category().name(), error.message().c_str());
 		return msg;
 #endif
 	}
@@ -2172,7 +2170,7 @@ namespace {
 		return {};
 #else
 		return "Local Service Discovery startup error [" + local_address.to_string() + "]: "
-			+ convert_from_native(error.message());
+			+ error.message();
 #endif
 	}
 
@@ -2278,7 +2276,7 @@ namespace {
 		, m_url_idx(alloc.copy_string(u))
 #if TORRENT_ABI_VERSION == 1
 		, url(u)
-		, msg(convert_from_native(e.message()))
+		, msg(e.message())
 #endif
 	{}
 
@@ -2299,7 +2297,7 @@ namespace {
 		return {};
 #else
 		return torrent_alert::message() + " url seed ("
-			+ server_url() + ") failed: " + convert_from_native(error.message());
+			+ server_url() + ") failed: " + error.message();
 #endif
 	}
 
@@ -2324,7 +2322,7 @@ namespace {
 #if TORRENT_ABI_VERSION == 1
 		, operation(operation_name(op_))
 		, file(f)
-		, msg(convert_from_native(error.message()))
+		, msg(error.message())
 #endif
 	{}
 
@@ -2340,7 +2338,7 @@ namespace {
 #else
 		return torrent_alert::message() + " "
 			+ operation_name(op) + " (" + filename()
-			+ ") error: " + convert_from_native(error.message());
+			+ ") error: " + error.message();
 #endif
 	}
 
@@ -2647,7 +2645,7 @@ namespace {
 		if (error)
 		{
 			std::snprintf(buf, sizeof(buf), "session error: (%d %s) %s"
-				, error.value(), convert_from_native(error.message()).c_str()
+				, error.value(), error.message().c_str()
 				, m_alloc.get().ptr(m_msg_idx));
 		}
 		else

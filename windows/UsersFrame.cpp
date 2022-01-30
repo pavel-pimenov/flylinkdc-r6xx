@@ -134,6 +134,7 @@ LRESULT UsersFrame::onContextMenu(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, B
 		
 		OMenu usersMenu;
 		usersMenu.CreatePopupMenu();
+		usersMenu.AppendMenu(MF_STRING, IDC_COPY_NICK, CTSTRING(COPY_NICK));
 		usersMenu.AppendMenu(MF_STRING, IDC_EDIT, CTSTRING(PROPERTIES));
 		usersMenu.AppendMenu(MF_STRING, IDC_OPEN_USER_LOG, CTSTRING(OPEN_USER_LOG));
 		usersMenu.AppendMenu(MF_STRING, IDC_REMOVE_FROM_FAVORITES, CTSTRING(REMOVE_FROM_FAVORITES));
@@ -482,7 +483,7 @@ LRESULT UsersFrame::onOpenUserLog(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWn
 		UserInfo* ui = ctrlUsers.getItemData(i);
 		dcassert(i != -1);
 		
-		const auto& l_user = ui->getUser(); // [!] PVS V807 Decreased performance. Consider creating a pointer to avoid using the 'ui->getUser()' expression repeatedly. usersframe.cpp 445
+		const auto l_user = ui->getUser();
 		StringMap params;
 		params["hubNI"] = Util::toString(ClientManager::getHubNames(l_user->getCID(), BaseUtil::emptyString));
 		params["hubURL"] = Util::toString(ClientManager::getHubs(l_user->getCID(), BaseUtil::emptyString));
@@ -663,6 +664,37 @@ void UsersFrame::saveBad()
 		m_ignoreListCnange = false;
 	}
 }
+
+// [+] Copy UserName from Friends List / 2022 SCALOlaz
+LRESULT UsersFrame::onCopy(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
+{
+	if (ctrlUsers.GetSelectedCount() == 1)
+	{
+	//	string data;
+		int i = ctrlUsers.GetNextItem(-1, LVNI_SELECTED);
+		UserInfo* ui = ctrlUsers.getItemData(i);
+		dcassert(i != -1);
+		const auto l_user = ui->getUser();
+
+		string sCopy;
+		switch (wID)
+		{
+		case IDC_COPY_NICK:
+			sCopy = l_user->getLastNick();
+			break;
+		default:
+			dcdebug("USERSFRAME DON'T GO HERE\n");
+			return 0;
+		}
+
+		if (!sCopy.empty())
+		{
+			WinUtil::setClipboard(sCopy);
+		}
+		return 0;
+	}
+}
+
 /**
  * @file
  * $Id: UsersFrame.cpp,v 1.37 2006/08/13 19:03:50 bigmuscle Exp $

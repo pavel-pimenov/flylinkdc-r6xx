@@ -63,11 +63,20 @@ extern uint32_t adler32_neon(uint32_t adler, const unsigned char *buf, size_t le
 #ifdef PPC_VMX_ADLER32
 extern uint32_t adler32_vmx(uint32_t adler, const unsigned char *buf, size_t len);
 #endif
+#ifdef X86_SSE41_ADLER32
+extern uint32_t adler32_sse41(uint32_t adler, const unsigned char *buf, size_t len);
+#endif
 #ifdef X86_SSSE3_ADLER32
 extern uint32_t adler32_ssse3(uint32_t adler, const unsigned char *buf, size_t len);
 #endif
 #ifdef X86_AVX2_ADLER32
 extern uint32_t adler32_avx2(uint32_t adler, const unsigned char *buf, size_t len);
+#endif
+#ifdef X86_AVX512_ADLER32
+extern uint32_t adler32_avx512(uint32_t adler, const unsigned char *buf, size_t len);
+#endif
+#ifdef X86_AVX512VNNI_ADLER32
+extern uint32_t adler32_avx512_vnni(uint32_t adler, const unsigned char *buf, size_t len);
 #endif
 #ifdef POWER8_VSX_ADLER32
 extern uint32_t adler32_power8(uint32_t adler, const unsigned char* buf, size_t len);
@@ -131,8 +140,7 @@ Z_INTERNAL uint32_t crc32_generic(uint32_t, const unsigned char *, uint64_t);
 extern uint32_t crc32_acle(uint32_t, const unsigned char *, uint64_t);
 #elif defined(POWER8_VSX_CRC32)
 extern uint32_t crc32_power8(uint32_t, const unsigned char *, uint64_t);
-#endif
-#ifdef S390_CRC32_VX
+#elif defined(S390_CRC32_VX)
 extern uint32_t s390_crc32_vx(uint32_t, const unsigned char *, uint64_t);
 #endif
 
@@ -299,9 +307,22 @@ Z_INTERNAL uint32_t adler32_stub(uint32_t adler, const unsigned char *buf, size_
     if (x86_cpu_has_ssse3)
         functable.adler32 = &adler32_ssse3;
 #endif
+#ifdef X86_SSE41_ADLER32
+    if (x86_cpu_has_sse41)
+        functable.adler32 = &adler32_sse41;
+#endif
 #ifdef X86_AVX2_ADLER32
     if (x86_cpu_has_avx2)
         functable.adler32 = &adler32_avx2;
+#endif
+#ifdef X86_AVX512_ADLER32
+    if (x86_cpu_has_avx512 && x86_cpu_well_suited_avx512)
+        functable.adler32 = &adler32_avx512;
+#endif
+#ifdef X86_AVX512VNNI_ADLER32
+    if (x86_cpu_has_avx512vnni && x86_cpu_well_suited_avx512) {
+        functable.adler32 = &adler32_avx512_vnni;
+    }
 #endif
 #ifdef PPC_VMX_ADLER32
     if (power_cpu_has_altivec)
@@ -316,31 +337,31 @@ Z_INTERNAL uint32_t adler32_stub(uint32_t adler, const unsigned char *buf, size_
 }
 
 Z_INTERNAL uint32_t crc32_fold_reset_stub(crc32_fold *crc) {
-    functable.crc32_fold_reset = crc32_fold_reset_c;
+    functable.crc32_fold_reset = &crc32_fold_reset_c;
     cpu_check_features();
 #ifdef X86_PCLMULQDQ_CRC
     if (x86_cpu_has_pclmulqdq)
-        functable.crc32_fold_reset = crc32_fold_reset_pclmulqdq;
+        functable.crc32_fold_reset = &crc32_fold_reset_pclmulqdq;
 #endif
     return functable.crc32_fold_reset(crc);
 }
 
 Z_INTERNAL void crc32_fold_copy_stub(crc32_fold *crc, uint8_t *dst, const uint8_t *src, size_t len) {
-    functable.crc32_fold_copy = crc32_fold_copy_c;
+    functable.crc32_fold_copy = &crc32_fold_copy_c;
     cpu_check_features();
 #ifdef X86_PCLMULQDQ_CRC
     if (x86_cpu_has_pclmulqdq)
-        functable.crc32_fold_copy = crc32_fold_copy_pclmulqdq;
+        functable.crc32_fold_copy = &crc32_fold_copy_pclmulqdq;
 #endif
     functable.crc32_fold_copy(crc, dst, src, len);
 }
 
 Z_INTERNAL uint32_t crc32_fold_final_stub(crc32_fold *crc) {
-    functable.crc32_fold_final = crc32_fold_final_c;
+    functable.crc32_fold_final = &crc32_fold_final_c;
     cpu_check_features();
 #ifdef X86_PCLMULQDQ_CRC
     if (x86_cpu_has_pclmulqdq)
-        functable.crc32_fold_final = crc32_fold_final_pclmulqdq;
+        functable.crc32_fold_final = &crc32_fold_final_pclmulqdq;
 #endif
     return functable.crc32_fold_final(crc);
 }
@@ -504,43 +525,26 @@ Z_INTERNAL uint8_t* chunkmemset_safe_stub(uint8_t *out, unsigned dist, unsigned 
 }
 
 Z_INTERNAL uint32_t crc32_stub(uint32_t crc, const unsigned char *buf, uint64_t len) {
-    int32_t use_byfour = sizeof(void *) == sizeof(ptrdiff_t);
-
     Assert(sizeof(uint64_t) >= sizeof(size_t),
            "crc32_z takes size_t but internally we have a uint64_t len");
-    /* return a function pointer for optimized arches here after a capability test */
 
-    functable.crc32 = &crc32_generic;
+    functable.crc32 = &crc32_byfour;
     cpu_check_features();
-
-    if (use_byfour) {
-#if BYTE_ORDER == LITTLE_ENDIAN
-        functable.crc32 = crc32_little;
-#  if defined(ARM_ACLE_CRC_HASH)
-        if (arm_cpu_has_crc32)
-            functable.crc32 = crc32_acle;
-#  endif
-#elif BYTE_ORDER == BIG_ENDIAN
-        functable.crc32 = crc32_big;
-#  if defined(S390_CRC32_VX)
-        if (s390_cpu_has_vx)
-            functable.crc32 = s390_crc32_vx;
-#  endif
-#else
-#  error No endian defined
-#endif
-    }
-#if defined(POWER8_VSX_CRC32)
+#ifdef ARM_ACLE_CRC_HASH
+    if (arm_cpu_has_crc32)
+        functable.crc32 = &crc32_acle;
+#elif defined(POWER8_VSX_CRC32)
     if (power_cpu_has_arch_2_07)
-        functable.crc32 = crc32_power8;
+        functable.crc32 = &crc32_power8;
+#elif defined(S390_CRC32_VX)
+    if (s390_cpu_has_vx)
+        functable.crc32 = &s390_crc32_vx;
 #endif
 
     return functable.crc32(crc, buf, len);
 }
 
 Z_INTERNAL uint32_t compare258_stub(const unsigned char *src0, const unsigned char *src1) {
-
-    functable.compare258 = &compare258_c;
 
 #ifdef UNALIGNED_OK
 #  if defined(UNALIGNED64_OK) && defined(HAVE_BUILTIN_CTZLL)
@@ -558,14 +562,14 @@ Z_INTERNAL uint32_t compare258_stub(const unsigned char *src0, const unsigned ch
     if (x86_cpu_has_avx2)
         functable.compare258 = &compare258_unaligned_avx2;
 #  endif
+#else
+    functable.compare258 = &compare258_c;
 #endif
 
     return functable.compare258(src0, src1);
 }
 
 Z_INTERNAL uint32_t longest_match_stub(deflate_state *const s, Pos cur_match) {
-
-    functable.longest_match = &longest_match_c;
 
 #ifdef UNALIGNED_OK
 #  if defined(UNALIGNED64_OK) && defined(HAVE_BUILTIN_CTZLL)
@@ -583,14 +587,14 @@ Z_INTERNAL uint32_t longest_match_stub(deflate_state *const s, Pos cur_match) {
     if (x86_cpu_has_avx2)
         functable.longest_match = &longest_match_unaligned_avx2;
 #  endif
+#else
+    functable.longest_match = &longest_match_c;
 #endif
 
     return functable.longest_match(s, cur_match);
 }
 
 Z_INTERNAL uint32_t longest_match_slow_stub(deflate_state *const s, Pos cur_match) {
-
-    functable.longest_match_slow = &longest_match_slow_c;
 
 #ifdef UNALIGNED_OK
 #  if defined(UNALIGNED64_OK) && defined(HAVE_BUILTIN_CTZLL)
@@ -608,6 +612,8 @@ Z_INTERNAL uint32_t longest_match_slow_stub(deflate_state *const s, Pos cur_matc
     if (x86_cpu_has_avx2)
         functable.longest_match_slow = &longest_match_slow_unaligned_avx2;
 #  endif
+#else
+    functable.longest_match_slow = &longest_match_slow_c;
 #endif
 
     return functable.longest_match_slow(s, cur_match);

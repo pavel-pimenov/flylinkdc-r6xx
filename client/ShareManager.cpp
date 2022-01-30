@@ -1363,7 +1363,7 @@ ShareManager::Directory::Ptr ShareManager::buildTreeL(__int64& p_path_id, const 
 					}
 					else
 					{
-						auto &l_dir_item_second = l_dir_item->second; // [!] PVS V807 Decreased performance. Consider creating a reference to avoid using the 'l_dir_item->second' expression repeatedly. sharemanager.cpp 1054
+						auto &l_dir_item_second = l_dir_item->second;
 						l_lastFileIter = l_dir->m_share_files.insert(l_lastFileIter,
 						                                             Directory::ShareFile(l_file_name,
 						                                                                  l_dir_item_second.m_size,
@@ -3184,7 +3184,7 @@ bool ShareManager::isShareFolder(const string& path, bool thoroughCheck /* = fal
 		// TODO - нет лока!
 		for (auto i = g_shares.cbegin(); i != g_shares.cend(); ++i)
 		{
-			const auto &l_shares = i->first; // [!] PVS V807 Decreased performance. Consider creating a reference to avoid using the 'i->first' expression repeatedly. sharemanager.cpp 2391
+			const auto &l_shares = i->first;
 			// is it a perfect match
 			if (path.size() == l_shares.size() && stricmp(path, l_shares) == 0)
 				return true;

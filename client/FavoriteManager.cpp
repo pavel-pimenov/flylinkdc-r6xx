@@ -806,7 +806,7 @@ void FavoriteManager::save_favorites()
 			CFlyReadLock(*g_csFavUsers);
 			for (auto i = g_fav_users_map.cbegin(), iend = g_fav_users_map.cend(); i != iend; ++i)
 			{
-				const auto &u = i->second; // [!] PVS V807 Decreased performance. Consider creating a reference to avoid using the 'i->second' expression repeatedly. favoritemanager.cpp 687
+				const auto &u = i->second;
 				xml.addTag("User");
 				if (u.getLastSeen())
 					xml.addChildAttrib("LastSeen", u.getLastSeen());

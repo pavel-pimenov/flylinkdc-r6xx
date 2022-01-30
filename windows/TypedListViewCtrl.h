@@ -264,37 +264,37 @@ class TypedListViewCtrl : public CWindowImpl<TypedListViewCtrl<T, ctrlId>, CList
 					}
 					if (di->item.mask & LVIF_IMAGE) // http://support.microsoft.com/KB/141834
 					{
-						/*
-						#ifdef _DEBUG
-						        static int g_count = 0;
-						        dcdebug("onGetDispInfo  count = %d di->item.iItem = %d di->item.iSubItem = %d, di->item.iIndent = %d, di->item.lParam = %d "
-						                "mask = %d "
-						                "state = %d "
-						                "stateMask = %d "
-						                "pszText = %d "
-						                "cchTextMax = %d "
-						                "iGroupId = %d "
-						                "cColumns = %d "
-						                "puColumns = %d "
-						                "hdr.code = %d "
-						                "hdr.hwndFrom = %d "
-						                "hdr.idFrom = %d\n"
-						                ,++g_count, di->item.iItem, di->item.iSubItem, di->item.iIndent, di->item.lParam,
-						    di->item.mask,
-						    di->item.state,
-						    di->item.stateMask,
-						    di->item.pszText,
-						    di->item.cchTextMax,
-						//    di->item.iImage,
-						    di->item.iGroupId,
-						    di->item.cColumns,
-						    di->item.puColumns,
-						    di->hdr.code,
-						    di->hdr.hwndFrom,
-						    di->hdr.idFrom
-						                );
-						#endif
-						*/
+					
+#ifdef _DEBUG
+						static int g_count = 0;
+						dcdebug("onGetDispInfo  count = %d di->item.iItem = %d di->item.iSubItem = %d, di->item.iIndent = %d, di->item.lParam = %d "
+						        "mask = %d "
+						        "state = %d "
+						        "stateMask = %d "
+						        "pszText = %d "
+						        "cchTextMax = %d "
+						        "iGroupId = %d "
+						        "cColumns = %d "
+						        "puColumns = %d "
+						        "hdr.code = %d "
+						        "hdr.hwndFrom = %d "
+						        "hdr.idFrom = %d\n"
+						        , ++g_count, di->item.iItem, di->item.iSubItem, di->item.iIndent, di->item.lParam,
+						        di->item.mask,
+						        di->item.state,
+						        di->item.stateMask,
+						        di->item.pszText,
+						        di->item.cchTextMax,
+						        //    di->item.iImage,
+						        di->item.iGroupId,
+						        di->item.cColumns,
+						        di->item.puColumns,
+						        di->hdr.code,
+						        di->hdr.hwndFrom,
+						        di->hdr.idFrom
+						       );
+#endif
+						       
 						//[?] di->item.mask |= LVIF_DI_SETITEM;
 						di->item.iImage = ((T*)di->item.lParam)->getImageIndex();
 					}
@@ -969,7 +969,7 @@ class TypedListViewCtrl : public CWindowImpl<TypedListViewCtrl<T, ctrlId>, CList
 		static int CALLBACK compareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort)
 		{
 			thisClass* t = (thisClass*)lParamSort;
-			int result = T::compareItems((T*)lParam1, (T*)lParam2, t->getRealSortColumn()); 
+			int result = T::compareItems((T*)lParam1, (T*)lParam2, t->getRealSortColumn());
 			return (t->sortAscending ? result : -result);
 		}
 		

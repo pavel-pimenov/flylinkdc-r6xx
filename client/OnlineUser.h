@@ -831,10 +831,6 @@ class Identity
 		}
 		
 		void getParams(StringMap& map, const string& prefix, bool compatibility) const;
-		UserPtr& getUser()
-		{
-			return user;
-		}
 		GETSET(UserPtr, user, User);
 		bool isExtJSON() const
 		{
@@ -939,19 +935,11 @@ class OnlineUser :  public UserInfoBase
 		static std::atomic<int> g_online_user_counts;
 #endif
 		
-		operator UserPtr&()
-		{
-			return getUser();
-		}
-		operator const UserPtr&() const
-		{
-			return getUser();
-		}
-		UserPtr& getUser() // TODO
+		UserPtr getUser()
 		{
 			return m_identity.getUser();
 		}
-		const UserPtr& getUser() const // TODO
+		const UserPtr getUser() const
 		{
 			return m_identity.getUser();
 		}

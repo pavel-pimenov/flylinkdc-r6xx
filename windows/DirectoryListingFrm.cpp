@@ -504,7 +504,7 @@ FileImage::TypeDirectoryImages DirectoryListingFrame::GetTypeDirectory(const Dir
 		if ((*i)->isDVD())
 		{
 			const string nameSubDirectory = (*i)->getName();
-
+			
 			// Папка содержащая подпапки VIDEO_TS или AUDIO_TS, является DVD папкой
 			if (FileImage::isDvdFolder(nameSubDirectory))
 			{
@@ -515,7 +515,7 @@ FileImage::TypeDirectoryImages DirectoryListingFrame::GetTypeDirectory(const Dir
 			{
 				return FileImage::DIR_BD; // Папка Blu-ray
 			}
-
+			
 		}
 	}
 	
@@ -744,8 +744,8 @@ LRESULT DirectoryListingFrame::onDownloadDir(WORD, WORD, HWND, BOOL&)
 	{
 		DirectoryListing::Directory* dir = (DirectoryListing::Directory*)ctrlTree.GetItemData(t);
 		try
-		{
-			dl->download(dir, SETTING(DOWNLOAD_DIRECTORY), WinUtil::isShift(), QueueItem::DEFAULT);
+		{	if (dir)
+				dl->download(dir, SETTING(DOWNLOAD_DIRECTORY), WinUtil::isShift(), QueueItem::DEFAULT);
 		}
 		catch (const Exception& e)
 		{
@@ -808,7 +808,7 @@ LRESULT DirectoryListingFrame::onDownloadDirTo(WORD, WORD, HWND, BOOL&)
 		CWaitCursor l_cursor_wait; //-V808
 		DirectoryListing::Directory* dir = (DirectoryListing::Directory*)ctrlTree.GetItemData(t);
 		tstring target = Text::toT(SETTING(DOWNLOAD_DIRECTORY));
-		if (WinUtil::browseDirectory(target, m_hWnd))
+		if (dir && WinUtil::browseDirectory(target, m_hWnd))
 		{
 			LastDir::add(target);
 			
@@ -1126,7 +1126,7 @@ HTREEITEM DirectoryListingFrame::findItem(HTREEITEM ht, const tstring& name)
 	for (HTREEITEM child = ctrlTree.GetChildItem(ht); child != NULL; child = ctrlTree.GetNextSiblingItem(child))
 	{
 		DirectoryListing::Directory* d = (DirectoryListing::Directory*)ctrlTree.GetItemData(child);
-		if (Text::toT(d->getName()) == name.substr(0, i))
+		if (d && Text::toT(d->getName()) == name.substr(0, i))
 		{
 			return findItem(child, name.substr(i + 1));
 		}
@@ -1460,7 +1460,8 @@ LRESULT DirectoryListingFrame::onDownloadTargetDir(WORD /*wNotifyCode*/, WORD wI
 		try
 		{
 			dcassert(newId < (int)LastDir::get().size());
-			dl->download(dir, Text::fromT(LastDir::get()[newId]), WinUtil::isShift(), QueueItem::DEFAULT);
+			if (dir)
+				dl->download(dir, Text::fromT(LastDir::get()[newId]), WinUtil::isShift(), QueueItem::DEFAULT);
 		}
 		catch (const Exception& e)
 		{
@@ -1634,7 +1635,7 @@ HTREEITEM DirectoryListingFrame::findFile(const StringSearch& str, HTREEITEM roo
 {
 	// Check dir name for match
 	DirectoryListing::Directory* dir = (DirectoryListing::Directory*)ctrlTree.GetItemData(root);
-	if (str.match(dir->getName()))
+	if (dir && str.match(dir->getName()))
 	{
 		if (skipHits == 0)
 		{
@@ -1740,8 +1741,8 @@ void DirectoryListingFrame::findFile(bool findNext)
 				
 				// Locate the dir in the file list
 				DirectoryListing::Directory* dir = (DirectoryListing::Directory*)ctrlTree.GetItemData(foundDir);
-				
-				foundFile = ctrlList.findItem(Text::toT(dir->getName()), -1, false);
+				if (dir)
+					foundFile = ctrlList.findItem(Text::toT(dir->getName()), -1, false);
 			}
 			else
 			{
@@ -2210,7 +2211,7 @@ LRESULT DirectoryListingFrame::onGenerateDCLST(WORD /*wNotifyCode*/, WORD wID, H
 			dir = (DirectoryListing::Directory*)ctrlTree.GetItemData(t);
 		}
 	}
-	if (dir != NULL)
+	if (dir)
 	{
 		try
 		{

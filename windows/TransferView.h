@@ -378,7 +378,7 @@ class TransferView : public CWindowImpl<TransferView>, private DownloadManagerLi
 				
 				void update(const UpdateInfo& ui);
 				void update_nicks();
-				const UserPtr& getUser() const
+				const UserPtr getUser() const
 				{
 					return m_hintedUser.user;
 				}

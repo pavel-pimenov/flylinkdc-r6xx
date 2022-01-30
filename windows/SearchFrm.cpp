@@ -1404,7 +1404,7 @@ void SearchFrame::on(SearchManagerListener::SR, const std::unique_ptr<SearchResu
 						CFlyServerJSON::addAntivirusCounter(*aResult, l_count, l_virus_level);
 					}
 				}
-#if 0				
+#if 0
 				// TODO - ¬ключить блокировку поисковой выдачи return;
 				// Level 2
 				l_count = check_antivirus_level(make_pair(aResult->getTTH(), "."), *aResult, 2);
@@ -1992,15 +1992,7 @@ const tstring SearchFrame::SearchInfo::getText(uint8_t col) const
 			case COLUMN_HITS:
 				return m_hits == 0 ? BaseUtil::emptyStringT : Util::toStringW(m_hits + 1) + _T(' ') + TSTRING(USERS);
 			case COLUMN_NICK:
-				if (getUser())
-				{
-					return Text::toT(Util::toString(ClientManager::getNicks(getUser()->getCID(), m_sr.getHubUrl(), false)));
-				}
-				else
-				{
-					return BaseUtil::emptyStringT;
-				}
-			// TODO - сохранить ник в columns и показывать его от туда?
+				return Text::toT(m_sr.getNicks());
 			case COLUMN_TYPE:
 				if (m_sr.getType() == SearchResult::TYPE_FILE)
 				{
@@ -2255,7 +2247,7 @@ tstring SearchFrame::getDownloadDirectory(WORD wID)
 	tstring dir;
 	if (wID == IDC_DOWNLOAD_WHOLE_FAVORITE_DIRS) return Text::toT(SETTING(DOWNLOAD_DIRECTORY));
 	if (i == dlTargets.end()) return dir;
-	const auto& l_trarget = i->second; // [!] PVS V807 Decreased performance. Consider creating a reference to avoid using the 'i->second' expression repeatedly. searchfrm.cpp 1201
+	const auto l_trarget = i->second;
 	if (l_trarget.Type == TARGET_STRUCT::PATH_BROWSE)
 	{
 		if (WinUtil::browseDirectory(dir, m_hWnd))
@@ -2328,7 +2320,7 @@ LRESULT SearchFrame::onDownloadTo(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWn
 		int i = ctrlResults.GetNextItem(-1, LVNI_SELECTED);
 		dcassert(i != -1);
 		const SearchInfo* si = ctrlResults.getItemData(i);
-		const SearchResult& sr = si->m_sr;
+		const SearchResult sr = si->m_sr;
 		
 		if (sr.getType() == SearchResult::TYPE_FILE)
 		{
@@ -3094,6 +3086,9 @@ bool SearchFrame::is_filter_item(const SearchInfo* si)
 bool SearchFrame::isSkipSearchResult(SearchInfo*& si)
 {
 	//dcassert(m_closed == false);
+	dcassert(si);
+	if (!si)
+		return true;
 	if (m_closed == true || m_is_before_search == true)
 	{
 		check_delete(si);
@@ -3111,11 +3106,11 @@ void SearchFrame::addSearchResult(SearchInfo* si)
 	//{
 	if (isSkipSearchResult(si))
 		return;
-	const SearchResult& sr = si->m_sr;
+	const SearchResult sr = si->m_sr;
 	SearchInfoList::ParentPair* pp = nullptr;
 	if (!si->m_is_torrent)
 	{
-		const auto l_user      = sr.getUser();
+		const auto l_user = sr.getUser();
 		if (!sr.getIP().is_unspecified())
 		{
 			l_user->setIP(sr.getIP(), true);
@@ -3154,15 +3149,16 @@ void SearchFrame::addSearchResult(SearchInfo* si)
 				if (isSkipSearchResult(si))
 					return;
 				const SearchInfo* si2 = s->second.parent;
-				const auto& sr2 = si2->m_sr;
-				if (l_user->getCID() == sr2.getUser()->getCID())
-				{
-					if (sr.getFile() == sr2.getFile())
+				const auto sr2 = si2->m_sr;
+				if (l_user && sr2.getUser())
+					if (l_user->getCID() == sr2.getUser()->getCID())
 					{
-						check_delete(si);
-						return;
+						if (sr.getFile() == sr2.getFile())
+						{
+							check_delete(si);
+							return;
+						}
 					}
-				}
 			}
 		}
 	}
@@ -3577,7 +3573,7 @@ HTREEITEM SearchFrame::add_category(const std::string p_search, const std::strin
 }
 LRESULT SearchFrame::onSpeaker(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, BOOL& /*bHandled*/)
 {
-	dcassert(!isClosedOrShutdown());
+	//dcassert(!isClosedOrShutdown());
 	if (isClosedOrShutdown())
 		return 0;
 	switch (wParam)
@@ -4201,26 +4197,13 @@ LRESULT SearchFrame::onCustomDraw(int /*idCtrl*/, LPNMHDR pnmh, BOOL& /*bHandled
 					if (!si->columns[COLUMN_FLY_SERVER_RATING].empty())
 						cd->clrTextBk = OperaColors::brightenColor(cd->clrTextBk, -0.02f);
 					si->m_sr.calcHubName();
-					//if (si->m_location.isNew())
+					if (si->m_location.empty())
 					{
 						const auto ip = si->getText(COLUMN_IP);
 						if (!ip.empty())
 						{
 							const string l_str_ip = Text::fromT(ip);
 							si->m_location = dcpp::GeoManager::getInstance()->getCountry(l_str_ip);
-#ifdef FLYLINKDC_USE_LASTIP_AND_USER_RATIO
-							if (si->m_is_flush_ip_to_sqlite == false &&
-							        m_storeIP &&
-							        si->getUser() && // https://drdump.com/Problem.aspx?ProblemID=364805
-							        si->getUser()->getHubID())
-							{
-								si->m_is_flush_ip_to_sqlite = true;
-								boost::system::error_code ec;
-								const auto l_ip = boost::asio::ip::address_v4::from_string(l_str_ip, ec);
-								dcassert(!ec);
-								si->getUser()->setIP(l_ip, true);
-							}
-#endif
 						}
 					}
 				}
@@ -4815,7 +4798,7 @@ LRESULT SearchFrame::onMarkAsDownloaded(WORD /*wNotifyCode*/, WORD /*wID*/, HWND
 	while ((i = ctrlResults.GetNextItem(i, LVNI_SELECTED)) != -1)
 	{
 		const SearchInfo* si = ctrlResults.getItemData(i);
-		const SearchResult& sr = si->m_sr;
+		const SearchResult sr = si->m_sr;
 		if (sr.getType() == SearchResult::TYPE_FILE)
 		{
 			CFlylinkDBManager::getInstance()->push_download_tth(sr.getTTH());

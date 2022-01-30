@@ -62,7 +62,7 @@ class UserInfoBase
 		void removeAll();
 		void connectFav();
 		
-		virtual const UserPtr& getUser() const = 0;
+		virtual const UserPtr getUser() const = 0;
 		static uint8_t getImage(const OnlineUser& ou);
 		static uint8_t getStateImageIndex()
 		{

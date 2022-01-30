@@ -608,7 +608,7 @@ void DownloadManager::endData(UserConnection* aSource)
 		d->getDownloadFile()->flushBuffers(false);
 		
 		int64_t bl = 1024;
-		auto &l_getTigerTree = d->getTigerTree(); // [!] PVS V807 Decreased performance. Consider creating a reference to avoid using the 'd->getTigerTree()' expression repeatedly. downloadmanager.cpp 404
+		auto &l_getTigerTree = d->getTigerTree();
 		while (bl * (int64_t)l_getTigerTree.getLeaves().size() < l_getTigerTree.getFileSize())
 		{
 			bl *= 2;
@@ -778,7 +778,7 @@ void DownloadManager::removeDownload(const DownloadPtr& d)
 			catch (const Exception& e)
 			{
 #ifdef _DEBUG
-				dcassert(0);
+				//dcassert(0);
 				LogManager::message("DownloadManager::removeDownload error =" + std::string(e.what()));
 #endif // _DEBUG
 			}

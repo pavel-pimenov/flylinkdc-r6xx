@@ -235,7 +235,6 @@ class User : public Flags
 		{
 			return isSet(NMDC);
 		}
-		
 		bool isServer() const
 		{
 			return isSet(SERVER);

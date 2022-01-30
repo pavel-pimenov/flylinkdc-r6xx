@@ -474,7 +474,7 @@ class SearchFrame : public MDITabChildWindowImpl < SearchFrame, RGB(127, 127, 25
 				typedef vector<Ptr> Array;
 				
 				SearchInfo(const SearchResult &aSR) : m_sr(aSR), collapsed(true), parent(nullptr),
-					m_hits(0), m_icon_index(-1), m_is_flush_ip_to_sqlite(false),
+					m_hits(0), m_icon_index(-1),
 					m_is_torrent(false), m_is_top_torrent(false)
 				{
 				}
@@ -482,7 +482,7 @@ class SearchFrame : public MDITabChildWindowImpl < SearchFrame, RGB(127, 127, 25
 				{
 				}
 				
-				const UserPtr& getUser() const override
+				const UserPtr getUser() const
 				{
 					return m_sr.getUser();
 				}
@@ -546,7 +546,6 @@ class SearchFrame : public MDITabChildWindowImpl < SearchFrame, RGB(127, 127, 25
 					return columns[COLUMN_TTH];
 				}
 				std::string m_location;
-				bool m_is_flush_ip_to_sqlite;
 				SearchResult m_sr;
 				tstring columns[COLUMN_LAST];
 				const TTHValue& getGroupCond() const

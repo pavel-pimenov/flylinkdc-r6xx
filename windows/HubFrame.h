@@ -471,12 +471,10 @@ class HubFrame : public MDITabChildWindowImpl < HubFrame, RGB(255, 0, 0), IDR_HU
 		{
 			m_tasks.add(static_cast<uint8_t>(s), nullptr);
 		}
-#ifndef FLYLINKDC_UPDATE_USER_JOIN_USE_WIN_MESSAGES_Q
 		void speak(Tasks s, const OnlineUserPtr& u)
 		{
 			m_tasks.add(static_cast<uint8_t>(s), new OnlineUserTask(u));
 		}
-#endif
 		void speak(Tasks s, const string& msg, bool inChat = true)
 		{
 			m_tasks.add(static_cast<uint8_t>(s), new StatusTask(msg, inChat));

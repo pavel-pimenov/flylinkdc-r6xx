@@ -4046,7 +4046,7 @@ void CFlylinkDBManager::load_dir(__int64 p_path_id, CFlyDirMap& p_dir_map, bool 
 			CFlyLock(m_cs);
 			m_set_ftype.init(m_flySQLiteDB, "update fly_file set ftype=? where name=? and dic_path=? and ftype=-1");
 			sqlite3_transaction l_trans(m_flySQLiteDB, p_dir_map.size() > 1);
-			const auto &l_set_ftype_get = m_set_ftype.get_sql(); // [!] PVS V807 Decreased performance. Consider creating a pointer to avoid using the 'm_set_ftype.get()' expression repeatedly. cflylinkdbmanager.cpp 1992
+			const auto &l_set_ftype_get = m_set_ftype.get_sql();
 			l_set_ftype_get->bind(3, p_path_id);
 			for (auto i = p_dir_map.cbegin(); i != p_dir_map.cend(); ++i)
 			{
@@ -4072,7 +4072,7 @@ void CFlylinkDBManager::update_file_infoL(const string& p_fname, __int64 p_path_
 {
 	m_update_file.init(m_flySQLiteDB,
 	                   "update fly_file set size=?,stamp=?,tth_id=?,stamp_share=? where name=? and dic_path=?;");
-	const auto &l_update_file = m_update_file.get_sql(); // [!] PVS V807 Decreased performance. Consider creating a pointer to avoid using the 'm_update_file.get()' expression repeatedly. cflylinkdbmanager.cpp 2021
+	const auto &l_update_file = m_update_file.get_sql();
 	l_update_file->bind(1, p_Size);
 	l_update_file->bind(2, p_TimeStamp);
 	l_update_file->bind(3, p_tth_id);
@@ -4689,7 +4689,7 @@ void CFlylinkDBManager::log(const int p_area, const StringMap& p_params)
 		m_insert_fly_message.init(m_flySQLiteDB,
 		                          "insert into log_db.fly_log(sdate,type,body,hub,nick,ip,file,source,target,fsize,fchunk,extra,userCID)"
 		                          " values(datetime('now','localtime'),?,?,?,?,?,?,?,?,?,?,?,?);");
-		const auto &l_insert_fly_message_get = m_insert_fly_message.get_sql(); // [!] PVS V807 Decreased performance. Consider creating a pointer to avoid using the 'm_insert_fly_message.get()' expression repeatedly. cflylinkdbmanager.cpp 2482
+		const auto &l_insert_fly_message_get = m_insert_fly_message.get_sql();
 		l_insert_fly_message_get->bind(1, p_area);
 		l_insert_fly_message_get->bind(2, getString(p_params, "message"), SQLITE_TRANSIENT);
 		l_insert_fly_message_get->bind(3, getString(p_params, "hubURL"), SQLITE_TRANSIENT);

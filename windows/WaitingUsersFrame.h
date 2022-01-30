@@ -218,7 +218,7 @@ class WaitingUsersFrame : public MDITabChildWindowImpl < WaitingUsersFrame, RGB(
 			UserTask(const UserPtr& user) : m_user(user)
 			{
 			}
-			const UserPtr& getUser() const
+			const UserPtr getUser() const
 			{
 				return m_user;
 			}

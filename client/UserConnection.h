@@ -218,11 +218,7 @@ class UserConnection : public Speaker<UserConnectionListener>,
 			return isSet(FLAG_UPLOAD) ? g_UPLOAD : g_DOWNLOAD;
 		}
 		
-		const UserPtr& getUser() const
-		{
-			return m_hintedUser.user;
-		}
-		const UserPtr& getUser()
+		const UserPtr getUser() const
 		{
 			return m_hintedUser.user;
 		}

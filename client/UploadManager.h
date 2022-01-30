@@ -44,7 +44,7 @@ class UploadQueueItem :
 		{
 		}
 		void update();
-		const UserPtr& getUser() const
+		const UserPtr getUser() const
 		{
 			return m_hintedUser.user;
 		}

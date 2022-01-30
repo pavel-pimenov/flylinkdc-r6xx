@@ -71,7 +71,7 @@ class DirectoryItem
 		DirectoryItem(const UserPtr& aUser, const string& aName, const string& aTarget,
 		              QueueItem::Priority p) : m_name(aName), m_target(aTarget), m_priority(p), m_user(aUser) { }
 		              
-		const UserPtr& getUser() const
+		const UserPtr getUser() const
 		{
 			return m_user;
 		}
@@ -3332,7 +3332,7 @@ void QueueManager::FileQueue::findPFSSourcesL(PFSSourceList& sl)
 		const auto& badSources = q->getBadSourcesL();
 		for (auto j = sources.cbegin(); j != sources.cend(); ++j)
 		{
-			const auto &l_getPartialSource = j->second.getPartialSource(); // [!] PVS V807 Decreased performance. Consider creating a pointer to avoid using the '(* j).getPartialSource()' expression repeatedly. queuemanager.cpp 2900
+			const auto &l_getPartialSource = j->second.getPartialSource();
 			if (j->second.isSet(QueueItem::Source::FLAG_PARTIAL) &&
 			        l_getPartialSource->getNextQueryTime() <= now &&
 			        l_getPartialSource->getPendingQueryCount() < 10 && l_getPartialSource->getUdpPort() > 0)
@@ -3343,7 +3343,7 @@ void QueueManager::FileQueue::findPFSSourcesL(PFSSourceList& sl)
 		}
 		for (auto j = badSources.cbegin(); j != badSources.cend(); ++j)
 		{
-			const auto &l_getPartialSource = j->second.getPartialSource(); // [!] PVS V807 Decreased performance. Consider creating a pointer to avoid using the '(* j).getPartialSource()' expression repeatedly. queuemanager.cpp 2900
+			const auto &l_getPartialSource = j->second.getPartialSource();
 			if (j->second.isSet(QueueItem::Source::FLAG_TTH_INCONSISTENCY) == false && j->second.isSet(QueueItem::Source::FLAG_PARTIAL) &&
 			        l_getPartialSource->getNextQueryTime() <= now && l_getPartialSource->getPendingQueryCount() < 10 &&
 			        l_getPartialSource->getUdpPort() > 0)

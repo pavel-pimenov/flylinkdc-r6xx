@@ -221,8 +221,14 @@ uint8_t UserInfoBase::getImage(const OnlineUser& ou)
 //	static int g_count = 0;
 //	dcdebug("UserInfoBase::getImage count = %d ou = %p\n", ++g_count, &ou);
 #endif
-	const auto& id = ou.getIdentity();
-	const auto& u = ou.getUser();
+	const auto id = ou.getIdentity();
+	const auto u = ou.getUser();
+#ifdef _DEBUG
+	if (!(u->getCID() == id.getUser()->getCID()))
+	{
+		dcassert(0);
+	}
+#endif
 	uint8_t image;
 	if (id.isOp())
 	{
@@ -235,16 +241,10 @@ uint8_t UserInfoBase::getImage(const OnlineUser& ou)
 	else
 	{
 		auto speed = id.getLimit();
-		if (!speed)
+		if (speed == 0)
 		{
 			speed = id.getDownloadSpeed();
 		}
-		/*
-		if (!speed)
-		{
-		    // TODO: needs icon for user with no limit?
-		}
-		*/
 		if (speed >= 10 * 1024 * 1024) // over 10 MB
 		{
 			image = 2;
@@ -261,21 +261,12 @@ uint8_t UserInfoBase::getImage(const OnlineUser& ou)
 	
 	if (u->isAway())
 	{
-		//User away...
 		image += 5;
 	}
-	
-	/* TODO const string freeSlots = identity.get("FS");
-	if(!freeSlots.empty() && identity.supports(AdcHub::ADCS_FEATURE) && identity.supports(AdcHub::SEGA_FEATURE) &&
-	    ((identity.supports(AdcHub::TCP4_FEATURE) && identity.supports(AdcHub::UDP4_FEATURE)) || identity.supports(AdcHub::NAT0_FEATURE)))
-	{
-	    image += 10;
-	}*/
-	
 	if (!id.isTcpActive())
 	{
 		// Users we can't connect to...
-		image += 10;// 20
+		image += 10;
 	}
 	return image;
 }

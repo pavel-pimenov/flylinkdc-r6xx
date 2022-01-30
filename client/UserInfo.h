@@ -34,15 +34,11 @@ enum Tasks
 #ifndef FLYLINKDC_ADD_CHAT_LINE_USE_WIN_MESSAGES_Q
 	ADD_CHAT_LINE,
 #endif
-#ifndef FLYLINKDC_REMOVE_USER_WIN_MESSAGES_Q
 	REMOVE_USER,
-#endif
 #ifndef FLYLINKDC_PRIVATE_MESSAGE_USE_WIN_MESSAGES_Q
 	PRIVATE_MESSAGE,
 #endif
-#ifndef FLYLINKDC_UPDATE_USER_JOIN_USE_WIN_MESSAGES_Q
 	UPDATE_USER_JOIN,
-#endif
 	GET_PASSWORD,
 	STATS,
 	DISCONNECTED,
@@ -61,7 +57,6 @@ enum Tasks
 #endif
 };
 
-#ifndef FLYLINKDC_UPDATE_USER_JOIN_USE_WIN_MESSAGES_Q
 struct OnlineUserTask : public Task
 {
 	explicit OnlineUserTask(const OnlineUserPtr& p_ou) : m_ou(p_ou)
@@ -69,7 +64,6 @@ struct OnlineUserTask : public Task
 	}
 	const OnlineUserPtr m_ou;
 };
-#endif
 
 #ifndef FLYLINKDC_PRIVATE_MESSAGE_USE_WIN_MESSAGES_Q
 struct MessageTask : public Task
@@ -140,7 +134,7 @@ class UserInfo : public UserInfoBase
 		{
 			return m_ou;
 		}
-		const UserPtr& getUser() const
+		const UserPtr getUser() const
 		{
 			return m_ou->getUser();
 		}

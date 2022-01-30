@@ -43,7 +43,7 @@ class UserInfoSimple: public UserInfoBase
 		static tstring getBroadcastPrivateMessage();
 		static uint64_t inputSlotTime();
 		
-		const UserPtr& getUser() const
+		const UserPtr getUser() const
 		{
 			return m_hintedUser.user;
 		}

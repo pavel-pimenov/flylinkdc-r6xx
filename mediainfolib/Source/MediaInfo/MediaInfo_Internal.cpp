@@ -77,7 +77,7 @@
         #include <signal.h>
         #if defined(_POSIX_PRIORITY_SCHEDULING) // Note: unistd.h must be included first
             #include <sched.h>
-    #endif //_POSIX_PRIORITY_SCHEDULING
+        #endif //_POSIX_PRIORITY_SCHEDULING
     #endif
     #include <ctime>
 #endif
@@ -302,7 +302,7 @@ extern const Char* MediaInfo_Version;
 //***************************************************************************
 // Modifiers - ChannelLayout_2018
 //***************************************************************************
-static const size_t ChannelLayout_2018_Size=63;
+static const size_t ChannelLayout_2018_Size=64;
 static const char* ChannelLayout_2018[ChannelLayout_2018_Size][2] =
 {
     { "BC", "Cb" },
@@ -346,6 +346,7 @@ static const char* ChannelLayout_2018[ChannelLayout_2018_Size][2] =
     { "Rhr", "Tbr" },
     { "Rhs", "Tfr" },
     { "RI", "Bfr" },
+    { "Rls", "Lb" },
     { "Rrh", "Tbr" },
     { "Rrs", "Rb" },
     { "Rsc", "Rscr" },

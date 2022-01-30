@@ -23,7 +23,7 @@
  */
 
 #ifndef HASH_CALC_OFFSET
-#  define HASH_CALC_OFFSET 0 
+#  define HASH_CALC_OFFSET 0
 #endif
 #ifndef HASH_CALC_MASK
 #  define HASH_CALC_MASK HASH_MASK
@@ -31,7 +31,7 @@
 #ifndef HASH_CALC_READ
 #  ifdef UNALIGNED_OK
 #    define HASH_CALC_READ \
-        val = *(uint32_t *)(strstart);
+        memcpy(&val, strstart, sizeof(val));
 #  else
 #    define HASH_CALC_READ \
         val  = ((uint32_t)(strstart[0])); \

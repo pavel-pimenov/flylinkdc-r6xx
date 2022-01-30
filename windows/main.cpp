@@ -62,9 +62,9 @@ crash_rpt::ApplicationInfo* GetApplicationInfo()
 	appInfo.ApplicationGUID =
 	
 #ifdef FLYLINKDC_BETA
-	    "6B1B86A3-9825-4906-9481-B2D616F9B213";
+	    "634CDB33-5B78-4B94-8CD6-BAFB391D2EB7";
 #else
-	    "5A1ACE32-DFDB-4B2B-AE18-A4078DE8F6F5";
+	    "13DC1A46-3AD9-43F5-B5D2-C402AC10657B";
 #endif
 	    
 #ifdef _WIN64

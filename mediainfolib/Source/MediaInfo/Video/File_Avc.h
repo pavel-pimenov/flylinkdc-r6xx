@@ -28,7 +28,7 @@ class File_Avc :
 #else //MEDIAINFO_DUPLICATE
     public File__Analyze
 #endif //MEDIAINFO_DUPLICATE
-    ,private File__Base_Avc_Hevc
+    ,private File__Base_Avc_Hevc // FlylinkDC++
 {
 public :
     //In
@@ -53,7 +53,7 @@ public :
         {}
     };
     static avcintra_header AVC_Intra_Headers_Data(int32u CodecID);
-    static int32u AVC_Intra_CodecID_FromMeta(int32u Height, int32u Fields, int32u SampleDuration, int32u TimeScale, int32u SizePerFrame);
+    static int32u AVC_Intra_CodecID_FromMeta(int32u Width, int32u Height, int32u Fields, int32u SampleDuration, int32u TimeScale, int32u SizePerFrame);
 
 private :
     File_Avc(const File_Avc &File_Avc); //No copy
@@ -412,6 +412,21 @@ private :
     void sei_message_mastering_display_colour_volume();
     void sei_message_light_level();
 
+    enum hdr_format
+    {
+        HdrFormat_EtsiTs103433,
+        HdrFormat_SmpteSt209440,
+        HdrFormat_SmpteSt2086,
+    };
+
+    typedef std::map<hdr_format, std::map<video, Ztring> > hdr;
+
+    hdr                                 HDR;
+
+
+    Ztring  maximum_content_light_level;
+    Ztring  maximum_frame_average_light_level;
+
     void consumer_camera_1();
     void consumer_camera_2();
     void sei_message_recovery_point();
@@ -459,7 +474,7 @@ private :
     struct temporal_reference
     {
         #if defined(MEDIAINFO_DTVCCTRANSPORT_YES)
-        buffer_data* GA94_03;
+            buffer_data* GA94_03;
         #endif //MEDIAINFO_DTVCCTRANSPORT_YES
 
         int32u frame_num;
@@ -529,6 +544,11 @@ private :
     size_t                              Structure_Frame;
 
     //Temp
+    Ztring                              Encoded_Library;
+    Ztring                              Encoded_Library_Name;
+    Ztring                              Encoded_Library_Version;
+    Ztring                              Encoded_Library_Date;
+    Ztring                              Encoded_Library_Settings;
     Ztring                              BitRate_Nominal;
     Ztring                              MuxingMode;
     string                              PictureTypes_PreviousFrames;

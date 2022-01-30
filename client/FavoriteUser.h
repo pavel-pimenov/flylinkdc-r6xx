@@ -66,10 +66,6 @@ class FavoriteUser : public Flags
 				
 			return BaseUtil::emptyString;
 		}
-		UserPtr& getUser()
-		{
-			return user;
-		}
 		void update(const OnlineUser& p_info);
 		GETSET(UserPtr, user, User);
 		GETSET(string, nick, Nick);

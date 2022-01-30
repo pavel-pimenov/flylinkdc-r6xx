@@ -155,7 +155,7 @@ class PrivateFrame : public MDITabChildWindowImpl < PrivateFrame, RGB(0, 255, 25
 		
 		void sendMessage(const tstring& msg, bool thirdperson = false) override;
 		
-		const UserPtr& getUser() const
+		const UserPtr getUser() const
 		{
 			return m_replyTo.user;
 		}

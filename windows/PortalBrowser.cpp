@@ -115,7 +115,7 @@ void PortalBrowserFrame::openWindow(WORD wID)
 				
 				if (fhub)
 				{
-					const auto l_password = fhub->getPassword(); // [!] PVS V807 Decreased performance. Consider creating a reference to avoid using the 'fhub->getPassword()' expression repeatedly. portalbrowser.cpp 103
+					const auto l_password = fhub->getPassword();
 					if (l_password.size())
 					{
 						strPassword.resize(l_password.size());
@@ -123,7 +123,7 @@ void PortalBrowserFrame::openWindow(WORD wID)
 						is.pszPortalPassword = strPassword.c_str();
 					}
 					
-					const auto l_nick = fhub->getNick(); // [!] PVS V807 Decreased performance. Consider creating a reference to avoid using the 'fhub->getNick()' expression repeatedly. portalbrowser.cpp 110
+					const auto l_nick = fhub->getNick();
 					if (l_nick.size())
 					{
 						strLogin.resize(l_nick.size());

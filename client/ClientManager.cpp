@@ -203,8 +203,7 @@ bool ClientManager::getUserParams(const UserPtr& user, UserParams& p_params)
 	const OnlineUserPtr u = getOnlineUserL(user);
 	if (u)
 	{
-		// [!] PVS V807 Decreased performance. Consider creating a reference to avoid using the 'u->getIdentity()' expression repeatedly. clientmanager.h 160
-		const auto& i = u->getIdentity();
+		const auto i = u->getIdentity();
 		p_params.m_bytesShared = i.getBytesShared();
 		p_params.m_slots = i.getSlots();
 		p_params.m_limit = i.getLimit();
@@ -669,7 +668,7 @@ void ClientManager::putOnline(const OnlineUserPtr& ou, bool p_is_fire_online) no
 {
 	if (!isBeforeShutdown())
 	{
-		const auto& user = ou->getUser();
+		const auto user = ou->getUser();
 		dcassert(ou->getIdentity().getSID() != AdcCommand::HUB_SID);
 		dcassert(!user->getCID().isZero());
 		{
@@ -713,7 +712,7 @@ void ClientManager::putOffline(const OnlineUserPtr& ou, bool p_is_disconnect) no
 		
 		if (diff == 1) //last user
 		{
-			UserPtr& u = ou->getUser();
+			auto u = ou->getUser();
 			u->unsetFlag(User::ONLINE);
 			if (p_is_disconnect)
 			{
@@ -1443,9 +1442,7 @@ void ClientManager::fileListDisconnected(const UserPtr& p)
 		const auto i = g_onlineUsers.find(p->getCID());
 		if (i != g_onlineUsers.end())
 		{
-			OnlineUser* ou = i->second;
-			auto& id = ou->getIdentity(); // [!] PVS V807 Decreased performance. Consider creating a reference to avoid using the 'ou->getIdentity()' expression repeatedly. cheatmanager.h 43
-			
+			auto ou = i->second;
 			auto fileListDisconnects = id.incFileListDisconnects(); // 8 бит не мало?
 			
 			if (SETTING(ACCEPTED_DISCONNECTS) == 0)
@@ -1454,7 +1451,7 @@ void ClientManager::fileListDisconnected(const UserPtr& p)
 			if (fileListDisconnects == SETTING(ACCEPTED_DISCONNECTS))
 			{
 				c = &ou->getClient();
-				report = id.setCheat(ou->getClientBase(), "Disconnected file list " + Util::toString(fileListDisconnects) + " times", false);
+				report = ou->getIdentity().setCheat(ou->getClientBase(), "Disconnected file list " + Util::toString(fileListDisconnects) + " times", false);
 				sendRawCommandL(*ou, SETTING(DISCONNECT_RAW));
 			}
 		}
@@ -1473,10 +1470,9 @@ void ClientManager::connectionTimeout(const UserPtr& p)
 		const auto i = g_onlineUsers.find(p->getCID());
 		if (i != g_onlineUsers.end())
 		{
-			OnlineUserPtr ou = i->second;
-			auto& id = ou->getIdentity(); // [!] PVS V807 Decreased performance. Consider creating a reference to avoid using the 'ou.getIdentity()' expression repeatedly. cheatmanager.h 80
+			auto ou = i->second;
 			
-			auto connectionTimeouts = id.incConnectionTimeouts(); // 8 бит не мало?
+			const auto connectionTimeouts = ou->getIdentity().incConnectionTimeouts(); // 8 бит не мало?
 			
 			if (SETTING(ACCEPTED_TIMEOUTS) == 0)
 				return;
@@ -1485,7 +1481,7 @@ void ClientManager::connectionTimeout(const UserPtr& p)
 			{
 				c = &ou->getClient();
 #ifdef FLYLINKDC_USE_DETECT_CHEATING
-				report = id.setCheat(ou.getClientBase(), "Connection timeout " + Util::toString(connectionTimeouts) + " times", false);
+				report = ou->getIdentity().setCheat(ou.getClientBase(), "Connection timeout " + Util::toString(connectionTimeouts) + " times", false);
 #else
 				report = "Connection timeout " + Util::toString(connectionTimeouts) + " times";
 #endif
@@ -1510,7 +1506,7 @@ void ClientManager::checkCheating(const UserPtr& p, DirectoryListing* dl)
 			return;
 			
 		ou = i->second;
-		auto& id = ou->getIdentity(); // [!] PVS V807 Decreased performance. Consider creating a reference to avoid using the 'ou->getIdentity()' expression repeatedly. cheatmanager.h 127
+		auto id = ou->getIdentity();
 		
 		const int64_t l_statedSize = id.getBytesShared();
 		const int64_t l_realSize = dl->getTotalSize();
@@ -1523,7 +1519,7 @@ void ClientManager::checkCheating(const UserPtr& p, DirectoryListing* dl)
 		
 		if (l_statedSize > l_sizeTolerated)
 		{
-			id.setFakeCardBit(Identity::BAD_LIST | Identity::CHECKED, true);
+			ou->getIdentity().setFakeCardBit(Identity::BAD_LIST | Identity::CHECKED, true);
 			string detectString = STRING(CHECK_MISMATCHED_SHARE_SIZE) + " - ";
 			if (l_realSize == 0)
 			{
@@ -1589,7 +1585,7 @@ void ClientManager::setSupports(const UserPtr& p, const StringList & aSupports, 
 	const auto i = g_onlineUsers.find(p->getCID());
 	if (i != g_onlineUsers.end())
 	{
-		auto& id = i->second->getIdentity();
+		auto id = i->second->getIdentity();
 		id.setKnownUcSupports(knownUcSupports);
 		{
 			AdcSupports::setSupports(id, aSupports);

@@ -92,7 +92,7 @@ void SearchResultBaseTTH::toRES(AdcCommand& cmd, char p_type) const
 
 SearchResult::SearchResult(Types aType, int64_t aSize, const string& aFile, const TTHValue& aTTH, uint32_t aToken) :
 	SearchResultCore(aType, aSize, aFile, aTTH),
-	m_user(ClientManager::getMe_UseOnlyForNonHubSpecifiedTasks()),
+	m_search_user(ClientManager::getMe_UseOnlyForNonHubSpecifiedTasks()),
 	m_is_tth_remembrance(false),
 	m_is_tth_download(false),
 	m_is_virus(false),
@@ -111,7 +111,7 @@ SearchResult::SearchResult(const UserPtr& aUser, Types aType, uint8_t aSlots, ui
 	SearchResultCore(aType, aSize, aFile, aTTH, aSlots, aFreeSlots),
 	m_hubName(aHubName),
 	m_hubURL(aHubURL),
-	m_user(aUser),
+	m_search_user(aUser),
 	m_search_ip4(aIP4),
 	m_token(aToken),
 	m_is_tth_share(false),
@@ -122,6 +122,10 @@ SearchResult::SearchResult(const UserPtr& aUser, Types aType, uint8_t aSlots, ui
 	m_virus_level(0),
 	m_is_tth_queue(false)
 {
+	if (m_search_user)
+	{
+		m_search_nicks = Util::toString(ClientManager::getNicks(m_search_user->getCID(), getHubUrl(), false));
+	}
 }
 
 void SearchResult::calcP2PGuard()

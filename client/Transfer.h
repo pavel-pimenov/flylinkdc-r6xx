@@ -101,11 +101,11 @@ class Transfer
 	protected:
 		void getParams(const UserConnection* aSource, StringMap& params) const;
 	public:
-		UserPtr& getUser()
+		UserPtr getUser()
 		{
 			return m_hinted_user.user;
 		}
-		const UserPtr& getUser() const
+		const UserPtr getUser() const
 		{
 			return m_hinted_user.user;
 		}

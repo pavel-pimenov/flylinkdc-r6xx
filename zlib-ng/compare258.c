@@ -59,14 +59,12 @@ Z_INTERNAL uint32_t compare258_c(const unsigned char *src0, const unsigned char 
 
 #define LONGEST_MATCH       longest_match_c
 #define COMPARE256          compare256_c_static
-#define COMPARE258          compare258_c_static
 
 #include "match_tpl.h"
 
 #define LONGEST_MATCH_SLOW
 #define LONGEST_MATCH       longest_match_slow_c
 #define COMPARE256          compare256_c_static
-#define COMPARE258          compare258_c_staticc
 
 #include "match_tpl.h"
 
@@ -106,14 +104,12 @@ Z_INTERNAL uint32_t compare258_unaligned_16(const unsigned char *src0, const uns
 
 #define LONGEST_MATCH       longest_match_unaligned_16
 #define COMPARE256          compare256_unaligned_16_static
-#define COMPARE258          compare258_unaligned_16_static
 
 #include "match_tpl.h"
 
 #define LONGEST_MATCH_SLOW
 #define LONGEST_MATCH       longest_match_slow_unaligned_16
 #define COMPARE256          compare256_unaligned_16_static
-#define COMPARE258          compare258_unaligned_16_static
 
 #include "match_tpl.h"
 
@@ -123,10 +119,12 @@ static inline uint32_t compare256_unaligned_32_static(const unsigned char *src0,
     uint32_t len = 0;
 
     do {
-        uint32_t sv = *(uint32_t *)src0;
-        uint32_t mv = *(uint32_t *)src1;
-        uint32_t diff = sv ^ mv;
+        uint32_t sv, mv, diff;
 
+        memcpy(&sv, src0, sizeof(sv));
+        memcpy(&mv, src1, sizeof(mv));
+
+        diff = sv ^ mv;
         if (diff) {
             uint32_t match_byte = __builtin_ctz(diff) / 8;
             return len + match_byte;
@@ -151,14 +149,12 @@ Z_INTERNAL uint32_t compare258_unaligned_32(const unsigned char *src0, const uns
 
 #define LONGEST_MATCH       longest_match_unaligned_32
 #define COMPARE256          compare256_unaligned_32_static
-#define COMPARE258          compare258_unaligned_32_static
 
 #include "match_tpl.h"
 
 #define LONGEST_MATCH_SLOW
 #define LONGEST_MATCH       longest_match_slow_unaligned_32
 #define COMPARE256          compare256_unaligned_32_static
-#define COMPARE258          compare258_unaligned_32_static
 
 #include "match_tpl.h"
 
@@ -170,10 +166,12 @@ static inline uint32_t compare256_unaligned_64_static(const unsigned char *src0,
     uint32_t len = 0;
 
     do {
-        uint64_t sv = *(uint64_t *)src0;
-        uint64_t mv = *(uint64_t *)src1;
-        uint64_t diff = sv ^ mv;
+        uint64_t sv, mv, diff;
 
+        memcpy(&sv, src0, sizeof(sv));
+        memcpy(&mv, src1, sizeof(mv));
+
+        diff = sv ^ mv;
         if (diff) {
             uint64_t match_byte = __builtin_ctzll(diff) / 8;
             return len + (uint32_t)match_byte;
@@ -198,14 +196,12 @@ Z_INTERNAL uint32_t compare258_unaligned_64(const unsigned char *src0, const uns
 
 #define LONGEST_MATCH       longest_match_unaligned_64
 #define COMPARE256          compare256_unaligned_64_static
-#define COMPARE258          compare258_unaligned_64_static
 
 #include "match_tpl.h"
 
 #define LONGEST_MATCH_SLOW
 #define LONGEST_MATCH       longest_match_slow_unaligned_64
 #define COMPARE256          compare256_unaligned_64_static
-#define COMPARE258          compare258_unaligned_64_static
 
 #include "match_tpl.h"
 

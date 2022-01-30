@@ -759,6 +759,7 @@ protected :
         #if MEDIAINFO_TRACE
             int64u  Trace_Count;
         #endif // MEDIAINFO_TRACE
+        int32u  ShouldCheckAvcHeaders;
         frame_info  FrameInfo;
 
         essence()
@@ -779,6 +780,7 @@ protected :
             #if MEDIAINFO_TRACE
                 Trace_Count=0;
             #endif // MEDIAINFO_TRACE
+            ShouldCheckAvcHeaders=0;
             FrameInfo.DTS=(int64u)-1;
         }
 
@@ -1332,7 +1334,7 @@ protected :
 
     // Extra metadata
     int64u ExtraMetadata_Offset;
-    set<int32u> ExtraMetadata_SID;
+    std::set<int32u> ExtraMetadata_SID;
     File_DolbyVisionMetadata* DolbyVisionMetadata;
     File_DolbyAudioMetadata* DolbyAudioMetadata;
     #if defined(MEDIAINFO_ADM_YES)

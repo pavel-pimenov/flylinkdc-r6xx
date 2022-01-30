@@ -159,10 +159,11 @@ class SearchResult : public SearchResultCore
 		string getFileName() const;
 		string getFilePath() const;
 		
-		const UserPtr& getUser() const
+		const UserPtr getUser() const
 		{
-			return m_user;
+			return m_search_user;
 		}
+		
 		HintedUser getHintedUser() const
 		{
 			return HintedUser(getUser(), getHubUrl());
@@ -171,6 +172,11 @@ class SearchResult : public SearchResultCore
 		{
 			return m_hubURL;
 		}
+		const string& getNicks() const
+		{
+			return m_search_nicks;
+		}
+		
 		const string& getHubName() const
 		{
 			return m_hubName;
@@ -218,7 +224,8 @@ class SearchResult : public SearchResultCore
 		string m_hubURL;
 		boost::asio::ip::address_v4 m_search_ip4;
 		uint32_t m_token;
-		UserPtr m_user;
+		UserPtr m_search_user;
+		string  m_search_nicks;
 		bool m_is_tth_check = false;
 #ifdef FLYLINKDC_USE_P2P_GUARD
 		string m_p2p_guard_text;

@@ -646,7 +646,7 @@ HTREEITEM QueueFrame::addDirectory(const string& dir, bool isFileList /* = false
 			if (next != m_fileLists)
 			{
 				const string& n = getDir(next);
-				if (!n.empty() && strnicmp(n.c_str() + i, dir.c_str() + i, n.length() - i) == 0) 
+				if (!n.empty() && strnicmp(n.c_str() + i, dir.c_str() + i, n.length() - i) == 0)
 				{
 					// Found a part, we assume it's the best one we can find...
 					i = n.length();
@@ -1314,7 +1314,7 @@ LRESULT QueueFrame::onContextMenu(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, B
 							// ниже сохраняем адрес итератора
 							for (auto i = badSources.cbegin(); i != badSources.cend(); ++i)
 							{
-								const auto& user = i->first;
+								const auto user = i->first;
 								tstring nick = WinUtil::getNicks(user, BaseUtil::emptyString);
 								if (i->second.isSet(QueueItem::Source::FLAG_FILE_NOT_AVAILABLE))
 								{

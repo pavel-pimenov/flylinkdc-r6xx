@@ -84,7 +84,7 @@ class ConnectionQueueItem
 		{
 			return m_is_download;
 		}
-		const UserPtr& getUser() const
+		const UserPtr getUser() const
 		{
 			return m_hinted_user.user;
 		}
