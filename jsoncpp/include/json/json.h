@@ -135,7 +135,8 @@ license you like.
 #include <cstring>
 #include <memory>
 
-#pragma pack(push, 8)
+#pragma pack(push)
+#pragma pack()
 
 namespace Json {
 template <typename T> class SecureAllocator {
@@ -459,7 +460,8 @@ class ValueConstIterator;
 #include "forwards.h"
 #endif // if !defined(JSON_IS_AMALGAMATION)
 
-#pragma pack(push, 8)
+#pragma pack(push)
+#pragma pack()
 
 namespace Json {
 
@@ -577,7 +579,8 @@ public:
 #pragma warning(disable : 4251 4275)
 #endif // if defined(JSONCPP_DISABLE_DLL_INTERFACE_WARNING)
 
-#pragma pack(push, 8)
+#pragma pack(push)
+#pragma pack()
 
 /** \brief JSON (JavaScript Object Notation).
  */
@@ -1496,7 +1499,8 @@ inline void swap(Value& a, Value& b) { a.swap(b); }
 #pragma warning(disable : 4251)
 #endif // if defined(JSONCPP_DISABLE_DLL_INTERFACE_WARNING)
 
-#pragma pack(push, 8)
+#pragma pack(push)
+#pragma pack()
 
 namespace Json {
 
@@ -1912,7 +1916,8 @@ JSON_API IStream& operator>>(IStream&, Value&);
 #pragma warning(disable : 4251)
 #endif // if defined(JSONCPP_DISABLE_DLL_INTERFACE_WARNING)
 
-#pragma pack(push, 8)
+#pragma pack(push)
+#pragma pack()
 
 namespace Json {
 

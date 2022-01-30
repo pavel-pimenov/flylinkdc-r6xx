@@ -134,7 +134,22 @@ LRESULT UsersFrame::onContextMenu(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, B
 		
 		OMenu usersMenu;
 		usersMenu.CreatePopupMenu();
-		usersMenu.AppendMenu(MF_STRING, IDC_COPY_NICK, CTSTRING(COPY_NICK));
+
+		// Put Copy Items only if user Offline
+		if (ctrlUsers.GetSelectedCount() == 1)
+		{
+			const auto user = ctrlUsers.getItemData(ctrlUsers.GetSelectedIndex())->getUser();
+			if (user && !user->isOnline())
+			{
+				CString sCopy = CTSTRING(COPY);
+				sCopy = sCopy + " ";
+				sCopy = sCopy + CTSTRING(COPY_NICK);
+
+				usersMenu.AppendMenu(MF_STRING, IDC_COPY_NICK, sCopy);
+			//	usersMenu.AppendMenu(MF_STRING, IDC_COPY_ALL, CTSTRING(COPY_ALL));
+				usersMenu.AppendMenu(MF_SEPARATOR);
+			}
+		}
 		usersMenu.AppendMenu(MF_STRING, IDC_EDIT, CTSTRING(PROPERTIES));
 		usersMenu.AppendMenu(MF_STRING, IDC_OPEN_USER_LOG, CTSTRING(OPEN_USER_LOG));
 		usersMenu.AppendMenu(MF_STRING, IDC_REMOVE_FROM_FAVORITES, CTSTRING(REMOVE_FROM_FAVORITES));
@@ -682,6 +697,10 @@ LRESULT UsersFrame::onCopy(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOO
 		case IDC_COPY_NICK:
 			sCopy = l_user->getLastNick();
 			break;
+			case IDC_COPY_ALL:
+				sCopy = l_user->getLastNick();
+				sCopy = sCopy + "/r/n";
+				break;
 		default:
 			dcdebug("USERSFRAME DON'T GO HERE\n");
 			return 0;
@@ -691,9 +710,9 @@ LRESULT UsersFrame::onCopy(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOO
 		{
 			WinUtil::setClipboard(sCopy);
 		}
+	}
 		return 0;
 	}
-}
 
 /**
  * @file
