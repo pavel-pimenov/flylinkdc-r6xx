@@ -1382,14 +1382,14 @@ void File_Ac3::Streams_Fill()
     //TimeStamp
     if (TimeStamp_IsPresent)
     {
-        Ztring TimeCode_FrameRate=Ztring::ToZtring((float64)TimeStamp_FirstFrame.FramesPerSecond/((TimeStamp_FirstFrame.DropFrame|TimeStamp_FirstFrame.FramesPerSecond_Is1001)?1.001:1.000), 3);
+        Ztring TimeCode_FrameRate=Ztring::ToZtring((float64)TimeStamp_FirstFrame.FramesPerSecond/((TimeStamp_FirstFrame.DropFrame || TimeStamp_FirstFrame.FramesPerSecond_Is1001)?1.001:1.000), 3);
         if (TimeStamp_FirstFrame.MoreSamples)
             TimeStamp_FirstFrame.MoreSamples_Frequency=Retrieve(Stream_Audio, 0, Audio_SamplingRate).To_int32s();
         Fill(Stream_Audio, 0, "TimeCode_FirstFrame", TimeStamp_FirstFrame.ToString());
         Fill_SetOptions(Stream_Audio, 0, "TimeCode_FirstFrame", "N YCY");
         Fill(Stream_Audio, 0, "TimeCode_FirstFrame/String", TimeStamp_FirstFrame.ToString()+" ("+TimeCode_FrameRate.To_UTF8()+" fps), embedded in stream");
         Fill_SetOptions(Stream_Audio, 0, "TimeCode_FirstFrame/String", "Y NTN");
-        Fill(Stream_Audio, 0, "TimeCode_FirstFrame_FrameRate", TimeStamp_FirstFrame.ToString());
+        Fill(Stream_Audio, 0, "TimeCode_FirstFrame_FrameRate", TimeCode_FrameRate);
         Fill_SetOptions(Stream_Audio, 0, "TimeCode_FirstFrame_FrameRate", "N YFY");
         Fill(Stream_Audio, 0, "TimeCode_Source", "Stream");
         Fill_SetOptions(Stream_Audio, 0, "TimeCode_Source", "N YTY");
@@ -4120,7 +4120,7 @@ void File_Ac3::program_assignment()
             int8u padding = 8 - (reserved_data_size_bits % 8);
             Skip_S1(reserved_data_size_bits,                    "reserved_data()");
             if (padding)
-            Skip_S1(padding,                                    "padding");
+                Skip_S1(padding,                                "padding");
         }
     }
 
@@ -4693,7 +4693,7 @@ bool File_Ac3::FrameSynchPoint_Test()
         if (Size>=6)
         {
             size_t Size_Total=Core_Size_Get();
-            if (Element_IsWaitingForMoreData())
+            if (Element_IsWaitingForMoreData() || Buffer_Offset+Size_Total>=Buffer_Size)
                 return false; //Need more data
 
             Save_Buffer=Buffer;
@@ -4892,45 +4892,45 @@ void File_Ac3::Get_V4(int8u  Bits, int32u  &Info, const char* Name)
 {
     Info = 0;
 
-    #if MEDIAINFO_TRACE
-            int8u Count = 0;
+#if MEDIAINFO_TRACE
+    int8u Count = 0;
 #endif //MEDIAINFO_TRACE
     for (;;)
-            {
-                Info += BS->Get4(Bits);
+    {
+        Info += BS->Get4(Bits);
 #if MEDIAINFO_TRACE
-                Count += Bits;
+        Count += Bits;
 #endif //MEDIAINFO_TRACE
         if (!BS->GetB())
             break;
         Info <<= Bits;
         Info += (1 << Bits);
-            }
+    }
 #if MEDIAINFO_TRACE
     if (Trace_Activated)
     {
-            Param(Name, Info, Count);
-            Param_Info(__T("(")+Ztring::ToZtring(Count)+__T(" bits)"));
-        }
-    #endif //MEDIAINFO_TRACE
+        Param(Name, Info, Count);
+        Param_Info(__T("(") + Ztring::ToZtring(Count) + __T(" bits)"));
+    }
+#endif //MEDIAINFO_TRACE
 }
 
 //---------------------------------------------------------------------------
 void File_Ac3::Skip_V4(int8u  Bits, const char* Name)
 {
-    #if MEDIAINFO_TRACE
-        if (Trace_Activated)
-        {
+#if MEDIAINFO_TRACE
+    if (Trace_Activated)
+    {
         int32u Info = 0;
         Get_V4(Bits, Info, Name);
-        }
-        else
-    #endif //MEDIAINFO_TRACE
-        {
-            do
-                BS->Skip(Bits);
-            while (BS->GetB());
-        }
+    }
+    else
+#endif //MEDIAINFO_TRACE
+    {
+        do
+            BS->Skip(Bits);
+        while (BS->GetB());
+    }
 }
 
 } //NameSpace
