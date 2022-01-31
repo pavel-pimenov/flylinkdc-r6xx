@@ -130,6 +130,8 @@ namespace seh_errors {
 		status_unwind_consolidate = STATUS_UNWIND_CONSOLIDATE,
 		invalid_handle = EXCEPTION_INVALID_HANDLE,
 	};
+
+	std::error_code make_error_code(error_code_enum e);
 }
 
 std::error_category& seh_category();
