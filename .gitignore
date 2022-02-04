@@ -13,8 +13,7 @@ client.key
 /GdiOle/GdiOle_p.c
 /GdiOle/dlldata.c
 .vs
-/libtorrent/merge-vendors.bat
-/mediainfolib/merge-vendors.bat
+merge-vendors.bat
 *.lastbuildstate
 *.vcxproj.FileListAbsolute.txt
 unsuccessfulbuild

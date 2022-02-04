@@ -755,6 +755,13 @@ void File__Analyze::Fill (stream_t StreamKind, size_t StreamPos, size_t Paramete
                                     }
                             }
                             break;
+        case Stream_Text:
+                            switch (Parameter)
+                            {
+                                case Text_DisplayAspectRatio:  DisplayAspectRatio_Fill(Value, Stream_Text, StreamPos, Text_Width, Text_Height, -1, Text_DisplayAspectRatio); break;
+                                case Text_DisplayAspectRatio_Original:  DisplayAspectRatio_Fill(Value, Stream_Text, StreamPos, -1, -1, -1, Text_DisplayAspectRatio_Original); break;
+                            }
+                            break;
         case Stream_Image:
                             switch (Parameter)
                             {
@@ -2532,14 +2539,17 @@ void File__Analyze::Duration_Duration123(stream_t StreamKind, size_t StreamPos, 
                 // Testing frame rate (1/1001)
                 if (!DropFrame_IsValid)
                 {
-                    float32 FrameRateF=FrameRateS.To_float32();
                     int32s  FrameRateI=float32_int32s(FrameRateS.To_float32());
-                    float FrameRateF_Min=((float32)FrameRateI)/((float32)1.002);
-                    float FrameRateF_Max=(float32)FrameRateI;
-                    if (FrameRateF>=FrameRateF_Min && FrameRateF<FrameRateF_Max)
-                        DropFrame=true;
-                    else
-                        DropFrame=false;
+                    if (FrameRateI==30) // Flagging drop frame only for 30 DF
+                    {
+                        float32 FrameRateF=FrameRateS.To_float32();
+                        float FrameRateF_Min=((float32)FrameRateI)/((float32)1.002);
+                        float FrameRateF_Max=(float32)FrameRateI;
+                        if (FrameRateF>=FrameRateF_Min && FrameRateF<FrameRateF_Max)
+                            DropFrame=true;
+                        else
+                            DropFrame=false;
+                    }
                 }
 
                 TimeCode TC(FrameCountS.To_int64s(), (int8u)float32_int32s(FrameRateS.To_float32()), DropFrame);

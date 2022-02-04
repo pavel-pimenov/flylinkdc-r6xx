@@ -323,6 +323,11 @@ bool TimeCode::FromString(const char* Value, size_t Length)
             else
                 return true;
         }
+        else
+        {
+            MoreSamples=0;
+            MoreSamples_Frequency=0;
+        }
         Hours=((Value[0]-'0')*10)+(Value[1]-'0');
         Minutes=((Value[3]-'0')*10)+(Value[4]-'0');
         Seconds=((Value[6]-'0')*10)+(Value[7]-'0');
@@ -351,6 +356,7 @@ bool TimeCode::FromString(const char* Value, size_t Length)
         Hours=S/3600;
         Minutes=(S%3600)/60;
         Seconds=S%60;
+        Frames=0;
         c=(unsigned char)Value[i];
         if (c=='.' || c==',')
         {
@@ -376,6 +382,43 @@ bool TimeCode::FromString(const char* Value, size_t Length)
             MoreSamples_Frequency=PowersOf10[i-1-i_Start];
             MoreSamples=S;
         }
+        else
+        {
+            MoreSamples=0;
+            MoreSamples_Frequency=1; // Indicates that it comes from a timestamp
+        }
+        return false;
+    }
+    //X.Xf format
+    if (Length>=2
+     && Value[Length-1]=='f')
+    {
+        Length--; //Remove the "f" from the string
+        unsigned char c;
+        int i=0;
+        int32s S=0;
+        int TheoriticalMax=i+PowersOf10_Size;
+        int MaxLength=Length>TheoriticalMax?TheoriticalMax:Length;
+        while (i<MaxLength)
+        {
+            c=(unsigned char)Value[i];
+            c-='0';
+            if (c>9)
+                break;
+            S*=10;
+            S+=c;
+            i++;
+        }
+        if (i!=Length)
+            return true;
+        if (!FramesPerSecond)
+            FramesPerSecond=1; // Arbitrary choosen
+        int32s OneHourInFrames=3600*FramesPerSecond;
+        int32s OneMinuteInFrames=60*FramesPerSecond;
+        Hours=S/OneHourInFrames;
+        Minutes=(S%OneHourInFrames)/OneMinuteInFrames;
+        Seconds=(S%OneMinuteInFrames)/FramesPerSecond;
+        Frames=S%FramesPerSecond;
         return false;
     }
 
