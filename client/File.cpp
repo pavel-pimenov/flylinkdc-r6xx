@@ -654,7 +654,7 @@ StringList File::findFiles(const string& path, const string& pattern, bool p_app
 	}
 	else
 	{
-		dcassert(0);
+		//dcassert(0);
 #ifndef _CONSOLE
 		const string l_error = Util::translateError();
 		LogManager::message("File::findFiles error [" + path + "] code:" + l_error);

@@ -403,7 +403,7 @@ void AutoUpdate::startUpdateThisThread()
 						{
 							// Download RTF file from Server
 							string programRtfData;
-							size_t l_dataRTFSize = Util::getDataFromInetSafe(true, programUpdateDescription, programRtfData);
+							size_t l_dataRTFSize = Util::getDataFromInetSafe(false, programUpdateDescription, programRtfData);
 							if (m_guiDelegate && !ClientManager::isBeforeShutdown())
 							{
 								idResult = UpdateResult(m_guiDelegate->ShowDialogUpdate(l_message, programRtfData, l_files4Description));

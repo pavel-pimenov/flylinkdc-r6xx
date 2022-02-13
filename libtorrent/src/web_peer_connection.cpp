@@ -272,7 +272,7 @@ void web_peer_connection::disconnect(error_code const& ec
 			, std::bind(&aux::torrent::maybe_connect_web_seeds, t));
 	}
 
-	if (error >= failure)
+	if (m_web && error >= failure)
 	{
 		m_web->retry = std::max(m_web->retry, aux::time_now32()
 			+ seconds32(m_settings.get_int(settings_pack::urlseed_wait_retry)));

@@ -49,7 +49,6 @@
     <ClInclude Include="include\libtorrent\aux_\disable_warnings_pop.hpp" />
     <ClInclude Include="include\libtorrent\aux_\disable_warnings_push.hpp" />
     <ClInclude Include="include\libtorrent\aux_\disk_buffer_pool.hpp" />
-    <ClInclude Include="include\libtorrent\aux_\disk_io_job.hpp" />
     <ClInclude Include="include\libtorrent\aux_\disk_io_thread_pool.hpp" />
     <ClInclude Include="include\libtorrent\aux_\disk_job_fence.hpp" />
     <ClInclude Include="include\libtorrent\aux_\disk_job_pool.hpp" />
@@ -85,6 +84,7 @@
     <ClInclude Include="include\libtorrent\aux_\merkle.hpp" />
     <ClInclude Include="include\libtorrent\aux_\merkle_tree.hpp" />
     <ClInclude Include="include\libtorrent\aux_\mmap.hpp" />
+    <ClInclude Include="include\libtorrent\aux_\mmap_disk_job.hpp" />
     <ClInclude Include="include\libtorrent\aux_\mmap_storage.hpp" />
     <ClInclude Include="include\libtorrent\aux_\noexcept_movable.hpp" />
     <ClInclude Include="include\libtorrent\aux_\numeric_cast.hpp" />
@@ -317,7 +317,6 @@
     <ClCompile Include="src\disabled_disk_io.cpp" />
     <ClCompile Include="src\disk_buffer_holder.cpp" />
     <ClCompile Include="src\disk_buffer_pool.cpp" />
-    <ClCompile Include="src\disk_io_job.cpp" />
     <ClCompile Include="src\disk_io_thread_pool.cpp" />
     <ClCompile Include="src\disk_job_fence.cpp" />
     <ClCompile Include="src\disk_job_pool.cpp" />
@@ -383,6 +382,7 @@
     <ClCompile Include="src\merkle_tree.cpp" />
     <ClCompile Include="src\mmap.cpp" />
     <ClCompile Include="src\mmap_disk_io.cpp" />
+    <ClCompile Include="src\mmap_disk_job.cpp" />
     <ClCompile Include="src\mmap_storage.cpp" />
     <ClCompile Include="src\natpmp.cpp" />
     <ClCompile Include="src\packet_buffer.cpp" />

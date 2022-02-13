@@ -695,9 +695,6 @@
     <ClInclude Include="include\libtorrent\aux_\disk_buffer_pool.hpp">
       <Filter>Header Files\libtorrent\aux_</Filter>
     </ClInclude>
-    <ClInclude Include="include\libtorrent\aux_\disk_io_job.hpp">
-      <Filter>Header Files\libtorrent\aux_</Filter>
-    </ClInclude>
     <ClInclude Include="include\libtorrent\aux_\disk_io_thread_pool.hpp">
       <Filter>Header Files\libtorrent\aux_</Filter>
     </ClInclude>
@@ -875,6 +872,9 @@
     <ClInclude Include="include\libtorrent\aux_\storage_free_list.hpp">
       <Filter>Header Files\libtorrent\aux_</Filter>
     </ClInclude>
+    <ClInclude Include="include\libtorrent\aux_\mmap_disk_job.hpp">
+      <Filter>Header Files\libtorrent\aux_</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\kademlia\dht_storage.cpp">
@@ -983,9 +983,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\disk_buffer_pool.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\disk_io_job.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\disk_io_thread_pool.cpp">
@@ -1364,6 +1361,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\posix_part_file.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mmap_disk_job.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

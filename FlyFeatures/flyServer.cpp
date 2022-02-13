@@ -1356,8 +1356,8 @@ void CFlyServerConfig::loadTorrentSearchEngine()
 				if (g_lua_source_search_engine.empty())
 				{
 #ifdef _DEBUG					
-//					Util::getDataFromInetSafe(true, "file://C:/vc17/r5xx/compiled/Settings/lua/flylinkdc-search-engine.lua", g_lua_source_search_engine, 1000);
-                    Util::getDataFromInetSafe(true, "http://etc.fly-server.ru/etc/flylinkdc-search-engine.lua", g_lua_source_search_engine, 1000);
+//					Util::getDataFromInetSafe(false, "file://C:/vc17/r5xx/compiled/Settings/lua/flylinkdc-search-engine.lua", g_lua_source_search_engine, 1000);
+                    Util::getDataFromInetSafe(false, "http://etc.fly-server.ru/etc/flylinkdc-search-engine.lua", g_lua_source_search_engine, 1000);
 #else
 					Util::getDataFromInetSafe(true, "http://etc.fly-server.ru/etc/flylinkdc-search-engine.lua", g_lua_source_search_engine, 1000);
 #endif

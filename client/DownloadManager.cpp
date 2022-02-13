@@ -1084,7 +1084,7 @@ void DownloadManager::onTorrentAlertNotify()
 						
 						if (const auto l_port = lt::alert_cast<lt::portmap_error_alert>(a))
 						{
-							dcassert(0);
+							//dcassert(0);
 							LogManager::torrent_message("portmap_error_alert: " + a->message() + " info:" +
 							                            std::string(a->what()) + " index = " + Util::toString(int(l_port->mapping)));
 							if (l_port->mapping == m_maping_index[0])

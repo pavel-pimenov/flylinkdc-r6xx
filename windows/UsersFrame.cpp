@@ -143,7 +143,7 @@ LRESULT UsersFrame::onContextMenu(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, B
 			{
 				CString sCopy = CTSTRING(COPY);
 				sCopy = sCopy + " ";
-				sCopy = sCopy + CTSTRING(COPY_NICK);
+				sCopy = sCopy + CTSTRING(COPY_NICK);		// В одну строку упорно говорит об ошибке.
 
 				usersMenu.AppendMenu(MF_STRING, IDC_COPY_NICK, sCopy);
 			//	usersMenu.AppendMenu(MF_STRING, IDC_COPY_ALL, CTSTRING(COPY_ALL));
@@ -697,7 +697,7 @@ LRESULT UsersFrame::onCopy(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOO
 		case IDC_COPY_NICK:
 			sCopy = l_user->getLastNick();
 			break;
-			case IDC_COPY_ALL:
+			case IDC_COPY_ALL:	// Короче я пока не понял как забрать время последнего входа юзера. Фичу не юзаем
 				sCopy = l_user->getLastNick();
 				sCopy = sCopy + "/r/n";
 				break;
