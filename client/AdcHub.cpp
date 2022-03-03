@@ -284,7 +284,8 @@ void AdcHub::handle(AdcCommand::INF, const AdcCommand& c) noexcept
 		return;
 	}
 	
-	auto id = ou->getIdentity();
+	auto& id = ou->getIdentity();
+	auto& u = ou->getUser();
 	string l_ip4;
 	string l_ip6;
 	for (auto i = c.getParameters().cbegin(); i != c.getParameters().cend(); ++i)
@@ -403,7 +404,7 @@ void AdcHub::handle(AdcCommand::INF, const AdcCommand& c) noexcept
 			}
 			case TAG('A', 'W'):
 			{
-				ou->getUser()->setFlag(User::AWAY);
+				u->setFlag(User::AWAY);
 				break;
 			}
 #ifdef _DEBUG
