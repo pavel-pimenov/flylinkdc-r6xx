@@ -860,11 +860,8 @@ void AdcHub::handle(AdcCommand::STA, const AdcCommand& c) noexcept
 		}
 		case AdcCommand::ERROR_CID_TAKEN:
 		{
-			//SET_SETTING(PRIVATE_ID, CID::generate().toBase32()); // —генерируем новые PRIVATE_ID - чтобы не было конфликта
-			//ClientManager::generateNewMyCID();
-			std::unique_ptr<ChatMessage> message(new ChatMessage("Generate new CID = " + ClientManager::getMyCID().toBase32(), ou));
+			std::unique_ptr<ChatMessage> message(new ChatMessage("CID = " + ClientManager::getMyCID().toBase32(), ou));
 			fly_fire2(ClientListener::Message(), this, message);
-			//reconnect();
 			return;
 		}
 	}
