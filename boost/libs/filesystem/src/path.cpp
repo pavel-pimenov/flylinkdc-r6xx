@@ -12,8 +12,9 @@
 
 #include <boost/filesystem/config.hpp>
 #include <boost/filesystem/path.hpp>
+#include <boost/filesystem/path_traits.hpp> // codecvt_error_category()
 #include <boost/scoped_array.hpp>
-#include <boost/system/error_code.hpp>
+#include <boost/system/error_category.hpp> // for BOOST_SYSTEM_HAS_CONSTEXPR
 #include <boost/assert.hpp>
 #include <algorithm>
 #include <iterator>
@@ -42,7 +43,6 @@
 namespace fs = boost::filesystem;
 
 using boost::filesystem::path;
-using boost::system::error_code;
 
 //--------------------------------------------------------------------------------------//
 //                                                                                      //
@@ -386,10 +386,11 @@ BOOST_FILESYSTEM_DECL path& path::remove_trailing_separator()
     return *this;
 }
 
-BOOST_FILESYSTEM_DECL path& path::replace_extension(path const& new_extension)
+BOOST_FILESYSTEM_DECL void path::replace_extension_v3(path const& new_extension)
 {
     // erase existing extension, including the dot, if any
-    m_pathname.erase(m_pathname.size() - extension().m_pathname.size());
+    size_type ext_pos = m_pathname.size() - extension_v3().m_pathname.size();
+    m_pathname.erase(m_pathname.begin() + ext_pos, m_pathname.end());
 
     if (!new_extension.empty())
     {
@@ -398,8 +399,21 @@ BOOST_FILESYSTEM_DECL path& path::replace_extension(path const& new_extension)
             m_pathname.push_back(dot);
         m_pathname.append(new_extension.m_pathname);
     }
+}
 
-    return *this;
+BOOST_FILESYSTEM_DECL void path::replace_extension_v4(path const& new_extension)
+{
+    // erase existing extension, including the dot, if any
+    size_type ext_pos = m_pathname.size() - find_extension_v4_size();
+    m_pathname.erase(m_pathname.begin() + ext_pos, m_pathname.end());
+
+    if (!new_extension.empty())
+    {
+        // append new_extension, adding the dot if necessary
+        if (new_extension.m_pathname[0] != dot)
+            m_pathname.push_back(dot);
+        m_pathname.append(new_extension.m_pathname);
+    }
 }
 
 //  decomposition  -------------------------------------------------------------------//
@@ -565,9 +579,8 @@ BOOST_FILESYSTEM_DECL path path::extension_v3() const
     return pos == string_type::npos ? path() : path(name.m_pathname.c_str() + pos);
 }
 
-BOOST_FILESYSTEM_DECL path path::extension_v4() const
+BOOST_FILESYSTEM_DECL string_type::size_type path::find_extension_v4_size() const
 {
-    path ext;
     const size_type size = m_pathname.size();
     size_type root_name_size = 0;
     find_root_directory_start(m_pathname.c_str(), size, root_name_size);
@@ -590,10 +603,10 @@ BOOST_FILESYSTEM_DECL path path::extension_v4() const
         }
 
         if (ext_pos > filename_pos)
-            ext.assign(m_pathname.c_str() + ext_pos, m_pathname.c_str() + size);
+            return size - ext_pos;
     }
 
-    return ext;
+    return 0u;
 }
 
 //  lexical operations  --------------------------------------------------------------//
@@ -1512,36 +1525,15 @@ void __cdecl destroy_path_globals()
     g_path_locale = NULL;
 }
 
-#if _MSC_VER < 1300 || _MSC_VER > 1900 // 1300 == VC++ 7.0, 1900 == VC++ 14.0
-typedef void (__cdecl* init_func_ptr_t)();
-#define BOOST_FILESYSTEM_INIRETSUCCESS_V
-#define BOOST_FILESYSTEM_INIT_FUNC void __cdecl
-#else
-typedef int (__cdecl* init_func_ptr_t)();
-#define BOOST_FILESYSTEM_INIRETSUCCESS_V 0
-#define BOOST_FILESYSTEM_INIT_FUNC int __cdecl
-#endif
-
 BOOST_FILESYSTEM_INIT_FUNC init_path_globals()
 {
+#if !defined(BOOST_SYSTEM_HAS_CONSTEXPR)
+    // codecvt_error_category needs to be called early to dynamic-initialize the error category instance
+    boost::filesystem::codecvt_error_category();
+#endif
     std::atexit(&destroy_path_globals);
-    return BOOST_FILESYSTEM_INIRETSUCCESS_V;
+    return BOOST_FILESYSTEM_INITRETSUCCESS_V;
 }
-
-#if defined(__has_attribute)
-#if __has_attribute(__used__)
-#define BOOST_FILESYSTEM_ATTRIBUTE_RETAIN __attribute__((__used__))
-#endif
-#endif
-
-#if !defined(BOOST_FILESYSTEM_ATTRIBUTE_RETAIN) && defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__) >= 402
-#define BOOST_FILESYSTEM_ATTRIBUTE_RETAIN __attribute__((__used__))
-#endif
-
-#if !defined(BOOST_FILESYSTEM_ATTRIBUTE_RETAIN)
-#define BOOST_FILESYSTEM_NO_ATTRIBUTE_RETAIN
-#define BOOST_FILESYSTEM_ATTRIBUTE_RETAIN
-#endif
 
 #if _MSC_VER >= 1400
 
@@ -1573,12 +1565,7 @@ struct globals_retainer
     globals_retainer() { m_p_init_path_globals = &p_init_path_globals; }
 };
 BOOST_ATTRIBUTE_UNUSED
-static const globals_retainer g_globals_retainer
-#if !defined(BOOST_NO_CXX11_UNIFIED_INITIALIZATION_SYNTAX)
-    {};
-#else // !defined(BOOST_NO_CXX11_UNIFIED_INITIALIZATION_SYNTAX)
-    = globals_retainer();
-#endif // !defined(BOOST_NO_CXX11_UNIFIED_INITIALIZATION_SYNTAX)
+static const globals_retainer g_globals_retainer;
 #endif // defined(BOOST_FILESYSTEM_NO_ATTRIBUTE_RETAIN)
 
 #else // defined(_MSC_VER)
