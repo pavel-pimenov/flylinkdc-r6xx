@@ -341,11 +341,11 @@ int32_t Z_EXPORT PREFIX(inflateBack)(PREFIX3(stream) *strm, in_func in, void *in
             /* use inflate_fast() if we have enough input and output */
             if (have >= INFLATE_FAST_MIN_HAVE &&
                 left >= INFLATE_FAST_MIN_LEFT) {
-                RESTORE_BACK();
+                RESTORE();
                 if (state->whave < state->wsize)
                     state->whave = state->wsize - left;
-                zng_inflate_fast_back(strm, state->wsize);
-                LOAD_BACK();
+                zng_inflate_fast(strm, state->wsize);
+                LOAD();
                 break;
             }
 

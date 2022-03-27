@@ -48,6 +48,7 @@
  */
 
 #include "zbuild.h"
+#include "cpu_features.h"
 #include "deflate.h"
 #include "deflate_p.h"
 #include "functable.h"
@@ -82,7 +83,7 @@ const char PREFIX(deflate_copyright)[] = " deflate 1.2.11.f Copyright 1995-2016 
 /* Invoked at the beginning of deflateParams(). Useful for updating arch-specific compression parameters. */
 #  define DEFLATE_PARAMS_HOOK(strm, level, strategy, hook_flush) do {} while (0)
 /* Returns whether the last deflate(flush) operation did everything it's supposed to do. */
-# define DEFLATE_DONE(strm, flush) 1
+#  define DEFLATE_DONE(strm, flush) 1
 /* Adjusts the upper bound on compressed data length based on compression parameters and uncompressed data length.
  * Useful when arch-specific deflation code behaves differently than regular zlib-ng algorithms. */
 #  define DEFLATE_BOUND_ADJUST_COMPLEN(strm, complen, sourceLen) do {} while (0)
@@ -193,11 +194,7 @@ int32_t Z_EXPORT PREFIX(deflateInit2_)(PREFIX3(stream) *strm, int32_t level, int
     int wrap = 1;
     static const char my_version[] = PREFIX2(VERSION);
 
-#if defined(X86_FEATURES)
-    x86_check_features();
-#elif defined(ARM_FEATURES)
-    arm_check_features();
-#endif
+    cpu_check_features();
 
     if (version == NULL || version[0] != my_version[0] || stream_size != sizeof(PREFIX3(stream))) {
         return Z_VERSION_ERROR;
