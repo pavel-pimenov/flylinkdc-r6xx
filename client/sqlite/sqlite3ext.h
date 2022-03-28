@@ -15,9 +15,6 @@
 ** as extensions by SQLite should #include this file instead of 
 ** sqlite3.h.
 */
-
-#pragma once //[+]FlylinkDC++
-
 #ifndef SQLITE3EXT_H
 #define SQLITE3EXT_H
 #include "sqlite3.h"
