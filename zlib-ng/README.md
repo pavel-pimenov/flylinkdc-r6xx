@@ -19,7 +19,7 @@ Features
 * Zlib compatible API with support for dual-linking
 * Modernized native API based on zlib API for ease of porting
 * Modern C11 syntax and a clean code layout
-* Deflate medium and quick algorithms based on Intels zlib fork
+* Deflate medium and quick algorithms based on Intel’s zlib fork
 * Support for CPU intrinsics when available
   * Adler32 implementation using SSSE3, AVX2, AVX512, AVX512-VNNI, Neon, VMX & VSX
   * CRC32-B implementation using PCLMULQDQ, VPCLMULQDQ, ACLE, & IBM Z
@@ -119,8 +119,8 @@ Build Options
 | WITH_OPTIM               | --without-optimizations  | Build with optimisations                                                              | ON      |
 | WITH_NEW_STRATEGIES      | --without-new-strategies | Use new strategies                                                                    | ON      |
 | WITH_NATIVE_INSTRUCTIONS | --native                 | Compiles with full instruction set supported on this host (gcc/clang -march=native)   | OFF     |
-| WITH_SANITIZER           | --with-sanitizer         | Build with sanitizer (memory, address, undefined)                                     | OFF     |
-| WITH_FUZZERS             | --with-fuzzers           | Build test/fuzz                                                                       | OFF     |
+| WITH_SANITIZER           |                          | Build with sanitizer (memory, address, undefined)                                     | OFF     |
+| WITH_FUZZERS             |                          | Build test/fuzz                                                                       | OFF     |
 | WITH_BENCHMARKS          |                          | Build test/benchmarks                                                                 | OFF     |
 | WITH_MAINTAINER_WARNINGS |                          | Build with project maintainer warnings                                                | OFF     |
 | WITH_CODE_COVERAGE       |                          | Enable code coverage reporting                                                        | OFF     |

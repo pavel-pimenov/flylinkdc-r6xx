@@ -281,6 +281,7 @@
     <ClInclude Include="include\libtorrent\torrent_handle.hpp" />
     <ClInclude Include="include\libtorrent\torrent_info.hpp" />
     <ClInclude Include="include\libtorrent\torrent_status.hpp" />
+    <ClInclude Include="include\libtorrent\truncate.hpp" />
     <ClInclude Include="include\libtorrent\union_endpoint.hpp" />
     <ClInclude Include="include\libtorrent\units.hpp" />
     <ClInclude Include="include\libtorrent\upnp.hpp" />
@@ -310,6 +311,7 @@
     <ClCompile Include="src\chained_buffer.cpp" />
     <ClCompile Include="src\choker.cpp" />
     <ClCompile Include="src\close_reason.cpp" />
+    <ClCompile Include="src\copy_file.cpp" />
     <ClCompile Include="src\cpuid.cpp" />
     <ClCompile Include="src\crc32c.cpp" />
     <ClCompile Include="src\create_torrent.cpp" />
@@ -443,6 +445,7 @@
     <ClCompile Include="src\torrent_peer_allocator.cpp" />
     <ClCompile Include="src\torrent_status.cpp" />
     <ClCompile Include="src\tracker_manager.cpp" />
+    <ClCompile Include="src\truncate.cpp" />
     <ClCompile Include="src\udp_socket.cpp" />
     <ClCompile Include="src\udp_tracker_connection.cpp" />
     <ClCompile Include="src\upnp.cpp" />

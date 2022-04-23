@@ -319,7 +319,7 @@ int print_peer_info(std::string& out
 	if (print_peaks) out += " | peak  ";
 	out += " ) sent-req tmo bsy rcv flags            dn  up  source  ";
 	if (print_fails) out += "fail hshf ";
-	if (print_send_bufs) out += "rq sndb (recvb |alloc | wmrk ) q-bytes ";
+	if (print_send_bufs) out += " rq sndb (recvb |alloc | wmrk ) q-bytes ";
 	if (print_timers) out += "inactive wait timeout q-time ";
 	out += "  v disk ^    rtt  ";
 	if (print_block) out += "block-progress ";
@@ -610,6 +610,7 @@ void assign_setting(lt::settings_pack& settings, std::string const& key, char co
 				{"anti_leech"_sv, settings_pack::anti_leech},
 				{"enable_os_cache"_sv, settings_pack::enable_os_cache},
 				{"disable_os_cache"_sv, settings_pack::disable_os_cache},
+				{"write_through"_sv, settings_pack::write_through},
 				{"prefer_tcp"_sv, settings_pack::prefer_tcp},
 				{"peer_proportional"_sv, settings_pack::peer_proportional},
 				{"pe_forced"_sv, settings_pack::pe_forced},
