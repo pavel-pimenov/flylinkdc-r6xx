@@ -1007,7 +1007,7 @@ void File_DvDif::Errors_Stats_Update()
             Errors_Stats_Line+=__T("XX:XX:XX:XX");
             #if MEDIAINFO_EVENTS
                 Event.TimeCode|=0x7FFFF<<8;
-                //Event.TimeCode|=Speed_TimeCode_Current.Time.DropFrame<<7;
+                //Event.TimeCode|=Speed_TimeCode_Current.Time.DropFrame()<<7;
                 Event.TimeCode|=0x3F;
             #endif //MEDIAINFO_EVENTS
         }
@@ -1870,7 +1870,7 @@ void File_DvDif::Errors_Stats_Update()
 
     //Speed_TimeCode_Current
     Speed_TimeCode_Current_Theory2=Speed_TimeCode_Current; // Don't change it
-        Speed_TimeCode_Current_Theory=Speed_TimeCode_Current;
+    Speed_TimeCode_Current_Theory=Speed_TimeCode_Current;
     if (Speed_TimeCode_Current_Theory.IsValid)
     {
         int8u Frames_Max;
