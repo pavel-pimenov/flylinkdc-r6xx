@@ -117,7 +117,7 @@ OnlineUserPtr AdcHub::getUser(const uint32_t aSID, const CID& aCID, const string
 		{
 			messageYouHaweRightOperatorOnThisHub();
 		}
-	}
+	}	
 	else // User
 	{
 		UserPtr u = ClientManager::createUser(aCID, p_nick, getHubID());
@@ -1554,7 +1554,7 @@ void AdcHub::info(bool p_force)
 	
 	
 	addParam(c, "EM", SETTING(EMAIL));
-	// [!] Flylink++ Exclusive hub mode
+	/*
 	const FavoriteHubEntry *fhe = FavoriteManager::getFavoriteHubEntry(getHubUrl());
 	if (fhe && fhe->getExclusiveHub())
 	{
@@ -1569,6 +1569,7 @@ void AdcHub::info(bool p_force)
 		addParam(c, "HO", Util::toString(l_op));
 	}
 	else
+*/ 
 	{
 		if (getTotalCounts() == 0)
 		{

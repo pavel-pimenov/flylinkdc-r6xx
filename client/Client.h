@@ -511,7 +511,9 @@ class Client : public ClientBase, public Speaker<ClientListener>, public Buffere
 		
 #endif
 	private:
+#ifdef FLYLINKDC_USE_MIMICRYTAG
 		bool m_is_override_name;
+#endif
 	protected:
 		string getTagVersion() const;
 		

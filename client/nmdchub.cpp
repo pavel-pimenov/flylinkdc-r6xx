@@ -2210,7 +2210,7 @@ void NmdcHub::myInfo(bool p_always_send, bool p_is_force_passive)
 		return; // antispam
 	}
 	checkstate();
-	const FavoriteHubEntry *l_fhe = reloadSettings(false);
+	//const FavoriteHubEntry *l_fhe = reloadSettings(false);
 	char l_modeChar;
 	if (p_is_force_passive)
 	{
@@ -2257,7 +2257,8 @@ void NmdcHub::myInfo(bool p_always_send, bool p_is_force_passive)
 	{
 		status |= NmdcSupports::TLS;
 	}
-	const string l_currentCounts = l_fhe && l_fhe->getExclusiveHub() ? getCountsIndivid() : getCounts();
+	//const string l_currentCounts = l_fhe && l_fhe->getExclusiveHub() ? getCountsIndivid() : getCounts();
+	const string l_currentCounts = getCounts();
 	
 	// IRAINMAN_USE_UNICODE_IN_NMDC
 	string l_currentMyInfo;
@@ -3196,7 +3197,7 @@ void NmdcHub::RequestConnectionForAutodetect()
 	{
 		bool bWantAutodetect = false;
 		const auto l_fav = FavoriteManager::getFavoriteHubEntry(getHubUrl());
-		const auto l_mode = ClientManager::getMode(l_fav, bWantAutodetect);
+		//const auto l_mode = ClientManager::getMode(l_fav, bWantAutodetect);
 		//if (l_mode == SettingsManager::INCOMING_FIREWALL_PASSIVE ||
 		//    l_mode == SettingsManager::INCOMING_DIRECT)
 		{

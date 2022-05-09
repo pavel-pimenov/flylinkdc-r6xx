@@ -53,6 +53,7 @@ StringSet FavoriteManager::g_sync_hub_isp_delete;
 #endif
 StringSet FavoriteManager::g_redirect_hubs;
 
+#ifdef FLYLINKDC_USE_MIMICRYTAG
 const FavoriteManager::mimicrytag FavoriteManager::g_MimicryTags[] =
 {
 	// Up from http://ru.wikipedia.org/wiki/DC%2B%2B
@@ -67,6 +68,7 @@ const FavoriteManager::mimicrytag FavoriteManager::g_MimicryTags[] =
 	FavoriteManager::mimicrytag("Lama", "500"),     // http://lamalama.tv
 	FavoriteManager::mimicrytag(nullptr, nullptr),          // terminating, don't delete this
 };
+#endif
 
 FavoriteManager::FavoriteManager()
 {
@@ -763,7 +765,7 @@ void FavoriteManager::save_favorites()
 				xml.addChildAttrib("HideShare", (*i)->getHideShare()); // Save paramethers always IRAINMAN_INCLUDE_HIDE_SHARE_MOD
 				xml.addChildAttrib("ShowJoins", (*i)->getShowJoins()); // Show joins
 				xml.addChildAttrib("ExclChecks", (*i)->getExclChecks()); // Excl. from client checking
-				xml.addChildAttrib("ExclusiveHub", (*i)->getExclusiveHub()); // Exclusive Hub
+//				xml.addChildAttrib("ExclusiveHub", (*i)->getExclusiveHub()); // Exclusive Hub
 				xml.addChildAttrib("SuppressChatAndPM", (*i)->getSuppressChatAndPM());
 				xml.addChildAttrib("UserListState", (*i)->getUserListState());
 				if ((*i)->getISPDisableFlylinkDCSupportHub())
@@ -790,7 +792,9 @@ void FavoriteManager::save_favorites()
 				xml.addChildAttrib("SearchIntervalPassive", Util::toString((*i)->getSearchIntervalPassive()));
 				xml.addChildAttribIfNotEmpty("ClientName", (*i)->getClientName());
 				xml.addChildAttribIfNotEmpty("ClientVersion", (*i)->getClientVersion());
+#ifdef FLYLINKDC_USE_MIMICRYTAG
 				xml.addChildAttrib("OverrideId", Util::toString((*i)->getOverrideId()));
+#endif
 				xml.addChildAttribIfNotEmpty("Group", (*i)->getGroup());
 #ifdef IRAINMAN_ENABLE_CON_STATUS_ON_FAV_HUBS
 				xml.addChildAttrib("Status", (*i)->getConnectionStatus().getStatus());
@@ -1325,7 +1329,9 @@ void FavoriteManager::load(SimpleXML& aXml
 				const bool l_SuppressChatAndPM = aXml.getBoolChildAttrib("SuppressChatAndPM");
 				e->setSuppressChatAndPM(l_SuppressChatAndPM);
 				
+#ifdef FLYLINKDC_USE_MIMICRYTAG
 				const bool l_isOverrideId = Util::toInt(aXml.getChildAttrib("OverrideId")) != 0;
+#endif
 				const string l_clientName = aXml.getChildAttrib("ClientName");
 				const string l_clientVersion = aXml.getChildAttrib("ClientVersion");
 				
@@ -1379,7 +1385,7 @@ void FavoriteManager::load(SimpleXML& aXml
 					e->setHideShare(aXml.getBoolChildAttrib("HideShare")); // Hide Share Mod
 					e->setShowJoins(aXml.getBoolChildAttrib("ShowJoins")); // Show joins
 					e->setExclChecks(aXml.getBoolChildAttrib("ExclChecks")); // Excl. from client checking
-					e->setExclusiveHub(aXml.getBoolChildAttrib("ExclusiveHub")); // Exclusive Hub Mod
+//					e->setExclusiveHub(aXml.getBoolChildAttrib("ExclusiveHub")); // Exclusive Hub Mod
 					e->setHeaderOrder(aXml.getChildAttrib("HeaderOrder", SETTING(HUBFRAME_ORDER)));
 					e->setHeaderWidths(aXml.getChildAttrib("HeaderWidths", SETTING(HUBFRAME_WIDTHS)));
 					e->setHeaderVisible(aXml.getChildAttrib("HeaderVisible", SETTING(HUBFRAME_VISIBLE)));
@@ -1410,7 +1416,9 @@ void FavoriteManager::load(SimpleXML& aXml
 						e->setClientName(l_clientName);
 						e->setClientVersion(l_clientVersion);
 					}
+#ifdef FLYLINKDC_USE_MIMICRYTAG
 					e->setOverrideId(l_isOverrideId);
+#endif
 					e->setGroup(l_Group);
 #ifdef IRAINMAN_ENABLE_CON_STATUS_ON_FAV_HUBS
 					e->setSavedConnectionStatus(Util::toInt(aXml.getChildAttrib("Status")),
@@ -1454,7 +1462,9 @@ void FavoriteManager::load(SimpleXML& aXml
 							e->setSuppressChatAndPM(l_SuppressChatAndPM);
 							e->setClientName(l_clientName);
 							e->setClientVersion(l_clientVersion);
+#ifdef FLYLINKDC_USE_MIMICRYTAG
 							e->setOverrideId(l_isOverrideId);
+#endif
 							
 							l_is_needSave = true;
 						}
@@ -1471,7 +1481,9 @@ void FavoriteManager::load(SimpleXML& aXml
 						l_HubEntry->setSuppressChatAndPM(l_SuppressChatAndPM);
 						l_HubEntry->setClientName(l_clientName);
 						l_HubEntry->setClientVersion(l_clientVersion);
+#ifdef FLYLINKDC_USE_MIMICRYTAG
 						l_HubEntry->setOverrideId(l_isOverrideId);
+#endif
 						l_HubEntry->setGroup("ISP");
 					}
 					if (l_ISPDelete)

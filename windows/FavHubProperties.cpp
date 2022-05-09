@@ -92,7 +92,8 @@ LRESULT FavHubProperties::OnInitDialog(UINT, WPARAM, LPARAM, BOOL&)
 	CheckDlgButton(IDC_ANTIVIRUS_AUTOBAN_FOR_IP, entry->getAutobanAntivirusIP() ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_ANTIVIRUS_AUTOBAN_FOR_NICK, entry->getAutobanAntivirusNick() ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_EXCL_CHECKS, entry->getExclChecks() ? BST_CHECKED : BST_UNCHECKED); // Excl. from client checking
-	CheckDlgButton(IDC_EXCLUSIVE_HUB, entry->getExclusiveHub() ? BST_CHECKED : BST_UNCHECKED); // Exclusive hub, send H:1/0/0 or similar
+	// CheckDlgButton(IDC_EXCLUSIVE_HUB, entry->getExclusiveHub() ? BST_CHECKED : BST_UNCHECKED); // Exclusive hub, send H:1/0/0 or similar
+	CheckDlgButton(IDC_EXCLUSIVE_HUB, FALSE);
 	CheckDlgButton(IDC_SUPPRESS_FAV_CHAT_AND_PM, entry->getSuppressChatAndPM() ? BST_CHECKED : BST_UNCHECKED);
 	
 	SetDlgItemText(IDC_RAW_ONE, Text::toT(entry->getRawOne()).c_str());
@@ -109,6 +110,7 @@ LRESULT FavHubProperties::OnInitDialog(UINT, WPARAM, LPARAM, BOOL&)
 	SetDlgItemText(IDC_WIZARD_NICK_RND, CTSTRING(WIZARD_NICK_RND)); // Rand Nick button
 	SetDlgItemText(IDC_WIZARD_NICK_RND2, CTSTRING(DEFAULT));        // Default Nick button
 	
+#ifdef FLYLINKDC_USE_MIMICRYTAG
 	CComboBox IdCombo;
 	IdCombo.Attach(GetDlgItem(IDC_CLIENT_ID_BOX));
 	const bool l_isAdc = Util::isAdcHub(entry->getServer());
@@ -117,14 +119,19 @@ LRESULT FavHubProperties::OnInitDialog(UINT, WPARAM, LPARAM, BOOL&)
 		IdCombo.AddString(Text::toT(FavoriteManager::createClientId(i->tag, i->version, l_isAdc)).c_str());
 	}
 	IdCombo.Detach();
-	
+
 	if (!entry->getClientName().empty())
 		SetDlgItemText(IDC_CLIENT_ID_BOX, Text::toT(FavoriteManager::createClientId(entry->getClientName(), entry->getClientVersion(), l_isAdc)).c_str());
 		
 	CheckDlgButton(IDC_CLIENT_ID, entry->getOverrideId() ? BST_CHECKED : BST_UNCHECKED);
 	BOOL x;
 	OnChangeId(BN_CLICKED, IDC_CLIENT, 0, x);
-	
+#else
+	::EnableWindow(GetDlgItem(IDC_CLIENT_ID), FALSE);
+
+#endif
+	::EnableWindow(GetDlgItem(IDC_EXCLUSIVE_HUB), FALSE);
+
 	CComboBox combo;
 	combo.Attach(GetDlgItem(IDC_FAVGROUP_BOX));
 	combo.AddString(_T("---"));
@@ -218,7 +225,7 @@ LRESULT FavHubProperties::OnCloseCmd(WORD /*wNotifyCode*/, WORD wID, HWND /*hWnd
 			MessageBox(CTSTRING(INCOMPLETE_FAV_HUB), _T(""), MB_ICONWARNING | MB_OK);
 			return 0;
 		}
-		const string& url = Text::fromT(buf);
+		const string url = Text::fromT(buf);
 		entry->setServer(Util::formatDchubUrl(url));
 		GET_TEXT(IDC_HUBNAME, buf);
 		entry->setName(Text::fromT(buf));
@@ -241,7 +248,7 @@ LRESULT FavHubProperties::OnCloseCmd(WORD /*wNotifyCode*/, WORD wID, HWND /*hWnd
 		entry->setAutobanAntivirusIP(IsDlgButtonChecked(IDC_ANTIVIRUS_AUTOBAN_FOR_IP) == 1);
 		entry->setAutobanAntivirusNick(IsDlgButtonChecked(IDC_ANTIVIRUS_AUTOBAN_FOR_NICK) == 1);
 		entry->setExclChecks(IsDlgButtonChecked(IDC_EXCL_CHECKS) == 1); // Excl. from client checking
-		entry->setExclusiveHub(IsDlgButtonChecked(IDC_EXCLUSIVE_HUB) == 1); // Exclusive hub, send H:1/0/0 or similar
+//		entry->setExclusiveHub(IsDlgButtonChecked(IDC_EXCLUSIVE_HUB) == 1); // Exclusive hub, send H:1/0/0 or similar
 		entry->setSuppressChatAndPM(IsDlgButtonChecked(IDC_SUPPRESS_FAV_CHAT_AND_PM) == 1);
 		
 		GET_TEXT(IDC_RAW_ONE, buf);
@@ -281,13 +288,14 @@ LRESULT FavHubProperties::OnCloseCmd(WORD /*wNotifyCode*/, WORD wID, HWND /*hWnd
 		}
 		combo.Detach();
 		
+#ifdef FLYLINKDC_USE_MIMICRYTAG
 		GET_TEXT(IDC_CLIENT_ID_BOX, buf);
 		string l_clientName, l_clientVersion;
 		FavoriteManager::splitClientId(Text::fromT(buf), l_clientName, l_clientVersion);
 		entry->setClientName(l_clientName);
 		entry->setClientVersion(l_clientVersion);
 		entry->setOverrideId(IsDlgButtonChecked(IDC_CLIENT_ID) == BST_CHECKED);
-		
+#endif		
 		
 		int ct = -1;
 		if (IsDlgButtonChecked(IDC_DEFAULT))

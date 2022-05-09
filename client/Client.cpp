@@ -48,7 +48,9 @@ Client::Client(const string& p_HubURL, char p_separator, bool p_is_secure,
 	m_exclChecks(false),
 	m_message_count(0),
 	m_is_hide_share(0),
+#ifdef FLYLINKDC_USE_MIMICRYTAG
 	m_is_override_name(false),
+#endif
 	m_is_fly_support_hub(false),
 	m_vip_icon_index(0),
 	m_proto(p_proto),
@@ -210,6 +212,7 @@ const FavoriteHubEntry* Client::reloadSettings(bool updateNick)
 	string speedDescription;
 #endif
 	const FavoriteHubEntry* hub = FavoriteManager::getFavoriteHubEntry(getHubUrl());
+#ifdef FLYLINKDC_USE_MIMICRYTAG
 	extern bool g_UseStrongDCTag;
 	m_is_override_name = (hub && hub->getOverrideId() || g_UseStrongDCTag);
 	if (m_is_override_name) // mimicry tag
@@ -228,7 +231,8 @@ const FavoriteHubEntry* Client::reloadSettings(bool updateNick)
 			}
 		}
 	}
-	else // FlylinkDC native
+	else 
+#endif
 	{
 #ifdef IRAINMAN_ENABLE_SLOTS_AND_LIMIT_IN_DESCRIPTION
 		if (BOOLSETTING(ADD_TO_DESCRIPTION))
