@@ -68,9 +68,9 @@ const char PREFIX(deflate_copyright)[] = " deflate 1.2.11.f Copyright 1995-2016 
 #  include "arch/s390/dfltcc_deflate.h"
 #else
 /* Memory management for the deflate state. Useful for allocating arch-specific extension blocks. */
-#  define ZALLOC_STATE(strm, items, size) ZALLOC(strm, items, size)
+#  define ZALLOC_DEFLATE_STATE(strm) ((deflate_state *)ZALLOC(strm, 1, sizeof(deflate_state)))
 #  define ZFREE_STATE(strm, addr) ZFREE(strm, addr)
-#  define ZCOPY_STATE(dst, src, size) memcpy(dst, src, size)
+#  define ZCOPY_DEFLATE_STATE(dst, src) memcpy(dst, src, sizeof(deflate_state))
 /* Memory management for the window. Useful for allocation the aligned window. */
 #  define ZALLOC_WINDOW(strm, items, size) ZALLOC(strm, items, size)
 #  define TRY_FREE_WINDOW(strm, addr) TRY_FREE(strm, addr)
@@ -230,7 +230,7 @@ int32_t Z_EXPORT PREFIX(deflateInit2_)(PREFIX3(stream) *strm, int32_t level, int
     if (windowBits == 8)
         windowBits = 9;  /* until 256-byte window bug fixed */
 
-    s = (deflate_state *) ZALLOC_STATE(strm, 1, sizeof(deflate_state));
+    s = ZALLOC_DEFLATE_STATE(strm);
     if (s == NULL)
         return Z_MEM_ERROR;
     strm->state = (struct internal_state *)s;
@@ -662,7 +662,7 @@ unsigned long Z_EXPORT PREFIX(deflateBound)(PREFIX3(stream) *strm, unsigned long
  * applications may wish to modify it to avoid allocating a large
  * strm->next_out buffer and copying into it. (See also read_buf()).
  */
-Z_INTERNAL void flush_pending(PREFIX3(stream) *strm) {
+Z_INTERNAL void PREFIX(flush_pending)(PREFIX3(stream) *strm) {
     uint32_t len;
     deflate_state *s = strm->state;
 
@@ -715,7 +715,7 @@ int32_t Z_EXPORT PREFIX(deflate)(PREFIX3(stream) *strm, int32_t flush) {
 
     /* Flush as much pending output as possible */
     if (s->pending != 0) {
-        flush_pending(strm);
+        PREFIX(flush_pending)(strm);
         if (strm->avail_out == 0) {
             /* Since avail_out is 0, deflate will be called again with
              * more output space, but possibly with both pending and
@@ -770,7 +770,7 @@ int32_t Z_EXPORT PREFIX(deflate)(PREFIX3(stream) *strm, int32_t flush) {
         s->status = BUSY_STATE;
 
         /* Compression must start with an empty pending buffer */
-        flush_pending(strm);
+        PREFIX(flush_pending)(strm);
         if (s->pending != 0) {
             s->last_flush = -1;
             return Z_OK;
@@ -792,7 +792,7 @@ int32_t Z_EXPORT PREFIX(deflate)(PREFIX3(stream) *strm, int32_t flush) {
             s->status = BUSY_STATE;
 
             /* Compression must start with an empty pending buffer */
-            flush_pending(strm);
+            PREFIX(flush_pending)(strm);
             if (s->pending != 0) {
                 s->last_flush = -1;
                 return Z_OK;
@@ -826,7 +826,7 @@ int32_t Z_EXPORT PREFIX(deflate)(PREFIX3(stream) *strm, int32_t flush) {
                 s->pending = s->pending_buf_size;
                 HCRC_UPDATE(beg);
                 s->gzindex += copy;
-                flush_pending(strm);
+                PREFIX(flush_pending)(strm);
                 if (s->pending != 0) {
                     s->last_flush = -1;
                     return Z_OK;
@@ -849,7 +849,7 @@ int32_t Z_EXPORT PREFIX(deflate)(PREFIX3(stream) *strm, int32_t flush) {
             do {
                 if (s->pending == s->pending_buf_size) {
                     HCRC_UPDATE(beg);
-                    flush_pending(strm);
+                    PREFIX(flush_pending)(strm);
                     if (s->pending != 0) {
                         s->last_flush = -1;
                         return Z_OK;
@@ -872,7 +872,7 @@ int32_t Z_EXPORT PREFIX(deflate)(PREFIX3(stream) *strm, int32_t flush) {
             do {
                 if (s->pending == s->pending_buf_size) {
                     HCRC_UPDATE(beg);
-                    flush_pending(strm);
+                    PREFIX(flush_pending)(strm);
                     if (s->pending != 0) {
                         s->last_flush = -1;
                         return Z_OK;
@@ -889,7 +889,7 @@ int32_t Z_EXPORT PREFIX(deflate)(PREFIX3(stream) *strm, int32_t flush) {
     if (s->status == HCRC_STATE) {
         if (s->gzhead->hcrc) {
             if (s->pending + 2 > s->pending_buf_size) {
-                flush_pending(strm);
+                PREFIX(flush_pending)(strm);
                 if (s->pending != 0) {
                     s->last_flush = -1;
                     return Z_OK;
@@ -901,7 +901,7 @@ int32_t Z_EXPORT PREFIX(deflate)(PREFIX3(stream) *strm, int32_t flush) {
         s->status = BUSY_STATE;
 
         /* Compression must start with an empty pending buffer */
-        flush_pending(strm);
+        PREFIX(flush_pending)(strm);
         if (s->pending != 0) {
             s->last_flush = -1;
             return Z_OK;
@@ -953,7 +953,7 @@ int32_t Z_EXPORT PREFIX(deflate)(PREFIX3(stream) *strm, int32_t flush) {
                     }
                 }
             }
-            flush_pending(strm);
+            PREFIX(flush_pending)(strm);
             if (strm->avail_out == 0) {
                 s->last_flush = -1; /* avoid BUF_ERROR at next call, see above */
                 return Z_OK;
@@ -975,7 +975,7 @@ int32_t Z_EXPORT PREFIX(deflate)(PREFIX3(stream) *strm, int32_t flush) {
 #endif
     if (s->wrap == 1)
         put_uint32_msb(s, strm->adler);
-    flush_pending(strm);
+    PREFIX(flush_pending)(strm);
     /* If avail_out is zero, the application will call deflate again
      * to flush the rest.
      */
@@ -1024,11 +1024,11 @@ int32_t Z_EXPORT PREFIX(deflateCopy)(PREFIX3(stream) *dest, PREFIX3(stream) *sou
 
     memcpy((void *)dest, (void *)source, sizeof(PREFIX3(stream)));
 
-    ds = (deflate_state *) ZALLOC_STATE(dest, 1, sizeof(deflate_state));
+    ds = ZALLOC_DEFLATE_STATE(dest);
     if (ds == NULL)
         return Z_MEM_ERROR;
     dest->state = (struct internal_state *) ds;
-    ZCOPY_STATE((void *)ds, (void *)ss, sizeof(deflate_state));
+    ZCOPY_DEFLATE_STATE(ds, ss);
     ds->strm = dest;
 
 #ifdef X86_PCLMULQDQ_CRC

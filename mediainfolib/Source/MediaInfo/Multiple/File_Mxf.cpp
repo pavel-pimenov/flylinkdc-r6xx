@@ -3041,7 +3041,7 @@ void File_Mxf::Streams_Finish_Essence(int32u EssenceUID, const int128u& TrackUID
         //Fill(StreamKind_Last, StreamPos_Last, Fill_Parameter(StreamKind_Last, Generic_TimeCode_FirstFrame), TC.ToString().c_str());
         //Fill(StreamKind_Last, StreamPos_Last, Fill_Parameter(StreamKind_Last, Generic_TimeCode_Source), "Time code track (stripped)");
     }
-    size_t SDTI_TimeCode_StartTimecode_StreamPos_Last;
+    size_t SDTI_TimeCode_StartTimecode_StreamPos_Last=0;
     if (SDTI_TimeCode_StartTimecode.HasValue())
     {
         SDTI_TimeCode_StartTimecode_StreamPos_Last=StreamPos_Last;
@@ -3052,7 +3052,7 @@ void File_Mxf::Streams_Finish_Essence(int32u EssenceUID, const int128u& TrackUID
         //Fill(StreamKind_Last, StreamPos_Last, Fill_Parameter(StreamKind_Last, Generic_TimeCode_FirstFrame), SDTI_TimeCode_StartTimecode.c_str());
         //Fill(StreamKind_Last, StreamPos_Last, Fill_Parameter(StreamKind_Last, Generic_TimeCode_Source), "SDTI");
     }
-    size_t SystemScheme1_TimeCodeArray_StartTimecode_StreamPos_Last;
+    size_t SystemScheme1_TimeCodeArray_StartTimecode_StreamPos_Last=0;
     if (SystemScheme1_TimeCodeArray_StartTimecode.HasValue())
     {
         SystemScheme1_TimeCodeArray_StartTimecode_StreamPos_Last=StreamPos_Last;
@@ -3333,7 +3333,9 @@ void File_Mxf::Streams_Finish_Essence(int32u EssenceUID, const int128u& TrackUID
                 int64u FrameCount=FrameCount_FromComponent;
                 int64u File_IgnoreEditsBefore=Config->File_IgnoreEditsBefore;
                 if (File_IgnoreEditsBefore && Config->File_EditRate && (EditRate_FromTrack<Config->File_EditRate*0.9 || EditRate_FromTrack>Config->File_EditRate*1.1)) //In case of problem or EditRate being sampling rate
+                    File_IgnoreEditsBefore = float64_int64s(((float64)File_IgnoreEditsBefore) / Config->File_EditRate * EditRate_FromTrack);
                     File_IgnoreEditsBefore=float64_int64s(((float64)File_IgnoreEditsBefore)/Config->File_EditRate*EditRate_FromTrack);
+                File_IgnoreEditsBefore=float64_int64s(((float64)File_IgnoreEditsBefore)/Config->File_EditRate*EditRate_FromTrack);
                 int64u File_IgnoreEditsAfter=Config->File_IgnoreEditsAfter;
                 if (File_IgnoreEditsAfter!=(int64u)-1 && Config->File_EditRate && (EditRate_FromTrack<Config->File_EditRate*0.9 || EditRate_FromTrack>Config->File_EditRate*1.1)) //In case of problem or EditRate being sampling rate
                     File_IgnoreEditsAfter=float64_int64s(((float64)File_IgnoreEditsAfter)/Config->File_EditRate*EditRate_FromTrack);

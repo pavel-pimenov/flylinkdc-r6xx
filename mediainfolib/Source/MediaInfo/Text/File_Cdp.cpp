@@ -575,7 +575,7 @@ void File_Cdp::ccsvcinfo_section()
         Element_Begin1("service");
         string language;
         int8u caption_service_number=0;
-        bool digital_cc, wide_aspect_ratio, line21_field;
+        bool digital_cc, wide_aspect_ratio, line21_field=0;
         Get_String(3, language,                                 "language");
         BS_Begin();
         Get_SB (digital_cc,                                     "digital_cc");

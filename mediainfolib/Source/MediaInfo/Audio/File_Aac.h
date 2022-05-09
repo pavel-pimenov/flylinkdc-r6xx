@@ -243,6 +243,11 @@ protected :
     #if MEDIAINFO_ADVANCED
         int64u  aac_frame_length_Total;
     #endif //MEDIAINFO_ADVANCED
+    #if MEDIAINFO_MACROBLOCKS
+        int     ParseCompletely;
+    #else //MEDIAINFO_MACROBLOCKS
+        static constexpr int ParseCompletely=0;
+    #endif //MEDIAINFO_MACROBLOCKS
 
     //***********************************************************************
     // Elements - Speech coding (HVXC)
