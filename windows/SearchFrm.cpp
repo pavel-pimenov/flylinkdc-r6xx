@@ -1940,135 +1940,142 @@ int SearchFrame::SearchInfo::getImageIndex() const
 
 const tstring SearchFrame::SearchInfo::getText(uint8_t col) const
 {
-	dcassert(col < COLUMN_LAST);
-	if (m_is_torrent)
+	try
 	{
-		switch (col)
+		dcassert(col < COLUMN_LAST);
+		if (m_is_torrent)
 		{
-			case COLUMN_TTH:
-				//return Text::toT("SHA1:" + m_sr.getSHA1());
-				return  Text::toT(m_sr.getTorrentMagnet());
-			case COLUMN_FILENAME:
-				return Text::toT(m_sr.getFile());
-			case COLUMN_HITS:
-				return Text::toT(m_sr.getPeersString());
-			//case COLUMN_EXACT_SIZE:
-			//  return m_sr.getSize() > 0 ? Util::formatExactSize(m_sr.getSize()) : BaseUtil::emptyStringT;
-			case COLUMN_SIZE:
-				return m_sr.getSize() > 0 ? Util::formatBytesW(m_sr.getSize()) : BaseUtil::emptyStringT;
-			case COLUMN_TORRENT_COMMENT:
-				return Text::toT(Util::toString(m_sr.m_comment));
-			case COLUMN_TORRENT_DATE:
-				return Text::toT(m_sr.m_date);
-			case COLUMN_TORRENT_URL:
-				return Text::toT(Util::toString(m_sr.m_url));
-			case COLUMN_TORRENT_TRACKER:
-				return Text::toT(Util::toString(m_sr.m_tracker));
-			case COLUMN_TORRENT_PAGE:
-				return Text::toT(Util::toString(m_sr.m_torrent_page));
+			switch (col)
+			{
+				case COLUMN_TTH:
+					//return Text::toT("SHA1:" + m_sr.getSHA1());
+					return  Text::toT(m_sr.getTorrentMagnet());
+				case COLUMN_FILENAME:
+					return Text::toT(m_sr.getFile());
+				case COLUMN_HITS:
+					return Text::toT(m_sr.getPeersString());
+				//case COLUMN_EXACT_SIZE:
+				//  return m_sr.getSize() > 0 ? Util::formatExactSize(m_sr.getSize()) : BaseUtil::emptyStringT;
+				case COLUMN_SIZE:
+					return m_sr.getSize() > 0 ? Util::formatBytesW(m_sr.getSize()) : BaseUtil::emptyStringT;
+				case COLUMN_TORRENT_COMMENT:
+					return Text::toT(Util::toString(m_sr.m_comment));
+				case COLUMN_TORRENT_DATE:
+					return Text::toT(m_sr.m_date);
+				case COLUMN_TORRENT_URL:
+					return Text::toT(Util::toString(m_sr.m_url));
+				case COLUMN_TORRENT_TRACKER:
+					return Text::toT(Util::toString(m_sr.m_tracker));
+				case COLUMN_TORRENT_PAGE:
+					return Text::toT(Util::toString(m_sr.m_torrent_page));
+			}
+			return BaseUtil::emptyStringT;
 		}
-		return BaseUtil::emptyStringT;
-	}
-	else
-	{
-		switch (col)
+		else
 		{
-			case COLUMN_FILENAME:
-				if (m_sr.getType() == SearchResult::TYPE_FILE)
-				{
-					if (m_sr.getFile().rfind(_T('\\')) == tstring::npos)
+			switch (col)
+			{
+				case COLUMN_FILENAME:
+					if (m_sr.getType() == SearchResult::TYPE_FILE)
 					{
-						return Text::toT(m_sr.getFile());
+						if (m_sr.getFile().rfind(_T('\\')) == tstring::npos)
+						{
+							return Text::toT(m_sr.getFile());
+						}
+						else
+						{
+							return Text::toT(Util::getFileName(m_sr.getFile()));
+						}
 					}
 					else
 					{
-						return Text::toT(Util::getFileName(m_sr.getFile()));
+						return Text::toT(m_sr.getFileName());
 					}
-				}
-				else
-				{
-					return Text::toT(m_sr.getFileName());
-				}
-			case COLUMN_HITS:
-				return m_hits == 0 ? BaseUtil::emptyStringT : Util::toStringW(m_hits + 1) + _T(' ') + TSTRING(USERS);
-			case COLUMN_NICK:
-				return Text::toT(m_sr.getNicks());
-			case COLUMN_TYPE:
-				if (m_sr.getType() == SearchResult::TYPE_FILE)
-				{
-					const tstring type = Text::toT(Util::getFileExtWithoutDot(Text::fromT(getText(COLUMN_FILENAME))));
-					return type;
-				}
-				else
-				{
-					return TSTRING(DIRECTORY);
-				}
-			case COLUMN_EXACT_SIZE:
-				return m_sr.getSize() > 0 ? Util::formatExactSize(m_sr.getSize()) : BaseUtil::emptyStringT;
-			case COLUMN_SIZE:
-				if (m_sr.getType() == SearchResult::TYPE_FILE)
-				{
-					return Util::formatBytesW(m_sr.getSize());
-				}
-				else
-				{
-					return BaseUtil::emptyStringT;
-				}
-			case COLUMN_PATH:
-				if (m_sr.getType() == SearchResult::TYPE_FILE)
-				{
-					return Text::toT(Util::getFilePath(m_sr.getFile()));
-				}
-				else
-				{
-					return Text::toT(m_sr.getFile());
-				}
+				case COLUMN_HITS:
+					return m_hits == 0 ? BaseUtil::emptyStringT : Util::toStringW(m_hits + 1) + _T(' ') + TSTRING(USERS);
+				case COLUMN_NICK:
+					return Text::toT(m_sr.getNicks());
+				case COLUMN_TYPE:
+					if (m_sr.getType() == SearchResult::TYPE_FILE)
+					{
+						const tstring type = Text::toT(Util::getFileExtWithoutDot(Text::fromT(getText(COLUMN_FILENAME))));
+						return type;
+					}
+					else
+					{
+						return TSTRING(DIRECTORY);
+					}
+				case COLUMN_EXACT_SIZE:
+					return m_sr.getSize() > 0 ? Util::formatExactSize(m_sr.getSize()) : BaseUtil::emptyStringT;
+				case COLUMN_SIZE:
+					if (m_sr.getType() == SearchResult::TYPE_FILE)
+					{
+						return Util::formatBytesW(m_sr.getSize());
+					}
+					else
+					{
+						return BaseUtil::emptyStringT;
+					}
+				case COLUMN_PATH:
+					if (m_sr.getType() == SearchResult::TYPE_FILE)
+					{
+						return Text::toT(Util::getFilePath(m_sr.getFile()));
+					}
+					else
+					{
+						return Text::toT(m_sr.getFile());
+					}
 #ifdef FLYLINKDC_USE_ANTIVIRUS_DB
-			case COLUMN_ANTIVIRUS:
-			{
-				if (getUser())
-					return Text::toT(Util::toString(ClientManager::getAntivirusNicks(getUser()->getCID())));
-				else
-					return "";
-			}
-#endif
-			case COLUMN_LOCAL_PATH:
-			{
-				tstring l_result;
-				if (m_sr.getType() == SearchResult::TYPE_FILE)
+				case COLUMN_ANTIVIRUS:
 				{
-					l_result = ShareManager::calc_status_file(m_sr.getTTH());
+					if (getUser())
+						return Text::toT(Util::toString(ClientManager::getAntivirusNicks(getUser()->getCID())));
+					else
+						return "";
 				}
-				return l_result;
-			}
-			case COLUMN_SLOTS:
-				return Text::toT(m_sr.getSlotString());
-			case COLUMN_HUB:
-				return Text::toT(m_sr.getHubName() + " (" + m_sr.getHubUrl() + ')');
-			case COLUMN_IP:
-				return Text::toT(m_sr.getIPAsString());
-			case COLUMN_P2P_GUARD:
+#endif
+				case COLUMN_LOCAL_PATH:
+				{
+					tstring l_result;
+					if (m_sr.getType() == SearchResult::TYPE_FILE)
+					{
+						l_result = ShareManager::calc_status_file(m_sr.getTTH());
+					}
+					return l_result;
+				}
+				case COLUMN_SLOTS:
+					return Text::toT(m_sr.getSlotString());
+				case COLUMN_HUB:
+					return Text::toT(m_sr.getHubName() + " (" + m_sr.getHubUrl() + ')');
+				case COLUMN_IP:
+					return Text::toT(m_sr.getIPAsString());
+				case COLUMN_P2P_GUARD:
 #ifdef FLYLINKDC_USE_P2P_GUARD
-				return Text::toT(m_sr.getP2PGuard());
+					return Text::toT(m_sr.getP2PGuard());
 #else
-				return BaseUtil::emptyStringT;
-#endif
-			case COLUMN_TTH:
-				return m_sr.getType() == SearchResult::TYPE_FILE ? Text::toT(m_sr.getTTH().toBase32()) : BaseUtil::emptyStringT;
-			case COLUMN_LOCATION:
-				return BaseUtil::emptyStringT;
-			default:
-			{
-				if (col < COLUMN_LAST)
-				{
-					return columns[col];
-				}
-				else
-				{
 					return BaseUtil::emptyStringT;
+#endif
+				case COLUMN_TTH:
+					return m_sr.getType() == SearchResult::TYPE_FILE ? Text::toT(m_sr.getTTH().toBase32()) : BaseUtil::emptyStringT;
+				case COLUMN_LOCATION:
+					return BaseUtil::emptyStringT;
+				default:
+				{
+					if (col < COLUMN_LAST)
+					{
+						return columns[col];
+					}
+					else
+					{
+						return BaseUtil::emptyStringT;
+					}
 				}
 			}
 		}
+	}
+	catch (const std::bad_alloc&)
+	{
+		ShareManager::tryFixBadAlloc();
 	}
 	return BaseUtil::emptyStringT;
 }
@@ -3102,8 +3109,8 @@ bool SearchFrame::isSkipSearchResult(SearchInfo*& si)
 
 void SearchFrame::addSearchResult(SearchInfo* si)
 {
-	//try
-	//{
+	try
+	{
 	if (isSkipSearchResult(si))
 		return;
 	const SearchResult sr = si->m_sr;
@@ -3502,11 +3509,12 @@ void SearchFrame::addSearchResult(SearchInfo* si)
 		m_pausedResults.push_back(si);
 #endif
 	}
-	//}
-	//catch (std::bad_alloc&)
-	//{
-	//  ShareManager::tryFixBadAlloc();
-	//}
+	}
+	catch (std::bad_alloc&)
+	{
+	  ShareManager::tryFixBadAlloc(); // fix https://drdump.com/DumpGroup.aspx?DumpGroupID=2090689
+	  LogManager::message("Error bad_alloc SearchFrame::addSearchResult");
+	}
 }
 HTREEITEM SearchFrame::add_category(const std::string p_search, const std::string p_group, SearchInfo* p_si,
                                     const SearchResult& p_sr, int p_type_node, HTREEITEM p_parent_node,

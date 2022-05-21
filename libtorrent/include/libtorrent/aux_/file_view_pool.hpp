@@ -120,7 +120,7 @@ namespace libtorrent::aux {
 			std::shared_ptr<file_mapping> mapping;
 			time_point last_use{aux::time_now()};
 #if TORRENT_HAVE_MAP_VIEW_OF_FILE
-			std::uint64_t dirty_bytes;
+			std::uint64_t dirty_bytes = 0;
 #endif
 			open_mode_t mode{};
 		};

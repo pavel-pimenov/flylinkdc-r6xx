@@ -1508,7 +1508,7 @@ namespace {
 				auto const iter = dir_links.find(std::string(branch));
 				if (iter == dir_links.end()) goto failed;
 				if (traversed.count(std::string(branch))) goto failed;
-				traversed.insert(std::string(branch));
+				traversed.emplace(std::string(branch));
 
 				// this path element is a symlink. substitute the branch so far by
 				// the link target

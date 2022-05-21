@@ -198,7 +198,7 @@ void LogManager::flush_all_log()
 			}
 			else
 			{
-				dcassert(0);
+				//dcassert(0);
 			}
 		}
 	}

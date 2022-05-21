@@ -2262,7 +2262,7 @@ void NmdcHub::myInfo(bool p_always_send, bool p_is_force_passive)
 	
 	// IRAINMAN_USE_UNICODE_IN_NMDC
 	string l_currentMyInfo;
-	l_currentMyInfo.resize(256);
+	l_currentMyInfo.resize(512);
 	const string l_version = getClientName() + " V:" + getTagVersion();
 	string l_ExtJSONSupport;
 	if (m_supportFlags & SUPPORTS_EXTJSON2)
@@ -2329,17 +2329,27 @@ void NmdcHub::myInfo(bool p_always_send, bool p_is_force_passive)
 		                    + Util::toString(ShareManager::get_cache_size_file_not_exists_set()) + "/"
 		                    + Util::toString(ShareManager::get_cache_file_map());
 	}
-	l_currentMyInfo.resize(_snprintf(&l_currentMyInfo[0], l_currentMyInfo.size() - 1, "$MyINFO $ALL %s %s<%s,M:%c,H:%s,S:%d"
-	                                 ">$ $%s%c$%s$",
-	                                 getMyNickFromUtf8().c_str(),
-	                                 fromUtf8Chat(escape(getCurrentDescription())).c_str(),
-	                                 l_version.c_str(),
-	                                 l_modeChar,
-	                                 l_currentCounts.c_str(),
-	                                 UploadManager::getSlots(),
-	                                 uploadSpeed.c_str(), status,
-	                                 fromUtf8Chat(escape(getCurrentEmail())).c_str()));
-	                                 
+	const int l_sizeMyInfo = _snprintf(&l_currentMyInfo[0], l_currentMyInfo.size() - 2, "$MyINFO $ALL %s %s<%s,M:%c,H:%s,S:%d"
+	                                   ">$ $%s%c$%s$",
+	                                   getMyNickFromUtf8().c_str(),
+	                                   fromUtf8Chat(escape(getCurrentDescription())).c_str(),
+	                                   l_version.c_str(),
+	                                   l_modeChar,
+	                                   l_currentCounts.c_str(),
+	                                   UploadManager::getSlots(),
+	                                   uploadSpeed.c_str(), status,
+	                                   fromUtf8Chat(escape(getCurrentEmail())).c_str());
+	if (l_sizeMyInfo >= 0 && l_sizeMyInfo < l_currentMyInfo.size()) // fix https://drdump.com/Problem.aspx?ProblemID=752992
+	{
+		l_currentMyInfo.resize(l_sizeMyInfo);
+	}
+	else
+	{
+		l_currentMyInfo = "$MyINFO $ALL " + fromUtf8Chat(escape(getCurrentDescription())) +
+		                  " <FlylinkDC++ V:666.666, M:P,H:11/0/1,S:10>$ $50A$$666$";
+		dcassert(0);
+	}
+	
 	const int64_t l_currentBytesShared =
 #ifdef IRAINMAN_INCLUDE_HIDE_SHARE_MOD
 	    getHideShare() ? 0 :
@@ -3196,7 +3206,7 @@ void NmdcHub::RequestConnectionForAutodetect()
 	if (m_bAutodetectionPending && m_iRequestCount < c_MAX_CONNECTION_REQUESTS_COUNT)
 	{
 		bool bWantAutodetect = false;
-		const auto l_fav = FavoriteManager::getFavoriteHubEntry(getHubUrl());
+		//const auto l_fav = FavoriteManager::getFavoriteHubEntry(getHubUrl());
 		//const auto l_mode = ClientManager::getMode(l_fav, bWantAutodetect);
 		//if (l_mode == SettingsManager::INCOMING_FIREWALL_PASSIVE ||
 		//    l_mode == SettingsManager::INCOMING_DIRECT)

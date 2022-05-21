@@ -5772,7 +5772,7 @@ namespace {
 		auto k = std::upper_bound(m_trackers.begin(), m_trackers.end(), url.tier
 			, [] (int tier, aux::announce_entry const& v) { return tier < v.tier; });
 		if (k - m_trackers.begin() < m_last_working_tracker) ++m_last_working_tracker;
-		k = m_trackers.insert(k, aux::announce_entry(url.url));
+		k = m_trackers.emplace(k, aux::announce_entry(url.url));
 		if (url.source == 0) k->source = lt::announce_entry::source_client;
 		else k->source = url.source;
 		k->trackerid = url.trackerid;
