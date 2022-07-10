@@ -1,8 +1,8 @@
 /*
 
-Copyright (c) 2017, Steven Siloti
-Copyright (c) 2017-2021, Arvid Norberg
 Copyright (c) 2017-2018, 2020-2021, Alden Torres
+Copyright (c) 2017-2022, Arvid Norberg
+Copyright (c) 2017, Steven Siloti
 Copyright (c) 2021, Vladimir Golovnev (glassez)
 All rights reserved.
 
@@ -275,6 +275,11 @@ namespace {
 
 	entry write_torrent_file(add_torrent_params const& atp)
 	{
+		return write_torrent_file(atp, {});
+	}
+
+	entry write_torrent_file(add_torrent_params const& atp, write_torrent_flags_t const flags)
+	{
 		entry ret;
 		if (!atp.ti)
 			aux::throw_ex<system_error>(errors::torrent_missing_info);
@@ -299,7 +304,7 @@ namespace {
 			std::vector<bool> const empty_verified;
 			for (file_index_t f : fs.file_range())
 			{
-				if (fs.pad_file_at(f) || fs.file_size(f) < fs.piece_length())
+				if (fs.pad_file_at(f) || fs.file_size(f) <= fs.piece_length())
 					continue;
 
 				aux::merkle_tree t(fs.file_num_blocks(f)
@@ -328,7 +333,7 @@ namespace {
 					layer += h.to_string();
 			}
 		}
-		else if (atp.ti->v2())
+		else if (atp.ti->v2() && !(flags & write_flags::allow_missing_piece_layer))
 		{
 			// we must have piece layers for v2 torrents for them to be valid
 			// .torrent files
@@ -336,19 +341,51 @@ namespace {
 		}
 
 		// save web seeds
-		if (!atp.url_seeds.empty())
+		if (!atp.url_seeds.empty() && !(flags & write_flags::no_http_seeds))
 		{
-			entry::list_type& url_list = ret["url-list"].list();
+			auto& url_list = ret["url-list"].list();
+			url_list.reserve(atp.url_seeds.size());
 			std::copy(atp.url_seeds.begin(), atp.url_seeds.end(), std::back_inserter(url_list));
 		}
 
 #if TORRENT_ABI_VERSION < 4
-		if (!atp.http_seeds.empty())
+		if (!atp.http_seeds.empty() && !(flags & write_flags::no_http_seeds))
 		{
-			entry::list_type& httpseeds_list = ret["httpseeds"].list();
+			auto& httpseeds_list = ret["httpseeds"].list();
+			httpseeds_list.reserve(atp.http_seeds.size());
 			std::copy(atp.http_seeds.begin(), atp.http_seeds.end(), std::back_inserter(httpseeds_list));
 		}
 #endif
+
+		// save DHT nodes
+		if (!atp.dht_nodes.empty() && (flags & write_flags::include_dht_nodes))
+		{
+			auto& nodes = ret["nodes"].list();
+			nodes.reserve(atp.dht_nodes.size());
+			for (auto const& n : atp.dht_nodes)
+			{
+				entry::list_type node(2);
+				node[0] = std::move(n.first);
+				node[1] = n.second;
+				nodes.emplace_back(std::move(node));
+			}
+		}
+
+		if (!atp.ti->similar_torrents().empty() && !atp.ti->info("similar"))
+		{
+			auto& l = ret["similar"].list();
+			l.reserve(atp.ti->similar_torrents().size());
+			for (auto const& n : atp.ti->similar_torrents())
+				l.emplace_back(n.to_string());
+		}
+
+		if (!atp.ti->collections().empty() && !atp.ti->info("collections"))
+		{
+			auto& l = ret["collections"].list();
+			l.reserve(atp.ti->collections().size());
+			for (auto const& n : atp.ti->collections())
+				l.emplace_back(n);
+		}
 
 		// save trackers
 		if (atp.trackers.size() == 1)

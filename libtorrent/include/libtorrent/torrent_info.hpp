@@ -1,12 +1,12 @@
 /*
 
 Copyright (c) 2017, Pavel Pimenov
-Copyright (c) 2003-2011, 2013-2021, Arvid Norberg
+Copyright (c) 2003-2011, 2013-2022, Arvid Norberg
 Copyright (c) 2004, Magnus Jonsson
 Copyright (c) 2016-2018, 2020-2021, Alden Torres
 Copyright (c) 2016, Markus
-Copyright (c) 2017-2019, Steven Siloti
 Copyright (c) 2017, 2019, Andrei Kurushin
+Copyright (c) 2017-2019, Steven Siloti
 Copyright (c) 2019, Amir Abrams
 Copyright (c) 2020, Mike Tzou
 All rights reserved.
@@ -141,7 +141,7 @@ TORRENT_VERSION_NAMESPACE_3
 	{
 	public:
 
-		// The constructor that takes an info-hash  will initialize the info-hash
+		// The constructor that takes an info-hash will initialize the info-hash
 		// to the given value, but leave all other fields empty. This is used
 		// internally when downloading torrents without the metadata. The
 		// metadata will be created by libtorrent as soon as it has been
@@ -330,6 +330,9 @@ TORRENT_VERSION_NAMESPACE_3
 			, std::string const& extern_auth = std::string()
 			, web_seed_entry::headers_t const& extra_headers = web_seed_entry::headers_t());
 #endif
+
+		// internal
+		void clear_web_seeds() { m_web_seeds.clear(); }
 
 		// ``total_size()`` returns the total number of bytes the torrent-file
 		// represents. Note that this is the number of pieces times the piece

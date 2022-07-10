@@ -1,6 +1,6 @@
 /*
 
-Copyright (c) 2016, 2019-2021, Arvid Norberg
+Copyright (c) 2016, 2019-2022, Arvid Norberg
 Copyright (c) 2019, Steven Siloti
 Copyright (c) 2020, Tiger Wang
 Copyright (c) 2021, Alden Torres
@@ -37,6 +37,10 @@ see LICENSE file.
 #include "libtorrent/aux_/disable_warnings_push.hpp"
 auto const map_failed = MAP_FAILED;
 #include "libtorrent/aux_/disable_warnings_pop.hpp"
+#endif
+
+#if TORRENT_USE_SYNC_FILE_RANGE
+#include <fcntl.h> // for sync_file_range
 #endif
 
 namespace libtorrent {
@@ -205,6 +209,18 @@ namespace {
 
 	auto create_file(native_path_string const& name, open_mode_t const mode)
 	{
+
+		if (mode & aux::open_mode::allow_set_file_valid_data)
+		{
+			// Enable privilege required by SetFileValidData()
+			// https://docs.microsoft.com/en-us/windows/desktop/api/fileapi/nf-fileapi-setfilevaliddata
+			// This must happen before the file is opened:
+			// https://devblogs.microsoft.com/oldnewthing/20160603-00/?p=93565
+			// SetFileValidData() is not available on WinRT, so there is no
+			// corresponding call in that version of create_file()
+			std::call_once(g_once_flag, acquire_manage_volume_privs);
+		}
+
 		return CreateFileW(name.c_str()
 			, file_access(mode)
 			, FILE_SHARE_WRITE | FILE_SHARE_READ | FILE_SHARE_DELETE
@@ -250,10 +266,6 @@ file_handle::file_handle(string_view name, std::int64_t const size
 			throw_ex<storage_error>(error_code(GetLastError(), system_category()), operation_t::file_truncate);
 
 #ifndef TORRENT_WINRT
-		// Enable privilege required by SetFileValidData()
-		// https://docs.microsoft.com/en-us/windows/desktop/api/fileapi/nf-fileapi-setfilevaliddata
-		std::call_once(g_once_flag, acquire_manage_volume_privs);
-
 		// if the user has permissions, avoid filling
 		// the file with zeroes, but just fill it with
 		// garbage instead
@@ -704,8 +716,13 @@ void file_mapping::page_out(span<byte const> range)
 	auto const size = static_cast<std::size_t>(range.size());
 #if TORRENT_USE_MADVISE && defined MADV_PAGEOUT
 	::madvise(start, size, MADV_PAGEOUT);
+#elif TORRENT_USE_SYNC_FILE_RANGE
+	// this is best-effort. ignore errors
+	::sync_file_range(m_file.fd(), start - static_cast<const byte*>(m_mapping)
+		, size, SYNC_FILE_RANGE_WRITE);
 #endif
 
+	// msync(MS_ASYNC) is a no-op on Linux > 2.6.19.
 	::msync(start, size, MS_ASYNC);
 
 #endif // MAP_VIEW_OF_FILE

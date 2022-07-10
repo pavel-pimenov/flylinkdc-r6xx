@@ -1,13 +1,12 @@
 /*
 
+Copyright (c) 2017-2022, Arvid Norberg
 Copyright (c) 2017-2018, Steven Siloti
-Copyright (c) 2017-2021, Arvid Norberg
 Copyright (c) 2020, Alden Torres
 All rights reserved.
 
 You may use, distribute and modify this code under the terms of the BSD license,
 see LICENSE file.
-
 */
 
 #ifndef TORRENT_FWD_HPP
@@ -122,6 +121,7 @@ struct socks5_alert;
 struct file_prio_alert;
 TORRENT_VERSION_NAMESPACE_3_END
 struct oversized_file_alert;
+struct torrent_conflict_alert;
 
 // include/libtorrent/announce_entry.hpp
 TORRENT_VERSION_NAMESPACE_2

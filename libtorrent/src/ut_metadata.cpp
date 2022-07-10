@@ -1,11 +1,12 @@
 /*
 
 Copyright (c) 2009, Andrew Resch
-Copyright (c) 2007-2021, Arvid Norberg
+Copyright (c) 2007-2022, Arvid Norberg
 Copyright (c) 2015, Steven Siloti
 Copyright (c) 2016-2018, 2020-2021, Alden Torres
 Copyright (c) 2017, Andrei Kurushin
 Copyright (c) 2017, Pavel Pimenov
+Copyright (c) 2022, Joris CARRIER
 All rights reserved.
 
 You may use, distribute and modify this code under the terms of the BSD license,
@@ -476,8 +477,12 @@ namespace {
 		int const piece = int(i - m_requested_metadata.begin());
 
 		// don't request the same block more than once every 3 seconds
+		// unless the source is disconnected
+		auto source = m_requested_metadata[piece].source.lock();
 		time_point const now = aux::time_now();
 		if (m_requested_metadata[piece].last_request != min_time()
+			&& source
+			&& !source->m_pc.is_disconnecting()
 			&& total_seconds(now - m_requested_metadata[piece].last_request) < 3)
 			return -1;
 

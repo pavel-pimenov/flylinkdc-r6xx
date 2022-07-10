@@ -27,10 +27,10 @@
 	#error atlribbon.h requires atlapp.h to be included first
 #endif
 
-#include <atlmisc.h>    // for RecentDocumentList classes
-#include <atlframe.h>   // for Frame and UpdateUI classes
-#include <atlctrls.h>   // required for atlctrlw.h
-#include <atlctrlw.h>   // for CCommandBarCtrl
+#include "atlmisc.h"    // for RecentDocumentList classes
+#include "atlframe.h"   // for Frame and UpdateUI classes
+#include "atlctrls.h"   // required for atlctrlw.h
+#include "atlctrlw.h"   // for CCommandBarCtrl
 
 #ifndef __ATLSTR_H__
   #pragma warning(push)

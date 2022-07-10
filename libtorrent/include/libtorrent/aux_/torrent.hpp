@@ -1,17 +1,17 @@
 /*
 
-Copyright (c) 2003-2021, Arvid Norberg
+Copyright (c) 2003-2022, Arvid Norberg
 Copyright (c) 2003, Daniel Wallin
 Copyright (c) 2004, Magnus Jonsson
 Copyright (c) 2016-2021, Alden Torres
+Copyright (c) 2017, AllSeeingEyeTolledEweSew
 Copyright (c) 2017, Falcosc
 Copyright (c) 2017, Pavel Pimenov
-Copyright (c) 2017, AllSeeingEyeTolledEweSew
 Copyright (c) 2018-2019, Steven Siloti
 Copyright (c) 2018, d-komarov
 Copyright (c) 2019, ghbplayer
-Copyright (c) 2020, Viktor Elofsson
 Copyright (c) 2020, Paul-Louis Ageneau
+Copyright (c) 2020, Viktor Elofsson
 Copyright (c) 2021, AdvenT
 Copyright (c) 2021, Mark Scott
 All rights reserved.
@@ -71,6 +71,7 @@ see LICENSE file.
 #include "libtorrent/aux_/announce_entry.hpp"
 #include "libtorrent/extensions.hpp" // for add_peer_flags_t
 #include "libtorrent/aux_/ssl.hpp"
+#include "libtorrent/aux_/tracker_list.hpp"
 
 #if TORRENT_USE_RTC
     #include "libtorrent/aux_/rtc_signaling.hpp"
@@ -431,6 +432,7 @@ namespace libtorrent::aux {
 		int seed_rank(aux::session_settings const& s) const;
 
 		void add_piece(piece_index_t piece, char const* data, add_piece_flags_t flags);
+		void add_piece_async(piece_index_t piece, std::vector<char> data, add_piece_flags_t flags);
 		void on_disk_write_complete(storage_error const& error
 			, peer_request const& p);
 
@@ -524,7 +526,7 @@ namespace libtorrent::aux {
 		void resume();
 
 		void set_session_paused(bool b);
-		void set_paused(bool b, pause_flags_t flags = torrent_handle::clear_disk_cache);
+		void set_paused(bool b, pause_flags_t flags = {});
 		void set_announce_to_dht(bool b) { m_announce_to_dht = b; }
 		void set_announce_to_trackers(bool b) { m_announce_to_trackers = b; }
 		void set_announce_to_lsd(bool b) { m_announce_to_lsd = b; }
@@ -533,7 +535,7 @@ namespace libtorrent::aux {
 
 		time_point32 started() const { return m_started; }
 		void step_session_time(int seconds);
-		void do_pause(pause_flags_t flags = torrent_handle::clear_disk_cache, bool was_paused = false);
+		void do_pause(bool was_paused = false);
 		void do_resume();
 
 		seconds32 finished_time() const;
@@ -769,7 +771,10 @@ namespace libtorrent::aux {
 
 		// forcefully sets next_announce to the current time
 		void force_tracker_request(time_point, int tracker_idx, reannounce_flags_t flags);
+		void force_tracker_request_url(time_point, std::string const& url, reannounce_flags_t flags);
 		void scrape_tracker(int idx, bool user_triggered);
+		void scrape_tracker_url(std::string url, bool user_triggered);
+		void scrape_tracker_impl(aux::announce_entry& ae, bool user_triggered);
 		void announce_with_tracker(event_t e = event_t::none);
 
 #ifndef TORRENT_DISABLE_DHT
@@ -781,8 +786,6 @@ namespace libtorrent::aux {
 		// the tracker
 		void set_tracker_login(std::string const& name, std::string const& pw);
 #endif
-
-		aux::announce_entry* find_tracker(std::string const& url);
 
 // --------------------------------------------
 		// PIECE MANAGEMENT
@@ -1263,10 +1266,7 @@ namespace libtorrent::aux {
 		void set_limit_impl(int limit, int channel, bool state_update = true);
 		int limit_impl(int channel) const;
 
-		int deprioritize_tracker(int tracker_index);
-
 		void update_peer_interest(bool was_finished);
-		void prioritize_udp_trackers();
 
 		void update_tracker_timer(time_point32 now);
 
@@ -1356,7 +1356,7 @@ namespace libtorrent::aux {
 		// us.
 		aux::suggest_piece m_suggest_pieces;
 
-		aux::vector<aux::announce_entry> m_trackers;
+		aux::tracker_list m_trackers;
 
 #ifndef TORRENT_DISABLE_STREAMING
 		// this list is sorted by time_critical_piece::deadline
@@ -1570,9 +1570,6 @@ namespace libtorrent::aux {
 		// the torrent this last time. When the torrent is paused, this counter is
 		// incremented to include this current session.
 		seconds32 m_active_time{0};
-
-		// the index to the last tracker that worked
-		std::int8_t m_last_working_tracker = -1;
 
 // ----
 

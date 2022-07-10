@@ -1,10 +1,10 @@
 /*
 
-Copyright (c) 2003-2021, Arvid Norberg
+Copyright (c) 2003-2022, Arvid Norberg
+Copyright (c) 2016-2018, 2020-2021, Alden Torres
+Copyright (c) 2016, 2019, Andrei Kurushin
 Copyright (c) 2016-2017, Pavel Pimenov
 Copyright (c) 2016-2019, Steven Siloti
-Copyright (c) 2016, 2019, Andrei Kurushin
-Copyright (c) 2016-2018, 2020-2021, Alden Torres
 All rights reserved.
 
 You may use, distribute and modify this code under the terms of the BSD license,
@@ -900,41 +900,16 @@ namespace {
 
 #ifndef BOOST_NO_EXCEPTIONS
 	torrent_info::torrent_info(bdecode_node const& torrent_file)
-	{
-		error_code ec;
-		if (!parse_torrent_file(torrent_file, ec, load_torrent_limits{}))
-			aux::throw_ex<system_error>(ec);
-
-		INVARIANT_CHECK;
-	}
+		: torrent_info(torrent_file, load_torrent_limits{})
+	{}
 
 	torrent_info::torrent_info(span<char const> buffer, from_span_t)
-	{
-		error_code ec;
-		bdecode_node e = bdecode(buffer, ec);
-		if (ec) aux::throw_ex<system_error>(ec);
-
-		if (!parse_torrent_file(e, ec, load_torrent_limits{}))
-			aux::throw_ex<system_error>(ec);
-
-		INVARIANT_CHECK;
-	}
+		: torrent_info(buffer, load_torrent_limits{}, from_span)
+	{}
 
 	torrent_info::torrent_info(std::string const& filename)
-	{
-		std::vector<char> buf;
-		error_code ec;
-		int ret = load_file(filename, buf, ec);
-		if (ret < 0) aux::throw_ex<system_error>(ec);
-
-		bdecode_node e = bdecode(buf, ec);
-		if (ec) aux::throw_ex<system_error>(ec);
-
-		if (!parse_torrent_file(e, ec, load_torrent_limits{}))
-			aux::throw_ex<system_error>(ec);
-
-		INVARIANT_CHECK;
-	}
+		: torrent_info(filename, load_torrent_limits{})
+	{}
 
 	torrent_info::torrent_info(bdecode_node const& torrent_file
 		, load_torrent_limits const& cfg)

@@ -1,14 +1,14 @@
 /*
 
 Copyright (c) 2019, Amir Abrams
-Copyright (c) 2003-2021, Arvid Norberg
+Copyright (c) 2003-2022, Arvid Norberg
 Copyright (c) 2004, Magnus Jonsson
 Copyright (c) 2015, 2018, Steven Siloti
 Copyright (c) 2016-2017, 2020, Alden Torres
-Copyright (c) 2017, Falcosc
 Copyright (c) 2017, 2020, AllSeeingEyeTolledEweSew
-Copyright (c) 2019, ghbplayer
+Copyright (c) 2017, Falcosc
 Copyright (c) 2019, Andrei Kurushin
+Copyright (c) 2019, ghbplayer
 Copyright (c) 2021, Mark Scott
 All rights reserved.
 
@@ -246,10 +246,7 @@ namespace aux {
 		static inline constexpr add_piece_flags_t overwrite_existing = 0_bit;
 
 		// This function will write ``data`` to the storage as piece ``piece``,
-		// as if it had been downloaded from a peer. ``data`` is expected to
-		// point to a buffer of as many bytes as the size of the specified piece.
-		// The data in the buffer is copied and passed on to the disk IO thread
-		// to be written at a later point.
+		// as if it had been downloaded from a peer.
 		//
 		// By default, data that's already been downloaded is not overwritten by
 		// this buffer. If you trust this data to be correct (and pass the piece
@@ -263,7 +260,20 @@ namespace aux {
 		//
 		// Adding pieces while the torrent is being checked (i.e. in
 		// torrent_status::checking_files state) is not supported.
+		//
+		// The overload taking a raw pointer to the data is a blocking call. It
+		// won't return until the libtorrent thread has copied the data into its
+		// disk write buffer. ``data`` is expected to point to a buffer of as
+		// many bytes as the size of the specified piece. See
+		// file_storage::piece_size().
+		//
+		// The data in the buffer is copied and passed on to the disk IO thread
+		// to be written at a later point.
+		//
+		// The overload taking a ``std::vector<char>`` is not blocking, it will
+		// send the buffer to the main thread and return immediately.
 		void add_piece(piece_index_t piece, char const* data, add_piece_flags_t flags = {}) const;
+		void add_piece(piece_index_t piece, std::vector<char> data, add_piece_flags_t flags = {}) const;
 
 		// This function starts an asynchronous read operation of the specified
 		// piece from this torrent. You must have completed the download of the
@@ -559,7 +569,9 @@ namespace aux {
 		// disconnected. This is a graceful shut down of the torrent in the sense
 		// that no downloaded bytes are wasted.
 		static inline constexpr pause_flags_t graceful_pause = 0_bit;
-		static inline constexpr pause_flags_t clear_disk_cache = 1_bit;
+
+		// hidden
+		TORRENT_DEPRECATED static inline constexpr pause_flags_t clear_disk_cache = 1_bit;
 
 		// ``pause()``, and ``resume()`` will disconnect all peers and reconnect
 		// all peers respectively. When a torrent is paused, it will however
@@ -1099,7 +1111,9 @@ namespace aux {
 		//
 		// ``force_lsd_announce`` will announce the torrent on LSD
 		// immediately.
-		void force_reannounce(int seconds = 0, int idx = -1, reannounce_flags_t = {}) const;
+		void force_reannounce(int seconds, int idx, reannounce_flags_t = {}) const;
+		void force_reannounce(int seconds, std::string const& url, reannounce_flags_t = {}) const;
+		void force_reannounce(int seconds = 0, reannounce_flags_t = {}) const;
 		void force_dht_announce() const;
 		void force_lsd_announce() const;
 
@@ -1123,7 +1137,9 @@ namespace aux {
 		// ``num_incomplete`` fields in the torrent_status struct once it
 		// completes. When it completes, it will generate a scrape_reply_alert.
 		// If it fails, it will generate a scrape_failed_alert.
-		void scrape_tracker(int idx = -1) const;
+		void scrape_tracker(int idx) const;
+		void scrape_tracker() const;
+		void scrape_tracker(std::string url) const;
 
 		// ``set_upload_limit`` will limit the upload bandwidth used by this
 		// particular torrent to the limit you set. It is given as the number of

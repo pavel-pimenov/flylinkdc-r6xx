@@ -1,18 +1,19 @@
 /*
 
+Copyright (c) 2015, Thomas
 Copyright (c) 2003, Daniel Wallin
 Copyright (c) 2004, Magnus Jonsson
-Copyright (c) 2009-2021, Arvid Norberg
+Copyright (c) 2009-2022, Arvid Norberg
 Copyright (c) 2014-2018, Steven Siloti
-Copyright (c) 2015, Thomas
 Copyright (c) 2015-2018, 2020-2021, Alden Torres
+Copyright (c) 2015, Thomas Yuan
 Copyright (c) 2016, Pavel Pimenov
 Copyright (c) 2017, Andrei Kurushin
 Copyright (c) 2017, Antoine Dahan
 Copyright (c) 2019, Amir Abrams
 Copyright (c) 2020, Fonic
-Copyright (c) 2020, Viktor Elofsson
 Copyright (c) 2020, Paul-Louis Ageneau
+Copyright (c) 2020, Viktor Elofsson
 All rights reserved.
 
 You may use, distribute and modify this code under the terms of the BSD license,
@@ -116,10 +117,11 @@ namespace libtorrent {
 	}
 
 	tracker_alert::tracker_alert(aux::stack_allocator& alloc
-		, torrent_handle const& h, tcp::endpoint const& ep, string_view u)
+		, torrent_handle const& h, tcp::endpoint const& ep, protocol_version const v, string_view u)
 		: torrent_alert(alloc, h)
 		, local_endpoint(ep)
 		, m_url_idx(alloc.copy_string(u))
+		, version(v)
 #if TORRENT_ABI_VERSION == 1
 		, url(u)
 #endif
@@ -136,7 +138,7 @@ namespace libtorrent {
 		return {};
 #else
 		return torrent_alert::message() + " (" + tracker_url() + ")"
-			+ "[" + print_endpoint(local_endpoint) + "]";
+			+ "[" + print_endpoint(local_endpoint) + (version == protocol_version::V1 ? "-v1]" : "-v2]");
 #endif
 	}
 
@@ -331,9 +333,10 @@ namespace libtorrent {
 
 	tracker_error_alert::tracker_error_alert(aux::stack_allocator& alloc
 		, torrent_handle const& h, tcp::endpoint const& ep, int times
-		, string_view u, operation_t const operation, error_code const& e
+		, protocol_version v, string_view u, operation_t const operation
+		, error_code const& e
 		, string_view m)
-		: tracker_alert(alloc, h, ep, u)
+		: tracker_alert(alloc, h, ep, v, u)
 		, times_in_row(times)
 		, error(e)
 		, op(operation)
@@ -367,8 +370,8 @@ namespace libtorrent {
 
 	tracker_warning_alert::tracker_warning_alert(aux::stack_allocator& alloc
 		, torrent_handle const& h, tcp::endpoint const& ep
-		, string_view u, string_view m)
-		: tracker_alert(alloc, h, ep, u)
+		, string_view u, protocol_version v, string_view m)
+		: tracker_alert(alloc, h, ep, v, u)
 		, m_msg_idx(alloc.copy_string(m))
 #if TORRENT_ABI_VERSION == 1
 		, msg(m)
@@ -393,8 +396,8 @@ namespace libtorrent {
 
 	scrape_reply_alert::scrape_reply_alert(aux::stack_allocator& alloc
 		, torrent_handle const& h, tcp::endpoint const& ep
-		, int incomp, int comp, string_view u)
-		: tracker_alert(alloc, h, ep, u)
+		, int incomp, int comp, string_view u, protocol_version const v)
+		: tracker_alert(alloc, h, ep, v, u)
 		, incomplete(incomp)
 		, complete(comp)
 	{
@@ -408,15 +411,16 @@ namespace libtorrent {
 #else
 		char ret[400];
 		std::snprintf(ret, sizeof(ret), "%s scrape reply: %d %d"
-			, tracker_alert::message().c_str(), incomplete, complete);
+			, tracker_alert::message().c_str()
+			, incomplete, complete);
 		return ret;
 #endif
 	}
 
 	scrape_failed_alert::scrape_failed_alert(aux::stack_allocator& alloc
-		, torrent_handle const& h, tcp::endpoint const& ep
+		, torrent_handle const& h, tcp::endpoint const& ep, protocol_version const v
 		, string_view u, error_code const& e)
-		: tracker_alert(alloc, h, ep, u)
+		: tracker_alert(alloc, h, ep, v, u)
 		, error(e)
 #if TORRENT_ABI_VERSION == 1
 		, msg(e.message())
@@ -426,9 +430,9 @@ namespace libtorrent {
 	}
 
 	scrape_failed_alert::scrape_failed_alert(aux::stack_allocator& alloc
-		, torrent_handle const& h, tcp::endpoint const& ep
+		, torrent_handle const& h, tcp::endpoint const& ep, protocol_version const v
 		, string_view u, string_view m)
-		: tracker_alert(alloc, h, ep, u)
+		: tracker_alert(alloc, h, ep, v, u)
 		, error(errors::tracker_failure)
 		, m_msg_idx(alloc.copy_string(m))
 #if TORRENT_ABI_VERSION == 1
@@ -455,8 +459,8 @@ namespace libtorrent {
 
 	tracker_reply_alert::tracker_reply_alert(aux::stack_allocator& alloc
 		, torrent_handle const& h, tcp::endpoint const& ep
-		, int np, string_view u)
-		: tracker_alert(alloc, h, ep, u)
+		, int np, protocol_version v, string_view u)
+		: tracker_alert(alloc, h, ep, v, u)
 		, num_peers(np)
 	{
 		TORRENT_ASSERT(!u.empty());
@@ -469,7 +473,8 @@ namespace libtorrent {
 #else
 		char ret[400];
 		std::snprintf(ret, sizeof(ret), "%s received peers: %d"
-			, tracker_alert::message().c_str(), num_peers);
+			, tracker_alert::message().c_str()
+			, num_peers);
 		return ret;
 #endif
 	}
@@ -477,7 +482,8 @@ namespace libtorrent {
 	dht_reply_alert::dht_reply_alert(aux::stack_allocator& alloc
 		, torrent_handle const& h
 		, int np)
-		: tracker_alert(alloc, h, {}, "")
+		// TODO: is it reasonable to just hard-code this to V1?
+		: tracker_alert(alloc, h, {}, protocol_version::V1, "")
 		, num_peers(np)
 	{}
 
@@ -495,8 +501,8 @@ namespace libtorrent {
 
 	tracker_announce_alert::tracker_announce_alert(aux::stack_allocator& alloc
 		, torrent_handle const& h, tcp::endpoint const& ep, string_view u
-		, event_t const e)
-		: tracker_alert(alloc, h, ep, u)
+		, protocol_version const v, event_t const e)
+		: tracker_alert(alloc, h, ep, v, u)
 		, event(e)
 	{
 		TORRENT_ASSERT(!u.empty());
@@ -508,7 +514,8 @@ namespace libtorrent {
 		return {};
 #else
 		static const char* const event_str[] = {"none", "completed", "started", "stopped", "paused"};
-		return tracker_alert::message() + " sending announce (" + event_str[static_cast<int>(event)] + ")";
+		return tracker_alert::message()
+			+ " sending announce (" + event_str[static_cast<int>(event)] + ")";
 #endif
 	}
 
@@ -1535,9 +1542,10 @@ namespace {
 		aux::stack_allocator& alloc
 		, torrent_handle const& h
 		, tcp::endpoint const& ep
+		, protocol_version const v
 		, string_view u
 		, const std::string& id)
-		: tracker_alert(alloc, h,  ep, u)
+		: tracker_alert(alloc, h, ep, v, u)
 		, m_tracker_idx(alloc.copy_string(id))
 #if TORRENT_ABI_VERSION == 1
 		, trackerid(id)
@@ -2927,7 +2935,7 @@ namespace {
 		"picker_log", "session_error", "dht_live_nodes",
 		"session_stats_header", "dht_sample_infohashes",
 		"block_uploaded", "alerts_dropped", "socks5",
-		"file_prio", "oversized_file"
+		"file_prio", "oversized_file", "torrent_conflict"
 		}};
 
 		TORRENT_ASSERT(alert_type >= 0);
@@ -2996,6 +3004,22 @@ namespace {
 		return {};
 #else
 		return torrent_alert::message() + " has an oversized file";
+#endif
+	}
+
+	torrent_conflict_alert::torrent_conflict_alert(aux::stack_allocator& alloc, torrent_handle h1
+		, torrent_handle h2, std::shared_ptr<torrent_info> ti)
+		: torrent_alert(alloc, h1)
+		, conflicting_torrent(std::move(h2))
+		, metadata(std::move(ti))
+	{}
+
+	std::string torrent_conflict_alert::message() const
+	{
+#ifdef TORRENT_DISABLE_ALERT_MSG
+		return {};
+#else
+		return torrent_alert::message() + " has a conflict with another torrent";
 #endif
 	}
 

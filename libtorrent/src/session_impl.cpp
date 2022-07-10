@@ -1,20 +1,24 @@
 /*
 
 Copyright (c) 2003, Magnus Jonsson
-Copyright (c) 2006-2021, Arvid Norberg
+Copyright (c) 2015, Thomas
+Copyright (c) 2015, Thomas
+Copyright (c) 2006-2022, Arvid Norberg
 Copyright (c) 2009, Andrew Resch
 Copyright (c) 2014-2020, Steven Siloti
 Copyright (c) 2015-2021, Alden Torres
-Copyright (c) 2015, Thomas
 Copyright (c) 2015, Mikhail Titov
+Copyright (c) 2015, Thomas Yuan
+Copyright (c) 2016-2017, Andrei Kurushin
 Copyright (c) 2016, Falcosc
 Copyright (c) 2016-2017, Pavel Pimenov
-Copyright (c) 2016-2017, Andrei Kurushin
 Copyright (c) 2017, sledgehammer_999
 Copyright (c) 2018, Xiyue Deng
 Copyright (c) 2020, Fonic
-Copyright (c) 2020, Rosen Penev
 Copyright (c) 2020, Paul-Louis Ageneau
+Copyright (c) 2020, Rosen Penev
+Copyright (c) 2022, Vladimir Golovnev (glassez)
+Copyright (c) 2022, thrnz
 All rights reserved.
 
 You may use, distribute and modify this code under the terms of the BSD license,
@@ -1986,6 +1990,7 @@ namespace {
 			listen_endpoint_t ep(address_v4::any(), port, {}
 				, transport::plaintext, listen_socket_t::proxy);
 			eps.emplace_back(ep);
+			++m_listen_socket_version;
 		}
 		else
 		{
@@ -2054,6 +2059,9 @@ namespace {
 		}
 
 		auto remove_iter = partition_listen_sockets(eps, m_listen_sockets);
+
+		if (remove_iter != m_listen_sockets.end() || !eps.empty())
+			++m_listen_socket_version;
 
 		while (remove_iter != m_listen_sockets.end())
 		{
@@ -4496,7 +4504,7 @@ namespace {
 		, info_hash_t const& old_ih)
 	{
 		m_torrents.erase(old_ih);
-		m_torrents.insert(t->torrent_file().info_hashes(), t);
+		m_torrents.insert(t->info_hash(), t);
 	}
 
 	void session_impl::set_queue_position(torrent* me, queue_position_t p)
@@ -4600,10 +4608,10 @@ namespace {
 		if ((lhs->num_peers() == 0) != (rhs->num_peers() == 0))
 			return lhs->num_peers() != 0;
 
-		// other than that, always prefer to disconnect peers from seeding torrents
+		// other than that, always prefer to disconnect peers from finished torrents
 		// in order to not harm downloading ones
-		if (lhs->is_seed() != rhs->is_seed())
-			return lhs->is_seed();
+		if (lhs->is_finished() != rhs->is_finished())
+			return lhs->is_finished();
 
 		return lhs->num_peers() > rhs->num_peers();
 	}
@@ -4832,9 +4840,12 @@ namespace {
 		alert_params.info_hashes = info_hash;
 
 		torrent_handle handle(torrent_ptr);
-		m_alerts.emplace_alert<add_torrent_alert>(handle, std::move(alert_params), ec);
 
-		if (!torrent_ptr) return handle;
+        if (!torrent_ptr)
+        {
+            m_alerts.emplace_alert<add_torrent_alert>(handle, std::move(alert_params), ec);
+            return handle;
+        }
 
 		TORRENT_ASSERT(info_hash.has_v1() || info_hash.has_v2());
 
@@ -4848,6 +4859,7 @@ namespace {
 		if (!added)
 		{
 			abort_torrent.disarm();
+            m_alerts.emplace_alert<add_torrent_alert>(handle, std::move(alert_params), ec);
 			return handle;
 		}
 
@@ -4866,6 +4878,8 @@ namespace {
 
 		TORRENT_ASSERT(info_hash == torrent_ptr->torrent_file().info_hashes());
 		insert_torrent(info_hash, torrent_ptr);
+
+        m_alerts.emplace_alert<add_torrent_alert>(handle, std::move(alert_params), ec);
 
 		// once we successfully add the torrent, we can disarm the abort action
 		abort_torrent.disarm();
@@ -5120,7 +5134,7 @@ namespace {
 	}
 
 	// verify that ``addr``s interface allows incoming connections
-	bool session_impl::verify_incoming_interface(address const& addr)
+	bool session_impl::verify_incoming_interface(address const& addr) const
 	{
 		auto const iter = std::find_if(m_listen_sockets.begin(), m_listen_sockets.end()
 			, [&addr](std::shared_ptr<listen_socket_t> const& s)
@@ -5192,7 +5206,7 @@ namespace {
 	void session_impl::remove_torrent_impl(std::shared_ptr<torrent> tptr
 		, remove_flags_t const options)
 	{
-		m_torrents.erase(tptr->torrent_file().info_hashes());
+		m_torrents.erase(tptr->info_hash());
 
 		torrent& t = *tptr;
 		if (options)
@@ -5482,7 +5496,7 @@ namespace {
 		return 0;
 	}
 
-	int session_impl::get_listen_port(transport const ssl, aux::listen_socket_handle const& s)
+	int session_impl::get_listen_port(transport const ssl, aux::listen_socket_handle const& s) const
 	{
 		auto* socket = s.get();
 		if (socket->ssl != ssl)
@@ -5500,7 +5514,7 @@ namespace {
 		return socket->udp_external_port();
 	}
 
-	int session_impl::listen_port(transport const ssl, address const& local_addr)
+	int session_impl::listen_port(transport const ssl, address const& local_addr) const
 	{
 		auto socket = std::find_if(m_listen_sockets.begin(), m_listen_sockets.end()
 			, [&](std::shared_ptr<listen_socket_t> const& e)

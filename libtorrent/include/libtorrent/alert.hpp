@@ -1,8 +1,8 @@
 /*
 
 Copyright (c) 2003, Daniel Wallin
+Copyright (c) 2004-2005, 2008-2009, 2013-2020, 2022, Arvid Norberg
 Copyright (c) 2004, Magnus Jonsson
-Copyright (c) 2004-2005, 2008-2009, 2013-2020, Arvid Norberg
 Copyright (c) 2016, Alden Torres
 All rights reserved.
 
@@ -84,7 +84,7 @@ namespace alert_category {
 	// Low level alerts for when peers are connected and disconnected.
 	inline constexpr alert_category_t connect = 5_bit;
 
-		// Enables alerts for when a torrent or the session changes state.
+	// Enables alerts for when a torrent or the session changes state.
 	inline constexpr alert_category_t status = 6_bit;
 
 	// Alerts when a peer is blocked by the ip blocker or port blocker.

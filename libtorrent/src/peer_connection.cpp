@@ -1,15 +1,15 @@
 /*
 
 Copyright (c) 2016, tnextday
-Copyright (c) 2003-2021, Arvid Norberg
+Copyright (c) 2003-2022, Arvid Norberg
 Copyright (c) 2004, Magnus Jonsson
 Copyright (c) 2015, Mikhail Titov
 Copyright (c) 2016-2018, 2020-2021, Alden Torres
-Copyright (c) 2016-2018, Steven Siloti
 Copyright (c) 2016, Andrei Kurushin
+Copyright (c) 2016-2018, Steven Siloti
 Copyright (c) 2018, Pavel Pimenov
-Copyright (c) 2020, Viktor Elofsson
 Copyright (c) 2020, Paul-Louis Ageneau
+Copyright (c) 2020, Viktor Elofsson
 All rights reserved.
 
 You may use, distribute and modify this code under the terms of the BSD license,
@@ -5307,9 +5307,15 @@ namespace {
 				TORRENT_ASSERT(r.piece >= piece_index_t(0));
 				TORRENT_ASSERT(r.piece < t->torrent_file().end_piece());
 
+				disk_job_flags_t flags{};
+				auto const read_mode = m_settings.get_int(settings_pack::disk_io_read_mode);
+				if (read_mode == settings_pack::disable_os_cache)
+					flags |= disk_interface::volatile_read;
+
 				m_disk_thread.async_read(t->storage(), r
 					, [conn = self(), r](disk_buffer_holder buf, storage_error const& ec)
-					{ conn->wrap(&peer_connection::on_disk_read_complete, std::move(buf), ec, r, clock_type::now()); });
+					{ conn->wrap(&peer_connection::on_disk_read_complete, std::move(buf), ec, r, clock_type::now()); }
+					, flags);
 			}
 			m_last_sent_payload.set(m_connect, clock_type::now());
 			m_requests.erase(m_requests.begin() + i);

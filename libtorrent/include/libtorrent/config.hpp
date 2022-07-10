@@ -1,11 +1,11 @@
 /*
 
-Copyright (c) 2005, 2008-2021, Arvid Norberg
+Copyright (c) 2005, 2008-2022, Arvid Norberg
 Copyright (c) 2009, Daniel Wallin
 Copyright (c) 2015, John Sebastian Peterson
-Copyright (c) 2016, terry zhao
 Copyright (c) 2016-2017, 2019, 2021, Alden Torres
 Copyright (c) 2016, 2019, Andrei Kurushin
+Copyright (c) 2016, terry zhao
 Copyright (c) 2017, Steven Siloti
 Copyright (c) 2018, Pavel Pimenov
 Copyright (c) 2020, Paul-Louis Ageneau
@@ -228,6 +228,8 @@ see LICENSE file.
 #elif defined _POSIX_C_SOURCE && _POSIX_C_SOURCE < 200112L
 #define TORRENT_HAS_FALLOCATE 0
 #endif
+
+#define TORRENT_USE_SYNC_FILE_RANGE 1
 
 #endif // ANDROID
 
@@ -486,6 +488,10 @@ see LICENSE file.
 
 #ifndef TORRENT_USE_MADVISE
 #define TORRENT_USE_MADVISE 0
+#endif
+
+#ifndef TORRENT_USE_SYNC_FILE_RANGE
+#define TORRENT_USE_SYNC_FILE_RANGE 0
 #endif
 
 #ifndef TORRENT_USE_FDATASYNC

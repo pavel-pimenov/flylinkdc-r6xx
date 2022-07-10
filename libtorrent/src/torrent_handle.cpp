@@ -1,13 +1,13 @@
 /*
 
-Copyright (c) 2003-2021, Arvid Norberg
+Copyright (c) 2003-2022, Arvid Norberg
 Copyright (c) 2004, Magnus Jonsson
 Copyright (c) 2016-2017, 2019-2020, Alden Torres
-Copyright (c) 2017, Falcosc
 Copyright (c) 2017, 2020, AllSeeingEyeTolledEweSew
+Copyright (c) 2017, Falcosc
 Copyright (c) 2018, Steven Siloti
-Copyright (c) 2019, ghbplayer
 Copyright (c) 2019, Andrei Kurushin
+Copyright (c) 2019, ghbplayer
 Copyright (c) 2021, Mark Scott
 All rights reserved.
 
@@ -78,7 +78,7 @@ namespace libtorrent {
 #ifndef BOOST_NO_EXCEPTIONS
 			try {
 #endif
-				(t.get()->*f)(a...);
+				(t.get()->*f)(std::move(a)...);
 #ifndef BOOST_NO_EXCEPTIONS
 			} catch (system_error const& e) {
 				ses.alerts().emplace_alert<torrent_error_alert>(torrent_handle(m_torrent)
@@ -110,7 +110,7 @@ namespace libtorrent {
 #ifndef BOOST_NO_EXCEPTIONS
 			try {
 #endif
-				(t.get()->*f)(a...);
+				(t.get()->*f)(std::move(a)...);
 #ifndef BOOST_NO_EXCEPTIONS
 			} catch (...) {
 				ex = std::current_exception();
@@ -146,7 +146,7 @@ namespace libtorrent {
 #ifndef BOOST_NO_EXCEPTIONS
 			try {
 #endif
-				r = (t.get()->*f)(a...);
+				r = (t.get()->*f)(std::move(a)...);
 #ifndef BOOST_NO_EXCEPTIONS
 			} catch (...) {
 				ex = std::current_exception();
@@ -644,6 +644,12 @@ namespace libtorrent {
 		sync_call(&aux::torrent::add_piece, piece, data, flags);
 	}
 
+	void torrent_handle::add_piece(piece_index_t piece, std::vector<char> data
+		, add_piece_flags_t const flags) const
+	{
+		async_call(&aux::torrent::add_piece_async, piece, std::move(data), flags);
+	}
+
 	void torrent_handle::read_piece(piece_index_t piece) const
 	{
 		async_call(&aux::torrent::read_piece, piece);
@@ -771,9 +777,20 @@ namespace libtorrent {
 		async_call(&aux::torrent::lsd_announce);
 	}
 
-	void torrent_handle::force_reannounce(int s, int idx, reannounce_flags_t const flags) const
+	// TODO: deprecate the overload that takes an index
+	void torrent_handle::force_reannounce(int const s, int const idx, reannounce_flags_t const flags) const
 	{
 		async_call(&aux::torrent::force_tracker_request, aux::time_now() + seconds(s), idx, flags);
+	}
+
+	void torrent_handle::force_reannounce(int const s, std::string const& url, reannounce_flags_t const flags) const
+	{
+		async_call(&aux::torrent::force_tracker_request_url, aux::time_now() + seconds(s), url, flags);
+	}
+
+	void torrent_handle::force_reannounce(int const s, reannounce_flags_t const flags) const
+	{
+		async_call(&aux::torrent::force_tracker_request, aux::time_now() + seconds(s), -1, flags);
 	}
 
 	std::vector<open_file_state> torrent_handle::file_status() const
@@ -787,6 +804,16 @@ namespace libtorrent {
 	void torrent_handle::scrape_tracker(int idx) const
 	{
 		async_call(&aux::torrent::scrape_tracker, idx, true);
+	}
+
+	void torrent_handle::scrape_tracker(std::string url) const
+	{
+		async_call(&aux::torrent::scrape_tracker_url, std::move(url), true);
+	}
+
+	void torrent_handle::scrape_tracker() const
+	{
+		async_call(&aux::torrent::scrape_tracker, -1, true);
 	}
 
 #if TORRENT_ABI_VERSION == 1

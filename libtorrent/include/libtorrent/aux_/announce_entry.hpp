@@ -1,8 +1,8 @@
 /*
 
 Copyright (c) 2017-2018, Steven Siloti
-Copyright (c) 2020, Arvid Norberg
 Copyright (c) 2020, Alden Torres
+Copyright (c) 2020, 2022, Arvid Norberg
 All rights reserved.
 
 You may use, distribute and modify this code under the terms of the BSD license,
@@ -21,6 +21,10 @@ see LICENSE file.
 #include "libtorrent/aux_/listen_socket_handle.hpp"
 #include "libtorrent/aux_/array.hpp"
 #include "libtorrent/info_hash.hpp"
+
+#include "libtorrent/aux_/disable_warnings_push.hpp"
+#include <boost/intrusive/list.hpp>
+#include "libtorrent/aux_/disable_warnings_pop.hpp"
 
 #include <string>
 #include <cstdint>
@@ -150,7 +154,12 @@ namespace aux {
 		announce_entry();
 		~announce_entry();
 		announce_entry(announce_entry const&);
+		announce_entry(announce_entry&&);
 		announce_entry& operator=(announce_entry const&) &;
+		announce_entry& operator=(announce_entry&&) &;
+
+		// next and prev pointers for the list of
+		boost::intrusive::list_member_hook<> list_hook;
 
 		// tracker URL as it appeared in the torrent file
 		std::string url;
@@ -163,6 +172,10 @@ namespace aux {
 		// each local listen socket (endpoint) will announce to the tracker. This
 		// list contains state per endpoint.
 		std::vector<announce_endpoint> endpoints;
+
+		// last time we ran "refresh_endpoint_list()" on this tracker entry,
+		// this was the version of listen sockets in the session.
+		std::uint32_t listen_socket_version = 0;
 
 		// the tier this tracker belongs to
 		std::uint8_t tier = 0;
@@ -185,6 +198,7 @@ namespace aux {
 
 		// internal
 		announce_endpoint* find_endpoint(aux::listen_socket_handle const& s);
+		announce_endpoint const* find_endpoint(aux::listen_socket_handle const& s) const;
 	};
 
 }

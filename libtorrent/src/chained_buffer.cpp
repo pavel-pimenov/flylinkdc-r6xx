@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2011, 2014, 2016-2021, Arvid Norberg
-Copyright (c) 2016-2018, Alden Torres
+Copyright (c) 2016-2018, 2022, Alden Torres
 All rights reserved.
 
 You may use, distribute and modify this code under the terms of the BSD license,
@@ -13,8 +13,7 @@ see LICENSE file.
 
 #include <algorithm> // for copy
 
-namespace libtorrent {
-namespace aux {
+namespace libtorrent::aux {
 
 	void chained_buffer::pop_front(int bytes_to_pop)
 	{
@@ -147,5 +146,4 @@ namespace aux {
 #endif
 	}
 
-}
 }

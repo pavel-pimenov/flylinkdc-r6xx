@@ -878,6 +878,12 @@
     <ClInclude Include="include\libtorrent\truncate.hpp">
       <Filter>Header Files\libtorrent</Filter>
     </ClInclude>
+    <ClInclude Include="include\libtorrent\aux_\tracker_list.hpp">
+      <Filter>Header Files\libtorrent\aux_</Filter>
+    </ClInclude>
+    <ClInclude Include="include\libtorrent\aux_\storage_array.hpp">
+      <Filter>Header Files\libtorrent\aux_</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\kademlia\dht_storage.cpp">
@@ -1373,6 +1379,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\truncate.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\load_torrent.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tracker_list.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

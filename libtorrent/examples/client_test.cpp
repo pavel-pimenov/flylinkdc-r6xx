@@ -1,6 +1,6 @@
 /*
 
-Copyright (c) 2003-2021, Arvid Norberg
+Copyright (c) 2003-2022, Arvid Norberg
 Copyright (c) 2015, Mike Tzou
 Copyright (c) 2016, 2018-2020, Alden Torres
 Copyright (c) 2016, Andrei Kurushin
@@ -53,6 +53,7 @@ see LICENSE file.
 #include "libtorrent/string_view.hpp"
 #include "libtorrent/disk_interface.hpp" // for open_file_state
 #include "libtorrent/disabled_disk_io.hpp" // for disabled_disk_io_constructor
+#include "libtorrent/load_torrent.hpp"
 
 #include "torrent_view.hpp"
 #include "session_view.hpp"
@@ -731,9 +732,8 @@ void add_magnet(lt::session& ses, lt::string_view uri)
 }
 
 // return false on failure
-bool add_torrent(lt::session& ses, std::string const torrent)
+bool add_torrent(lt::session& ses, std::string const torrent) try
 {
-	using lt::add_torrent_params;
 	using lt::storage_mode_t;
 
 	static int counter = 0;
@@ -741,29 +741,27 @@ bool add_torrent(lt::session& ses, std::string const torrent)
 	std::printf("[%d] %s\n", counter++, torrent.c_str());
 
 	lt::error_code ec;
-	auto ti = std::make_shared<lt::torrent_info>(torrent, ec);
-	if (ec)
-	{
-		std::printf("failed to load torrent \"%s\": %s\n"
-			, torrent.c_str(), ec.message().c_str());
-		return false;
-	}
-
-	add_torrent_params p;
+	lt::add_torrent_params atp = lt::load_torrent_file(torrent);
 
 	std::vector<char> resume_data;
-	if (load_file(resume_file(ti->info_hashes()), resume_data))
+	if (load_file(resume_file(atp.info_hashes), resume_data))
 	{
-		p = lt::read_resume_data(resume_data, ec);
+		lt::add_torrent_params rd = lt::read_resume_data(resume_data, ec);
 		if (ec) std::printf("  failed to load resume data: %s\n", ec.message().c_str());
+		else atp = rd;
 	}
 
-	set_torrent_params(p);
+	set_torrent_params(atp);
 
-	p.ti = ti;
-	p.flags &= ~lt::torrent_flags::duplicate_is_error;
-	ses.async_add_torrent(std::move(p));
+	atp.flags &= ~lt::torrent_flags::duplicate_is_error;
+	ses.async_add_torrent(std::move(atp));
 	return true;
+}
+catch (lt::system_error const& e)
+{
+	std::printf("failed to load torrent \"%s\": %s\n"
+		, torrent.c_str(), e.code().message().c_str());
+	return false;
 }
 
 std::vector<std::string> list_dir(std::string path
@@ -1943,8 +1941,9 @@ COLUMN OPTIONS
 							if (!s.info_hashes.has(v)) continue;
 							auto const& av = ep.info_hashes[v];
 
-							std::snprintf(str, sizeof(str), "  [%2d] fails: %-3d (%-3d) %s %5d \"%s\" %s\x1b[K\n"
+							std::snprintf(str, sizeof(str), "  [%2d] %s fails: %-3d (%-3d) %s %5d \"%s\" %s\x1b[K\n"
 								, idx
+								, v == lt::protocol_version::V1 ? "v1" : "v2"
 								, av.fails, ae.fail_limit
 								, to_string(int(total_seconds(av.next_announce - now)), 8).c_str()
 								, av.min_announce > now ? int(total_seconds(av.min_announce - now)) : 0

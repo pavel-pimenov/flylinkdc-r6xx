@@ -1,6 +1,6 @@
 /*
 
-Copyright (c) 2014-2021, Arvid Norberg
+Copyright (c) 2014-2022, Arvid Norberg
 Copyright (c) 2016-2017, 2019-2021, Alden Torres
 Copyright (c) 2017-2018, Steven Siloti
 Copyright (c) 2020, Paul-Louis Ageneau
@@ -170,9 +170,10 @@ namespace libtorrent::aux {
 		virtual std::uint16_t listen_port() const = 0;
 		virtual std::uint16_t ssl_listen_port() const = 0;
 
-		virtual int listen_port(aux::transport ssl, address const& local_addr) = 0;
+		virtual int listen_port(aux::transport ssl, address const& local_addr) const = 0;
 
-		virtual void for_each_listen_socket(std::function<void(aux::listen_socket_handle const&)> f) = 0;
+		virtual std::uint32_t listen_socket_version() const = 0;
+		virtual void for_each_listen_socket(std::function<void(aux::listen_socket_handle const&)> f) const = 0;
 
 		// ask for which interface and port to bind outgoing peer connections on
 		virtual tcp::endpoint bind_outgoing_socket(socket_type& s, address const&

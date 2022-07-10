@@ -1,6 +1,6 @@
 /*
 
-Copyright (c) 2007-2021, Arvid Norberg
+Copyright (c) 2007-2022, Arvid Norberg
 Copyright (c) 2015, Mikhail Titov
 Copyright (c) 2016-2018, 2020-2021, Alden Torres
 Copyright (c) 2016, Andrei Kurushin
@@ -8,6 +8,7 @@ Copyright (c) 2017, Jan Berkel
 Copyright (c) 2017, Steven Siloti
 Copyright (c) 2019, patch3proxyheaders915360
 Copyright (c) 2020, Paul-Louis Ageneau
+Copyright (c) 2022, AlexeyKhrolenko
 All rights reserved.
 
 You may use, distribute and modify this code under the terms of the BSD license,
@@ -372,7 +373,16 @@ void http_connection::on_timeout(std::weak_ptr<http_connection> p
 
 	// be forgiving of timeout while we're still resolving the hostname
 	// it may be delayed because we're queued up behind another slow lookup
-	if (c->m_start_time + (c->m_completion_timeout * (int(c->m_resolving_host) + 1)) <= now)
+	if (c->m_resolving_host
+		&& (c->m_start_time + (c->m_completion_timeout * 2) > now))
+	{
+		ADD_OUTSTANDING_ASYNC("http_connection::on_timeout");
+		c->m_timer.expires_at(c->m_start_time + c->m_completion_timeout * 2);
+		c->m_timer.async_wait(std::bind(&http_connection::on_timeout, p, _1));
+		return;
+	}
+
+	if (c->m_start_time + c->m_completion_timeout <= now)
 	{
 		// the connection timed out. If we have more endpoints to try, just
 		// close this connection. The on_connect handler will try the next
@@ -468,6 +478,9 @@ void http_connection::on_resolve(error_code const& e
 		callback(e);
 		return;
 	}
+
+	if (m_abort) return;
+
 	TORRENT_ASSERT(!addresses.empty());
 
 	// reset timeout

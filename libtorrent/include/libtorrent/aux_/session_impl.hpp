@@ -1,9 +1,9 @@
 /*
 
-Copyright (c) 2006-2021, Arvid Norberg
+Copyright (c) 2006-2022, Arvid Norberg
 Copyright (c) 2014-2019, Steven Siloti
+Copyright (c) 2015-2022, Alden Torres
 Copyright (c) 2015, Thomas
-Copyright (c) 2015-2021, Alden Torres
 Copyright (c) 2016-2017, Pavel Pimenov
 Copyright (c) 2020, Paul-Louis Ageneau
 All rights reserved.
@@ -661,12 +661,13 @@ namespace aux {
 			std::uint16_t ssl_listen_port(listen_socket_t* sock) const;
 
 			// used by the DHT tracker, returns a UDP listen port
-			int get_listen_port(transport ssl, aux::listen_socket_handle const& s) override;
+			int get_listen_port(transport ssl, aux::listen_socket_handle const& s) const override;
 			// used by peer connections, returns a TCP listen port
 			// or zero if no matching listen socket is found
-			int listen_port(transport ssl, address const& local_addr) override;
+			int listen_port(transport ssl, address const& local_addr) const override;
 
-			void for_each_listen_socket(std::function<void(aux::listen_socket_handle const&)> f) override
+			std::uint32_t listen_socket_version() const override { return m_listen_socket_version; }
+			void for_each_listen_socket(std::function<void(aux::listen_socket_handle const&)> f) const override
 			{
 				for (auto& s : m_listen_sockets)
 				{
@@ -766,7 +767,7 @@ namespace aux {
 			// implements session_interface
 			tcp::endpoint bind_outgoing_socket(socket_type& s
 				, address const& remote_address, error_code& ec) const override;
-			bool verify_incoming_interface(address const& addr);
+			bool verify_incoming_interface(address const& addr) const;
 			bool verify_bound_address(address const& addr, bool utp
 				, error_code& ec) override;
 
@@ -1003,6 +1004,9 @@ namespace aux {
 			// since we might be listening on multiple interfaces
 			// we might need more than one listen socket
 			std::vector<std::shared_ptr<listen_socket_t>> m_listen_sockets;
+
+			// increment every time we change which sockets we're listening on
+			std::uint32_t m_listen_socket_version = 0;
 
 #if TORRENT_USE_I2P
 			i2p_connection m_i2p_conn;

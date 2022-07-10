@@ -3,7 +3,7 @@
 Copyright (c) 2003-2013, Daniel Wallin
 Copyright (c) 2013-2020, Arvid Norberg
 Copyright (c) 2015, Steven Siloti
-Copyright (c) 2016, 2020, Alden Torres
+Copyright (c) 2016, 2020, 2022, Alden Torres
 All rights reserved.
 
 You may use, distribute and modify this code under the terms of the BSD license,
@@ -19,8 +19,7 @@ see LICENSE file.
 #include <memory> // for shared_ptr
 #endif
 
-namespace libtorrent {
-namespace aux {
+namespace libtorrent::aux {
 
 	alert_manager::alert_manager(int const queue_limit, alert_category_t const alert_mask)
 		: m_alert_mask(alert_mask)
@@ -121,5 +120,4 @@ namespace aux {
 		std::swap(m_queue_size_limit, queue_size_limit_);
 		return queue_size_limit_;
 	}
-}
 }

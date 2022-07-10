@@ -1,10 +1,10 @@
 /*
 
-Copyright (c) 2007-2012, 2014-2021, Arvid Norberg
-Copyright (c) 2016-2019, Steven Siloti
+Copyright (c) 2007-2012, 2014-2022, Arvid Norberg
 Copyright (c) 2016-2018, 2020-2021, Alden Torres
-Copyright (c) 2018, gubatron
+Copyright (c) 2016-2019, Steven Siloti
 Copyright (c) 2018, Xiyue Deng
+Copyright (c) 2018, gubatron
 All rights reserved.
 
 You may use, distribute and modify this code under the terms of the BSD license,
@@ -40,7 +40,7 @@ see LICENSE file.
 #include "libtorrent/settings_pack.hpp"
 #include "libtorrent/aux_/file_view_pool.hpp"
 #include "libtorrent/aux_/scope_end.hpp"
-#include "libtorrent/aux_/storage_free_list.hpp"
+#include "libtorrent/aux_/storage_array.hpp"
 
 #ifdef TORRENT_WINDOWS
 #include "signal_error_code.hpp"
@@ -252,8 +252,8 @@ private:
 	static bool wait_for_job(job_queue& jobq, aux::disk_io_thread_pool& threads
 		, std::unique_lock<std::mutex>& l);
 
-	void add_completed_jobs(jobqueue_t& jobs);
-	void add_completed_jobs_impl(jobqueue_t& jobs, jobqueue_t& completed);
+	void add_completed_jobs(jobqueue_t jobs);
+	void add_completed_jobs_impl(jobqueue_t jobs, jobqueue_t& completed);
 
 	void fail_jobs_impl(storage_error const& e, jobqueue_t& src, jobqueue_t& dst);
 
@@ -343,10 +343,7 @@ private:
 	// completion callbacks in m_completed jobs
 	bool m_job_completions_in_flight = false;
 
-	aux::vector<std::shared_ptr<aux::mmap_storage>, storage_index_t> m_torrents;
-
-	// indices into m_torrents to empty slots
-	aux::storage_free_list m_free_slots;
+	aux::storage_array<aux::mmap_storage> m_torrents;
 
 	std::atomic_flag m_jobs_aborted = ATOMIC_FLAG_INIT;
 
@@ -387,21 +384,15 @@ TORRENT_EXPORT std::unique_ptr<disk_interface> mmap_disk_io_constructor(
 	{
 		TORRENT_ASSERT(params.files.is_valid());
 
-		storage_index_t const idx = m_free_slots.new_index(m_torrents.end_index());
 		auto storage = std::make_shared<aux::mmap_storage>(params, m_file_pool);
-		storage->set_storage_index(idx);
 		storage->set_owner(owner);
-		if (idx == m_torrents.end_index())
-			m_torrents.emplace_back(std::move(storage));
-		else m_torrents[idx] = std::move(storage);
+		storage_index_t const idx = m_torrents.add(std::move(storage));
 		return storage_holder(idx, *this);
 	}
 
 	void mmap_disk_io::remove_torrent(storage_index_t const idx)
 	{
-		TORRENT_ASSERT(m_torrents[idx] != nullptr);
-		m_torrents[idx].reset();
-		m_free_slots.add(idx);
+		m_torrents.remove(idx);
 	}
 
 #if TORRENT_USE_ASSERTS
@@ -418,7 +409,7 @@ TORRENT_EXPORT std::unique_ptr<disk_interface> mmap_disk_io_constructor(
 		TORRENT_ASSERT(m_store_buffer.size() == 0);
 
 		// all torrents are supposed to have been removed by now
-		TORRENT_ASSERT(m_torrents.size() == m_free_slots.size());
+		TORRENT_ASSERT(m_torrents.empty());
 		TORRENT_ASSERT(m_generic_threads.num_threads() == 0);
 		TORRENT_ASSERT(m_hash_threads.num_threads() == 0);
 		if (!m_generic_io_jobs.m_queued_jobs.empty())
@@ -1462,13 +1453,13 @@ TORRENT_EXPORT std::unique_ptr<disk_interface> mmap_disk_io_constructor(
 			j->ret = status_t::fatal_disk_error;
 			j->error = storage_error(boost::asio::error::operation_aborted);
 			completed_jobs.push_back(j);
-			add_completed_jobs(completed_jobs);
+			add_completed_jobs(std::move(completed_jobs));
 			return;
 		}
 
 		perform_job(j, completed_jobs);
 		if (!completed_jobs.empty())
-			add_completed_jobs(completed_jobs);
+			add_completed_jobs(std::move(completed_jobs));
 	}
 
 	bool mmap_disk_io::wait_for_job(job_queue& jobq, aux::disk_io_thread_pool& threads
@@ -1696,7 +1687,7 @@ TORRENT_EXPORT std::unique_ptr<disk_interface> mmap_disk_io_constructor(
 			return m_generic_threads;
 	}
 
-	void mmap_disk_io::add_completed_jobs(jobqueue_t& jobs)
+	void mmap_disk_io::add_completed_jobs(jobqueue_t jobs)
 	{
 		jobqueue_t completed = std::move(jobs);
 		jobqueue_t new_jobs;
@@ -1705,13 +1696,13 @@ TORRENT_EXPORT std::unique_ptr<disk_interface> mmap_disk_io_constructor(
 			// when a job completes, it's possible for it to cause
 			// a fence to be lowered, issuing the jobs queued up
 			// behind the fence
-			add_completed_jobs_impl(completed, new_jobs);
+			add_completed_jobs_impl(std::move(completed), new_jobs);
 			TORRENT_ASSERT(completed.empty());
-			completed.swap(new_jobs);
+			completed = std::move(new_jobs);
 		} while (!completed.empty());
 	}
 
-	void mmap_disk_io::add_completed_jobs_impl(jobqueue_t& jobs, jobqueue_t& completed)
+	void mmap_disk_io::add_completed_jobs_impl(jobqueue_t jobs, jobqueue_t& completed)
 	{
 		jobqueue_t new_jobs;
 		int ret = 0;
@@ -1764,7 +1755,7 @@ TORRENT_EXPORT std::unique_ptr<disk_interface> mmap_disk_io_constructor(
 			{
 				{
 					std::lock_guard<std::mutex> l(m_job_mutex);
-					m_generic_io_jobs.m_queued_jobs.append(new_jobs);
+					m_generic_io_jobs.m_queued_jobs.append(std::move(new_jobs));
 				}
 
 				{
@@ -1776,7 +1767,7 @@ TORRENT_EXPORT std::unique_ptr<disk_interface> mmap_disk_io_constructor(
 		}
 
 		std::lock_guard<std::mutex> l(m_completed_jobs_mutex);
-		m_completed_jobs.append(jobs);
+		m_completed_jobs.append(std::move(jobs));
 
 		if (!m_job_completions_in_flight)
 		{

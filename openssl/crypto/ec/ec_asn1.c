@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2002-2022 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -794,7 +794,7 @@ EC_GROUP *EC_GROUP_new_from_ecparameters(const ECPARAMETERS *params)
     }
 
     /* extract the order */
-    if ((a = ASN1_INTEGER_to_BN(params->order, a)) == NULL) {
+    if (ASN1_INTEGER_to_BN(params->order, a) == NULL) {
         ECerr(EC_F_EC_GROUP_NEW_FROM_ECPARAMETERS, ERR_R_ASN1_LIB);
         goto err;
     }
@@ -811,7 +811,7 @@ EC_GROUP *EC_GROUP_new_from_ecparameters(const ECPARAMETERS *params)
     if (params->cofactor == NULL) {
         BN_free(b);
         b = NULL;
-    } else if ((b = ASN1_INTEGER_to_BN(params->cofactor, b)) == NULL) {
+    } else if (ASN1_INTEGER_to_BN(params->cofactor, b) == NULL) {
         ECerr(EC_F_EC_GROUP_NEW_FROM_ECPARAMETERS, ERR_R_ASN1_LIB);
         goto err;
     }

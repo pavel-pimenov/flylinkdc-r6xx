@@ -1,10 +1,11 @@
 /*
 
-Copyright (c) 2008-2021, Arvid Norberg
+Copyright (c) 2008-2022, Arvid Norberg
 Copyright (c) 2009, Georg Rudoy
 Copyright (c) 2016-2018, 2020, Alden Torres
 Copyright (c) 2017-2019, Steven Siloti
 Copyright (c) 2021, Mark Scott
+Copyright (c) 2022, Konstantin Morozov
 All rights reserved.
 
 You may use, distribute and modify this code under the terms of the BSD license,
@@ -1101,6 +1102,8 @@ namespace {
 		TORRENT_ASSERT_PRECOND(m_piece_length > 0);
 		auto const& f = m_files[index];
 
+		if (f.size == 0) return 0;
+
 		// this function only works for v2 torrents, where files are guaranteed to
 		// be aligned to pieces
 		TORRENT_ASSERT(f.pad_file == false);
@@ -1119,6 +1122,8 @@ namespace {
 		TORRENT_ASSERT_PRECOND(index >= file_index_t(0) && index < end_file());
 		TORRENT_ASSERT_PRECOND(m_piece_length > 0);
 		auto const& f = m_files[index];
+
+		if (f.size == 0) return 0;
 
 		// this function only works for v2 torrents, where files are guaranteed to
 		// be aligned to pieces
@@ -1502,13 +1507,13 @@ namespace {
 				branch.size() < target.size();
 				branch = lsplit_path(target, branch.size() + 1).first)
 			{
+				std::string branch_temp(branch);
 				// this is a concrete directory
-				if (dir_map.count(branch)) continue;
-
-				auto const iter = dir_links.find(std::string(branch));
+				if (dir_map.count(branch_temp)) continue;
+				auto const iter = dir_links.find(branch_temp);
 				if (iter == dir_links.end()) goto failed;
-				if (traversed.count(std::string(branch))) goto failed;
-				traversed.emplace(std::string(branch));
+				if (traversed.count(branch_temp)) goto failed;
+				traversed.insert(std::move(branch_temp));
 
 				// this path element is a symlink. substitute the branch so far by
 				// the link target

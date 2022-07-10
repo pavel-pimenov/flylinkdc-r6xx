@@ -1,8 +1,8 @@
 /*
 
+Copyright (c) 2016-2018, 2020, 2022, Alden Torres
 Copyright (c) 2016, 2018, Steven Siloti
-Copyright (c) 2016-2018, 2020, Alden Torres
-Copyright (c) 2017-2020, Arvid Norberg
+Copyright (c) 2017-2020, 2022, Arvid Norberg
 All rights reserved.
 
 You may use, distribute and modify this code under the terms of the BSD license,
@@ -24,8 +24,7 @@ namespace {
 	constexpr std::chrono::seconds reap_idle_threads_interval(60);
 }
 
-namespace libtorrent {
-namespace aux {
+namespace libtorrent::aux {
 
 	disk_io_thread_pool::disk_io_thread_pool(pool_thread_interface& thread_iface
 		, io_context& ios)
@@ -199,5 +198,4 @@ namespace aux {
 		m_thread_iface.notify_all();
 	}
 
-}
-} // namespace libtorrent
+} // namespace libtorrent::aux

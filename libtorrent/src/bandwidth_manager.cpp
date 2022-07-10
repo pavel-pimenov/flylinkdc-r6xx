@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2009, 2011, 2013-2014, 2016-2017, 2019-2020, Arvid Norberg
-Copyright (c) 2015-2016, 2018, 2020, Alden Torres
+Copyright (c) 2015-2016, 2018, 2020, 2022, Alden Torres
 Copyright (c) 2016, Andrei Kurushin
 All rights reserved.
 
@@ -15,8 +15,7 @@ see LICENSE file.
 #include <climits>
 #endif
 
-namespace libtorrent {
-namespace aux {
+namespace libtorrent::aux {
 
 	bandwidth_manager::bandwidth_manager(int channel)
 		: m_queued_bytes(0)
@@ -198,5 +197,4 @@ namespace aux {
 			queue.pop_back();
 		}
 	}
-}
 }

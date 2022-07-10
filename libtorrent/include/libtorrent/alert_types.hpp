@@ -1,17 +1,18 @@
 /*
 
 Copyright (c) 2017, toinetoine
-Copyright (c) 2004-2021, Arvid Norberg
+Copyright (c) 2015, Thomas
+Copyright (c) 2004-2022, Arvid Norberg
 Copyright (c) 2008, Andrew Resch
 Copyright (c) 2014-2018, Steven Siloti
-Copyright (c) 2015, Thomas
 Copyright (c) 2015-2018, 2020-2021, Alden Torres
+Copyright (c) 2015, Thomas Yuan
 Copyright (c) 2017, Antoine Dahan
 Copyright (c) 2018, d-komarov
 Copyright (c) 2019, ghbplayer
+Copyright (c) 2020, AllSeeingEyeTolledEweSew
 Copyright (c) 2020, Fonic
 Copyright (c) 2020, Viktor Elofsson
-Copyright (c) 2020, AllSeeingEyeTolledEweSew
 All rights reserved.
 
 You may use, distribute and modify this code under the terms of the BSD license,
@@ -73,7 +74,7 @@ namespace libtorrent {
 	constexpr int user_alert_id = 10000;
 
 	// this constant represents "max_alert_index" + 1
-	constexpr int num_alert_types = 99;
+	constexpr int num_alert_types = 100;
 
 	// internal
 	constexpr int abi_alert_count = 128;
@@ -171,7 +172,7 @@ TORRENT_VERSION_NAMESPACE_3
 	{
 		// internal
 		TORRENT_UNEXPORT tracker_alert(aux::stack_allocator& alloc, torrent_handle const& h
-			, tcp::endpoint const& ep, string_view u);
+			, tcp::endpoint const& ep, protocol_version v, string_view u);
 
 #if TORRENT_ABI_VERSION == 1
 		TORRENT_DEPRECATED static int const alert_type = 2;
@@ -187,8 +188,10 @@ TORRENT_VERSION_NAMESPACE_3
 
 	private:
 		aux::allocation_slot m_url_idx;
-#if TORRENT_ABI_VERSION == 1
 	public:
+		// the bittorrent protocol version that was announced
+		protocol_version version;
+#if TORRENT_ABI_VERSION == 1
 		// The tracker URL
 		TORRENT_DEPRECATED std::string url;
 #endif
@@ -517,7 +520,8 @@ TORRENT_VERSION_NAMESPACE_3
 		// internal
 		TORRENT_UNEXPORT tracker_error_alert(aux::stack_allocator& alloc
 			, torrent_handle const& h, tcp::endpoint const& ep
-			, int times, string_view u, operation_t op, error_code const& e, string_view m);
+			, int times, protocol_version v, string_view u
+			, operation_t op, error_code const& e, string_view m);
 
 		TORRENT_DEFINE_ALERT_PRIO(tracker_error_alert, 11, alert_priority::high)
 
@@ -559,7 +563,7 @@ TORRENT_VERSION_NAMESPACE_3
 		// internal
 		TORRENT_UNEXPORT tracker_warning_alert(aux::stack_allocator& alloc
 			, torrent_handle const& h, tcp::endpoint const& ep
-			, string_view u, string_view m);
+			, string_view u, protocol_version v, string_view m);
 
 		TORRENT_DEFINE_ALERT(tracker_warning_alert, 12)
 
@@ -584,7 +588,7 @@ TORRENT_VERSION_NAMESPACE_3
 		// internal
 		TORRENT_UNEXPORT scrape_reply_alert(aux::stack_allocator& alloc
 			, torrent_handle const& h, tcp::endpoint const& ep
-			, int incomp, int comp, string_view u);
+			, int incomp, int comp, string_view u, protocol_version v);
 
 		TORRENT_DEFINE_ALERT_PRIO(scrape_reply_alert, 13, alert_priority::critical)
 
@@ -605,10 +609,10 @@ TORRENT_VERSION_NAMESPACE_3
 		// internal
 		TORRENT_UNEXPORT scrape_failed_alert(aux::stack_allocator& alloc
 			, torrent_handle const& h, tcp::endpoint const& ep
-			, string_view u, error_code const& e);
+			, protocol_version v, string_view u, error_code const& e);
 		TORRENT_UNEXPORT scrape_failed_alert(aux::stack_allocator& alloc
 			, torrent_handle const& h, tcp::endpoint const& ep
-			, string_view u, string_view m);
+			, protocol_version v, string_view u, string_view m);
 
 		TORRENT_DEFINE_ALERT_PRIO(scrape_failed_alert, 14, alert_priority::critical)
 
@@ -641,7 +645,7 @@ TORRENT_VERSION_NAMESPACE_3
 		// internal
 		TORRENT_UNEXPORT tracker_reply_alert(aux::stack_allocator& alloc
 			, torrent_handle const& h, tcp::endpoint const& ep
-			, int np, string_view u);
+			, int np, protocol_version v, string_view u);
 
 		TORRENT_DEFINE_ALERT(tracker_reply_alert, 15)
 
@@ -681,7 +685,7 @@ TORRENT_VERSION_NAMESPACE_3
 		// internal
 		TORRENT_UNEXPORT tracker_announce_alert(aux::stack_allocator& alloc
 			, torrent_handle const& h, tcp::endpoint const& ep
-			, string_view u, event_t e);
+			, string_view u, protocol_version v, event_t e);
 
 		TORRENT_DEFINE_ALERT(tracker_announce_alert, 17)
 
@@ -1157,9 +1161,13 @@ TORRENT_VERSION_NAMESPACE_3
 		static inline constexpr alert_category_t static_category = alert_category::storage;
 		std::string message() const override;
 
-		// the ``params`` structure is populated with the fields to be passed to
-		// add_torrent() or async_add_torrent() to resume the torrent. To
-		// save the state to disk, you may pass it on to write_resume_data().
+		// the ``params`` object is populated with the torrent file whose resume
+		// data was saved. It is suitable to be:
+		//
+		// * added to a session with add_torrent() or async_add_torrent()
+		// * saved to disk with write_resume_data()
+		// * turned into a magnet link with make_magnet_uri()
+		// * saved as a .torrent file with write_torrent_file()
 		add_torrent_params params;
 
 #if TORRENT_ABI_VERSION == 1
@@ -1912,7 +1920,7 @@ TORRENT_VERSION_NAMESPACE_3
 	{
 		// internal
 		TORRENT_UNEXPORT trackerid_alert(aux::stack_allocator& alloc, torrent_handle const& h
-			, tcp::endpoint const& ep , string_view u, const std::string& id);
+			, tcp::endpoint const& ep, protocol_version v, string_view u, const std::string& id);
 
 		TORRENT_DEFINE_ALERT(trackerid_alert, 61)
 
@@ -1944,6 +1952,9 @@ TORRENT_VERSION_NAMESPACE_3
 	};
 
 	// This is posted whenever a torrent is transitioned into the error state.
+	// If the error code is duplicate_torrent (error_code_enum) error, it suggests two magnet
+	// links ended up resolving to the same hybrid torrent. For more details,
+	// see BitTorrent-v2-torrents_.
 	struct TORRENT_EXPORT torrent_error_alert final : torrent_alert
 	{
 		// internal
@@ -2957,6 +2968,35 @@ TORRENT_VERSION_NAMESPACE_3_END
 
 		// hidden
 		file_index_t reserved;
+	};
+
+	// this alert is posted when two separate torrents (magnet links) resolve to
+	// the same torrent, thus causing the same torrent being added twice. In
+	// that case, both torrents enter an error state with ``duplicate_torrent``
+	// as the error code. This alert is posted containing the metadata. For more
+	// information, see BitTorrent-v2-torrents_.
+	// The torrent this alert originated from was the one that downloaded the
+	//
+	// metadata (i.e. the `handle` member from the torrent_alert base class).
+	struct TORRENT_EXPORT torrent_conflict_alert final : torrent_alert
+	{
+		// internal
+		explicit torrent_conflict_alert(aux::stack_allocator& alloc, torrent_handle h1
+			, torrent_handle h2, std::shared_ptr<torrent_info> ti);
+		TORRENT_DEFINE_ALERT_PRIO(torrent_conflict_alert, 99, alert_priority::high)
+
+		static constexpr alert_category_t static_category = alert_category::error;
+		std::string message() const override;
+
+		// the handle to the torrent in conflict. The swarm associated with this
+		// torrent handle did not download the metadata, but the downloaded
+		// metadata collided with this swarm's info-hash.
+		torrent_handle conflicting_torrent;
+
+		// the metadata that was received by one of the torrents in conflict.
+		// One way to resolve the conflict is to remove both failing torrents
+		// and re-add it using this metadata
+		std::shared_ptr<torrent_info> metadata;
 	};
 
 	// internal

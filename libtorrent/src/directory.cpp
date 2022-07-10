@@ -1,6 +1,7 @@
 /*
 
 Copyright (c) 2020, Arvid Norberg
+Copyright (c) 2022, Alden Torres
 All rights reserved.
 
 You may use, distribute and modify this code under the terms of the BSD license,
@@ -11,8 +12,7 @@ see LICENSE file.
 #include "libtorrent/aux_/directory.hpp"
 #include "libtorrent/aux_/path.hpp"
 
-namespace libtorrent {
-namespace aux {
+namespace libtorrent::aux {
 
 	directory::directory(std::string const& path, error_code& ec)
 		: m_done(false)
@@ -99,5 +99,4 @@ namespace aux {
 #endif
 	}
 
-} // namespace aux
-}
+} // namespace libtorrent::aux
