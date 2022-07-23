@@ -17810,7 +17810,7 @@ void File_Mxf::ChooseParser_Ffv1(const essences::iterator &Essence, const descri
 
     //Filling
     #if defined(MEDIAINFO_FFV1_YES)
-        File__Analyze* Parser=NULL;
+        //File__Analyze* Parser=NULL;
         if (Descriptor->second.Parser)
         {
             Essence->second.Parsers.push_back(Descriptor->second.Parser);
