@@ -5,8 +5,8 @@
 //
 // Comparison operators for cpp_int_backend:
 //
-#ifndef BOOST_MP_CPP_INT_LIM_HPP
-#define BOOST_MP_CPP_INT_LIM_HPP
+#ifndef BOOST_MP_CPP_INT_LIMITS_HPP
+#define BOOST_MP_CPP_INT_LIMITS_HPP
 
 #include <boost/multiprecision/traits/max_digits10.hpp>
 
@@ -14,7 +14,7 @@ namespace std {
 
 namespace detail {
 
-#ifdef _MSC_VER
+#ifdef BOOST_MSVC
 #pragma warning(push)
 #pragma warning(disable : 4307)
 #endif
@@ -184,9 +184,9 @@ class numeric_limits<boost::multiprecision::number<boost::multiprecision::cpp_in
       return detail::get_max<MinBits, MaxBits, SignType, Checked, Allocator, ExpressionTemplates>(boost::multiprecision::backends::is_fixed_precision<backend_type>(), boost::multiprecision::is_signed_number<backend_type>(), std::integral_constant<bool, std::is_void<Allocator>::value>());
    }
    static BOOST_CXX14_CONSTEXPR_IF_DETECTION number_type          lowest() { return (min)(); }
-   static constexpr int digits       = boost::multiprecision::backends::max_precision<backend_type>::value == SIZE_MAX ? INT_MAX : boost::multiprecision::backends::max_precision<backend_type>::value;
-   static constexpr int digits10     = boost::multiprecision::detail::calc_digits10_s<digits>::value;
-   static constexpr int max_digits10 = boost::multiprecision::detail::calc_max_digits10_s<digits>::value;
+   static constexpr int  digits       = boost::multiprecision::backends::max_precision<backend_type>::value == SIZE_MAX ? INT_MAX : boost::multiprecision::backends::max_precision<backend_type>::value;
+   static constexpr int  digits10     = static_cast<int>(boost::multiprecision::detail::calc_digits10_s<static_cast<std::size_t>(digits)>::value);
+   static constexpr int  max_digits10 = static_cast<int>(boost::multiprecision::detail::calc_max_digits10_s<static_cast<std::size_t>(digits)>::value);
    static constexpr bool is_signed    = boost::multiprecision::is_signed_number<backend_type>::value;
    static constexpr bool is_integer   = true;
    static constexpr bool is_exact     = true;
@@ -259,7 +259,7 @@ constexpr bool numeric_limits<boost::multiprecision::number<boost::multiprecisio
 template <std::size_t MinBits, std::size_t MaxBits, boost::multiprecision::cpp_integer_type SignType, boost::multiprecision::cpp_int_check_type Checked, class Allocator, boost::multiprecision::expression_template_option ExpressionTemplates>
 constexpr float_round_style numeric_limits<boost::multiprecision::number<boost::multiprecision::cpp_int_backend<MinBits, MaxBits, SignType, Checked, Allocator>, ExpressionTemplates> >::round_style;
 
-#ifdef _MSC_VER
+#ifdef BOOST_MSVC
 #pragma warning(pop)
 #endif
 
