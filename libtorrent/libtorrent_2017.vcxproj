@@ -59,6 +59,8 @@
     <ClInclude Include="include\libtorrent\aux_\ffs.hpp" />
     <ClInclude Include="include\libtorrent\aux_\file.hpp" />
     <ClInclude Include="include\libtorrent\aux_\file_pointer.hpp" />
+    <ClInclude Include="include\libtorrent\aux_\file_pool.hpp" />
+    <ClInclude Include="include\libtorrent\aux_\file_pool_impl.hpp" />
     <ClInclude Include="include\libtorrent\aux_\file_progress.hpp" />
     <ClInclude Include="include\libtorrent\aux_\file_view_pool.hpp" />
     <ClInclude Include="include\libtorrent\aux_\generate_peer_id.hpp" />
@@ -320,9 +322,9 @@
     <ClCompile Include="src\escape_string.cpp" />
     <ClCompile Include="src\ffs.cpp" />
     <ClCompile Include="src\file.cpp" />
+    <ClCompile Include="src\file_pool_impl.cpp" />
     <ClCompile Include="src\file_progress.cpp" />
     <ClCompile Include="src\file_storage.cpp" />
-    <ClCompile Include="src\file_view_pool.cpp" />
     <ClCompile Include="src\fingerprint.cpp" />
     <ClCompile Include="src\generate_peer_id.cpp" />
     <ClCompile Include="src\gzip.cpp" />

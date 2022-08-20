@@ -18,12 +18,6 @@
     <ClCompile Include="zlib-ng\compress.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="zlib-ng\crc32.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="zlib-ng\crc32_comb.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="zlib-ng\deflate.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -88,6 +82,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="zlib-ng\compare256.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib-ng\adler32_fold.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib-ng\crc32_braid.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib-ng\crc32_braid_comb.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -171,6 +174,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="zlib-ng\cpu_features.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib-ng\crc32_braid_comb_p.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib-ng\crc32_braid_p.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib-ng\crc32_braid_tbl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib-ng\crc32_fold.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

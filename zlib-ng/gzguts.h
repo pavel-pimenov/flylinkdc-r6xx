@@ -1,7 +1,7 @@
 #ifndef GZGUTS_H_
 #define GZGUTS_H_
 /* gzguts.h -- zlib internal header definitions for gz* operations
- * Copyright (C) 2004, 2005, 2010, 2011, 2012, 2013, 2016 Mark Adler
+ * Copyright (C) 2004-2019 Mark Adler
  * For conditions of distribution and use, see copyright notice in zlib.h
  */
 
@@ -140,6 +140,6 @@ void Z_INTERNAL gz_error(gz_state *, int, const char *);
 /* GT_OFF(x), where x is an unsigned value, is true if x > maximum z_off64_t
    value -- needed when comparing unsigned to z_off64_t, which is signed
    (possible z_off64_t types off_t, off64_t, and long are all signed) */
-#  define GT_OFF(x) (sizeof(int) == sizeof(z_off64_t) && (x) > INT_MAX)
+#define GT_OFF(x) (sizeof(int) == sizeof(z_off64_t) && (x) > INT_MAX)
 
 #endif /* GZGUTS_H_ */

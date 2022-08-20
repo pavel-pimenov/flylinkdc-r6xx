@@ -12,12 +12,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="zlib-ng\adler32.c" />
+    <ClCompile Include="zlib-ng\adler32_fold.c" />
     <ClCompile Include="zlib-ng\chunkset.c" />
     <ClCompile Include="zlib-ng\compare256.c" />
     <ClCompile Include="zlib-ng\compress.c" />
     <ClCompile Include="zlib-ng\cpu_features.c" />
-    <ClCompile Include="zlib-ng\crc32.c" />
-    <ClCompile Include="zlib-ng\crc32_comb.c" />
+    <ClCompile Include="zlib-ng\crc32_braid.c" />
+    <ClCompile Include="zlib-ng\crc32_braid_comb.c" />
     <ClCompile Include="zlib-ng\crc32_fold.c" />
     <ClCompile Include="zlib-ng\deflate.c" />
     <ClCompile Include="zlib-ng\deflate_fast.c" />
@@ -43,7 +44,11 @@
     <ClInclude Include="zlib-ng\adler32_p.h" />
     <ClInclude Include="zlib-ng\chunkset_tpl.h" />
     <ClInclude Include="zlib-ng\cpu_features.h" />
+    <ClInclude Include="zlib-ng\crc32_braid_comb_p.h" />
+    <ClInclude Include="zlib-ng\crc32_braid_p.h" />
+    <ClInclude Include="zlib-ng\crc32_braid_tbl.h" />
     <ClInclude Include="zlib-ng\crc32_comb_tbl.h" />
+    <ClInclude Include="zlib-ng\crc32_fold.h" />
     <ClInclude Include="zlib-ng\crc32_p.h" />
     <ClInclude Include="zlib-ng\crc32_tbl.h" />
     <ClInclude Include="zlib-ng\deflate.h" />

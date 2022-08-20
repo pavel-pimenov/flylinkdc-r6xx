@@ -4,6 +4,10 @@
 	* libtorrent now requires C++17 to build
 	* added support for WebTorrent
 
+
+	* fix madvise range for flushing cache in mmap_storage
+	* open files with no_cache set in O_SYNC mode
+
 * 2.0.7 released
 
 	* fix issue in use of copy_file_range() on linux
@@ -125,6 +129,9 @@
 	* overhauled disk I/O subsystem to use memory mapped files (where available)
 	* libtorrent now requires C++14 to build
 	* added support for GnuTLS for HTTPS and torrents over SSL
+
+
+	* made UPnP and LSD code avoid using select_reactor (to work around an issue on windows in boost.asio < 1.80)
 
 1.2.17 released
 
