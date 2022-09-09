@@ -53,7 +53,7 @@ Ztring NewLine(size_t Level)
 }
 
 //---------------------------------------------------------------------------
-Ztring Element2Html(MediaInfo_Internal &MI, stream_t StreamKind, size_t StreamPos, Ztring Element, Ztring Format, Ztring FG, Ztring BG, Ztring HFG, Ztring HBG)
+Ztring Element2Html(MediaInfo_Internal &MI, stream_t StreamKind, size_t StreamPos, Ztring Element, Ztring Format, Ztring FG, Ztring BG, Ztring HFG, Ztring HBG, bool HasNestedObjects=false)
 {
     Ztring ToReturn;
     ToReturn+=__T("<table border='0' cellborder='0' cellspacing='0'>");
@@ -61,15 +61,18 @@ Ztring Element2Html(MediaInfo_Internal &MI, stream_t StreamKind, size_t StreamPo
     ToReturn+=__T("<td colspan='2' bgcolor='")+HBG+__T("'>");
     ToReturn+=__T("<font color='")+HFG+__T("'>");
     ToReturn+=__T("<b>")+XML_Encode(MI.Get(StreamKind, StreamPos, Element, Info_Name_Text))+__T("</b>");
-    ToReturn+=__T("<br/>");
     Ztring Sub=XML_Encode(MI.Get(StreamKind, StreamPos, Element, Info_Text));
-    if (Sub.size() && Sub[Sub.size()-1]==__T(')'))
+    if (!HasNestedObjects || Sub!=__T("Yes"))
     {
-        if (Sub.FindAndReplace(__T("("), __T("<br/>"), 0))
-            Sub.erase(Sub.size()-1);
+        ToReturn+=__T("<br/>");
+        if (Sub.size() && Sub[Sub.size()-1]==__T(')'))
+        {
+            if (Sub.FindAndReplace(__T("("), __T("<br/>"), 0))
+                Sub.erase(Sub.size()-1);
+        }
+        Sub.FindAndReplace(__T(" / "), __T("<br/>"), 0, Ztring_Recursive);
+        ToReturn+=Sub;
     }
-    Sub.FindAndReplace(__T(" / "), __T("<br/>"), 0, Ztring_Recursive);
-    ToReturn+=Sub;
     ToReturn+=__T("</font>");
     ToReturn+=__T("</td>");
     ToReturn+=__T("</tr>");
@@ -242,7 +245,7 @@ bool Export_Graph::Load()
             Temp+=NewLine(Level++)+Stream+__T("_")+Object+__T(" ["); \
             Temp+=NewLine(Level)+__T("shape=plaintext"); \
             Temp+=NewLine(Level)+__T("label=<"); \
-            Temp+=Element2Html(MI, Stream_Audio, StreamPos, Object, Format, __T(FOREGROUND_COLOR), __T(BACKGROUND_COLOR), __T(TITLE_FOREGROUND_COLOR), __T(TITLE_BACKGROUND_COLOR)); \
+            Temp+=Element2Html(MI, Stream_Audio, StreamPos, Object, Format, __T(FOREGROUND_COLOR), __T(BACKGROUND_COLOR), __T(TITLE_FOREGROUND_COLOR), __T(TITLE_BACKGROUND_COLOR), true); \
             Temp+=__T(">");\
             Temp+=NewLine(--Level)+__T("]");
 
@@ -253,6 +256,15 @@ bool Export_Graph::Load()
                 Linked##NAME##s.Write(MI.Get(Stream_Audio, StreamPos, Object+__T(" LinkedTo_" #NAME "_Pos"), Info_Text)); \
                 for (size_t NAME##Pos=0; NAME##Pos<Linked##NAME##s.size(); NAME##Pos++) \
                     Relations.push_back(relation(Stream+__T("_")+Object, Stream+__T("_" #NAME)+Linked##NAME##s[NAME##Pos], __T("[color=\"" COLOR "\"]"))); \
+            }
+
+#define OBJECT_LINK_TO2(NAME, NAME2, COLOR) \
+            { \
+                ZtringList Linked##NAME##s; \
+                Linked##NAME##s.Separator_Set(0, __T(" + ")); \
+                Linked##NAME##s.Write(MI.Get(Stream_Audio, StreamPos, Object+__T(" LinkedTo_" #NAME2 "_Pos"), Info_Text)); \
+                for (size_t NAME##Pos=0; NAME##Pos<Linked##NAME##s.size(); NAME##Pos++) \
+                    Relations.push_back(relation(Stream+__T("_")+Object, Stream+__T("_" #NAME)+Linked##NAME##s[NAME##Pos], __T("[color=\"" COLOR "\", style=\"dashed\"]"))); \
             }
 
 #define OBJECT_END() \
@@ -464,7 +476,8 @@ Ztring Export_Graph::Ed2_Graph(MediaInfo_Internal &MI, size_t StreamPos, size_t 
 Ztring Export_Graph::Adm_Graph(MediaInfo_Internal &MI, size_t StreamPos, size_t Level)
 {
     Ztring ToReturn;
-    if (MI.Get(Stream_Audio, StreamPos, __T("Metadata_Format")).find(__T("ADM, "), 0)!=0)
+    if (MI.Get(Stream_Audio, StreamPos, __T("Metadata_Format")).find(__T("ADM, "), 0)!=0
+     && MI.Get(Stream_Audio, StreamPos, __T("Format"))!=__T("IAB"))
         return ToReturn;
 
     Ztring Format=__T("ADM");
@@ -483,6 +496,7 @@ Ztring Export_Graph::Adm_Graph(MediaInfo_Internal &MI, size_t StreamPos, size_t 
 
     OBJECT_START(Programme, "NumberOfProgrammes", "#000000", "#c5cae9", "#ffffff", "#303f9f")
     OBJECT_LINK_TO(Content, "#c5cae9")
+    OBJECT_LINK_TO(PackFormat, "#c5cae9")
     OBJECT_END()
 
     OBJECT_START(Content, "NumberOfContents", "#000000", "#bbdefb", "#ffffff", "#1976d2")
@@ -490,6 +504,8 @@ Ztring Export_Graph::Adm_Graph(MediaInfo_Internal &MI, size_t StreamPos, size_t 
     OBJECT_END()
 
     OBJECT_START(Object, "NumberOfObjects", "#000000", "#b3e5fc", "#ffffff", "#0288d1")
+    OBJECT_LINK_TO(Object, "black")
+    OBJECT_LINK_TO2(Object, ComplementaryObject, "black")
     OBJECT_LINK_TO(PackFormat, "#b3e5fc")
     if (MediaInfoLib::Config.Graph_Adm_ShowTrackUIDs_Get())
         OBJECT_LINK_TO(TrackUID, "#b3e5fc")
@@ -627,7 +643,7 @@ Ztring Export_Graph::Transform(MediaInfo_Internal &MI, Export_Graph::graph Graph
     if (!Temp.empty())
         ToReturn+=Temp;
     else
-        ToReturn+=NewLine(Level)+__T("message [shape=plaintext, fontcolor=\"#1565c0\", label=<<b>Graphs are currently available for AC-4, MPEG-H, Dolby ED2 and ADM formats.</b>>]");
+        ToReturn+=NewLine(Level)+__T("message [shape=plaintext, fontcolor=\"#1565c0\", label=<<b>Graphs are currently available for AC-4, MPEG-H, Dolby ED2, IAB and ADM formats.</b>>]");
     ToReturn+=__T("\n}");
 
 #ifdef MEDIAINFO_GRAPHVIZ_YES
