@@ -1,4 +1,4 @@
-FlylinkDC++ 
+FlylinkDC++ r6xx
 ==============
 * http://www.softpedia.com/get/Internet/File-Sharing/FlylinkDC.shtml
 
