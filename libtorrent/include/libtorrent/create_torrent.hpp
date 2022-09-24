@@ -23,6 +23,7 @@ see LICENSE file.
 #include "libtorrent/aux_/path.hpp" // for combine_path etc.
 #include "libtorrent/fwd.hpp"
 #include "libtorrent/aux_/throw.hpp"
+#include "libtorrent/index_range.hpp"
 
 #include <vector>
 #include <string>
@@ -162,9 +163,21 @@ namespace libtorrent {
 		// across systems, this flag should be set.
 		static inline constexpr create_flags_t no_attributes = 8_bit;
 
+		// this flag enforces the file layout to be canonical according to the
+		// bittorrent v2 specification (just like the ``canonical_files`` flag)
+		// with the one exception that tail padding is not added to the last
+		// file.
+		// This behavior deviates from the specification but was the way
+		// libtorrent created torrents in version up to and including 2.0.7.
+		// This flag is here for backwards compatibility.
+		static inline constexpr create_flags_t canonical_files_no_tail_padding = 9_bit;
+
 		// The ``piece_size`` is the size of each piece in bytes. It must be a
 		// power of 2 and a minimum of 16 kiB. If a piece size of 0 is
 		// specified, a piece_size will be set automatically.
+		//
+		// The ``flags`` arguments specifies options for the torrent creation. It can
+		// be any combination of the flags defined by create_flags_t.
 		//
 		// The file_storage (``fs``) parameter defines the files, sizes and
 		// their properties for the torrent to be created. Set this up first,
@@ -175,14 +188,13 @@ namespace libtorrent {
 		// the info dictionary will be used by create_torrent::generate(). This means
 		// that none of the member functions of create_torrent that affects
 		// the content of the info dictionary (such as set_hash()), will
-		// have any affect.
+		// have any affect. Instead of using this overload, consider using
+		// write_torrent_file() instead.
 		//
 		// .. warning::
 		// 	The file_storage and torrent_info objects must stay alive for the
 		// 	entire duration of the create_torrent object.
 		//
-		// The ``flags`` arguments specifies options for the torrent creation. It can
-		// be any combination of the flags defined by create_flags_t.
 		explicit create_torrent(file_storage& fs, int piece_size = 0
 			, create_flags_t flags = {});
 		explicit create_torrent(torrent_info const& ti);
@@ -323,6 +335,14 @@ namespace libtorrent {
 
 		// returns the number of pieces in the associated file_storage object.
 		int num_pieces() const { return m_files.num_pieces(); }
+
+		piece_index_t end_piece() const { return m_files.end_piece(); }
+
+		index_range<piece_index_t> piece_range() const noexcept
+		{ return {piece_index_t{0}, end_piece()}; }
+
+		// the total number of bytes of all files and pad files
+		std::int64_t total_size() const { return m_files.total_size(); }
 
 		// ``piece_length()`` returns the piece size of all pieces but the
 		// last one. ``piece_size()`` returns the size of the specified piece.

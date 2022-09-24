@@ -1739,6 +1739,8 @@ bool is_downloading_state(int const st)
 
 		if (int(m_file_priority.size()) > m_torrent_file->num_files())
 			m_file_priority.resize(m_torrent_file->num_files());
+		else if (m_add_torrent_params->flags & torrent_flags::default_dont_download)
+			m_file_priority.resize(m_torrent_file->num_files(), dont_download);
 
 		auto cert = m_torrent_file->ssl_cert();
 		if (!cert.empty())
@@ -6914,6 +6916,9 @@ namespace {
 
 		ret.save_path = m_save_path;
 
+		ret.comment = torrent_file().comment();
+		ret.created_by = torrent_file().creator();
+		ret.creation_date = torrent_file().creation_date();
 		ret.info_hashes = torrent_file().info_hashes();
 		if (m_name) ret.name = *m_name;
 
@@ -7611,7 +7616,7 @@ namespace {
 		bdecode_node const metadata = bdecode(metadata_buf, ec, &pos, 200
 			, settings().get_int(settings_pack::metadata_token_limit));
 
-		auto info = std::make_shared<torrent_info>(old_ih);
+		auto info = std::make_shared<torrent_info>(*m_torrent_file);
 		if (ec || !info->parse_info_section(metadata, ec
 			, settings().get_int(settings_pack::max_piece_count)))
 		{
@@ -10054,6 +10059,7 @@ namespace {
 		// these counters are saved in the resume data, since they updated
 		// we need to save the resume data too
 		m_need_save_resume_data = true;
+		state_updated();
 
 		// if the rate is 0, there's no update because of network transfers
 		if (m_stat.low_pass_upload_rate() > 0 || m_stat.low_pass_download_rate() > 0)
@@ -10168,7 +10174,6 @@ namespace {
 		int num_peers = 0;
 		int num_downloaders = 0;
 		int missing_pieces = 0;
-		int num_interested = 0;
 		for (auto* p : m_connections)
 		{
 			TORRENT_INCREMENT(m_iterating_connections);
@@ -10183,8 +10188,6 @@ namespace {
 
 			if (p->share_mode()) continue;
 			if (p->upload_only()) continue;
-
-			if (p->is_peer_interested()) ++num_interested;
 
 			++num_downloaders;
 			missing_pieces += pieces_in_torrent - p->num_have_pieces();
