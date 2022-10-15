@@ -103,7 +103,7 @@
 ;Беларусь;Минск;Сеть БГУ;;10.167.0.3,10.162.0.3,10.144.0.2
 ;Беларусь;Минск;Соло;;10.60.1.1,adc://dc.uruchie.org:511,belarena.solo.by,10.42.0.150,10.1.55.2:1411,dc.westnet.by,dchub.solo.by,commfort.solo.by,q19.westnet.by,10.10.74.2,10.15.73.200,10.15.32.119,10.32.250.246:1411,10.1.55.2:1416,10.10.131.254:400,10.39.6.126,10.34.1.117,adc://m1.solo.by:2780,dc.mydc.by,minsk.solo.by,10.15.119.126,195.222.70.242,m1.solo.by,commfortradio.solo.by
 ;Беларусь;Минск;Терра онлайн;;172.16.0.239
-;Беларусь;Минск;Шпаркi Дамавiк;;dchub.telecom.by:4111,dchub-br.telecom.by:4111,10.60.1.1,dc.westnet.by,dchub.solo.by,10.32.250.246:1411,m1.solo.by,adcs://adcs.flylinkdc.com:2780,flylinkdc.dyndns.org
+;Беларусь;Минск;Шпаркi Дамавiк;;dchub.telecom.by:4111,dchub-br.telecom.by:4111,10.60.1.1,dc.westnet.by,dchub.solo.by,10.32.250.246:1411,m1.solo.by
 ;Беларусь;Могилев;BYFLY;;10.8.0.1,cmotru.com
 ;Беларусь;Могилев;Hostel 2;;10.10.0.10
 ;Беларусь;Могилев;Student-Net;;192.168.1.76

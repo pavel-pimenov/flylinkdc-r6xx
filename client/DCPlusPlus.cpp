@@ -47,9 +47,9 @@
 #include "C:\Program Files (x86)\Visual Leak Detector\include\vld.h" // VLD качать тут http://vld.codeplex.com/
 #endif
 
-#ifndef _DEBUG
-#include "../doctor-dump/CrashRpt.h"
-#endif // _DEBUG
+// #ifndef _DEBUG
+// #include "../doctor-dump/CrashRpt.h"
+// #endif // _DEBUG
 
 void startup(PROGRESSCALLBACKPROC pProgressCallbackProc, void* pProgressParam, GUIINITPROC pGuiInitProc, void *pGuiParam)
 {
@@ -197,8 +197,8 @@ void shutdown(GUIINITPROC pGuiInitProc, void *pGuiParam)
 {
 	// —охраним маркеры времени завершени€
 #ifndef _DEBUG
-	extern crash_rpt::CrashRpt g_crashRpt;
-	g_crashRpt.SetCustomInfo(_T("StopCore"));
+//	extern crash_rpt::CrashRpt g_crashRpt;
+//	g_crashRpt.SetCustomInfo(_T("StopCore"));
 #endif
 	
 	{

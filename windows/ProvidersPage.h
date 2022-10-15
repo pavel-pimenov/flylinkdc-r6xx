@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012-2021 FlylinkDC++ Team http://flylinkdc.com
+ * Copyright (C) 2011-2022 FlylinkDC++ Team https://www.fly-server.ru
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -52,7 +52,7 @@ class ProvidersPage : public CPropertyPage<IDD_PROVIDERS_PAGE>, public PropPage
 		LRESULT onClickedUse(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
 		LRESULT onLink(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 		{
-			WinUtil::openLink(_T("http://flylinkdc.com/forum/viewtopic.php?f=27&t=537"));
+			WinUtil::openLink(_T("https://www.fly-server.ru"));
 			return 0;
 		}
 		void write();

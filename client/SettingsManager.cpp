@@ -1424,7 +1424,8 @@ void SettingsManager::load(const string& aFileName)
 	}
 #endif
 	string l_GET_IP = SETTING(URL_GET_IP);
-	Text::replace_all(l_GET_IP, "flylinkdc.ru/", "flylinkdc.com/");
+	Text::replace_all(l_GET_IP, "flylinkdc.ru/", "fly-server.ru/");
+	Text::replace_all(l_GET_IP, "flylinkdc.com/", "fly-server.ru/");
 	set(URL_GET_IP, l_GET_IP);
 	
 	string l_result = SETTING(PM_PASSWORD_HINT);
@@ -1619,7 +1620,7 @@ bool SettingsManager::set(StrSetting key, const std::string& value)
 		}
 		break;
 		case LOW_PRIO_FILES:
-		break;
+			break;
 		case NICK:
 			REDUCE_LENGHT(49);
 			break;

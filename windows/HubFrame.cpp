@@ -4700,7 +4700,7 @@ void HubFrame::addDupeUsersToSummaryMenu(ClientManager::UserParams& p_param)
 {
 	// Данная функция ломает меню - http://youtu.be/GaWw-S4ZYJA
 	// Причину пока не знаю - есть краши https://crash-server.com/Problem.aspx?ClientID=guest&ProblemID=27075
-	// L: ретурн убрал, ведь не помогло же! return; // http://www.flylinkdc.ru/2013/07/flylinkdc-r502-beta92-build-14457.html
+	// L: ретурн убрал, ведь не помогло же! return; // http://www.fly-server.ru/2013/07/flylinkdc-r502-beta92-build-14457.html
 	/*
 	r502-beta94-x64 build 14474
 	косяк с пкм после alt+d ни куда не делся

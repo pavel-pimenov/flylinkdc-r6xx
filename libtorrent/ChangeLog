@@ -1,3 +1,5 @@
+	* introduced a new API for creating torrents, enabling file_storage optimizations
+	* default build to not include functions deprecated in libtorrent 1.1 and earlier
 	* add comment, created_by and creation_date to add_torrent_params
 	* move session_flags to session_params
 	* the entry class is now a standard variant type
@@ -6,6 +8,13 @@
 	* added support for WebTorrent
 
 
+	* add write_torrent_file_buf() overload for generating .torrent files
+	* add create_torrent::generate_buf() function to generate into a buffer
+	* fix copy_file when the file ends with a sparse region
+	* uTP performance, fix packet loss when sending is stalled
+	* fix trackers being stuck after session pause/resume
+	* fix bug in hash_picker with empty files
+	* uTP performance, prevent premature timeouts/resends
 	* add option to not memory map files below a certain size
 	* settings_pack now returns default values when queried for missing settings
 	* fix copy_file fall-back when SEEK_HOL/SEEK_DATA is not supported

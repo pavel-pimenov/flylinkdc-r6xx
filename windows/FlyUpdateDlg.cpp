@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2001-2021 FlylinkDC++ Team http://flylinkdc.com
+ * Copyright (C) 2006-2022 FlylinkDC++ Team https://www.fly-server.ru
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

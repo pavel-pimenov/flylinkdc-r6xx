@@ -356,7 +356,6 @@
 #define IDC_HELP_HOMEPAGE               1131
 #define IDC_LOG_DIRECTORY               1132
 #define IDC_BROWSE_LOG                  1133
-#define IDC_HELP_DISCUSS                1134
 #define IDC_HELP_FAQ                    1135
 #define IDC_SEARCH_SPY                  1136
 #define IDC_LATEST                      1137

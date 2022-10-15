@@ -42,7 +42,7 @@ const string UserConnection::FEATURE_BANMSG = "BanMsg";
 
 const string UserConnection::g_FILE_NOT_AVAILABLE = "File Not Available";
 #if defined (FLYLINKDC_USE_DOS_GUARD) && defined (IRAINMAN_DISALLOWED_BAN_MSG)
-const string UserConnection::g_PLEASE_UPDATE_YOUR_CLIENT = "Please update your DC++ http://flylinkdc.com";
+const string UserConnection::g_PLEASE_UPDATE_YOUR_CLIENT = "Please update your DC++ https://www.fly-server.ru";
 #endif
 
 #ifdef FLYLINKDC_USE_BLOCK_ERROR_CMD

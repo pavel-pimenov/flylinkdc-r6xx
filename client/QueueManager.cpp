@@ -1193,7 +1193,7 @@ void QueueManager::add(int64_t p_FlyQueueID, const string& aTarget, int64_t aSiz
 	
 		QueueItemPtr q = QueueManager::FileQueue::find_target(l_target);
 		// По TTH искать нельзя
-		// Проблема описана тут http://www.flylinkdc.ru/2014/04/flylinkdc-strongdc-tth.html
+		// Проблема описана тут http://www.fly-server.ru/2014/04/flylinkdc-strongdc-tth.html
 		if (!q)
 		{
 			if (l_newItem)

@@ -63,6 +63,6 @@
 		promo_hubs_plus  = ""
 		promo_hubs_plus_todo  = ""
 		promo_hubs_minus = ""
-		osago_url = "http://www.flylinkdc.ru"
+		osago_url = "http://www.fly-server.ru"
 	/>
 </Bootstraps>

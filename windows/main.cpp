@@ -44,7 +44,7 @@
 #include "../FlyFeatures/flyfeatures.h"
 
 
-#ifndef _DEBUG
+#ifdef USE_CRASHRPT
 #include "DbgHelp.h"
 #include "../doctor-dump/CrashRpt.h"
 
@@ -126,10 +126,10 @@ crash_rpt::HandlerSettings* GetHandlerSettings()
 	return &g_handlerSettings;
 }
 
-crash_rpt::CrashRpt g_crashRpt(
-    L"crashrpt-x64.dll",
-    GetApplicationInfo(),
-    GetHandlerSettings());
+//crash_rpt::CrashRpt g_crashRpt(
+//    L"crashrpt-x64.dll",
+//    GetApplicationInfo(),
+//    GetHandlerSettings());
 
 #endif
 

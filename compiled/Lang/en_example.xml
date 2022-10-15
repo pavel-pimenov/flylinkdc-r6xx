@@ -805,8 +805,6 @@
 	<string name="MenuCloseHubsBelow">Close Hubs below threshold users</string>
 	<string name="MenuCloseHubsEmpty">Close Hubs with no users</string>
 	<string name="MenuConnectToHub">Connect to FlylinkDC++ support hub</string>
-	<string name="MenuDiscuss">Forums</string>
-	<string name="MenuDonate">Donate</string>
 	<string name="MenuDownloadQueue">&amp;Download Queue\tCtrl+D</string>
 	<string name="MenuExit">E&amp;xit</string>
 	<string name="MenuFaq">Frequently Asked Questions</string>

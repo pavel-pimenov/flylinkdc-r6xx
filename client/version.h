@@ -72,13 +72,12 @@
 
 #define DCVERSIONSTRING "0.785"
 
-#define HOMEPAGE "http://flylinkdc.blogspot.com/"
-#define HELPPAGE "http://flylinkdc.com/dokuwiki/doku.php?id="
-#define HOMEPAGERU "http://flylinkdc.blogspot.com/"
+#define HOMEPAGE "https://flylinkdc.blogspot.com/"
+#define HELPPAGE "https://www.fly-server.ru/dokuwiki/doku.php?id="
+#define HOMEPAGERU "https://flylinkdc.blogspot.com/"
 
-#define HOMEPAGE_BLOG "http://flylinkdc.blogspot.com/"
-#define DISCUSS "http://flylinkdc.com/forum/"
-#define SITES_FLYLINK_TRAC "https://github.com/pavel-pimenov/flylinkdc-r5xx/"
+#define HOMEPAGE_BLOG "https://flylinkdc.blogspot.com/"
+#define SITES_FLYLINK_TRAC "https://github.com/pavel-pimenov/flylinkdc-r6xx/"
 
 
 #endif // FLY_VERSION_H

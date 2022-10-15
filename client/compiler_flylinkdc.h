@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2021 FlylinkDC++ Team http://flylinkdc.com
+ * Copyright (C) 2011-2022 FlylinkDC++ Team https://www.fly-server.ru
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -178,7 +178,7 @@ typedef unsigned __int64 uint64_t;
 //#define FLYLINKDC_USE_ONLINE_SWEEP_DB // ”дал€ть файлы из базы данных если они пропали из каталога.
 //#define FLYLINKDC_USE_VACUUM
 
-#define FLYLINKDC_USE_DOS_GUARD // ¬ключаем защиту от DoS атаки старых версий - http://www.flylinkdc.ru/2011/01/flylinkdc-dos.html
+#define FLYLINKDC_USE_DOS_GUARD // ¬ключаем защиту от DoS атаки старых версий - http://www.fly-server.ru/2011/01/flylinkdc-dos.html
 #define PPA_USER_COMMANDS_HUBS_SET
 #define FLYLINKDC_USE_IPFILTER
 # define FLYLINKDC_USE_LASTIP_AND_USER_RATIO

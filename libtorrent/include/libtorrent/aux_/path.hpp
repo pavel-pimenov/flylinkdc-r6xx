@@ -49,8 +49,15 @@ see LICENSE file.
 #include "libtorrent/error_code.hpp"
 #include "libtorrent/assert.hpp"
 #include "libtorrent/time.hpp"
+#include "libtorrent/flags.hpp"
 
 namespace libtorrent {
+
+	using file_attributes_t = flags::bitfield_flag<std::uint32_t, struct file_attribute_tag>;
+	using file_status_flag_t = flags::bitfield_flag<std::uint32_t, struct file_status_flag_tag>;
+
+	// internal flags for stat_file
+	constexpr file_status_flag_t dont_follow_links = 0_bit;
 
 	struct file_status
 	{
@@ -58,29 +65,16 @@ namespace libtorrent {
 		std::uint64_t atime = 0;
 		std::uint64_t mtime = 0;
 		std::uint64_t ctime = 0;
-		enum {
-#if defined TORRENT_WINDOWS
-			fifo = 0x1000, // named pipe (fifo)
-			character_special = 0x2000,  // character special
-			directory = 0x4000,  // directory
-			regular_file = 0x8000  // regular
-#else
-			fifo = 0010000, // named pipe (fifo)
-			character_special = 0020000,  // character special
-			directory = 0040000,  // directory
-			block_special = 0060000,  // block special
-			regular_file = 0100000,  // regular
-			link = 0120000,  // symbolic link
-			socket = 0140000  // socket
-#endif
-		} modes_t;
-		int mode = 0;
+
+		static constexpr file_attributes_t directory = 0_bit;
+		static constexpr file_attributes_t hidden = 1_bit;
+		static constexpr file_attributes_t executable = 2_bit;
+		static constexpr file_attributes_t symlink = 3_bit;
+		file_attributes_t mode = file_attributes_t{};
 	};
 
-	// internal flags for stat_file
-	enum { dont_follow_links = 1 };
 	TORRENT_EXTRA_EXPORT void stat_file(std::string const& f, file_status* s
-		, error_code& ec, int flags = 0);
+		, error_code& ec, file_status_flag_t flags = {});
 	TORRENT_EXTRA_EXPORT void rename(std::string const& f
 		, std::string const& newf, error_code& ec);
 	TORRENT_EXTRA_EXPORT void create_directories(std::string const& f

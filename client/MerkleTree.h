@@ -68,7 +68,7 @@ class MerkleTree
 			{
 				dcassert(0); // TODO: please refactoring MerkleTree to calculate three for this data.
 				LogManager::message("MerkleTree create error with p_FileSize=" + Util::toString(p_FileSize) + ", p_BlockSize=" + Util::toString(p_BlockSize) + ", p_DataSize=" + Util::toString(p_DataSize));
-				return; // http://www.flylinkdc.ru/2012/05/strongdc-sqlite-r9957.html
+				return; // http://www.fly-server.ru/2012/05/strongdc-sqlite-r9957.html
 			}
 			leaves.reserve(l_n);
 			for (size_t i = 0; i < l_n; i++, p_Data += Hasher::BYTES)
@@ -141,7 +141,7 @@ class MerkleTree
 				size_t n = std::min(size_t(BASE_BLOCK_SIZE), len - i);
 				Hasher h;
 				h.update(&zero, 1);
-				h.update(buf + i, n); 
+				h.update(buf + i, n);
 				if ((int64_t)BASE_BLOCK_SIZE < blockSize)
 				{
 					blocks.emplace_back(MerkleBlock(MerkleValue(h.finalize()), BASE_BLOCK_SIZE));

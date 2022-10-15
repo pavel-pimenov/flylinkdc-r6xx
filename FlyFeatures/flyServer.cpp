@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2021 FlylinkDC++ Team http://flylinkdc.com
+ * Copyright (C) 2011-2022 FlylinkDC++ Team https://www.fly-server.ru
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -46,7 +46,7 @@
 #include "ZenLib/ZtringListList.h"
 
 #ifndef _DEBUG
-#include "../doctor-dump/CrashRpt.h"
+// #include "../doctor-dump/CrashRpt.h"
 #else
 #include <fstream>
 #endif
@@ -147,7 +147,7 @@ string CFlyServerConfig::g_support_hub = "dchub://dc.fly-server.ru";
 #ifdef FLYLINKDC_USE_SUPPORT_HUB_EN
 string CFlyServerConfig::g_support_hub_en = "dchub://dc.fly-server.ru";
 #endif
-string CFlyServerConfig::g_support_upnp = "http://www.flylinkdc.ru/2015/11/upnp.html";
+string CFlyServerConfig::g_support_upnp = "http://www.fly-server.ru/2015/11/upnp.html";
 #endif // USE_SUPPORT_HUB
 #ifdef FLYLINKDC_USE_ANTIVIRUS_DB
 string CFlyServerConfig::g_antivirus_db_url;
@@ -155,7 +155,7 @@ string CFlyServerConfig::g_antivirus_db_url;
 #ifdef FLYLINKDC_USE_XXX_BLOCK
 string CFlyServerConfig::g_xxx_block_db_url;
 #endif
-string CFlyServerConfig::g_faq_search_does_not_work = "http://www.flylinkdc.ru/2014/01/flylinkdc.html";
+string CFlyServerConfig::g_faq_search_does_not_work = "http://www.fly-server.ru/2014/01/flylinkdc.html";
 StringSet CFlyServerConfig::g_parasitic_files;
 StringSet CFlyServerConfig::g_mediainfo_ext;
 StringSet CFlyServerConfig::g_virus_ext;
@@ -3233,7 +3233,7 @@ static void getExtMediaInfo(const string& p_file_ext_wo_dot,
 }
 //=========================================================================================
 #endif // FLYLINKDC_USE_MEDIAINFO_SERVER
-#if 0
+/*
 extern crash_rpt::CrashRpt g_crashRpt;
 class CFlyCrashReportInformer
 {
@@ -3248,13 +3248,13 @@ class CFlyCrashReportInformer
 			g_crashRpt.RemoveUserInfoFromReport(m_key);
 		}
 };
-#endif
+*/
 
 //=========================================================================================
 bool getMediaInfo(const string& p_name, CFlyMediaInfo& p_media, int64_t p_size, const TTHValue& p_tth, bool p_force /* = false*/)
 {
 #ifndef _DEBUG
-	extern crash_rpt::CrashRpt g_crashRpt;
+	//extern crash_rpt::CrashRpt g_crashRpt;
 	//CFlyCrashReportInformer l_crash_info(L"MediainfoTTH",Text::toT(p_tth.toBase32()).c_str());
 	const auto l_doctor_dump_key = L"Mediainfo";
 #endif
@@ -3275,8 +3275,8 @@ bool getMediaInfo(const string& p_name, CFlyMediaInfo& p_media, int64_t p_size, 
 		g_cur_mediainfo_file = p_name + "\r\n TTH = " + g_cur_mediainfo_file_tth + "\r\n File size = " + string(l_size);
 		Util::setRegistryValueString(FLYLINKDC_REGISTRY_MEDIAINFO_FREEZE_KEY, Text::toT(g_cur_mediainfo_file));
 #ifndef _DEBUG
-		g_crashRpt.AddUserInfoToReport(l_doctor_dump_key, Text::toT(g_cur_mediainfo_file).c_str());
-		g_crashRpt.SetCustomInfo(Text::toT(g_cur_mediainfo_file_tth).c_str());
+//		g_crashRpt.AddUserInfoToReport(l_doctor_dump_key, Text::toT(g_cur_mediainfo_file).c_str());
+//		g_crashRpt.SetCustomInfo(Text::toT(g_cur_mediainfo_file_tth).c_str());
 #endif
 		const auto l_media_result = g_media_info_lib.Open(Text::toT(File::formatPath(p_name)));
 		if (l_media_result && !ClientManager::isBeforeShutdown())
@@ -3450,8 +3450,8 @@ bool getMediaInfo(const string& p_name, CFlyMediaInfo& p_media, int64_t p_size, 
 		g_cur_mediainfo_file.clear();
 		Util::deleteRegistryValue(FLYLINKDC_REGISTRY_MEDIAINFO_FREEZE_KEY);
 #ifndef _DEBUG
-		g_crashRpt.RemoveUserInfoFromReport(l_doctor_dump_key);
-		g_crashRpt.SetCustomInfo(_T(""));
+//		g_crashRpt.RemoveUserInfoFromReport(l_doctor_dump_key);
+//		g_crashRpt.SetCustomInfo(_T(""));
 #endif
 		return true;
 	}
@@ -3476,7 +3476,7 @@ bool getMediaInfo(const string& p_name, CFlyMediaInfo& p_media, int64_t p_size, 
 		throw;
 	}
 #ifndef _DEBUG
-	g_crashRpt.RemoveUserInfoFromReport(l_doctor_dump_key);
+//	g_crashRpt.RemoveUserInfoFromReport(l_doctor_dump_key);
 #endif
 	return false;
 }

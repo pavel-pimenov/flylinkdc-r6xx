@@ -219,7 +219,6 @@ const menuImage g_MenuImages[] =
 	{IDC_HELP_HELP,          41},
 	// TODO {IDC_HELP_DONATE,        XX},
 	{IDC_HELP_HOMEPAGE,      42},
-	{IDC_HELP_DISCUSS,       43},
 	{IDC_SITES_FLYLINK_TRAC, 44},
 	{ID_APP_ABOUT,           45},
 	{IDC_TOPMOST,            46},
@@ -810,7 +809,6 @@ void WinUtil::init(HWND hWnd)
 	help.AppendMenu(MF_STRING, IDC_HELP_HELP, CTSTRING(MENU_HELP));
 	help.AppendMenu(MF_SEPARATOR);
 	help.AppendMenu(MF_STRING, IDC_HELP_HOMEPAGE, CTSTRING(MENU_HOMEPAGE));
-	help.AppendMenu(MF_STRING, IDC_HELP_DISCUSS, CTSTRING(MENU_DISCUSS));
 #ifdef FLYLINKDC_USE_DEAD_CODE
 	help.AppendMenu(MF_POPUP, (UINT_PTR)(HMENU)sites, CTSTRING(MENU_SITES));
 	help.AppendMenu(MF_STRING, IDC_HELP_GEOIPFILE, CTSTRING(MENU_HELP_GEOIPFILE));
@@ -1929,7 +1927,7 @@ bool WinUtil::checkCommand(tstring& cmd, tstring& param, tstring& message, tstri
 		}
 		else
 		{
-			WinUtil::openLink(_T("http://www.flylinkdc.ru/search?q=") + Text::toT(Util::encodeURI(Text::fromT(param))));
+			WinUtil::openLink(_T("http://www.fly-server.ru/search?q=") + Text::toT(Util::encodeURI(Text::fromT(param))));
 		}
 	}
 #endif // IRAINMAN_ENABLE_MORE_CLIENT_COMMAND

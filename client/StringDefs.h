@@ -810,8 +810,6 @@ enum Strings   // @DontAdd
 	MENU_CLOSE_HUBS_BELOW, // "Close Hubs below threshold users"
 	MENU_CLOSE_HUBS_EMPTY, // "Close Hubs with no users"
 	MENU_CONNECT_TO_HUB, // "Connect to FlylinkDC++ support hub"
-	MENU_DISCUSS, // "Forums"
-	MENU_DONATE, // "Donate"
 	MENU_DOWNLOAD_QUEUE, // "&Download Queue\tCtrl+D"
 	MENU_EXIT, // "E&xit"
 	MENU_FAQ, // "Frequently Asked Questions"

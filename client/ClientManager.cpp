@@ -24,10 +24,10 @@
 #include "../FlyFeatures/flyServer.h"
 #include "../FlyFeatures/AutoUpdate.h"
 
-#ifndef _DEBUG
-#include "DbgHelp.h"
-#include "../doctor-dump/CrashRpt.h"
-#endif
+// #ifndef _DEBUG
+// #include "DbgHelp.h"
+// #include "../doctor-dump/CrashRpt.h"
+// #endif
 
 
 UserPtr ClientManager::g_uflylinkdc;

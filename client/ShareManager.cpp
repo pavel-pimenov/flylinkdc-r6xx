@@ -31,7 +31,7 @@
 #include "../FlyFeatures/flyServer.h"
 #include "../windows/resource.h"
 
-bool ShareManager::g_ignoreFileSizeHFS = false; // http://www.flylinkdc.ru/2015/01/hfs-mac-windows.html
+bool ShareManager::g_ignoreFileSizeHFS = false; // http://www.fly-server.ru/2015/01/hfs-mac-windows.html
 size_t ShareManager::g_hits = 0;
 int ShareManager::g_RebuildIndexes = 0;
 std::unique_ptr<webrtc::RWLockWrapper> ShareManager::g_csBloom = std::unique_ptr<webrtc::RWLockWrapper>(webrtc::RWLockWrapper::CreateRWLock());

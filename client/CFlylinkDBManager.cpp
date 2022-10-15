@@ -2530,7 +2530,7 @@ void CFlylinkDBManager::add_sourceL(const QueueItemPtr& p_QueueItem, const CID& 
 	dcassert(!p_cid.isZero());
 	if (!p_cid.isZero())
 	{
-		UserPtr l_user = ClientManager::createUser(p_cid, p_nick, p_hub_id); // Создаем юзера в любом случае - http://www.flylinkdc.ru/2012/09/flylinkdc-r502-beta59.html
+		UserPtr l_user = ClientManager::createUser(p_cid, p_nick, p_hub_id); // Создаем юзера в любом случае - http://www.fly-server.ru/2012/09/flylinkdc-r502-beta59.html
 		bool wantConnection = false;
 		try
 		{

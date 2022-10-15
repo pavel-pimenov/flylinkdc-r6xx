@@ -109,8 +109,7 @@ Client::Client(const string& p_HubURL, char p_separator, bool p_is_secure,
 		"vostokhub.ru"
 	};
 // TODO static_assert(_countof(g_vip_icons_array) == _countof(WinUtil::g_HubFlylinkDCIconVIP))
-	if (l_lower_url.find("dc.fly-server.ru") != string::npos ||
-	        l_lower_url.find("adcs.flylinkdc.com") != string::npos)
+	if (l_lower_url.find("dc.fly-server.ru") != string::npos)
 	{
 		m_is_fly_support_hub = true;
 	}
@@ -231,7 +230,7 @@ const FavoriteHubEntry* Client::reloadSettings(bool updateNick)
 			}
 		}
 	}
-	else 
+	else
 #endif
 	{
 #ifdef IRAINMAN_ENABLE_SLOTS_AND_LIMIT_IN_DESCRIPTION

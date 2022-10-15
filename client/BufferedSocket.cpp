@@ -199,7 +199,7 @@ void BufferedSocket::threadConnect(const string& aAddr, uint16_t aPort, uint16_t
 			}
 			else
 			{
-				sock->connect(aAddr, aPort); // http://www.flylinkdc.ru/2012/10/ashampoo-firewall.html
+				sock->connect(aAddr, aPort); // http://www.fly-server.ru/2012/10/ashampoo-firewall.html
 			}
 			
 			while (true)

@@ -91,7 +91,7 @@
 #endif
 
 #ifndef _DEBUG
-#include "../doctor-dump/CrashRpt.h"
+ // #include "../doctor-dump/CrashRpt.h"
 #endif
 
 #include "Resource.h"
@@ -403,7 +403,6 @@ void MainFrame::createMainMenu(void)
 	m_CmdBar.m_arrCommand.Add(ID_APP_ABOUT);
 	m_CmdBar.m_arrCommand.Add(IDC_HELP_HOMEPAGE);
 	m_CmdBar.m_arrCommand.Add(IDC_SITES_FLYLINK_TRAC);
-	m_CmdBar.m_arrCommand.Add(IDC_HELP_DISCUSS);
 	m_CmdBar.m_arrCommand.Add(IDC_HELP_DONATE);
 	m_CmdBar.m_arrCommand.Add(IDC_WINAMP_SPAM);
 	m_CmdBar.m_arrCommand.Add(IDC_WINAMP_BACK);
@@ -647,7 +646,7 @@ LRESULT MainFrame::OnCreate(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/,
 	ToolbarManager::applyTo(m_rebar, "MainToolBar");
 	
 	m_ctrlStatus.Attach(m_hWndStatusBar);
-	m_ctrlStatus.SetSimple(FALSE); 
+	m_ctrlStatus.SetSimple(FALSE);
 	int w[STATUS_PART_LAST - 1] = {0};
 	m_ctrlStatus.SetParts(STATUS_PART_LAST - 1, w);
 	m_statusSizes[0] = WinUtil::getTextWidth(TSTRING(AWAY_STATUS), m_ctrlStatus.m_hWnd);
@@ -1904,7 +1903,7 @@ void MainFrame::parseCommandLine(const tstring& cmdLine)
 	}
 	if ((j = l_cmdLine.find(_T("magnet:?"), i)) != string::npos)
 	{
-		WinUtil::parseMagnetUri(l_cmdLine.substr(j)); 
+		WinUtil::parseMagnetUri(l_cmdLine.substr(j));
 	}
 	else if ((j = l_cmdLine.find(_T("dchub://"), i)) != string::npos ||
 	         (j = l_cmdLine.find(_T("nmdcs://"), i)) != string::npos ||
@@ -2766,9 +2765,6 @@ LRESULT MainFrame::onLink(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL
 	{
 		case IDC_HELP_HOMEPAGE:
 			site = _T(HOMEPAGE);
-			break;
-		case IDC_HELP_DISCUSS:
-			site = _T(DISCUSS);
 			break;
 		case IDC_HELP_HELP:
 			site = WinUtil::GetWikiLink() + _T("flylinkdc");
@@ -3814,7 +3810,7 @@ UINT MainFrame::ShowSetupWizard()
 	}
 	catch (Exception & e)
 	{
-		::MessageBox(NULL, Text::toT(e.getError()).c_str(), getFlylinkDCAppCaptionWithVersionT().c_str(), MB_OK | MB_ICONERROR); 
+		::MessageBox(NULL, Text::toT(e.getError()).c_str(), getFlylinkDCAppCaptionWithVersionT().c_str(), MB_OK | MB_ICONERROR);
 		return IDCLOSE;
 	}
 }
