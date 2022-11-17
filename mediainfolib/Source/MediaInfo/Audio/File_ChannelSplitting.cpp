@@ -112,7 +112,7 @@ void File_ChannelSplitting::Streams_Fill()
         Open_Buffer_Init(&Parser);
         Parser.Accept();
         Fill(&Parser);
-        size_t Pos=Count_Get(Stream_Audio);
+        // size_t Pos=Count_Get(Stream_Audio);
         Merge(Parser);
 
         for (size_t i=0; i<Common->SplittedChannels[0].size(); i++)

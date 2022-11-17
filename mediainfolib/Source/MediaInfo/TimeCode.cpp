@@ -78,13 +78,13 @@ bool TimeCode::FromFrames(int64s Frames_)
     else
         Flags.reset(IsNegative);
 
-    int64u Dropped=Flags.test(DropFrame)?(1+FramesMax/30):0;
-    int32u FrameRate=(int32u)FramesMax+1;
-    int64u Dropped2=Dropped*2;
-    int64u Dropped18=Dropped*18;
+    const int64u Dropped=Flags.test(DropFrame)?(1+FramesMax/30):0;
+    const int32u FrameRate=(int32u)FramesMax+1;
+    const int64u Dropped2=Dropped*2;
+    const int64u Dropped18=Dropped*18;
 
-    int64u Minutes_Tens = ((int64u)Frames_)/(600*FrameRate-Dropped18); //Count of 10 minutes
-    int64u Minutes_Units = (Frames_-Minutes_Tens*(600*FrameRate-Dropped18))/(60*FrameRate-Dropped2);
+    const int64u Minutes_Tens = ((int64u)Frames_)/(600*FrameRate-Dropped18); //Count of 10 minutes
+    const int64u Minutes_Units = (Frames_-Minutes_Tens*(600*FrameRate-Dropped18))/(60*FrameRate-Dropped2);
 
     Frames_+=Dropped18*Minutes_Tens+Dropped2*Minutes_Units;
     if (Minutes_Units && ((Frames_/FrameRate)%60)==0 && (Frames_%FrameRate)<Dropped2) // If Minutes_Tens is not 0 (drop) but count of remaining seconds is 0 and count of remaining frames is less than 2, 1 additional drop was actually counted, removing it
