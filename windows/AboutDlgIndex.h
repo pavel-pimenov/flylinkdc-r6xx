@@ -45,16 +45,8 @@ class AboutDlgIndex : public CDialogImpl<AboutDlgIndex>
 		
 		LRESULT OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 		{
-			int v = 0;
-			if (_MSC_VER >= 1910)
-				v = 2017;
-			if (_MSC_VER >= 1920)
-				v = 2019;
-			char m_full_version[64];
-			_snprintf(m_full_version, _countof(m_full_version), "%d (%d)", v, _MSC_FULL_VER);
-			
 			SetDlgItemText(IDC_COMPT, (TSTRING(COMPILED_ON) + _T(' ') + Util::getCompileDate() + _T(' ') + Util::getCompileTime(_T("%H:%M:%S"))
-			                           + _T(", Visual C++ ") + Text::toT(m_full_version)).c_str());
+			                           + _T(", Visual C++ 2022")).c_str());
 			SetWindowText(CTSTRING(MENU_ABOUT));
 			m_ctrTab.Attach(GetDlgItem(IDC_ABOUTTAB));
 			TCITEM tcItem;

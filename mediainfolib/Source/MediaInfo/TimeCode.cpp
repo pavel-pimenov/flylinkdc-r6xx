@@ -90,7 +90,7 @@ bool TimeCode::FromFrames(int64s Frames_)
     if (Minutes_Units && ((Frames_/FrameRate)%60)==0 && (Frames_%FrameRate)<Dropped2) // If Minutes_Tens is not 0 (drop) but count of remaining seconds is 0 and count of remaining frames is less than 2, 1 additional drop was actually counted, removing it
         Frames_-=Dropped2;
 
-    int64s HoursTemp=(((Frames_/FrameRate)/60)/60);
+    const int64s HoursTemp=(((Frames_/FrameRate)/60)/60);
     if (HoursTemp>(int32u)-1)
     {
         Hours=(int32u)-1;
@@ -99,12 +99,13 @@ bool TimeCode::FromFrames(int64s Frames_)
         Frames=FramesMax;
         return true;
     }
-    Hours=(int8u)HoursTemp;
-    Minutes=((Frames_/FrameRate)/60)%60;
-    Seconds=(Frames_/FrameRate)%60;
-    Frames=(int32u)(Frames_%FrameRate);
     Flags.reset(IsTime);
     Flags.set(IsValid);
+    Hours=(int8u)HoursTemp;
+    auto TotalSeconds=Frames_/FrameRate;
+    Minutes=(TotalSeconds/60)%60;
+    Seconds=TotalSeconds%60;
+    Frames=(int32u)(Frames_%FrameRate);
 
     return false;
 }
