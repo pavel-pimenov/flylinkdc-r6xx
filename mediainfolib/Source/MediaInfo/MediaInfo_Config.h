@@ -271,6 +271,8 @@ public :
     #if MEDIAINFO_ADVANCED && defined(MEDIAINFO_FILE_YES)
           void      TimeOut_Set (int64u Value);
           int64u    TimeOut_Get ();
+          void      AcceptSignals_Set (bool Value);
+          bool      AcceptSignals_Get ();
     #endif //MEDIAINFO_ADVANCED && defined(MEDIAINFO_FILE_YES)
 
           void      MpegTs_MaximumOffset_Set (int64u Value);
@@ -413,6 +415,7 @@ private :
     #endif //MEDIAINFO_ADVANCED
     #if MEDIAINFO_ADVANCED && defined(MEDIAINFO_FILE_YES)
         int64u      TimeOut;
+        bool        AcceptSignals;
     #endif //MEDIAINFO_ADVANCED && defined(MEDIAINFO_FILE_YES)
 
     int64u          MpegTs_MaximumOffset;
