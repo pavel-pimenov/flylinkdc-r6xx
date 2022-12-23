@@ -1,3 +1,10 @@
+Version 0.4.40, 2022-12-21
+--------------
++ BitStream_Fast: Resize()
++ C++11 min everywhere
+x Remove the bitcode generation in iOS build (no more supported by Apple)
+x Fix incompatibilities with some compilers
+
 Version 0.4.39, 2021-03-26
 --------------
 + Threads: avoid critical sections lockers when possible
