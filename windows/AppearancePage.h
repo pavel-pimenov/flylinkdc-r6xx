@@ -66,13 +66,14 @@ class AppearancePage : public CPropertyPage<IDD_APPEARANCE_PAGE>, public PropPag
 		
 		ExListViewCtrl ctrlList;
 		
+#ifdef FLYLINKDC_USE_THEME_MANAGER
 		typedef std::unordered_map<wstring, string> ThemeMap;
 		typedef pair<wstring, string> ThemePair;
 		
 		CComboBox ctrlTheme;
 		ThemeMap m_ThemeList;
-		
 		void GetThemeList();
+#endif		
 		
 };
 

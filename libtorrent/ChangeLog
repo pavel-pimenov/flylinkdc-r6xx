@@ -1,3 +1,4 @@
+	* optimize resume data format to use less space
 	* add a simpler overload to bencode() returning a vector<char>
 	* introduced a new API for creating torrents, enabling file_storage optimizations
 	* default build to not include functions deprecated in libtorrent 1.1 and earlier
@@ -9,6 +10,9 @@
 	* added support for WebTorrent
 
 
+	* support loading version 2 of resume data format
+	* fix issue with odd piece sizes
+	* add async piece availability query, post_piece_availability()
 	* add async piece availibility query, post_piece_availibility()
 	* add async download queue query, post_download_queue()
 	* add async file_progress query, post_file_progress()

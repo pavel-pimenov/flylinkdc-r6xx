@@ -70,6 +70,7 @@ void AppearancePage::write()
 {
 	PropPage::write(*this, items, listItems, GetDlgItem(IDC_APPEARANCE_BOOLEANS));
 	
+#ifdef FLYLINKDC_USE_THEME_MANAGER
 	ctrlTheme.Attach(GetDlgItem(IDC_THEME_COMBO));
 	const string l_filetheme = WinUtil::getDataFromMap(ctrlTheme.GetCurSel(), m_ThemeList);
 	if (SETTING(THEME_MANAGER_THEME_DLL_NAME) != l_filetheme)
@@ -79,7 +80,7 @@ void AppearancePage::write()
 			MessageBox(CTSTRING(THEME_CHANGE_THEME_INFO), CTSTRING(THEME_CHANGE_THEME), MB_OK | MB_ICONEXCLAMATION);
 	}
 	ctrlTheme.Detach();
-	
+#endif	
 }
 
 LRESULT AppearancePage::onInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
@@ -90,6 +91,7 @@ LRESULT AppearancePage::onInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*
 	
 	ctrlList.Attach(GetDlgItem(IDC_APPEARANCE_BOOLEANS));
 	
+#ifdef FLYLINKDC_USE_THEME_MANAGER
 	ctrlTheme.Attach(GetDlgItem(IDC_THEME_COMBO));
 	GetThemeList();
 	for (auto i = m_ThemeList.cbegin(); i != m_ThemeList.cend(); ++i)
@@ -97,7 +99,7 @@ LRESULT AppearancePage::onInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*
 		
 	ctrlTheme.SetCurSel(WinUtil::getIndexFromMap(m_ThemeList, SETTING(THEME_MANAGER_THEME_DLL_NAME)));
 	ctrlTheme.Detach();
-	
+#endif	
 	// Do specialized reading here
 	return TRUE;
 }
@@ -108,6 +110,7 @@ LRESULT AppearancePage::onClickedHelp(WORD /* wNotifyCode */, WORD /*wID*/, HWND
 	return S_OK;
 }
 
+#ifdef FLYLINKDC_USE_THEME_MANAGER
 void AppearancePage::GetThemeList()
 {
 	if (m_ThemeList.empty())
@@ -160,7 +163,7 @@ void AppearancePage::GetThemeList()
 					::FreeLibrary(hModule);
 				hModule = NULL;
 			}
-		}
-		
+		}	
 	}
 }
+#endif

@@ -215,6 +215,7 @@ typedef unsigned __int64 uint64_t;
 # define IRAINMAN_INCLUDE_SMILE // Disable this to cut all smile support from code.
 # define IRAINMAN_INCLUDE_RSS // Disable this to cut rss-manager from code.
 # define FLYLINKDC_USE_PROVIDER_RESOURCES
+//# define FLYLINKDC_USE_THEME_MANAGER
 
 // #define IRAINMAN_ENABLE_SLOTS_AND_LIMIT_IN_DESCRIPTION
 #define IRAINMAN_ENABLE_OP_VIP_MODE
@@ -225,7 +226,6 @@ typedef unsigned __int64 uint64_t;
 #define IRAINMAN_AUTOUPDATE_ALL_USERS_DATA 1
 //#define IRAINMAN_AUTOUPDATE_CORE_DIFFERENCE 1 // TODO
 //#define IRAINMAN_AUTOUPDATE_ARCH_DIFFERENCE 1 // TODO
-//#define IRAINMAN_THEME_MANAGER_LISTENER_ENABLE
 #define IRAINMAN_FAST_FLAT_TAB
 #define IRAINMAN_USE_GDI_PLUS_TAB 1 // if disable - used old-school tab.
 

@@ -207,6 +207,9 @@ TORRENT_VERSION_NAMESPACE_4
 		// This flag is here for backwards compatibility.
 		static inline constexpr create_flags_t canonical_files_no_tail_padding = 9_bit;
 
+		// hidden
+		static constexpr create_flags_t allow_odd_piece_size = 31_bit;
+
 		// The ``piece_size`` is the size of each piece in bytes. It must be a
 		// power of 2 and a minimum of 16 kiB. If a piece size of 0 is
 		// specified, a piece_size will be set automatically.
@@ -476,10 +479,12 @@ TORRENT_VERSION_NAMESPACE_4
 
 		std::string m_name;
 
+#if TORRENT_ABI_VERSION < 4
 		// if m_info_dict is initialized, it is
 		// used instead of m_files to generate
 		// the info dictionary
 		entry m_info_dict;
+#endif
 
 		// the URLs to the trackers
 		std::vector<std::pair<std::string, int>> m_urls;
@@ -499,7 +504,6 @@ TORRENT_VERSION_NAMESPACE_4
 		mutable std::optional<file_storage> m_file_storage_compat;
 #endif
 
-		mutable aux::vector<sha256_hash, file_index_t> m_fileroots;
 		aux::vector<aux::vector<sha256_hash, piece_index_t::diff_type>, file_index_t> m_file_piece_hash;
 
 		std::vector<sha1_hash> m_similar;

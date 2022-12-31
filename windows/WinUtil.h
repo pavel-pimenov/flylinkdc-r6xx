@@ -960,8 +960,8 @@ struct toolbarButton
 
 struct menuImage
 {
-	int id;
-	int image;
+	int id = 0;
+	int image = 0;
 };
 
 // In order to correct work of small images for toolbar's menu

@@ -36,6 +36,7 @@ HICON HIconWrapper::load(WORD id, int cx, int cy, UINT p_fuLoad)
 	dcassert(id);
 	m_fuload |= LR_SHARED;
 	HICON icon = nullptr;
+#ifdef FLYLINKDC_USE_THEME_MANAGER
 	const auto l_ThemeHandle = ThemeManager::getResourceLibInstance();
 	if (l_ThemeHandle)
 	{
@@ -45,10 +46,13 @@ HICON HIconWrapper::load(WORD id, int cx, int cy, UINT p_fuLoad)
 			dcdebug("!!!!!!!![Error - 1] (HICON)::LoadImage: ID = %d icon = %p this = %p fuLoad = %x\n", id, icon, this, m_fuload);
 		}
 	}
+#endif
 	if (!icon)
 	{
 		static const HMODULE g_current = GetModuleHandle(nullptr);
+#ifdef FLYLINKDC_USE_THEME_MANAGER
 		if (l_ThemeHandle != g_current)
+#endif
 		{
 			icon = (HICON)::LoadImage(g_current, MAKEINTRESOURCE(id), IMAGE_ICON, cx, cy, m_fuload);
 			dcdebug("!!!!!!!![step - 2] (HICON)::LoadImage: ID = %d icon = %p this = %p fuLoad = %x\n", id, icon, this, m_fuload);

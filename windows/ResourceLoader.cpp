@@ -5,8 +5,6 @@
 #include "File.h"
 #include "../FlyFeatures/ThemeManager.h"
 
-#define USE_THEME_MANAGER
-
 
 ExCImage::ExCImage(LPCTSTR pszFileName):
 	m_hBuffer(nullptr)
@@ -53,14 +51,16 @@ bool ExCImage::LoadFromResource(UINT id, LPCTSTR pType)
 		}
 	}
 	HMODULE hInst = nullptr;
+#ifdef FLYLINKDC_USE_THEME_MANAGER
 	if (m_is_use_theme)
 	{
 		hInst = ThemeManager::getResourceLibInstance();
 	}
+#endif
 	HRSRC hResource = ::FindResource(hInst, MAKEINTRESOURCE(id), pType);
 	if (!hResource)
 	{
-#if defined(USE_THEME_MANAGER)
+#ifdef FLYLINKDC_USE_THEME_MANAGER
 		hInst = nullptr;
 		hResource = ::FindResource(hInst, MAKEINTRESOURCE(id), pType);
 		dcassert(hResource);
@@ -137,7 +137,7 @@ int ResourceLoader::LoadImageList(UINT id, CImageList& aImgLst, int cx, int cy, 
 		aImgLst.Create(cx, cy, ILC_COLOR32 | ILC_MASK, imageCount, 1);
 		aImgLst.Add(img);
 		img.Destroy();
-#if defined(USE_THEME_MANAGER)
+#ifdef FLYLINKDC_USE_THEME_MANAGER
 		if (ThemeManager::isResourceLibLoaded() && imageCount > 0)
 		{
 			// Only for Not original images -- load

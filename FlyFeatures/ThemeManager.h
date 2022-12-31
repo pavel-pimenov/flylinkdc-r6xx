@@ -24,26 +24,8 @@
 #include "../client/Singleton.h"
 #include "../client/SettingsManager.h"
 
-#ifdef IRAINMAN_THEME_MANAGER_LISTENER_ENABLE
-class ThemeManagerListener
-{
-	public:
-		virtual ~ThemeManagerListener() { }
-		template<int I> struct X
-		{
-			enum { TYPE = I };
-		};
-		
-		typedef X<0> ResourceLoaded;
-		
-		virtual void on(ResourceLoaded, const string&) { }
-};
-#endif // IRAINMAN_THEME_MANAGER_LISTENER_ENABLE
-
+#ifdef FLYLINKDC_USE_THEME_MANAGER
 class ThemeManager :
-#ifdef IRAINMAN_THEME_MANAGER_LISTENER_ENABLE
-	public Speaker<ThemeManagerListener>,
-#endif
 	public Singleton<ThemeManager>
 {
 	public:
@@ -79,6 +61,7 @@ class ThemeManager :
 		
 		static HMODULE g_resourceLibInstance;
 };
+#endif // FLYLINKDC_USE_THEME_MANAGER
 
 #endif // _THEME_MANAGER_H_
 

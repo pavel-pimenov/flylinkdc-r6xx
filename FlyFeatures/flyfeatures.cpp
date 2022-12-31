@@ -30,7 +30,9 @@
 
 void createFlyFeatures()
 {
+#ifdef FLYLINKDC_USE_THEME_MANAGER
 	ThemeManager::newInstance();      
+#endif
 	InetDownloadReporter::newInstance(); 
 	AutoUpdate::newInstance();        
 #ifdef FLYLINKDC_USE_CUSTOM_MENU
@@ -54,7 +56,9 @@ void startupFlyFeatures(PROGRESSCALLBACKPROC pProgressCallbackProc, void* pProgr
 	CustomMenuManager::getInstance()->load();
 #endif // FLYLINKDC_USE_CUSTOM_MENU
 #endif // FLYLINKDC_USE_PROVIDER_RESOURCES
+#ifdef FLYLINKDC_USE_THEME_MANAGER
 	ThemeManager::getInstance()->load();
+#endif
 #ifdef SSA_VIDEO_PREVIEW_FEATURE
 	VideoPreview::getInstance()->initialize();
 #endif
@@ -86,5 +90,7 @@ void deleteFlyFeatures()
 #endif
 	AutoUpdate::deleteInstance();
 	InetDownloadReporter::deleteInstance(); 
+#ifdef FLYLINKDC_USE_THEME_MANAGER
 	ThemeManager::deleteInstance();
+#endif
 }

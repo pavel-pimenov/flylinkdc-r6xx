@@ -19,6 +19,8 @@
 #include "stdinc.h"
 #include "ThemeManager.h"
 
+#ifdef FLYLINKDC_USE_THEME_MANAGER
+
 HMODULE ThemeManager::g_resourceLibInstance = nullptr;
 #ifdef _DEBUG
 bool g_debugResourceLibIsLoaded = false;
@@ -52,11 +54,6 @@ void ThemeManager::loadResourceLib()
 		const auto themeFullPath = Util::getThemesPath() + themeDllName;
 		
 		setResourceLibInstance(::LoadLibrary(Text::toT(themeFullPath).c_str()));
-#ifdef IRAINMAN_THEME_MANAGER_LISTENER_ENABLE
-		if (isResourceLibLoaded())
-		{
-			fly_fire1(ThemeManagerListener::ResourceLoaded(), themeDllName);
-		}
-#endif
 	}
 }
+#endif
