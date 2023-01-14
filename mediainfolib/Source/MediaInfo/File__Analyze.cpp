@@ -2929,7 +2929,7 @@ void File__Analyze::Trusted_IsNot ()
     if (BS && (BS->Offset_Get() || BS->Remain()))
         BS->Skip(BS->Remain());
     else if (BT && (BT->Offset_Get() || BT->Remain()))
-        BS->Skip(BT->Remain());
+        BT->Skip(BT->Remain());
     else
         Element_Offset=Element_Size;
 

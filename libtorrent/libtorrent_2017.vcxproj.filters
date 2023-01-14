@@ -839,6 +839,9 @@
     <ClInclude Include="include\libtorrent\file_layout.hpp">
       <Filter>Header Files\libtorrent</Filter>
     </ClInclude>
+    <ClInclude Include="include\libtorrent\aux_\bencoder.hpp">
+      <Filter>Header Files\libtorrent\aux_</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\kademlia\dht_storage.cpp">
