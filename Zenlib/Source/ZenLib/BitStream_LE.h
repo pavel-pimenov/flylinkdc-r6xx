@@ -26,8 +26,18 @@ namespace ZenLib
 class BitStream_LE : public BitStream
 {
 public:
-    BitStream_LE ()                                                             :BitStream() {}
-    BitStream_LE (const int8u* Buffer_, size_t Size_)                           :BitStream(Buffer_, Size_) {}
+    BitStream_LE ()                                                             :BitStream()
+    {
+        endbyte=0;
+        endbit=0;
+        buffer=NULL;
+        ptr=NULL;
+        storage=0;
+    };
+
+    BitStream_LE (const int8u* Buffer_, size_t Size_)                           :BitStream(Buffer_, Size_) {
+        Attach(Buffer_, Size_);
+    };
 
     void Attach(const int8u* Buffer_, size_t Size_)
     {
@@ -54,7 +64,15 @@ public:
           0x01ffffff, 0x03ffffff, 0x07ffffff, 0x0fffffff,
           0x1fffffff, 0x3fffffff, 0x7fffffff, 0xffffffff,
         };
-        unsigned long m=Mask[HowMany];
+        unsigned long m = 0;
+        if (HowMany < 33)
+        {
+            m = Mask[HowMany];
+        }
+        else
+        {
+            return 0; // fix https://github.com/MediaArea/MediaInfoLib/commit/0333ecb73f6a8803544d32b4c9ac0b04ec9231b3
+        }
 
         HowMany+=endbit;
 
@@ -104,7 +122,7 @@ public:
     {
         if (endbit)
             Get(endbit);
-    };
+    }
 
     size_t Offset_Get()
     {
