@@ -688,18 +688,6 @@ namespace {
 
 } // anonymous namespace
 
-	web_seed_entry::web_seed_entry(std::string url_, std::string auth_, headers_t extra_headers_)
-		: url(std::move(url_))
-		, auth(std::move(auth_))
-		, extra_headers(std::move(extra_headers_))
-	{
-	}
-
-	web_seed_entry::web_seed_entry(web_seed_entry const&) = default;
-	web_seed_entry::web_seed_entry(web_seed_entry&&) = default;
-	web_seed_entry& web_seed_entry::operator=(web_seed_entry const&) = default;
-	web_seed_entry& web_seed_entry::operator=(web_seed_entry&&) = default;
-
 TORRENT_VERSION_NAMESPACE_3
 
 	torrent_info::torrent_info(torrent_info const&) = default;
@@ -1684,6 +1672,7 @@ namespace {
 		return true;
 	}
 
+#if TORRENT_ABI_VERSION < 4
 	void torrent_info::add_tracker(std::string const& url, int const tier)
 	{
 		add_tracker(url, tier, announce_entry::source_client);
@@ -1711,6 +1700,7 @@ namespace {
 	{
 		m_urls.clear();
 	}
+#endif
 
 #if TORRENT_ABI_VERSION == 1
 	std::vector<std::string> torrent_info::url_seeds() const
@@ -1727,6 +1717,7 @@ namespace {
 	}
 #endif // TORRENT_ABI_VERSION
 
+#if TORRENT_ABI_VERSION < 4
 	void torrent_info::add_url_seed(std::string const& url
 		, std::string const& ext_auth
 		, web_seed_entry::headers_t const& ext_headers)
@@ -1734,18 +1725,17 @@ namespace {
 		m_web_seeds.emplace_back(url, ext_auth, ext_headers);
 	}
 
-#if TORRENT_ABI_VERSION < 4
 	void torrent_info::add_http_seed(std::string const&
 		, std::string const&
 		, web_seed_entry::headers_t const&)
 	{
 	}
-#endif
 
 	void torrent_info::set_web_seeds(std::vector<web_seed_entry> seeds)
 	{
 		m_web_seeds = std::move(seeds);
 	}
+#endif
 
 	std::vector<sha1_hash> torrent_info::similar_torrents() const
 	{

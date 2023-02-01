@@ -274,6 +274,7 @@
     <ClInclude Include="include\libtorrent\units.hpp" />
     <ClInclude Include="include\libtorrent\upnp.hpp" />
     <ClInclude Include="include\libtorrent\version.hpp" />
+    <ClInclude Include="include\libtorrent\web_seed_entry.hpp" />
     <ClInclude Include="include\libtorrent\write_resume_data.hpp" />
     <ClInclude Include="src\ed25519\fe.h" />
     <ClInclude Include="src\ed25519\fixedint.h" />
@@ -449,6 +450,7 @@
     <ClCompile Include="src\version.cpp" />
     <ClCompile Include="src\web_connection_base.cpp" />
     <ClCompile Include="src\web_peer_connection.cpp" />
+    <ClCompile Include="src\web_seed_entry.cpp" />
     <ClCompile Include="src\write_resume_data.cpp" />
     <ClCompile Include="src\xml_parse.cpp" />
   </ItemGroup>

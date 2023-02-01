@@ -842,6 +842,9 @@
     <ClInclude Include="include\libtorrent\aux_\bencoder.hpp">
       <Filter>Header Files\libtorrent\aux_</Filter>
     </ClInclude>
+    <ClInclude Include="include\libtorrent\web_seed_entry.hpp">
+      <Filter>Header Files\libtorrent</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\kademlia\dht_storage.cpp">
@@ -1349,6 +1352,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\drive_info.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\web_seed_entry.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

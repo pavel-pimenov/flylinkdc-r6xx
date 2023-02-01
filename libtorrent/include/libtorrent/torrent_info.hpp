@@ -39,6 +39,7 @@ see LICENSE file.
 #include "libtorrent/aux_/vector.hpp"
 #include "libtorrent/announce_entry.hpp"
 #include "libtorrent/aux_/merkle_tree.hpp"
+#include "libtorrent/web_seed_entry.hpp"
 
 namespace libtorrent {
 
@@ -51,56 +52,6 @@ namespace aux {
 		, string_view element);
 	TORRENT_EXTRA_EXPORT bool verify_encoding(std::string& target);
 }
-
-	// the web_seed_entry holds information about a web seed (also known
-	// as URL seed or HTTP seed). It is essentially a URL with some state
-	// associated with it. For more information, see `BEP 17`_ and `BEP 19`_.
-	struct TORRENT_EXPORT web_seed_entry
-	{
-#if TORRENT_ABI_VERSION < 4
-		// http seeds are different from url seeds in the
-		// protocol they use. http seeds follows the original
-		// http seed spec. by John Hoffman
-		enum TORRENT_DEPRECATED type_t { url_seed, http_seed };
-#endif
-
-		using headers_t = std::vector<std::pair<std::string, std::string>>;
-
-		// hidden
-		web_seed_entry(std::string url_
-			, std::string auth_ = std::string()
-			, headers_t extra_headers_ = headers_t());
-
-		web_seed_entry(web_seed_entry const&);
-		web_seed_entry(web_seed_entry&&);
-		web_seed_entry& operator=(web_seed_entry const&);
-		web_seed_entry& operator=(web_seed_entry&&);
-
-		// URL and type comparison
-		bool operator==(web_seed_entry const& e) const
-		{ return url == e.url; }
-
-		// URL and type less-than comparison
-		bool operator<(web_seed_entry const& e) const
-		{ return url < e.url; }
-
-		// The URL of the web seed
-		std::string url;
-
-		// Optional authentication. If this is set, it's passed
-		// in as HTTP basic auth to the web seed. The format is:
-		// username:password.
-		std::string auth;
-
-		// Any extra HTTP headers that need to be passed to the web seed
-		headers_t extra_headers;
-
-#if TORRENT_ABI_VERSION < 4
-		// The type of web seed (see type_t)
-		TORRENT_DEPRECATED
-		std::uint8_t type = 0;
-#endif
-	};
 
 	// hidden
 	class from_span_t {};
@@ -266,6 +217,7 @@ TORRENT_VERSION_NAMESPACE_3
 		// the current one.
 		void remap_files(file_storage const& f);
 
+#if TORRENT_ABI_VERSION < 4
 		// ``add_tracker()`` adds a tracker to the announce-list. The ``tier``
 		// determines the order in which the trackers are to be tried.
 		// The ``trackers()`` function will return a sorted vector of
@@ -278,11 +230,20 @@ TORRENT_VERSION_NAMESPACE_3
 		// ``trackers()`` returns all entries from announce-list.
 		//
 		// ``clear_trackers()`` removes all trackers from announce-list.
+		TORRENT_DEPRECATED
 		void add_tracker(std::string const& url, int tier = 0);
+		TORRENT_DEPRECATED
 		void add_tracker(std::string const& url, int tier
 			, announce_entry::tracker_source source);
+		TORRENT_DEPRECATED
 		std::vector<announce_entry> const& trackers() const { return m_urls; }
+		TORRENT_DEPRECATED
 		void clear_trackers();
+#endif
+
+		// internal
+		std::vector<announce_entry> const& internal_trackers() const { return m_urls; }
+		void internal_clear_trackers() { m_urls.clear(); }
 
 		// These two functions are related to `BEP 38`_ (mutable torrents). The
 		// vectors returned from these correspond to the "similar" and
@@ -300,6 +261,9 @@ TORRENT_VERSION_NAMESPACE_3
 		std::vector<std::string> http_seeds() const;
 #endif // TORRENT_ABI_VERSION
 
+#if TORRENT_ABI_VERSION < 4
+		// Deprecated. Add and query web seeds from add_torrent_params instead.
+		//
 		// ``web_seeds()`` returns all url seeds and http seeds in the torrent.
 		// Each entry is a ``web_seed_entry`` and may refer to either a url seed
 		// or http seed.
@@ -319,12 +283,14 @@ TORRENT_VERSION_NAMESPACE_3
 		// seed.
 		//
 		// See http-seeding_ for more information.
+		TORRENT_DEPRECATED
 		void add_url_seed(std::string const& url
 			, std::string const& ext_auth = std::string()
 			, web_seed_entry::headers_t const& ext_headers = web_seed_entry::headers_t());
+		TORRENT_DEPRECATED
 		std::vector<web_seed_entry> const& web_seeds() const { return m_web_seeds; }
+		TORRENT_DEPRECATED
 		void set_web_seeds(std::vector<web_seed_entry> seeds);
-#if TORRENT_ABI_VERSION < 4
 		TORRENT_DEPRECATED
 		void add_http_seed(std::string const& url
 			, std::string const& extern_auth = std::string()
@@ -333,6 +299,7 @@ TORRENT_VERSION_NAMESPACE_3
 
 		// internal
 		void clear_web_seeds() { m_web_seeds.clear(); }
+		std::vector<web_seed_entry> const& internal_web_seeds() const { return m_web_seeds; }
 
 		// ``total_size()`` returns the total number of bytes the torrent-file
 		// represents. Note that this is the number of pieces times the piece
@@ -527,6 +494,10 @@ TORRENT_VERSION_NAMESPACE_3
 		TORRENT_DEPRECATED
 		void set_merkle_tree(std::vector<sha1_hash>& h)
 		{ TORRENT_ASSERT(h.size() == m_merkle_tree.size() ); m_merkle_tree.swap(h); }
+
+        // internal
+        std::size_t merkle_tree_size() const
+        { return m_merkle_tree.size(); }
 #endif
 
 		// ``name()`` returns the name of the torrent.

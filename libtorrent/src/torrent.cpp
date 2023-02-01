@@ -255,9 +255,9 @@ bool is_downloading_state(int const st)
 		// if override web seed flag is set, don't load any web seeds from the
 		// torrent file.
 		std::vector<web_seed_t> ws;
-		if (!(p.flags & torrent_flags::override_web_seeds))
+		if (!(p.flags & torrent_flags::deprecated_override_web_seeds))
 		{
-			for (auto const& e : m_torrent_file->web_seeds())
+			for (auto const& e : m_torrent_file->internal_web_seeds())
 				ws.emplace_back(e);
 		}
 
@@ -284,9 +284,9 @@ bool is_downloading_state(int const st)
 		// --- TRACKERS ---
 
 		// if override trackers flag is set, don't load trackers from torrent file
-		if (!(p.flags & torrent_flags::override_trackers))
+		if (!(p.flags & torrent_flags::deprecated_override_trackers))
 		{
-			m_trackers.replace(m_torrent_file->trackers());
+			m_trackers.replace(m_torrent_file->internal_trackers());
 		}
 
 		int tier = 0;
@@ -582,9 +582,9 @@ bool is_downloading_state(int const st)
 				, ""
 #endif
 				, m_sequential_download ? "sequential-download " : ""
-				, (m_add_torrent_params && m_add_torrent_params->flags & torrent_flags::override_trackers)
+				, (m_add_torrent_params && m_add_torrent_params->flags & torrent_flags::deprecated_override_trackers)
 					? "override-trackers "  : ""
-				, (m_add_torrent_params && m_add_torrent_params->flags & torrent_flags::override_web_seeds)
+				, (m_add_torrent_params && m_add_torrent_params->flags & torrent_flags::deprecated_override_web_seeds)
 					? "override-web-seeds " : ""
 				, m_save_path.c_str()
 				);
@@ -3173,7 +3173,7 @@ namespace {
 					req.key = tracker_key();
 
 #if TORRENT_USE_I2P
-					if (is_i2p())
+					if (is_i2p_url(req.url))
 					{
 						req.kind |= tracker_request::i2p;
 					}
@@ -3824,6 +3824,8 @@ namespace {
 		if (m_peer_list->add_i2p_peer(dest, peer_info::tracker, {}, &st))
 			state_updated();
 		peers_erased(st.erased);
+
+		update_want_peers();
 	}
 	catch (...) { handle_exception(); }
 #endif

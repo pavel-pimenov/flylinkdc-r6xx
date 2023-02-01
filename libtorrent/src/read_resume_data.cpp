@@ -282,7 +282,7 @@ namespace {
 			// resume data with an empty trackers list. Since we found a trackers
 			// list here, these should replace whatever we find in the .torrent
 			// file.
-			ret.flags |= torrent_flags::override_trackers;
+			ret.flags |= torrent_flags::deprecated_override_trackers;
 
 			int tier = 0;
 			for (int i = 0; i < trackers.list_size(); ++i)
@@ -309,7 +309,7 @@ namespace {
 		{
 			// since we found http seeds in the resume data, they should replace
 			// whatever web seeds are specified in the .torrent, by default
-			ret.flags |= torrent_flags::override_web_seeds;
+			ret.flags |= torrent_flags::deprecated_override_web_seeds;
 			for (int i = 0; i < url_list.list_size(); ++i)
 			{
 				auto url = url_list.list_string_value_at(i);

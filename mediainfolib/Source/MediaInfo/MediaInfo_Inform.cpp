@@ -154,17 +154,35 @@ Ztring MediaInfo_Internal::Inform()
     #if MEDIAINFO_ADVANCED
         if (Config.TimeCode_Dumps)
         {
-            string Result="<?xml version=\"1.0\"?>\n<timecode_streams";
+            string Result="<media";
             if (Config.ParseSpeed<1.0)
                 Result+=" full=\"0\"";
-            Result+=">\n";
+            Ztring Options=Get(Stream_General, 0, General_CompleteName, Info_Options);
+            if (InfoOption_ShowInInform<Options.size() && Options[InfoOption_ShowInInform]==__T('Y'))
+            {
+                Result+=" ref=\"";
+                Result+=XML_Encode(Get(Stream_General, 0, General_CompleteName)).To_UTF8();
+                Result+='\"';
+            }
+            Result+=" format=\"";
+            Result+=XML_Encode(Get(Stream_General, 0, General_Format)).To_UTF8();
+            Result+="\">\n";
             for (const auto& TimeCode_Dump : *Config.TimeCode_Dumps)
             {
-                Result+=TimeCode_Dump.second;
-                if (TimeCode_Dump.second.find(" start_tc=\"")==string::npos)
+                Result+="  <timecode_stream";
+                Result+=TimeCode_Dump.second.Attributes_First;
+                Result+=" frame_count=\""+std::to_string(TimeCode_Dump.second.FrameCount)+'\"';
+                Result+=TimeCode_Dump.second.Attributes_Last;
+                if (TimeCode_Dump.second.List.empty())
+                    Result+="/>\n";
+                else
+                {
+                    Result+=">\n";
+                    Result+=TimeCode_Dump.second.List;
                     Result+="  </timecode_stream>\n";
+                }
             }
-            Result+="</timecode_streams>";
+            Result+="</media>";
             return Ztring().From_UTF8(Result);
         }
     #endif //MEDIAINFO_ADVANCED
