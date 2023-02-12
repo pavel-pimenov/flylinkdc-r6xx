@@ -16,7 +16,7 @@
 		support_hub = "dchub://dc.fly-server.ru"
 		support_hub_en = "dchub://dc.fly-server.ru"
 		antivirus_db = ""
-		hublist_url = "http://www.te-home.net/?do=hublist&amp;get=hublist.xml.bz2,http://dchublist.ru/hublist.xml.bz2,http://dchublist.biz/?do=hublist.xml.bz2"
+		hublist_url = "http://www.te-home.net/?do=hublist&amp;get=hublist.xml.bz2,http://dchublist.ru/hublist.xml.bz2,http://hublist.pwiam.com/hublist.xml.bz2,http://dchublist.biz/?do=hublist.xml.bz2"
 		max_size_for_virus_detect = "10485760"
 		g_max_size_search_v_detect = "3145728"
 		unique_files_for_virus_detect = "3"
