@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2020 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2023 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -281,6 +281,20 @@ struct bn_gencb_st {
         /* if (ver==2) - new callback style */
         int (*cb_2) (int, int, BN_GENCB *);
     } cb;
+};
+
+struct bn_blinding_st {
+    BIGNUM *A;
+    BIGNUM *Ai;
+    BIGNUM *e;
+    BIGNUM *mod;                /* just a reference */
+    CRYPTO_THREAD_ID tid;
+    int counter;
+    unsigned long flags;
+    BN_MONT_CTX *m_ctx;
+    int (*bn_mod_exp) (BIGNUM *r, const BIGNUM *a, const BIGNUM *p,
+                       const BIGNUM *m, BN_CTX *ctx, BN_MONT_CTX *m_ctx);
+    CRYPTO_RWLOCK *lock;
 };
 
 /*-

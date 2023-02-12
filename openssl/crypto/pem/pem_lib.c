@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2022 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2023 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -957,7 +957,9 @@ int PEM_read_bio_ex(BIO *bp, char **name_out, char **header,
     *data = pem_malloc(len, flags);
     if (*header == NULL || *data == NULL) {
         pem_free(*header, flags, 0);
+        *header = NULL;
         pem_free(*data, flags, 0);
+        *data = NULL;
         goto end;
     }
     BIO_read(headerB, *header, headerlen);

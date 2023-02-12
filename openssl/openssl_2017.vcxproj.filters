@@ -2483,5 +2483,8 @@
     <ClCompile Include="crypto\async\arch\async_win.c">
       <Filter>Source Files\crypto\async\arch</Filter>
     </ClCompile>
+    <ClCompile Include="crypto\bn\rsa_sup_mul.c">
+      <Filter>Source Files\crypto\bn</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
