@@ -39,9 +39,6 @@
     <ClCompile Include="zlib-ng\infback.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="zlib-ng\inffast.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="zlib-ng\inflate.c">
       <Filter>Source Files</Filter>
     </ClCompile>

@@ -30,7 +30,6 @@
     <ClCompile Include="zlib-ng\deflate_stored.c" />
     <ClCompile Include="zlib-ng\functable.c" />
     <ClCompile Include="zlib-ng\infback.c" />
-    <ClCompile Include="zlib-ng\inffast.c" />
     <ClCompile Include="zlib-ng\inflate.c" />
     <ClCompile Include="zlib-ng\inftrees.c" />
     <ClCompile Include="zlib-ng\insert_string.c" />

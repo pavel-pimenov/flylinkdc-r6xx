@@ -73,41 +73,49 @@ extern uint32_t crc32_pclmulqdq(uint32_t crc32, const uint8_t *buf, size_t len);
 
 /* memory chunking */
 extern uint32_t chunksize_c(void);
-extern uint8_t* chunkcopy_c(uint8_t *out, uint8_t const *from, unsigned len);
-extern uint8_t* chunkunroll_c(uint8_t *out, unsigned *dist, unsigned *len);
-extern uint8_t* chunkmemset_c(uint8_t *out, unsigned dist, unsigned len);
 extern uint8_t* chunkmemset_safe_c(uint8_t *out, unsigned dist, unsigned len, unsigned left);
 #ifdef X86_SSE2_CHUNKSET
 extern uint32_t chunksize_sse2(void);
-extern uint8_t* chunkcopy_sse2(uint8_t *out, uint8_t const *from, unsigned len);
-extern uint8_t* chunkunroll_sse2(uint8_t *out, unsigned *dist, unsigned *len);
-extern uint8_t* chunkmemset_sse2(uint8_t *out, unsigned dist, unsigned len);
 extern uint8_t* chunkmemset_safe_sse2(uint8_t *out, unsigned dist, unsigned len, unsigned left);
 #endif
 #ifdef X86_SSE41
-extern uint8_t* chunkmemset_sse41(uint8_t *out, unsigned dist, unsigned len);
 extern uint8_t* chunkmemset_safe_sse41(uint8_t *out, unsigned dist, unsigned len, unsigned left);
 #endif
 #ifdef X86_AVX_CHUNKSET
 extern uint32_t chunksize_avx(void);
-extern uint8_t* chunkcopy_avx(uint8_t *out, uint8_t const *from, unsigned len);
-extern uint8_t* chunkunroll_avx(uint8_t *out, unsigned *dist, unsigned *len);
-extern uint8_t* chunkmemset_avx(uint8_t *out, unsigned dist, unsigned len);
 extern uint8_t* chunkmemset_safe_avx(uint8_t *out, unsigned dist, unsigned len, unsigned left);
 #endif
 #ifdef ARM_NEON_CHUNKSET
 extern uint32_t chunksize_neon(void);
-extern uint8_t* chunkcopy_neon(uint8_t *out, uint8_t const *from, unsigned len);
-extern uint8_t* chunkunroll_neon(uint8_t *out, unsigned *dist, unsigned *len);
-extern uint8_t* chunkmemset_neon(uint8_t *out, unsigned dist, unsigned len);
 extern uint8_t* chunkmemset_safe_neon(uint8_t *out, unsigned dist, unsigned len, unsigned left);
 #endif
 #ifdef POWER8_VSX_CHUNKSET
 extern uint32_t chunksize_power8(void);
-extern uint8_t* chunkcopy_power8(uint8_t *out, uint8_t const *from, unsigned len);
-extern uint8_t* chunkunroll_power8(uint8_t *out, unsigned *dist, unsigned *len);
-extern uint8_t* chunkmemset_power8(uint8_t *out, unsigned dist, unsigned len);
 extern uint8_t* chunkmemset_safe_power8(uint8_t *out, unsigned dist, unsigned len, unsigned left);
+#endif
+
+#ifdef ZLIB_COMPAT
+typedef struct z_stream_s z_stream;
+#else
+typedef struct zng_stream_s zng_stream;
+#endif
+
+/* inflate fast loop */
+extern void inflate_fast_c(PREFIX3(stream) *strm, uint32_t start);
+#ifdef X86_SSE2_CHUNKSET
+extern void inflate_fast_sse2(PREFIX3(stream) *strm, uint32_t start);
+#endif
+#ifdef X86_SSE41
+extern void inflate_fast_sse41(PREFIX3(stream) *strm, uint32_t start);
+#endif
+#ifdef X86_AVX_CHUNKSET
+extern void inflate_fast_avx(PREFIX3(stream) *strm, uint32_t start);
+#endif
+#ifdef ARM_NEON_CHUNKSET
+extern void inflate_fast_neon(PREFIX3(stream) *strm, uint32_t start);
+#endif
+#ifdef POWER8_VSX_CHUNKSET
+extern void inflate_fast_power8(PREFIX3(stream) *strm, uint32_t start);
 #endif
 
 /* CRC32 */

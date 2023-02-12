@@ -14,7 +14,6 @@
 #include "zutil.h"
 #include "inftrees.h"
 #include "inflate.h"
-#include "inffast.h"
 #include "inflate_p.h"
 #include "functable.h"
 
@@ -39,11 +38,11 @@ int32_t ZNG_CONDEXPORT; PREFIX(inflateBackInit)(PREFIX3(stream)* strm, int32_t w
         return Z_STREAM_ERROR;
     strm->msg = NULL;                   /* in case we return an error */
     if (strm->zalloc == NULL) {
-        strm->zalloc = PREFIX3(calloc);
+        strm->zalloc = PREFIX(zcalloc);
         strm->opaque = NULL;
     }
     if (strm->zfree == NULL)
-        strm->zfree = PREFIX3(cfree);
+        strm->zfree = PREFIX(zcfree);
     state = ZALLOC_INFLATE_STATE(strm);
     if (state == NULL)
         return Z_MEM_ERROR;
@@ -358,7 +357,7 @@ int32_t Z_EXPORT PREFIX(inflateBack)(PREFIX3(stream) *strm, in_func in, void *in
                 RESTORE();
                 if (state->whave < state->wsize)
                     state->whave = state->wsize - left;
-                zng_inflate_fast(strm, state->wsize);
+                functable.inflate_fast(strm, state->wsize);
                 LOAD();
                 break;
             }
