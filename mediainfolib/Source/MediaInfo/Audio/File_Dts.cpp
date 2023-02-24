@@ -1611,14 +1611,17 @@ void File_Dts::HD_XLL(int64u Size)
     size_t NaviByteCount=(Count*Bits4SSize+7)/8+2;
     bool NaviIsfine=false;
     CRC=Dts_CRC_CCIT_Compute(Buffer+Buffer_Offset+Element_Offset, NaviByteCount);
+    unsigned l_count = 0;
     if (CRC)
     {
-        while (CRC)
+        while (CRC && l_count++ < 1000) // hot fix inf loop
         {
             auto Buffer_Temp=Buffer+Buffer_Offset+Element_Offset+NaviByteCount;
             auto Buffer_End=Buffer+Buffer_Offset+End;
-            while (CRC && Buffer_Temp<Buffer_End)
-                CRC=(CRC>>8)^CRC_CCIT_Table[((uint8_t)CRC)^*Buffer_Temp++];
+            while (CRC && Buffer_Temp < Buffer_End && l_count++ < 1000) // hot fix inf loop
+            {
+                CRC = (CRC >> 8) ^ CRC_CCIT_Table[((uint8_t)CRC) ^ *Buffer_Temp++];
+            }
             if (!CRC)
             {
                 NaviIsfine=true;

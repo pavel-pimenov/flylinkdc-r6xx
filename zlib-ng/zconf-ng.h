@@ -38,6 +38,9 @@
  * created by gzip. (Files created by minigzip can still be extracted by
  * gzip.)
  */
+#ifndef MIN_WBITS
+#  define MIN_WBITS   8  /* 256 LZ77 window */
+#endif
 #ifndef MAX_WBITS
 #  define MAX_WBITS   15 /* 32K LZ77 window */
 #endif
@@ -94,6 +97,9 @@
 #  define Z_EXPORTVA
 #endif
 
+/* Conditional exports */
+#define ZNG_CONDEXPORT Z_EXPORT
+
 /* Fallback for something that includes us. */
 typedef unsigned char Byte;
 typedef Byte Bytef;
@@ -119,7 +125,6 @@ typedef PTRDIFF_TYPE ptrdiff_t;
 #endif
 
 #include <sys/types.h>      /* for off_t */
-#include <stdarg.h>         /* for va_list */
 
 #include <stddef.h>         /* for wchar_t and NULL */
 

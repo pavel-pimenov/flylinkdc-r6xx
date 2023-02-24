@@ -2773,38 +2773,31 @@ string FileImage::getVirusIconIndex(const string& aFileName, int& p_icon_index)
 int FileImage::getIconIndex(const string& aFileName)
 {
 	int p_icon_index = 0;
-	string x = getVirusIconIndex(aFileName, p_icon_index);
+	const string l_x = getVirusIconIndex(aFileName, p_icon_index);
 	if (p_icon_index)
 		return p_icon_index;
-	if (BOOLSETTING(USE_SYSTEM_ICONS))
-	{
-#ifndef _DEBUG // В отладке тупит
-		if (!x.empty())
+	if (BOOLSETTING(USE_SYSTEM_ICONS) && !l_x.empty())
 		{
 			//CFlyFastLock(m_cs);
-			const auto j = m_indexis.find(x);
+		const auto j = m_indexis.find(l_x);
 			if (j != m_indexis.end())
 			{
 				return j->second;
 			}
-		}
-		x = string("x.") + x;
-		SHFILEINFO fi = { 0 };
-		if (SHGetFileInfo(Text::toT(x).c_str(), FILE_ATTRIBUTE_NORMAL, &fi, sizeof(fi), SHGFI_ICON | SHGFI_SMALLICON | SHGFI_USEFILEATTRIBUTES))
+		const tstring file = _T("x.") + Text::toT(l_x);
+		SHFILEINFO fi = { };
+		if (SHGetFileInfo(file.c_str(), FILE_ATTRIBUTE_NORMAL, &fi, sizeof(fi), SHGFI_ICON | SHGFI_SMALLICON | SHGFI_USEFILEATTRIBUTES))
 		{
 			//CFlyFastLock(m_cs);
 			m_images.AddIcon(fi.hIcon);
 			::DestroyIcon(fi.hIcon);
-			m_indexis[x] = m_imageCount++;
+			m_indexis[l_x] = m_imageCount++;
 			return m_imageCount - 1;
 		}
 		else
 		{
 			return DIR_FILE;
 		}
-#else
-		return DIR_FILE;
-#endif
 	}
 	else
 	{
