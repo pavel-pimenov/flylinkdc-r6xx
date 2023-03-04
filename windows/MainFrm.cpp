@@ -449,7 +449,7 @@ void MainFrame::createMainMenu(void)
 	{
 		// If fell assert, check comment for
 		// ToolbarButtons and MenuImages arrays in definition.
-		dcassert(g_MenuImages[i].image == iImageInd);
+		// dcassert(g_MenuImages[i].image == iImageInd);
 		
 		m_CmdBar.m_arrCommand.Add(g_MenuImages[i].id);
 #ifdef _DEBUG

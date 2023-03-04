@@ -18,6 +18,7 @@
 #include "ZenLib/Conf.h"
 #include <algorithm>
 #include <iterator>
+#include <limits>
 using namespace ZenLib;
 using namespace std;
 //---------------------------------------------------------------------------
@@ -1696,7 +1697,7 @@ void File_Avc::Synched_Init()
     TemporalReferences_Reserved=0;
     TemporalReferences_Offset=0;
     TemporalReferences_Offset_pic_order_cnt_lsb_Last=0;
-    TemporalReferences_pic_order_cnt_Min=0;
+    TemporalReferences_pic_order_cnt_Min=numeric_limits<decltype(TemporalReferences_pic_order_cnt_Min)>::max();
 
     //Text
     #if defined(MEDIAINFO_DTVCCTRANSPORT_YES)
@@ -1726,6 +1727,8 @@ void File_Avc::Synched_Init()
     FirstPFrameInGop_IsParsed=false;
     Config_IsRepeated=false;
     tc=0;
+    pic_order_cnt_Displayed=numeric_limits<decltype(pic_order_cnt_Displayed)>::max();
+    pic_order_cnt_Delta=0;
 
     //Default values
     Streams.resize(0x100);
@@ -1775,7 +1778,9 @@ void File_Avc::Read_Buffer_Unsynched()
     TemporalReferences_Reserved=0;
     TemporalReferences_Offset=0;
     TemporalReferences_Offset_pic_order_cnt_lsb_Last=0;
-    TemporalReferences_pic_order_cnt_Min=0;
+    TemporalReferences_pic_order_cnt_Min=numeric_limits<decltype(TemporalReferences_pic_order_cnt_Min)>::max();
+    pic_order_cnt_Displayed=numeric_limits<decltype(pic_order_cnt_Displayed)>::max();
+    pic_order_cnt_Delta=0;
 
     //Text
     #if defined(MEDIAINFO_DTVCCTRANSPORT_YES)
@@ -1787,7 +1792,6 @@ void File_Avc::Read_Buffer_Unsynched()
     if (SizedBlocks || !Config_IsRepeated) //If sized blocks, it is not a broadcasted stream so SPS/PPS are only in container header, we must not disable them.
     {
         //Rebuilding immediatly TemporalReferences
-		// https://sourceforge.net/p/mpcbe/code/HEAD/tree/trunk/
         seq_parameter_set_structs* _seq_parameter_sets=!seq_parameter_sets.empty()?&seq_parameter_sets:&subset_seq_parameter_sets; //Some MVC streams have no seq_parameter_sets. TODO: better management of temporal references
 		for (std::vector<seq_parameter_set_struct*>::iterator seq_parameter_set_Item=_seq_parameter_sets->begin(); seq_parameter_set_Item != _seq_parameter_sets->end(); ++seq_parameter_set_Item)
             if ((*seq_parameter_set_Item))
@@ -2394,6 +2398,9 @@ void File_Avc::slice_header()
             (*seq_parameter_set_Item)->pic_struct_FirstDetected=bottom_field_flag?2:1; //2=BFF, 1=TFF
 
         //Saving some info
+        if ((*seq_parameter_set_Item)->vui_parameters && (*seq_parameter_set_Item)->vui_parameters->timing_info_present_flag && (*seq_parameter_set_Item)->vui_parameters->num_units_in_tick)
+            tc=float64_int64s(((float64)1000000000)/((float64)(*seq_parameter_set_Item)->vui_parameters->time_scale/(*seq_parameter_set_Item)->vui_parameters->num_units_in_tick/((*seq_parameter_set_Item)->pic_order_cnt_type==2?1:2)/FrameRate_Divider)/((!(*seq_parameter_set_Item)->frame_mbs_only_flag && field_pic_flag)?2:1));
+
         int32s TemporalReferences_Offset_pic_order_cnt_lsb_Diff=0;
         if ((*seq_parameter_set_Item)->pic_order_cnt_type!=1 && first_mb_in_slice==0 && (Element_Code!=0x14 || seq_parameter_sets.empty()) && TemporalReferences_Reserved) //Not slice_layer_extension except if MVC only
         {
@@ -2505,6 +2512,8 @@ void File_Avc::slice_header()
                 default:    ;
             }
 
+            if (TemporalReferences_pic_order_cnt_Min==numeric_limits<decltype(TemporalReferences_pic_order_cnt_Min)>::max())
+                TemporalReferences_pic_order_cnt_Min=pic_order_cnt;
             if (pic_order_cnt<TemporalReferences_pic_order_cnt_Min)
             {
                 if (pic_order_cnt<0)
@@ -2618,22 +2627,58 @@ void File_Avc::slice_header()
                 TemporalReferences_DelayedElement=NULL;
                 sei_message_user_data_registered_itu_t_t35_GA94_03_Delayed((*pic_parameter_set_Item)->seq_parameter_set_id);
             }
+
+            if (first_mb_in_slice==0)
+            {
+                if (Frame_Count==0)
+                {
+                    if (FrameInfo.PTS==(int64u)-1)
+                        FrameInfo.PTS=FrameInfo.DTS;
+                    PTS_Begin=FrameInfo.PTS;
+                    PTS_End=FrameInfo.PTS;
+                }
+                if ((*seq_parameter_set_Item)->pic_order_cnt_type != 1 && (Element_Code != 0x14 || seq_parameter_sets.empty())) //Not slice_layer_extension except if MVC only
+                {
+                    if ((!IsSub || Frame_Count_InThisBlock))
+                    {
+                        if (!pic_order_cnt_lsb || pic_order_cnt_Displayed==numeric_limits<decltype(pic_order_cnt_Displayed)>::max())
+                        {
+                            pic_order_cnt_Displayed=pic_order_cnt+pic_order_cnt_Delta;
+                            pic_order_cnt_Delta=0;
+                            FrameInfo.PTS=PTS_End;
+                        }
+                        int64s Divisor=field_pic_flag?1:(((*seq_parameter_set_Item)->frame_mbs_only_flag?2:(((*seq_parameter_set_Item)->pic_order_cnt_type==2)?1:2)));
+                        if (pic_order_cnt_Displayed!=numeric_limits<decltype(pic_order_cnt_Displayed)>::max())
+                        {
+                            int64s MissingFieldCount=pic_order_cnt-pic_order_cnt_Displayed;
+                            if (MissingFieldCount<0)
+                            {
+                                pic_order_cnt_Delta=MissingFieldCount;
+                                FrameInfo.PTS=FrameInfo.DTS;
+                                pic_order_cnt_Displayed=pic_order_cnt;
+                                if (IFrame_Count<=1)
+                                {
+                                    int64s Temp=MissingFieldCount;
+                                    Temp*=tc;
+                                    Temp/=Divisor;
+                                    PTS_Begin-=Temp;
+                                }
+                            }
+                            else
+                            {
+                                int64s Offset=MissingFieldCount*tc;
+                                Offset/=Divisor;
+                                FrameInfo.PTS=FrameInfo.DTS+Offset;
+                            }
+                        }
+                        pic_order_cnt_Displayed+=Divisor;
+                    }
+                }
+            }
         }
 
-        if ((*seq_parameter_set_Item)->vui_parameters && 
-			(*seq_parameter_set_Item)->vui_parameters->timing_info_present_flag && 
-			(*seq_parameter_set_Item)->vui_parameters->num_units_in_tick &&
-			FrameRate_Divider &&
-			(*seq_parameter_set_Item)->vui_parameters->time_scale)
-            tc=float64_int64s(((float64)1000000000)/((float64)(*seq_parameter_set_Item)->vui_parameters->time_scale/(*seq_parameter_set_Item)->vui_parameters->num_units_in_tick/((*seq_parameter_set_Item)->pic_order_cnt_type==2?1:2)/FrameRate_Divider)/((!(*seq_parameter_set_Item)->frame_mbs_only_flag && field_pic_flag)?2:1));
         if (first_mb_in_slice==0)
         {
-            if (Frame_Count==0)
-            {
-                if (FrameInfo.PTS==(int64u)-1)
-                    FrameInfo.PTS=FrameInfo.DTS+tc*(TemporalReferences_Offset_pic_order_cnt_lsb_Diff?2:1)*((!(*seq_parameter_set_Item)->frame_mbs_only_flag && field_pic_flag)?2:1); //No PTS in container
-                PTS_Begin=FrameInfo.PTS;
-            }
             #if MEDIAINFO_ADVANCED2
                 if (PTS_Begin_Segment==(int64u)-1 && File_Offset>=Config->File_Current_Offset)
                 {
@@ -2661,12 +2706,6 @@ void File_Avc::slice_header()
         }
         else if (first_mb_in_slice==0)
         {
-            if ((*seq_parameter_set_Item)->pic_order_cnt_type!=1 && (Element_Code!=0x14 || seq_parameter_sets.empty())) //Not slice_layer_extension except if MVC only
-            {
-                if ((!IsSub || Frame_Count_InThisBlock) && TemporalReferences_Offset_pic_order_cnt_lsb_Diff && TemporalReferences_Offset_pic_order_cnt_lsb_Diff!=2)
-                    FrameInfo.PTS+=(TemporalReferences_Offset_pic_order_cnt_lsb_Diff-(field_pic_flag?1:2))/((!(*seq_parameter_set_Item)->frame_mbs_only_flag && field_pic_flag)?1:2)*(int64s)tc;
-            }
-
             if (!FirstPFrameInGop_IsParsed && (slice_type==0 || slice_type==5)) //P-Frame
             {
                 FirstPFrameInGop_IsParsed=true;

@@ -1647,9 +1647,9 @@ bool utp_socket_impl::send_pkt(int const flags)
 			write_payload(p->buf + p->size, size_left);
 			p->size += std::uint16_t(size_left);
 
-				UTP_LOGV("%8p: NAGLE appending %d bytes to nagle packet. new size: %d allocated: %d\n"
-					, static_cast<void*>(this), size_left, p->size, p->allocated);
-			}
+			UTP_LOGV("%8p: NAGLE appending %d bytes to nagle packet. new size: %d allocated: %d\n"
+				, static_cast<void*>(this), size_left, p->size, p->allocated);
+		}
 
 		// did we fill up the whole mtu?
 		// if we didn't, we may still send it if there's
@@ -1869,7 +1869,12 @@ bool utp_socket_impl::send_pkt(int const flags)
 		TORRENT_ASSERT(payload_size == 0);
 		// If we're stalled we'll need to resend
 		if (m_stalled) p->need_resend = true;
-		m_outbuf.insert(m_seq_nr, std::move(p));
+		packet_ptr old = m_outbuf.insert(m_seq_nr, std::move(p));
+		if (old)
+		{
+			if (!old->need_resend) m_bytes_in_flight -= old->size - old->header_size;
+			release_packet(std::move(old));
+		}
 	}
 	else
 	{
