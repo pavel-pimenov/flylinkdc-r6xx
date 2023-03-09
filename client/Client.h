@@ -431,6 +431,10 @@ class Client : public ClientBase, public Speaker<ClientListener>, public Buffere
 			return getHubOnlineUser()->getIdentity();
 		}
 		GETSET(string, defpassword, Password);
+		const string getStoreDescription() const
+		{
+			return getMyIdentity().getStoreDescription();
+		}
 		const string getCurrentDescription() const
 		{
 			return getMyIdentity().getDescription();

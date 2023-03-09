@@ -2329,10 +2329,20 @@ void NmdcHub::myInfo(bool p_always_send, bool p_is_force_passive)
 		                    + Util::toString(ShareManager::get_cache_size_file_not_exists_set()) + "/"
 		                    + Util::toString(ShareManager::get_cache_file_map());
 	}
+	auto l_desc = fromUtf8Chat(escape(getStoreDescription()));
+	if (l_desc.empty())
+	{
+		l_desc = fromUtf8Chat(escape(getCurrentDescription()));
+	}
+	if (l_desc.empty())
+	{
+		l_desc = fromUtf8Chat(escape(SETTING(DESCRIPTION)));
+		dcassert(0);
+	}
 	const int l_sizeMyInfo = _snprintf(&l_currentMyInfo[0], l_currentMyInfo.size() - 2, "$MyINFO $ALL %s %s<%s,M:%c,H:%s,S:%d"
 	                                   ">$ $%s%c$%s$",
 	                                   getMyNickFromUtf8().c_str(),
-	                                   fromUtf8Chat(escape(getCurrentDescription())).c_str(),
+	                                   l_desc.c_str(),
 	                                   l_version.c_str(),
 	                                   l_modeChar,
 	                                   l_currentCounts.c_str(),
@@ -2345,7 +2355,7 @@ void NmdcHub::myInfo(bool p_always_send, bool p_is_force_passive)
 	}
 	else
 	{
-		l_currentMyInfo = "$MyINFO $ALL " + fromUtf8Chat(escape(getCurrentDescription())) +
+		l_currentMyInfo = "$MyINFO $ALL " + l_desc +
 		                  " <FlylinkDC++ V:666.666, M:P,H:11/0/1,S:10>$ $50A$$666$";
 		dcassert(0);
 	}
