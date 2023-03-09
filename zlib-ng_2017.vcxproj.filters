@@ -7,6 +7,9 @@
     <Filter Include="Header Files">
       <UniqueIdentifier>{487e0a46-ab72-4785-9c12-819fe64542ed}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\arc">
+      <UniqueIdentifier>{8f6a248f-e65c-48db-abd1-6b5ed4e0673b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="zlib-ng\adler32.c">
@@ -89,6 +92,9 @@
     </ClCompile>
     <ClCompile Include="zlib-ng\crc32_braid_comb.c">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib-ng\arch\x86\x86_features.c">
+      <Filter>Source Files\arc</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

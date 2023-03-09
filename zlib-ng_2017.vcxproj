@@ -13,6 +13,7 @@
   <ItemGroup>
     <ClCompile Include="zlib-ng\adler32.c" />
     <ClCompile Include="zlib-ng\adler32_fold.c" />
+    <ClCompile Include="zlib-ng\arch\x86\x86_features.c" />
     <ClCompile Include="zlib-ng\chunkset.c" />
     <ClCompile Include="zlib-ng\compare256.c" />
     <ClCompile Include="zlib-ng\compress.c" />
