@@ -2121,7 +2121,7 @@ class MediainfoCtrl : public Base
 				GetSubItemRect((int)p_cd->nmcd.dwItemSpec, p_cd->iSubItem, LVIR_BOUNDS, rc);
 				rc2 = rc;
 				SetItemFilled(p_cd, rc2);
-#ifdef PPA_MEDIAVIDEO_BOLD_TEXT
+#ifdef FLYLINKDC_USE_MEDIAVIDEO_BOLD_TEXT
 				HGDIOBJ l_old_font = nullptr;
 #endif
 				const auto l_ico_index = VideoImage::getMediaVideoIcon(p_coulumn_media_xy);
@@ -2130,7 +2130,7 @@ class MediainfoCtrl : public Base
 					rc.left = rc.right - 19;
 					const POINT p = { rc.left, rc.top };
 					g_videoImage.Draw(p_cd->nmcd.hdc, l_ico_index, p);
-#ifdef PPA_MEDIAVIDEO_BOLD_TEXT
+#ifdef FLYLINKDC_USE_MEDIAVIDEO_BOLD_TEXT
 					l_old_font = ::SelectObject(p_cd->nmcd.hdc, Fonts::g_boldFont);
 #endif
 				}
@@ -2138,7 +2138,7 @@ class MediainfoCtrl : public Base
 				{
 					::ExtTextOut(p_cd->nmcd.hdc, rc2.left + 6, rc2.top + 2, ETO_CLIPPED, rc2, p_coulumn_media_xy.c_str(), p_coulumn_media_xy.length(), NULL);
 				}
-#ifdef PPA_MEDIAVIDEO_BOLD_TEXT
+#ifdef FLYLINKDC_USE_MEDIAVIDEO_BOLD_TEXT
 				if (l_old_font)
 				{
 					::SelectObject(p_cd->nmcd.hdc, l_old_font);

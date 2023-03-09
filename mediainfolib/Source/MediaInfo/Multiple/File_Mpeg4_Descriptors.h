@@ -37,16 +37,16 @@ enum audio_profile : int8u
     High_Efficiency_AAC,
     High_Efficiency_AAC_v2,
     Low_Delay_AAC,
+    Low_Delay_AAC_v2,
     Baseline_MPEG_Surround,
     High_Definition_AAC,
     ALS_Simple,
     Baseline_USAC,
     Extended_HE_AAC,
+    UnspecifiedAudio,
+    NoAudio,
     AudioProfile_Max,
-    #if MEDIAINFO_CONFORMANCE
-    AudioProfile_Unspecified,
-    AudioProfile_NoAudio,
-#endif
+    UnknownAudio = (int8u)-1,
 };
 struct profilelevel_struct
 {
@@ -98,6 +98,7 @@ public :
         int16u                  SamplingRate;
         const std::vector<int64u>* stss;
         const bool*             stss_IsPresent;
+        const bool*             IsCmaf;
         const std::vector<stts_struct>* stts;
         const size_t*           FirstOutputtedDecodedSample;
         const std::vector<sgpd_prol_struct>* sgpd_prol;

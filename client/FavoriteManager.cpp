@@ -39,7 +39,7 @@ PreviewApplication::List FavoriteManager::g_previewApplications;
 uint16_t FavoriteManager::g_dontSave = 0;
 int FavoriteManager::g_lastId = 0;
 unsigned FavoriteManager::g_count_hub = 0;
-#ifdef PPA_USER_COMMANDS_HUBS_SET
+#ifdef FLYLINKDC_USE_USER_COMMANDS_HUBS_SET
 std::unordered_set<string> FavoriteManager::g_userCommandsHubUrl;
 #endif
 std::unique_ptr<webrtc::RWLockWrapper> FavoriteManager::g_csFavUsers = std::unique_ptr<webrtc::RWLockWrapper> (webrtc::RWLockWrapper::CreateRWLock());
@@ -122,7 +122,7 @@ UserCommand FavoriteManager::addUserCommand(int type, int ctx, Flags::MaskType f
 	{
 		// No dupes, add it...
 		CFlyWriteLock(*g_csUserCommand);
-#ifdef PPA_USER_COMMANDS_HUBS_SET
+#ifdef FLYLINKDC_USE_USER_COMMANDS_HUBS_SET
 		if (!hub.empty())
 		{
 			g_userCommandsHubUrl.insert(hub);
@@ -189,7 +189,7 @@ void FavoriteManager::updateUserCommand(const UserCommand& uc)
 int FavoriteManager::findUserCommand(const string& aName, const string& p_Hub)
 {
 	CFlyReadLock(*g_csUserCommand);
-#ifdef PPA_USER_COMMANDS_HUBS_SET
+#ifdef FLYLINKDC_USE_USER_COMMANDS_HUBS_SET
 	if (isHubExistsL(p_Hub))
 #endif
 	{
@@ -231,7 +231,7 @@ void FavoriteManager::prepareClose()
 {
 	//CFlyLog l_log("[User command cleanup]");
 	CFlyWriteLock(*g_csUserCommand);
-#ifdef PPA_USER_COMMANDS_HUBS_SET
+#ifdef FLYLINKDC_USE_USER_COMMANDS_HUBS_SET
 	g_userCommandsHubUrl.clear();
 #endif
 }
@@ -241,7 +241,7 @@ size_t FavoriteManager::countUserCommand(const string& p_Hub)
 	size_t l_count = 0;
 	{
 		CFlyReadLock(*g_csUserCommand);
-#ifdef PPA_USER_COMMANDS_HUBS_SET
+#ifdef FLYLINKDC_USE_USER_COMMANDS_HUBS_SET
 		if (isHubExistsL(p_Hub))
 #endif
 		{
@@ -258,7 +258,7 @@ size_t FavoriteManager::countUserCommand(const string& p_Hub)
 void FavoriteManager::removeUserCommand(const string& p_Hub)
 {
 	CFlyWriteLock(*g_csUserCommand);
-#ifdef PPA_USER_COMMANDS_HUBS_SET
+#ifdef FLYLINKDC_USE_USER_COMMANDS_HUBS_SET
 	if (isHubExistsL(p_Hub))
 #endif
 	{
@@ -277,7 +277,7 @@ void FavoriteManager::removeUserCommand(const string& p_Hub)
 			                    " g_count = " + Util::toString(++g_count));
 		}
 #endif
-#ifdef PPA_USER_COMMANDS_HUBS_SET
+#ifdef FLYLINKDC_USE_USER_COMMANDS_HUBS_SET
 		bool hubWithoutCommands = true;
 #endif
 		
@@ -293,7 +293,7 @@ void FavoriteManager::removeUserCommand(const string& p_Hub)
 			}
 			else
 			{
-#ifdef PPA_USER_COMMANDS_HUBS_SET
+#ifdef FLYLINKDC_USE_USER_COMMANDS_HUBS_SET
 				if (matchHub)
 				{
 					hubWithoutCommands = false;
@@ -302,7 +302,7 @@ void FavoriteManager::removeUserCommand(const string& p_Hub)
 				++i;
 			}
 		}
-#ifdef PPA_USER_COMMANDS_HUBS_SET
+#ifdef FLYLINKDC_USE_USER_COMMANDS_HUBS_SET
 		if (hubWithoutCommands)
 		{
 			g_userCommandsHubUrl.erase(p_Hub);
@@ -314,11 +314,11 @@ void FavoriteManager::removeUserCommand(const string& p_Hub)
 void FavoriteManager::removeHubUserCommands(int ctx, const string& p_Hub)
 {
 	CFlyWriteLock(*g_csUserCommand);
-#ifdef PPA_USER_COMMANDS_HUBS_SET
+#ifdef FLYLINKDC_USE_USER_COMMANDS_HUBS_SET
 	if (isHubExistsL(p_Hub))
 #endif
 	{
-#ifdef PPA_USER_COMMANDS_HUBS_SET
+#ifdef FLYLINKDC_USE_USER_COMMANDS_HUBS_SET
 		bool hubWithoutCommands = true;
 #endif
 		for (auto i = g_userCommands.cbegin(); i != g_userCommands.cend();)
@@ -330,7 +330,7 @@ void FavoriteManager::removeHubUserCommands(int ctx, const string& p_Hub)
 			}
 			else
 			{
-#ifdef PPA_USER_COMMANDS_HUBS_SET
+#ifdef FLYLINKDC_USE_USER_COMMANDS_HUBS_SET
 				if (matchHub)
 				{
 					hubWithoutCommands = false;
@@ -339,7 +339,7 @@ void FavoriteManager::removeHubUserCommands(int ctx, const string& p_Hub)
 				++i;
 			}
 		}
-#ifdef PPA_USER_COMMANDS_HUBS_SET
+#ifdef FLYLINKDC_USE_USER_COMMANDS_HUBS_SET
 		if (hubWithoutCommands)
 		{
 			g_userCommandsHubUrl.erase(p_Hub);

@@ -20,7 +20,19 @@
 #  include "arch/s390/s390_features.h"
 #endif
 
-extern void cpu_check_features(void);
+struct cpu_features {
+#if defined(X86_FEATURES)
+    struct x86_cpu_features x86;
+#elif defined(ARM_FEATURES)
+    struct arm_cpu_features arm;
+#elif defined(PPC_FEATURES) || defined(POWER_FEATURES)
+    struct power_cpu_features power;
+#elif defined(S390_FEATURES)
+    struct s390_cpu_features s390;
+#endif
+};
+
+extern void cpu_check_features(struct cpu_features *features);
 
 /* adler32 */
 typedef uint32_t (*adler32_func)(uint32_t adler, const uint8_t *buf, size_t len);
@@ -69,6 +81,13 @@ extern void     crc32_fold_pclmulqdq_copy(crc32_fold *crc, uint8_t *dst, const u
 extern void     crc32_fold_pclmulqdq(crc32_fold *crc, const uint8_t *src, size_t len, uint32_t init_crc);
 extern uint32_t crc32_fold_pclmulqdq_final(crc32_fold *crc);
 extern uint32_t crc32_pclmulqdq(uint32_t crc32, const uint8_t *buf, size_t len);
+#endif
+#if defined(X86_PCLMULQDQ_CRC) && defined(X86_VPCLMULQDQ_CRC)
+extern uint32_t crc32_fold_vpclmulqdq_reset(crc32_fold *crc);
+extern void     crc32_fold_vpclmulqdq_copy(crc32_fold *crc, uint8_t *dst, const uint8_t *src, size_t len);
+extern void     crc32_fold_vpclmulqdq(crc32_fold *crc, const uint8_t *src, size_t len, uint32_t init_crc);
+extern uint32_t crc32_fold_vpclmulqdq_final(crc32_fold *crc);
+extern uint32_t crc32_vpclmulqdq(uint32_t crc32, const uint8_t *buf, size_t len);
 #endif
 
 /* memory chunking */
@@ -127,7 +146,7 @@ extern uint32_t crc32_acle(uint32_t crc, const uint8_t *buf, size_t len);
 #elif defined(POWER8_VSX)
 extern uint32_t crc32_power8(uint32_t crc, const uint8_t *buf, size_t len);
 #elif defined(S390_CRC32_VX)
-extern uint32_t PREFIX(s390_crc32_vx)(uint32_t crc, const uint8_t *buf, size_t len);
+extern uint32_t crc32_s390_vx(uint32_t crc, const uint8_t *buf, size_t len);
 #endif
 
 /* compare256 */

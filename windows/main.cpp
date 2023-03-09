@@ -202,7 +202,7 @@ LRESULT CALLBACK splashCallback(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 		const HFONT hFont = CreateFontIndirect(&logFont);
 		CSelectFont l_font(dc, hFont); //-V808
 		//::SetTextColor(dc, RGB(179, 179, 179));
-		::SetTextColor(dc, RGB(0, 0, 0));
+		::SetTextColor(dc, RGB(0xFF, 0xFF, 0xFF));
 		const tstring l_progress = g_sSplashText;
 		::DrawText(dc, l_progress.c_str(), l_progress.length(), &rc2, DT_CENTER); //-V107
 		//::SetTextColor(dc, RGB(50, 50, 50));

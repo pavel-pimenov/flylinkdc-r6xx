@@ -1356,44 +1356,6 @@ User::DefinedAutoBanFlags User::hasAutoBan(Client *p_Client, const bool p_is_fav
 }
 #endif // IRAINMAN_ENABLE_AUTO_BAN
 
-#ifdef FLYLINKDC_USE_CHECK_CHANGE_TAG
-bool OnlineUser::isTagUpdate(const string& p_tag, bool& p_is_version_change)
-{
-	p_is_version_change = false;
-	if (p_tag != m_tag)
-	{
-		if (!m_tag.empty())
-		{
-			auto l_find_sep = p_tag.find(',');
-			if (l_find_sep != string::npos)
-			{
-				if (m_tag.size() > l_find_sep && m_tag[l_find_sep] == ',')
-				{
-					// Сравним приложение и версию - если не изменились - упростим парсинг тэга позже
-					if (m_tag.compare(0, l_find_sep, p_tag, 0, l_find_sep) == 0)
-						p_is_version_change = false;
-					else
-						p_is_version_change = true;
-				}
-			}
-		}
-		else
-		{
-			p_is_version_change = true; // Первый раз
-		}
-		m_tag = p_tag;
-		return true;
-	}
-	else
-	{
-#ifdef _DEBUG
-		LogManager::message("OnlineUser::isTagUpdate - duplicate tag = " + p_tag + " Hub =" + getClient().getHubUrl() + " user = " + getUser()->getLastNick());
-#endif
-		return false;
-	}
-}
-#endif // FLYLINKDC_USE_CHECK_CHANGE_TAG
-
 
 /**
  * @file

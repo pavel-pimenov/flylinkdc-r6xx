@@ -2865,29 +2865,34 @@ void NmdcHub::myInfoParse(const string& param)
 	}
 #endif // FLYLINKDC_USE_CHECK_CHANGE_MYINFO 
 	string tmpDesc = unescape(param.substr(i, j - i));
-	// Look for a tag...
 	if (!tmpDesc.empty() && tmpDesc[tmpDesc.size() - 1] == '>')
 	{
 		const string::size_type x = tmpDesc.rfind('<');
 		if (x != string::npos)
 		{
-			// Hm, we have something...disassemble it...
 			//dcassert(tmpDesc.length() > x + 2)
 			if (tmpDesc.length() > x + 2 && l_is_only_desc_change == false)
 			{
 				const string l_tag = tmpDesc.substr(x + 1, tmpDesc.length() - x - 2);
 				bool l_is_version_change = true;
-#ifdef FLYLINKDC_USE_CHECK_CHANGE_TAG
-				if (ou->isTagUpdate(l_tag, l_is_version_change))
-#endif
 				{
 					updateFromTag(ou->getIdentity(), l_tag, l_is_version_change); // тяжелая операция с токенами. TODO - оптимизнуть
-					//if (!ou->m_tag_old.empty())
-					//  ou->m_tag_old = l_tag;
+					if (!ou->m_tag_old.empty())
+					     ou->m_tag_old = l_tag;
 				}
-				//ou->m_tag_old = l_tag;
+				ou->m_tag_old = l_tag;
 			}
-			ou->getIdentity().setDescription(tmpDesc.erase(x));
+			const auto l_desc = tmpDesc.erase(x);
+			const auto l_orig_desc = ou->getIdentity().getStoreDescription();
+			if (!l_orig_desc.empty())
+			{
+				ou->getIdentity().setDescription(l_orig_desc);
+			}
+			else
+			{
+				ou->getIdentity().setDescription(l_desc);
+				ou->getIdentity().setStoreDescription(l_desc);
+			}
 		}
 	}
 	else

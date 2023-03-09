@@ -24,6 +24,7 @@
 
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
 #include "UserCommand.h"
 #include "FavoriteUser.h"
@@ -369,7 +370,7 @@ class FavoriteManager : private Speaker<FavoriteManagerListener>,
 		static bool g_recent_dirty;
 		static PreviewApplication::List g_previewApplications;
 		static UserCommand::List g_userCommands;
-#ifdef PPA_USER_COMMANDS_HUBS_SET
+#ifdef FLYLINKDC_USE_USER_COMMANDS_HUBS_SET
 		static std::unordered_set<string> g_userCommandsHubUrl;
 		static bool isHubExistsL(const string& p_Hub)
 		{

@@ -26,6 +26,8 @@
  */
 
 #include <list>
+#include <vector>
+#include <memory>
 
 class FavoriteHubEntry;
 typedef std::vector<FavoriteHubEntry*> FavoriteHubEntryList;

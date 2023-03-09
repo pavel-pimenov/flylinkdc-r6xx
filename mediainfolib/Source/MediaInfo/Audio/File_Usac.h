@@ -131,6 +131,7 @@ public :
     bool drcInstructionsUniDrc              (bool V1=false, bool NoV0=false);
     void channelLayout                      ();
     void UsacConfigExtension                ();
+    void fill_bytes                         (size_t usacConfigExtLength);
     void loudnessInfoSet                    (bool V1=false);
     bool loudnessInfo                       (bool FromAlbum, bool V1=false);
     void loudnessInfoSetExtension           ();
@@ -178,7 +179,6 @@ public :
     #if MEDIAINFO_CONFORMANCE
     enum conformance_flags
     {
-        None,
         Usac,
         BaselineUsac,
         xHEAAC,
@@ -188,16 +188,18 @@ public :
     bitset8                         ConformanceFlags;
     vector<field_value>             ConformanceErrors_Total[ConformanceLevel_Max];
     vector<field_value>             ConformanceErrors[ConformanceLevel_Max];
-    audio_profile                   Profile;
-    int8u                           Level;
+    bool                            Warning_Error;
+    profilelevel_struct             ProfileLevel;
     set<int8u>                      usacExtElementType_Present;
     const std::vector<int64u>*      Immediate_FramePos;
     const bool*                     Immediate_FramePos_IsPresent;
+    const bool*                     IsCmaf;
     const std::vector<stts_struct>* outputFrameLength;
     const size_t*                   FirstOutputtedDecodedSample;
     const std::vector<sgpd_prol_struct>* roll_distance_Values;
     const std::vector<sbgp_struct>* roll_distance_FramePos;
-    bool CheckIf(const bitset8 Flags) { return !ConformanceFlags || !Flags || (ConformanceFlags & Flags); }
+    bool CheckIf(const bitset8 Flags) { return !Flags || (ConformanceFlags & Flags); }
+    void SetProfileLevel(int8u AudioProfileLevelIndication);
     void Fill_Conformance(const char* Field, const char* Value, bitset8 Flags={}, conformance_level Level=Error);
     void Fill_Conformance(const char* Field, const string Value, bitset8 Flags={}, conformance_level Level=Error) { Fill_Conformance(Field, Value.c_str(), Flags, Level); }
     void Fill_Conformance(const char* Field, const char* Value, conformance_flags Flag, conformance_level Level=Error) { Fill_Conformance(Field, Value, bitset8().set(Flag)); }
@@ -206,7 +208,9 @@ public :
     void Merge_Conformance(bool FromConfig=false);
     void Streams_Finish_Conformance();
     struct usac_config;
+    struct usac_frame;
     void Streams_Finish_Conformance_Profile(usac_config& CurrentConf);
+    void numPreRollFrames_Check(usac_config& CurrentConf, int32u numPreRollFrames, const string numPreRollFramesConchString);
     #else
     inline void Streams_Finish_Conformance() {}
     #endif
@@ -325,6 +329,7 @@ public :
         gain_sets                   gainSets;
         #if MEDIAINFO_CONFORMANCE
         size_t                      loudnessInfoSet_Present[2];
+        vector<size_t>              numOutChannels_Lfe;
         #endif
         int32u                      numOutChannels;
         int32u                      sampling_frequency;

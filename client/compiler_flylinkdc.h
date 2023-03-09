@@ -165,7 +165,6 @@ typedef unsigned __int64 uint64_t;
 
 #define FLYLINKDC_USE_TORRENT
 
-
 // #define FLYLINKDC_USE_DEAD_CODE
 // #define FLYLINKDC_USE_DNS
 #define FLYLINKDC_USE_AUTO_FOLLOW
@@ -217,7 +216,6 @@ typedef unsigned __int64 uint64_t;
 # define FLYLINKDC_USE_PROVIDER_RESOURCES
 //# define FLYLINKDC_USE_THEME_MANAGER
 
-// #define IRAINMAN_ENABLE_SLOTS_AND_LIMIT_IN_DESCRIPTION
 #define IRAINMAN_ENABLE_OP_VIP_MODE
 #ifdef IRAINMAN_ENABLE_OP_VIP_MODE
 # define IRAINMAN_ENABLE_OP_VIP_MODE_ON_NMDC
@@ -327,9 +325,6 @@ typedef unsigned __int64 uint64_t;
 #define SCALOLAZ_HUB_MODE
 #define SCALOLAZ_SPEEDLIMIT_DLG // Speed Limit (Up/Dnl) control for StatusBar
 #define SCALOLAZ_MEDIAVIDEO_ICO // HD, SD icons on files in filelist
-#ifdef SCALOLAZ_MEDIAVIDEO_ICO
-//# define PPA_MEDIAVIDEO_BOLD_TEXT  //May configured from Settings (Interface) as bool?
-#endif // SCALOLAZ_MEDIAVIDEO_ICO
 #define SCALOLAZ_CHAT_REFFERING_TO_NICK
 #define SCALOLAZ_BB_COLOR_BUTTON
 

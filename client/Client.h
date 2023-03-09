@@ -430,16 +430,14 @@ class Client : public ClientBase, public Speaker<ClientListener>, public Buffere
 		{
 			return getHubOnlineUser()->getIdentity();
 		}
-		
-		
 		GETSET(string, defpassword, Password);
 		const string getCurrentDescription() const
 		{
 			return getMyIdentity().getDescription();
 		}
-		void setCurrentDescription(const string& descr)
+		void setCurrentDescription(const string& p_descr)
 		{
-			getMyIdentity().setDescription(descr);
+			getMyIdentity().setDescription(p_descr);
 		}
 		GETSET(string, randomTempNick, RandomTempNick)
 		GETSET(string, name, Name)
@@ -464,8 +462,7 @@ class Client : public ClientBase, public Speaker<ClientListener>, public Buffere
 		void clearMessagesCount()
 		{
 			m_message_count = 0;
-		}
-		
+		}		
 		GETSET(string, m_encoding, Encoding);
 		
 		void setRegistered()

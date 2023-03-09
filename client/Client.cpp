@@ -207,9 +207,6 @@ void Client::shutdown()
 
 const FavoriteHubEntry* Client::reloadSettings(bool updateNick)
 {
-#ifdef IRAINMAN_ENABLE_SLOTS_AND_LIMIT_IN_DESCRIPTION
-	string speedDescription;
-#endif
 	const FavoriteHubEntry* hub = FavoriteManager::getFavoriteHubEntry(getHubUrl());
 #ifdef FLYLINKDC_USE_MIMICRYTAG
 	extern bool g_UseStrongDCTag;
@@ -233,15 +230,6 @@ const FavoriteHubEntry* Client::reloadSettings(bool updateNick)
 	else
 #endif
 	{
-#ifdef IRAINMAN_ENABLE_SLOTS_AND_LIMIT_IN_DESCRIPTION
-		if (BOOLSETTING(ADD_TO_DESCRIPTION))
-		{
-			if (BOOLSETTING(ADD_DESCRIPTION_SLOTS))
-				speedDescription += '[' + Util::toString(UploadManager::getFreeSlots()) + ']';
-			if (BOOLSETTING(ADD_DESCRIPTION_LIMIT) && BOOLSETTING(THROTTLE_ENABLE) && ThrottleManager::getInstance()->getUploadLimitInKBytes() != 0)
-				speedDescription += "[L:" + Util::toString(ThrottleManager::getInstance()->getUploadLimitInKBytes()) + "KB]";
-		}
-#endif
 		m_clientName = getFlylinkDCAppCaption();
 		m_clientVersion = A_CLIENT_ID_VERSIONSTRING;
 		if (CompatibilityManager::isWine())
@@ -263,20 +251,11 @@ const FavoriteHubEntry* Client::reloadSettings(bool updateNick)
 		
 		if (!hub->getUserDescription().empty())
 		{
-			setCurrentDescription(
-#ifdef IRAINMAN_ENABLE_SLOTS_AND_LIMIT_IN_DESCRIPTION
-			    speedDescription +
-#endif
-			    hub->getUserDescription());
+			setCurrentDescription(hub->getUserDescription());
 		}
 		else
-		{
-		
-			setCurrentDescription(
-#ifdef IRAINMAN_ENABLE_SLOTS_AND_LIMIT_IN_DESCRIPTION
-			    speedDescription +
-#endif
-			    SETTING(DESCRIPTION));
+		{		
+			setCurrentDescription(SETTING(DESCRIPTION));
 		}
 		
 		if (!hub->getEmail().empty())
@@ -335,11 +314,7 @@ const FavoriteHubEntry* Client::reloadSettings(bool updateNick)
 			checkNick(l_nick);
 			setMyNick(l_nick);
 		}
-		setCurrentDescription(
-#ifdef IRAINMAN_ENABLE_SLOTS_AND_LIMIT_IN_DESCRIPTION
-		    speedDescription +
-#endif
-		    SETTING(DESCRIPTION));
+		setCurrentDescription(SETTING(DESCRIPTION));
 		setCurrentEmail(SETTING(EMAIL));
 #ifdef IRAINMAN_INCLUDE_HIDE_SHARE_MOD
 		setHideShare(false);

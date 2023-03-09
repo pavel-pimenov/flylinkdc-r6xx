@@ -202,23 +202,15 @@ class Identity
 			getUser()->setLastNick(p_nick);
 			change(CHANGES_NICK);
 		}
-#if 0
-		void setNickFast(const string& p_nick) // Используется при первой инициализации
-		{
-			dcassert(!p_nick.empty());
-			m_user_nick = p_nick;
-			m_user_nickT = Text::toT(p_nick);
-		}
-#endif
 		const string& getNick() const
 		{
-			static int g_count = 0;
+			//static int g_count = 0;
 			//dcdebug("[1]const string getNick %s count = %d\r\n", m_user_nick.c_str(), ++g_count);
 			return m_user_nick;
 		}
 		const tstring& getNickT() const
 		{
-			static int g_count = 0;
+			//static int g_count = 0;
 			//dcdebug("[2]const tstring getNickT %s count = %d\r\n", m_user_nick.c_str(), ++g_count);
 			return m_user_nickT;
 		}
@@ -276,7 +268,16 @@ class Identity
 		}
 		string getCountry() const;
 		string getIpAsString() const;
+		void setStoreDescription(const string& p_desc)
+		{
+			m_orig_description = p_desc;
+		}
+		string getStoreDescription() const
+		{
+			return m_orig_description;
+		}
 	private:
+		string m_orig_description;
 		string m_user_nick;
 		tstring m_user_nickT;
 		boost::asio::ip::address_v4 m_ip; // "I4"
@@ -994,32 +995,10 @@ class OnlineUser :  public UserInfoBase
 	private:
 		Identity m_identity;
 		ClientBase& m_client;
-#ifdef FLYLINKDC_USE_CHECK_CHANGE_TAG
-		string m_tag;
-#endif
 		bool m_is_first_find;
-#ifdef FLYLINKDC_USE_CHECK_CHANGE_TAG
-	public:
-		bool isTagUpdate(const string& p_tag, bool& p_is_version_change);
 		string m_tag_old;
-#endif
 		
 };
-
-// http://stackoverflow.com/questions/17016175/c-unordered-map-using-a-custom-class-type-as-the-key
-/*
-namespace std
-{
-template <>
-struct hash<OnlineUserPtr>
-{
-    size_t operator()(const OnlineUserPtr & x) const
-    {
-        return ((size_t)(&(*x))) / sizeof(OnlineUser);
-    }
-};
-}
-*/
 
 
 #endif /* ONLINEUSER_H_ */
