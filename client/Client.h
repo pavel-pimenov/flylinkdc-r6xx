@@ -431,18 +431,7 @@ class Client : public ClientBase, public Speaker<ClientListener>, public Buffere
 			return getHubOnlineUser()->getIdentity();
 		}
 		GETSET(string, defpassword, Password);
-		const string getStoreDescription() const
-		{
-			return getMyIdentity().getStoreDescription();
-		}
-		const string getCurrentDescription() const
-		{
-			return getMyIdentity().getDescription();
-		}
-		void setCurrentDescription(const string& p_descr)
-		{
-			getMyIdentity().setDescription(p_descr);
-		}
+
 		GETSET(string, randomTempNick, RandomTempNick)
 		GETSET(string, name, Name)
 		GETSET(string, rawOne, RawOne);
@@ -466,7 +455,7 @@ class Client : public ClientBase, public Speaker<ClientListener>, public Buffere
 		void clearMessagesCount()
 		{
 			m_message_count = 0;
-		}		
+		}
 		GETSET(string, m_encoding, Encoding);
 		
 		void setRegistered()
@@ -488,6 +477,16 @@ class Client : public ClientBase, public Speaker<ClientListener>, public Buffere
 		{
 			return getMyIdentity().getEmail();
 		}
+
+		string getCurrentDescription() const
+		{
+			return m_ClientDescription;
+		}
+		void setCurrentDescription(const string& desc)
+		{
+			m_ClientDescription = desc;
+		}
+
 		void setCurrentEmail(const string& email)
 		{
 			getMyIdentity().setEmail(email);
@@ -512,12 +511,11 @@ class Client : public ClientBase, public Speaker<ClientListener>, public Buffere
 		
 #endif
 	private:
-#ifdef FLYLINKDC_USE_MIMICRYTAG
-		bool m_is_override_name;
-#endif
+		string m_ClientDescription;
+
 	protected:
 		string getTagVersion() const;
-		
+
 #ifdef IRAINMAN_ENABLE_AUTO_BAN
 		virtual bool hubIsNotSupportSlot() const = 0;
 #endif // IRAINMAN_ENABLE_AUTO_BAN

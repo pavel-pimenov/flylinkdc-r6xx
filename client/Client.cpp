@@ -48,9 +48,6 @@ Client::Client(const string& p_HubURL, char p_separator, bool p_is_secure,
 	m_exclChecks(false),
 	m_message_count(0),
 	m_is_hide_share(0),
-#ifdef FLYLINKDC_USE_MIMICRYTAG
-	m_is_override_name(false),
-#endif
 	m_is_fly_support_hub(false),
 	m_vip_icon_index(0),
 	m_proto(p_proto),
@@ -208,27 +205,6 @@ void Client::shutdown()
 const FavoriteHubEntry* Client::reloadSettings(bool updateNick)
 {
 	const FavoriteHubEntry* hub = FavoriteManager::getFavoriteHubEntry(getHubUrl());
-#ifdef FLYLINKDC_USE_MIMICRYTAG
-	extern bool g_UseStrongDCTag;
-	m_is_override_name = (hub && hub->getOverrideId() || g_UseStrongDCTag);
-	if (m_is_override_name) // mimicry tag
-	{
-		if (g_UseStrongDCTag)
-		{
-			m_clientName    = "StrgDC++";
-			m_clientVersion = "2.42";
-		}
-		else
-		{
-			if (hub)
-			{
-				m_clientName = hub->getClientName();
-				m_clientVersion = hub->getClientVersion();
-			}
-		}
-	}
-	else
-#endif
 	{
 		m_clientName = getFlylinkDCAppCaption();
 		m_clientVersion = A_CLIENT_ID_VERSIONSTRING;
@@ -254,7 +230,7 @@ const FavoriteHubEntry* Client::reloadSettings(bool updateNick)
 			setCurrentDescription(hub->getUserDescription());
 		}
 		else
-		{		
+		{
 			setCurrentDescription(SETTING(DESCRIPTION));
 		}
 		

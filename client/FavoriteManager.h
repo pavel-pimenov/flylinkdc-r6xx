@@ -68,16 +68,6 @@ class FavoriteManager : private Speaker<FavoriteManagerListener>,
 		{
 			Speaker<FavoriteManagerListener>::removeListener(aListener);
 		}
-#ifdef FLYLINKDC_USE_MIMICRYTAG
-		struct mimicrytag
-		{
-			mimicrytag(char* p_tag, char* p_ver) : tag(p_tag), version(p_ver) { }
-			const char* tag;
-			const char* version;
-		};
-		
-		static const mimicrytag g_MimicryTags[];
-#endif
 		static void splitClientId(const string& p_id, string& p_name, string& p_version);
 		static string createClientId(const string& p_name, const string& p_version, const string& p_adress)
 		{

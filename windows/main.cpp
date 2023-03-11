@@ -44,97 +44,6 @@
 #include "../FlyFeatures/flyfeatures.h"
 
 
-#ifdef USE_CRASHRPT
-#include "DbgHelp.h"
-#include "../doctor-dump/CrashRpt.h"
-
-template<typename T>
-static T getFilePath(const T& path)
-{
-	const auto i = path.rfind('\\');
-	return (i != string_t::npos) ? path.substr(0, i + 1) : path;
-}
-
-crash_rpt::ApplicationInfo* GetApplicationInfo()
-{
-	static crash_rpt::ApplicationInfo appInfo;
-	appInfo.ApplicationInfoSize = sizeof(appInfo);
-	appInfo.ApplicationGUID =
-	
-#ifdef FLYLINKDC_BETA
-	    "634CDB33-5B78-4B94-8CD6-BAFB391D2EB7";
-#else
-	    "13DC1A46-3AD9-43F5-B5D2-C402AC10657B";
-#endif
-	    
-#ifdef _WIN64
-	appInfo.Prefix = "flylinkdc-x64";             // Prefix that will be used with the dump name: YourPrefix_v1.v2.v3.v4_YYYYMMDD_HHMMSS.mini.dmp.
-	appInfo.AppName = L"FlylinkDC++ x64";         // Application name that will be used in message box.
-#else
-	appInfo.Prefix = "flylinkdc-x86";             // Prefix that will be used with the dump name: YourPrefix_v1.v2.v3.v4_YYYYMMDD_HHMMSS.mini.dmp.
-	appInfo.AppName = L"FlylinkDC++";             // Application name that will be used in message box.
-#endif
-	appInfo.Company = L"FlylinkDC++ developers";  // Company name that will be used in message box.
-	appInfo.V[0] = 7;
-	appInfo.V[1] = 7;
-	appInfo.V[2] = VERSION_NUM;
-	appInfo.V[3] = REVISION_NUM;
-	return &appInfo;
-}
-
-/*
-TODO - рассмотреть возможность использовать штатную dbghelp.dll
-чтобы не забивать дистр лишней dll-кой
-
- WCHAR dbghelpPath[MAX_PATH];
-ExpandEnvironmentStringsW(L"%SystemRoot%\\System32\\dbghelp.dll", dbghelpPath, _countof(dbghelpPath));
-
-printf("%ls\n", dbghelpPath);
-
-if (NULL == LoadLibraryW(dbghelpPath))
-printf("failed\n");
-else
-printf("succeeded\n");
-
-TODO-2 // Добавить атрибуты по mediainfo + что+то еще
-    g_crashRpt.AddUserInfoToReport(L"Test-key",L"Test-Value");
-*/
-
-crash_rpt::HandlerSettings* GetHandlerSettings()
-{
-#ifndef _WIN64
-#error "r6xx support only x64"
-#endif
-	static TCHAR g_path_sender[MAX_PATH] = {0};
-	static TCHAR g_path_dbhelp[MAX_PATH] = {0};
-	::GetModuleFileName(NULL, g_path_sender, MAX_PATH);
-	wcscpy(g_path_dbhelp, g_path_sender);
-	auto l_tslash = wcsrchr(g_path_sender, '\\');
-	if (l_tslash)
-	{
-		l_tslash++;
-		wcscpy(l_tslash, L"sendrpt-x64.exe");
-		l_tslash = wcsrchr(g_path_dbhelp, '\\');
-		l_tslash++;
-		wcscpy(l_tslash, L"dbghelp-x64.dll");
-	}
-	static crash_rpt::HandlerSettings g_handlerSettings;
-	g_handlerSettings.HandlerSettingsSize = sizeof(g_handlerSettings);
-	g_handlerSettings.OpenProblemInBrowser = TRUE;
-	g_handlerSettings.SendRptPath = g_path_sender;
-	g_handlerSettings.DbgHelpPath = g_path_dbhelp;
-	return &g_handlerSettings;
-}
-
-//crash_rpt::CrashRpt g_crashRpt(
-//    L"crashrpt-x64.dll",
-//    GetApplicationInfo(),
-//    GetHandlerSettings());
-
-#endif
-
-bool g_UseStrongDCTag = false;
-
 CAppModule _Module;
 static void sendCmdLine(HWND hOther, LPTSTR lpstrCmdLine)
 {
@@ -549,14 +458,6 @@ static int Run(LPTSTR /*lpstrCmdLine*/ = NULL, int nCmdShow = SW_SHOWDEFAULT)
 	return nRet;
 }
 
-#ifdef FLYLINKDC_BETA
-static void crash_test_doctor_dump()
-{
-#ifndef _DEBUG
-	*((int*)0) = 0;
-#endif
-}
-#endif
 namespace leveldb
 {
 //extern void LevelDBDestoyModule();
@@ -584,7 +485,6 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
 	extern bool g_UseWALJournal;
 	extern bool g_EnableSQLtrace;
 	extern bool g_UseSynchronousOff;
-	extern bool g_UseStrongDCTag;
 	extern bool g_DisableUserStat;
 	if (_tcsstr(lpstrCmdLine, _T("/nowal")) != NULL)
 		g_DisableSQLJournal = true;
@@ -621,15 +521,6 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
 		CompatibilityManager::setWine(true);
 	if (_tcsstr(lpstrCmdLine, _T("/magnet")) != NULL)
 		l_is_magnet = true;
-		
-#ifdef FLYLINKDC_BETA
-	if (_tcsstr(lpstrCmdLine, _T("/strongdc")) != NULL)
-		g_UseStrongDCTag = true;
-	if (_tcsstr(lpstrCmdLine, _T("/crash-test-doctor-dump")) != NULL)
-	{
-		crash_test_doctor_dump();
-	}
-#endif
 	if (_tcsstr(lpstrCmdLine, _T("/c")) != NULL)
 	{
 		l_is_multipleInstances = true;

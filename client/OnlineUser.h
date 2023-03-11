@@ -268,16 +268,7 @@ class Identity
 		}
 		string getCountry() const;
 		string getIpAsString() const;
-		void setStoreDescription(const string& p_desc)
-		{
-			m_orig_description = p_desc;
-		}
-		string getStoreDescription() const
-		{
-			return m_orig_description;
-		}
 	private:
-		string m_orig_description;
 		string m_user_nick;
 		tstring m_user_nickT;
 		boost::asio::ip::address_v4 m_ip; // "I4"

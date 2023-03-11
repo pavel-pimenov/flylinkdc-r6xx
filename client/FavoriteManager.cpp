@@ -53,22 +53,6 @@ StringSet FavoriteManager::g_sync_hub_isp_delete;
 #endif
 StringSet FavoriteManager::g_redirect_hubs;
 
-#ifdef FLYLINKDC_USE_MIMICRYTAG
-const FavoriteManager::mimicrytag FavoriteManager::g_MimicryTags[] =
-{
-	// Up from http://ru.wikipedia.org/wiki/DC%2B%2B
-	FavoriteManager::mimicrytag("++", DCVERSIONSTRING),     // Version from core.
-	FavoriteManager::mimicrytag("EiskaltDC++", "2.2.9"),    // 24 feb 2015 http://code.google.com/p/eiskaltdc/
-	FavoriteManager::mimicrytag("AirDC++", "2.91"),         // 21 feb 2015 http://www.airdcpp.net/
-	FavoriteManager::mimicrytag("RSX++", "1.21"),           // 14 apr 2011 http://rsxplusplus.sourceforge.net/
-	FavoriteManager::mimicrytag("ApexDC++", "1.6.2"),       // 20 aug 2014 http://www.apexdc.net/changes/ (http://forums.apexdc.net/topic/4670-apexdc-160-available-for-download/)
-	FavoriteManager::mimicrytag("PWDC++", "0.41"),          // 29th Dec 2005: Project discontinued
-	FavoriteManager::mimicrytag("IceDC++", "1.01a"),        // 17 jul 2009 http://sourceforge.net/projects/icedc/
-	FavoriteManager::mimicrytag("StrgDC++", "2.42"),        // latest public beta (project possible dead) http://strongdc.sourceforge.net/download.php?lang=eng
-	FavoriteManager::mimicrytag("Lama", "500"),     // http://lamalama.tv
-	FavoriteManager::mimicrytag(nullptr, nullptr),          // terminating, don't delete this
-};
-#endif
 
 FavoriteManager::FavoriteManager()
 {
@@ -792,9 +776,6 @@ void FavoriteManager::save_favorites()
 				xml.addChildAttrib("SearchIntervalPassive", Util::toString((*i)->getSearchIntervalPassive()));
 				xml.addChildAttribIfNotEmpty("ClientName", (*i)->getClientName());
 				xml.addChildAttribIfNotEmpty("ClientVersion", (*i)->getClientVersion());
-#ifdef FLYLINKDC_USE_MIMICRYTAG
-				xml.addChildAttrib("OverrideId", Util::toString((*i)->getOverrideId()));
-#endif
 				xml.addChildAttribIfNotEmpty("Group", (*i)->getGroup());
 #ifdef IRAINMAN_ENABLE_CON_STATUS_ON_FAV_HUBS
 				xml.addChildAttrib("Status", (*i)->getConnectionStatus().getStatus());
@@ -1329,9 +1310,6 @@ void FavoriteManager::load(SimpleXML& aXml
 				const bool l_SuppressChatAndPM = aXml.getBoolChildAttrib("SuppressChatAndPM");
 				e->setSuppressChatAndPM(l_SuppressChatAndPM);
 				
-#ifdef FLYLINKDC_USE_MIMICRYTAG
-				const bool l_isOverrideId = Util::toInt(aXml.getChildAttrib("OverrideId")) != 0;
-#endif
 				const string l_clientName = aXml.getChildAttrib("ClientName");
 				const string l_clientVersion = aXml.getChildAttrib("ClientVersion");
 				
@@ -1416,9 +1394,6 @@ void FavoriteManager::load(SimpleXML& aXml
 						e->setClientName(l_clientName);
 						e->setClientVersion(l_clientVersion);
 					}
-#ifdef FLYLINKDC_USE_MIMICRYTAG
-					e->setOverrideId(l_isOverrideId);
-#endif
 					e->setGroup(l_Group);
 #ifdef IRAINMAN_ENABLE_CON_STATUS_ON_FAV_HUBS
 					e->setSavedConnectionStatus(Util::toInt(aXml.getChildAttrib("Status")),
@@ -1462,10 +1437,6 @@ void FavoriteManager::load(SimpleXML& aXml
 							e->setSuppressChatAndPM(l_SuppressChatAndPM);
 							e->setClientName(l_clientName);
 							e->setClientVersion(l_clientVersion);
-#ifdef FLYLINKDC_USE_MIMICRYTAG
-							e->setOverrideId(l_isOverrideId);
-#endif
-							
 							l_is_needSave = true;
 						}
 					}
@@ -1481,9 +1452,6 @@ void FavoriteManager::load(SimpleXML& aXml
 						l_HubEntry->setSuppressChatAndPM(l_SuppressChatAndPM);
 						l_HubEntry->setClientName(l_clientName);
 						l_HubEntry->setClientVersion(l_clientVersion);
-#ifdef FLYLINKDC_USE_MIMICRYTAG
-						l_HubEntry->setOverrideId(l_isOverrideId);
-#endif
 						l_HubEntry->setGroup("ISP");
 					}
 					if (l_ISPDelete)

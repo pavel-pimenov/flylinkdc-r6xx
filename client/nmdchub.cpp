@@ -2329,16 +2329,7 @@ void NmdcHub::myInfo(bool p_always_send, bool p_is_force_passive)
 		                    + Util::toString(ShareManager::get_cache_size_file_not_exists_set()) + "/"
 		                    + Util::toString(ShareManager::get_cache_file_map());
 	}
-	auto l_desc = fromUtf8Chat(escape(getStoreDescription()));
-	if (l_desc.empty())
-	{
-		l_desc = fromUtf8Chat(escape(getCurrentDescription()));
-	}
-	if (l_desc.empty())
-	{
-		l_desc = fromUtf8Chat(escape(SETTING(DESCRIPTION)));
-		dcassert(0);
-	}
+	auto l_desc = fromUtf8Chat(escape(getCurrentDescription()));
 	const int l_sizeMyInfo = _snprintf(&l_currentMyInfo[0], l_currentMyInfo.size() - 2, "$MyINFO $ALL %s %s<%s,M:%c,H:%s,S:%d"
 	                                   ">$ $%s%c$%s$",
 	                                   getMyNickFromUtf8().c_str(),
@@ -2880,7 +2871,6 @@ void NmdcHub::myInfoParse(const string& param)
 		const string::size_type x = tmpDesc.rfind('<');
 		if (x != string::npos)
 		{
-			//dcassert(tmpDesc.length() > x + 2)
 			if (tmpDesc.length() > x + 2 && l_is_only_desc_change == false)
 			{
 				const string l_tag = tmpDesc.substr(x + 1, tmpDesc.length() - x - 2);
@@ -2888,27 +2878,18 @@ void NmdcHub::myInfoParse(const string& param)
 				{
 					updateFromTag(ou->getIdentity(), l_tag, l_is_version_change); // тяжелая операция с токенами. TODO - оптимизнуть
 					if (!ou->m_tag_old.empty())
-					     ou->m_tag_old = l_tag;
+						ou->m_tag_old = l_tag;
 				}
 				ou->m_tag_old = l_tag;
 			}
 			const auto l_desc = tmpDesc.erase(x);
-			const auto l_orig_desc = ou->getIdentity().getStoreDescription();
-			if (!l_orig_desc.empty())
-			{
-				ou->getIdentity().setDescription(l_orig_desc);
-			}
-			else
-			{
-				ou->getIdentity().setDescription(l_desc);
-				ou->getIdentity().setStoreDescription(l_desc);
-			}
+			ou->getIdentity().setDescription(l_desc);
 		}
 	}
 	else
 	{
-		ou->getIdentity().setDescription(tmpDesc); //
-		dcassert(param.size() > (j + 2)); //
+		ou->getIdentity().setDescription(tmpDesc);
+		dcassert(param.size() > (j + 2));
 		if (param.size() > j + 3)
 		{
 			if (param[j] == '$')

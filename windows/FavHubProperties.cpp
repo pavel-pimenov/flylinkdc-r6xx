@@ -107,31 +107,13 @@ LRESULT FavHubProperties::OnInitDialog(UINT, WPARAM, LPARAM, BOOL&)
 	SetDlgItemText(IDC_FAV_SEARCH_INTERVAL_BOX, Util::toStringW(entry->getSearchInterval()).c_str());
 	SetDlgItemText(IDC_FAV_SEARCH_PASSIVE_INTERVAL_BOX, Util::toStringW(entry->getSearchIntervalPassive()).c_str());
 	
-	SetDlgItemText(IDC_WIZARD_NICK_RND, CTSTRING(WIZARD_NICK_RND)); // Rand Nick button
-	SetDlgItemText(IDC_WIZARD_NICK_RND2, CTSTRING(DEFAULT));        // Default Nick button
+	SetDlgItemText(IDC_WIZARD_NICK_RND, CTSTRING(WIZARD_NICK_RND));
+	SetDlgItemText(IDC_WIZARD_NICK_RND2, CTSTRING(DEFAULT));
 	
-#ifdef FLYLINKDC_USE_MIMICRYTAG
-	CComboBox IdCombo;
-	IdCombo.Attach(GetDlgItem(IDC_CLIENT_ID_BOX));
-	const bool l_isAdc = Util::isAdcHub(entry->getServer());
-	for (const FavoriteManager::mimicrytag* i = &FavoriteManager::g_MimicryTags[0]; i->tag; ++i)
-	{
-		IdCombo.AddString(Text::toT(FavoriteManager::createClientId(i->tag, i->version, l_isAdc)).c_str());
-	}
-	IdCombo.Detach();
-
-	if (!entry->getClientName().empty())
-		SetDlgItemText(IDC_CLIENT_ID_BOX, Text::toT(FavoriteManager::createClientId(entry->getClientName(), entry->getClientVersion(), l_isAdc)).c_str());
-		
-	CheckDlgButton(IDC_CLIENT_ID, entry->getOverrideId() ? BST_CHECKED : BST_UNCHECKED);
-	BOOL x;
-	OnChangeId(BN_CLICKED, IDC_CLIENT, 0, x);
-#else
 	::EnableWindow(GetDlgItem(IDC_CLIENT_ID), FALSE);
 
-#endif
 	::EnableWindow(GetDlgItem(IDC_EXCLUSIVE_HUB), FALSE);
-
+	
 	CComboBox combo;
 	combo.Attach(GetDlgItem(IDC_FAVGROUP_BOX));
 	combo.AddString(_T("---"));
@@ -287,16 +269,7 @@ LRESULT FavHubProperties::OnCloseCmd(WORD /*wNotifyCode*/, WORD wID, HWND /*hWnd
 			entry->setGroup(Text::fromT(text));
 		}
 		combo.Detach();
-		
-#ifdef FLYLINKDC_USE_MIMICRYTAG
-		GET_TEXT(IDC_CLIENT_ID_BOX, buf);
-		string l_clientName, l_clientVersion;
-		FavoriteManager::splitClientId(Text::fromT(buf), l_clientName, l_clientVersion);
-		entry->setClientName(l_clientName);
-		entry->setClientVersion(l_clientVersion);
-		entry->setOverrideId(IsDlgButtonChecked(IDC_CLIENT_ID) == BST_CHECKED);
-#endif		
-		
+	
 		int ct = -1;
 		if (IsDlgButtonChecked(IDC_DEFAULT))
 			ct = 0;

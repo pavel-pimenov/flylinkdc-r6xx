@@ -183,9 +183,6 @@ class FavoriteHubEntry
 			showJoins(false), exclChecks(false), mode(0),
 			searchInterval(SETTING(MINIMUM_SEARCH_INTERVAL)),
 			searchIntervalPassive(SETTING(MINIMUM_SEARCH_PASSIVE_INTERVAL)),
-#ifdef FLYLINKDC_USE_MIMICRYTAG
-			overrideId(0),
-#endif
 			headerSort(-1), headerSortAsc(true), suppressChatAndPM(false),
 			autobanAntivirusIP(false), autobanAntivirusNick(false)
 		{
@@ -243,12 +240,7 @@ class FavoriteHubEntry
 		GETSET(string, opChat, OpChat);
 		GETSET(string, clientName, ClientName);
 		GETSET(string, clientVersion, ClientVersion);
-#ifdef FLYLINKDC_USE_MIMICRYTAG
-		GETSET(bool, overrideId, OverrideId);
-#endif
-		
 		GETSET(string, antivirusCommandIP, AntivirusCommandIP);
-		
 		GETSET(uint32_t, searchInterval, SearchInterval);
 		GETSET(uint32_t, searchIntervalPassive, SearchIntervalPassive);
 		GETSET(string, encoding, Encoding);
