@@ -229,8 +229,7 @@ bool is_downloading_state(int const st)
 	{
 		if (p.flags & torrent_flags::need_save_resume)
 		{
-			m_need_save_resume_data |= torrent_handle::only_if_modified
-				| torrent_handle::if_metadata_changed;
+			m_need_save_resume_data |= torrent_handle::if_metadata_changed;
 		}
 
 		// we cannot log in the constructor, because it relies on shared_from_this
@@ -9360,8 +9359,7 @@ namespace {
 		}
 
 		auto conditions = flags & (
-			torrent_handle::only_if_modified
-			| torrent_handle::if_counters_changed
+			torrent_handle::if_counters_changed
 			| torrent_handle::if_download_progress
 			| torrent_handle::if_config_changed
 			| torrent_handle::if_state_changed
@@ -11846,7 +11844,10 @@ namespace {
 		// if we don't have any metadata, stop here
 
 		st->queue_position = queue_position();
+#if TORRENT_ABI_VERSION < 4
 		st->need_save_resume = bool(m_need_save_resume_data);
+#endif
+		st->need_save_resume_data = m_need_save_resume_data;
 #if TORRENT_ABI_VERSION == 1
 		st->ip_filter_applies = m_apply_ip_filter;
 #endif
