@@ -1,458 +1,495 @@
-{\rtf1\ansi\ansicpg1251\deff0\nouicompat\deflang1049\deflangfe1049{\fonttbl{\f0\fswiss\fprq2\fcharset204 Arial CYR;}{\f1\fnil\fcharset0 Calibri;}{\f2\fswiss\fprq2\fcharset0 Arial;}{\f3\fswiss\fprq2\fcharset204 Arial;}{\f4\fnil\fcharset204 Arial;}}
-{\colortbl ;\red247\green150\blue70;\red146\green208\blue80;\red255\green0\blue0;\red0\green0\blue255;\red255\green255\blue255;\red0\green102\blue204;}
+{\rtf1\ansi\ansicpg1251\deff0\nouicompat\deflang1049\deflangfe1049{\fonttbl{\f0\fswiss\fprq2\fcharset204 Arial CYR;}{\f1\fnil\fcharset0 Calibri;}{\f2\fnil\fcharset0 Arial;}{\f3\fnil\fcharset204 Arial;}{\f4\fswiss\fprq2\fcharset0 Arial;}{\f5\fswiss\fprq2\fcharset204 Arial;}}
+{\colortbl ;\red247\green150\blue70;\red146\green208\blue80;\red255\green0\blue0;\red255\green255\blue255;\red0\green0\blue255;}
 {\*\generator Riched20 10.0.19041}\viewkind4\uc1 
-\pard\nowidctlpar\cf1\kerning1\b\f0\fs32 Flylink\cf2 DC++\cf3  \cf0\b0 r\f1\lang1033 601\f0\lang1049  \cf3\b\f2\fs16\lang1033 beta\f0\lang1049\par
+\pard\nowidctlpar\cf1\kerning1\b\f0\fs32 Flylink\cf2 DC++\cf3  \cf0\b0 r\f1\lang1033 601\par
 
-\pard\cf0\b0\fs18\'d1\'ea\'e0\'f7\'e0\'f2\'fc, \'ef\'ee\'f0\'f3\'e3\'e0\'f2\'fc, \'e8\'eb\'e8 \'ee\'e1\'f1\'f3\'e4\'e8\'f2\'fc \'e1\'e5\'f2\'ea\'f3 :\f2\lang1033  {{\field{\*\fldinst{HYPERLINK https://flylinkdc.blogspot.com/search/label/beta }}{\fldrslt{https://flylinkdc.blogspot.com/search/label/beta\ul0\cf0}}}}\f0\fs18\lang1049\par
-\f3\'c7\f0\'e0\'ec\'e5\'f7\'e0\'ed\'e8\'ff \'ea \'ef\'f0\'ee\'e3\'f0\'e0\'ec\'ec\'e5 {\highlight5\kerning0\f4{\field{\*\fldinst{HYPERLINK https://t.me/flylinkdc_team }}{\fldrslt{https://t.me/flylinkdc_team\ul0\cf0}}}}\cf6\highlight5\kerning0\ul\f4\fs18\par
-\cf0\highlight0\kerning1\ulnone\b\f0\par
-=============================================\par
-\f2\fs16\lang1033 26.03.2023\par
-\b0\f3\lang1049 * \f2\lang1033 libtorrent\par
+\pard {\highlight4\kerning0\f2\fs18{\field{\*\fldinst{HYPERLINK https://\f3 flylinkdc.blogspot.com }}{\fldrslt{https://\f3\lang1049 flylinkdc.blogspot.com\ul0\cf0\f3 }}}}\highlight4\kerning0\f2\fs18   {\f3\lang1049{\field{\*\fldinst{HYPERLINK https://t.me/flylinkdc_team }}{\fldrslt{https://t.me/flylinkdc_team\ul0\cf0}}}}\f2\fs18  \f3\lang1049\par
+\highlight0\kerning1\b\f0 =============================================\par
+\f4\fs16\lang1033 26.03.2023\par
+\b0\f5\lang1049 * \f4\lang1033 libtorrent\par
+* mediainfo 23.03, 2023-03-29\par
++ DTS: Detection of IMAX Enhanced\par
++ MOV/MP4: Add HDR Vivid format support\par
++ HEVC: Add HDR Vivid format support\par
++ MXF/PCM: detect silent tracks (full parsing only)\par
++ Monkey's Audio: support of 32-bit files, show version\par
++ MP4 audioProfileLevelIndication: add Low Delay AAC v2 Profile\par
++ MP4/MOV: support of FLAC\par
++ MOV/MP4: support of TTML with images\par
++ MPEG-7: 3 modes (strict, relaxed, extended)\par
++ MPEG-7: more sub-termIDs (AudioPresentationCS)\par
++ MPEG-7: Add more PublicIdentifiers\par
++ MPEG-7: more sub-termIDs (MP4, WAV, AVC, ProRes)\par
++ AVI/WAV: display of the kind of fmt chunk\par
++ AVC: detection of more profiles\par
++ ChannelLayout: difference between M (Mono) and C (Center, part of multichannel content)\par
++ AC-3: detection of channel layout also for encrypted content\par
++ AC-4 and MPEG-H 3D Audio: Merged channel layout (all sub-streams together)\par
++ DTS: Detection of real bit depth e.g. 20 instead of only byte aligned bit depth (16 or 24)\par
++ FLAC: support of BWF in Vorbis comments\par
++ N19/STL: codepage, subtitle count, max line per subtitle, more metadata\par
++ ISAN: detection of descriptions referencing an ISAN\par
++ AAC: detection of eSBR (and fix of random wrong PS detection)\par
++ Extract of time codes, XML format, currently only for for MXF\par
+x MP4/MOV: fix freezes with some unknown udta atoms\par
+x FLV: fix duration of 0 with some buggy files\par
+x AVC: fix PTS of last frame\par
+x FFV1: fix potential crash with malformed files\par
+x AV1: add HDR format line and fix HDR values\par
+x AAC and WAV: fix of channel layout display for 5 front channels\par
+x AC-4: Tl/Tr mapped to to Tsl/Tsr\par
+x FLAC: fix sampling count\par
+x ID3v2: fix Genre not showing ID 0 (Blues)\par
+x MPEG-7: VBR fix\par
+x JSON/XML: Remove minus sign from element names\par
+x Normalization of date/time in report\par
 \b\f0\fs18\lang1049 =============================================\par
-\f2\fs16\lang1033 23.03.2023\par
-\b0\f3\lang1049 * \f2\lang1033 sqlite 3.41.2\f3\lang1049\par
-\b\f0\fs18 =============================================\par
-\f3\fs16 1\f2\lang1033 9.03.2023\par
-\b0\f3\lang1049 * \f2\lang1033 libtorrent\par
+\f4\fs16\lang1033 26.03.2023\par
+\b0\f5\lang1049 * \f4\lang1033 libtorrent\par
 \b\f0\fs18\lang1049 =============================================\par
-\f3\fs16 12\f2\lang1033 .03.2023\par
-\b0\f3\lang1049 * \f2\lang1033 sqlite\f3\lang1049\par
+\f4\fs16\lang1033 23.03.2023\par
+\b0\f5\lang1049 * \f4\lang1033 sqlite 3.41.2\f5\lang1049\par
 \b\f0\fs18 =============================================\par
-\f3\fs16 11\f2\lang1033 .03.2023\par
-\b0\f3\lang1049 * \'c8\'f1\'ef\'f0\'e0\'e2\'eb\'e5\'ed\'ee \'e4\'f3\'e1\'eb\'e8\'f0\'ee\'e2\'e0\'ed\'e8\'e5 \'ee\'ef\'e8\'f1\'e0\'ed\'e8\'ff - \'f7\'e0\'f1\'f2\'fc 3\par
+\f5\fs16 1\f4\lang1033 9.03.2023\par
+\b0\f5\lang1049 * \f4\lang1033 libtorrent\par
+\b\f0\fs18\lang1049 =============================================\par
+\f5\fs16 12\f4\lang1033 .03.2023\par
+\b0\f5\lang1049 * \f4\lang1033 sqlite\f5\lang1049\par
 \b\f0\fs18 =============================================\par
-\f2\fs16\lang1033 09.03.2023\par
-\b0\f3\lang1049 * \'c8\'f1\'ef\'f0\'e0\'e2\'eb\'e5\'ed\'ee \'e4\'f3\'e1\'eb\'e8\'f0\'ee\'e2\'e0\'ed\'e8\'e5 \'ee\'ef\'e8\'f1\'e0\'ed\'e8\'ff - \'f7\'e0\'f1\'f2\'fc 2\par
+\f5\fs16 11\f4\lang1033 .03.2023\par
+\b0\f5\lang1049 * \'c8\'f1\'ef\'f0\'e0\'e2\'eb\'e5\'ed\'ee \'e4\'f3\'e1\'eb\'e8\'f0\'ee\'e2\'e0\'ed\'e8\'e5 \'ee\'ef\'e8\'f1\'e0\'ed\'e8\'ff - \'f7\'e0\'f1\'f2\'fc 3\par
+\b\f0\fs18 =============================================\par
+\f4\fs16\lang1033 09.03.2023\par
+\b0\f5\lang1049 * \'c8\'f1\'ef\'f0\'e0\'e2\'eb\'e5\'ed\'ee \'e4\'f3\'e1\'eb\'e8\'f0\'ee\'e2\'e0\'ed\'e8\'e5 \'ee\'ef\'e8\'f1\'e0\'ed\'e8\'ff - \'f7\'e0\'f1\'f2\'fc 2\par
 * snappy\par
 \b\f0\fs18 ==================================================\par
-\f2\fs16\lang1033 0\f3\lang1049 5\f2\lang1033 .03.2023\par
-\b0 * \f3\lang1049\'c8\'f1\'ef\'f0\'e0\'e2\'eb\'e5\'ed \'e1\'e5\'f1\'ea\'ee\'ed\'e5\'f7\'ed\'fb\'e9 \'f0\'ee\'f1\'f2 \'ee\'ef\'e8\'f1\'e0\'ed\'e8\'ff \'ef\'f0\'e8 \'e4\'ee\'e1\'e0\'e2\'eb\'e5\'ed\'e8\'ff \'ef\'f0\'e5\'f4\'e8\'ea\'f1\'e0 \par
+\f4\fs16\lang1033 0\f5\lang1049 5\f4\lang1033 .03.2023\par
+\b0 * \f5\lang1049\'c8\'f1\'ef\'f0\'e0\'e2\'eb\'e5\'ed \'e1\'e5\'f1\'ea\'ee\'ed\'e5\'f7\'ed\'fb\'e9 \'f0\'ee\'f1\'f2 \'ee\'ef\'e8\'f1\'e0\'ed\'e8\'ff \'ef\'f0\'e8 \'e4\'ee\'e1\'e0\'e2\'eb\'e5\'ed\'e8\'ff \'ef\'f0\'e5\'f4\'e8\'ea\'f1\'e0 \par
   \'f1\'ee \'f1\'f2\'ee\'f0\'ee\'ed\'fb \'f5\'e0\'e1\'e0 (\'f1\'ef\'e0\'f1\'e8\'e1\'ee RoleX)\par
-\b\f0\fs18 =============== \f2\lang1033 r601\f3\lang1049 -\f2\lang1033 beta-23125 \f0\lang1049 ====================\par
-\f2\fs16\lang1033 02.03.2023\par
-\b0\f3\lang1049 * libtorrent\par
-* \f2\lang1033 mediainfo\par
-\b\f0\fs18\lang1049 =============== \f2\lang1033 r601\f3\lang1049 -\f2\lang1033 beta-23115 \f0\lang1049 ====================\par
-\f2\fs16\lang1033 22.0\f3\lang1049 2\f2\lang1033 .2023\par
-\b0\f3\lang1049 * \f2\lang1033 SQLite Release 3.41.0\par
-\b\f0\fs18\lang1049 =============== \f2\lang1033 r601\f3\lang1049 -\f2\lang1033 beta-2310\f3\lang1049 7\f2\lang1033  \f0\lang1049 ====================\par
-\f2\fs16\lang1033 1\f3\lang1049 9\f2\lang1033 .0\f3\lang1049 2\f2\lang1033 .2023\par
-\b0\f3\lang1049 * \f2\lang1033 fix mediainfo\f3\lang1049\par
-\b\f0\fs18 =============== \f2\lang1033 r601\f3\lang1049 -\f2\lang1033 beta-23105 \f0\lang1049 ====================\par
-\f2\fs16\lang1033 17.0\f3\lang1049 2\f2\lang1033 .2023\par
-\b0\f3\lang1049 * \f2\lang1033 zllib-ng\f3\lang1049\par
-\b\f0\fs18 =============== \f2\lang1033 r601\f3\lang1049 -\f2\lang1033 beta-23101 \f0\lang1049 ====================\par
-\f2\fs16\lang1033 1\f3\lang1049 2\f2\lang1033 .0\f3\lang1049 2\f2\lang1033 .2023\par
-\b0\f3\lang1049 * leveldb\par
+\b\f0\fs18 =============== \f4\lang1033 r601\f5\lang1049 -\f4\lang1033 beta-23125 \f0\lang1049 ====================\par
+\f4\fs16\lang1033 02.03.2023\par
+\b0\f5\lang1049 * libtorrent\par
+* \f4\lang1033 mediainfo\par
+\b\f0\fs18\lang1049 =============== \f4\lang1033 r601\f5\lang1049 -\f4\lang1033 beta-23115 \f0\lang1049 ====================\par
+\f4\fs16\lang1033 22.0\f5\lang1049 2\f4\lang1033 .2023\par
+\b0\f5\lang1049 * \f4\lang1033 SQLite Release 3.41.0\par
+\b\f0\fs18\lang1049 =============== \f4\lang1033 r601\f5\lang1049 -\f4\lang1033 beta-2310\f5\lang1049 7\f4\lang1033  \f0\lang1049 ====================\par
+\f4\fs16\lang1033 1\f5\lang1049 9\f4\lang1033 .0\f5\lang1049 2\f4\lang1033 .2023\par
+\b0\f5\lang1049 * \f4\lang1033 fix mediainfo\f5\lang1049\par
+\b\f0\fs18 =============== \f4\lang1033 r601\f5\lang1049 -\f4\lang1033 beta-23105 \f0\lang1049 ====================\par
+\f4\fs16\lang1033 17.0\f5\lang1049 2\f4\lang1033 .2023\par
+\b0\f5\lang1049 * \f4\lang1033 zllib-ng\f5\lang1049\par
+\b\f0\fs18 =============== \f4\lang1033 r601\f5\lang1049 -\f4\lang1033 beta-23101 \f0\lang1049 ====================\par
+\f4\fs16\lang1033 1\f5\lang1049 2\f4\lang1033 .0\f5\lang1049 2\f4\lang1033 .2023\par
+\b0\f5\lang1049 * leveldb\par
 * openssl\b\f0\fs18\par
-=============== \f2\lang1033 r601\f3\lang1049 -\f2\lang1033 beta-230\f3\lang1049 9\f2\lang1033 7 \f0\lang1049 ====================\par
-\f2\fs16\lang1033 01.02.2023\par
-\b0\f3\lang1049 * libtorrent\par
-\b\f0\fs18 =============== \f2\lang1033 r601\f3\lang1049 -\f2\lang1033 beta-230\f3\lang1049 9\f2\lang1033 4 \f0\lang1049 ====================\par
-\f3\fs16 2\f2\lang1033 8.0\f3\lang1049 1\f2\lang1033 .2023\par
-\b0\f3\lang1049 * libtorrent\par
-\b\f0\fs18 =============== \f2\lang1033 r601\f3\lang1049 -\f2\lang1033 beta-230\f3\lang1049 89\f2\lang1033  \f0\lang1049 ====================\par
-\f3\fs16 21\f2\lang1033 .0\f3\lang1049 1\f2\lang1033 .2023\par
-\b0\f3\lang1049 * libtorrent\par
-\b\f0\fs18 =============== \f2\lang1033 r601\f3\lang1049 -\f2\lang1033 beta-230\f3\lang1049 8\f2\lang1033 4 \f0\lang1049 ====================\par
-\f2\fs16\lang1033 19.0\f3\lang1049 1\f2\lang1033 .2023\par
-\b0\f3\lang1049 * SQLite  3.40.1\par
-\b\f0\fs18 =============== \f2\lang1033 r601\f3\lang1049 -\f2\lang1033 beta-230\f3\lang1049 81\f2\lang1033  \f0\lang1049 ====================\par
-\f2\fs16\lang1033 1\f3\lang1049 8\f2\lang1033 .0\f3\lang1049 1\f2\lang1033 .2023\par
-\b0\f3\lang1049 * \'c8\'f1\'ef\'f0\'e0\'e2\'eb\'e5\'ed\'ee \'ef\'e0\'e4\'e5\'ed\'e8\'e5 \f2\lang1033 (\f3\lang1049\'f7\'e0\'f1\'f2\'fc 2)\par
-\b\f0\fs18 =============== \f2\lang1033 r601\f3\lang1049 -\f2\lang1033 beta-2307\f3\lang1049 7\f2\lang1033  \f0\lang1049 ====================\par
-\f2\fs16\lang1033 1\f3\lang1049 8\f2\lang1033 .0\f3\lang1049 1\f2\lang1033 .2023\par
-\b0\f3\lang1049 * \'c8\'f1\'ef\'f0\'e0\'e2\'eb\'e5\'ed\'ee \'ef\'e0\'e4\'e5\'ed\'e8\'e5 {{\field{\*\fldinst{HYPERLINK https://github.com/MediaArea/MediaInfoLib/commit/0333ecb73f6a8803544d32b4c9ac0b04ec9231b3 }}{\fldrslt{https://github.com/MediaArea/MediaInfoLib/commit/0333ecb73f6a8803544d32b4c9ac0b04ec9231b3\ul0\cf0}}}}\f3\fs16\par
-\b\f0\fs18 =============== \f2\lang1033 r601\f3\lang1049 -\f2\lang1033 beta-23073 \f0\lang1049 ====================\par
-\f2\fs16\lang1033 15.0\f3\lang1049 1\f2\lang1033 .2023\par
-\b0\f3\lang1049 * libtorrent\par
-\b\f0\fs18 =============== \f2\lang1033 r601\f3\lang1049 -\f2\lang1033 beta-230\f3\lang1049 6\f2\lang1033 4 \f0\lang1049 ====================\par
-\f2\fs16\lang1033 03.0\f3\lang1049 1\f2\lang1033 .2023\par
-\b0\f3\lang1049 * libtorrent\par
-\b\f0\fs18 =============== \f2\lang1033 r601\f3\lang1049 -\f2\lang1033 beta-230\f3\lang1049 60\f2\lang1033  \f0\lang1049 ====================\par
-\f2\fs16\lang1033 31.\f3\lang1049 12\f2\lang1033 .2022\par
-\b0\f3\lang1049 * openssl\par
+=============== \f4\lang1033 r601\f5\lang1049 -\f4\lang1033 beta-230\f5\lang1049 9\f4\lang1033 7 \f0\lang1049 ====================\par
+\f4\fs16\lang1033 01.02.2023\par
+\b0\f5\lang1049 * libtorrent\par
+\b\f0\fs18 =============== \f4\lang1033 r601\f5\lang1049 -\f4\lang1033 beta-230\f5\lang1049 9\f4\lang1033 4 \f0\lang1049 ====================\par
+\f5\fs16 2\f4\lang1033 8.0\f5\lang1049 1\f4\lang1033 .2023\par
+\b0\f5\lang1049 * libtorrent\par
+\b\f0\fs18 =============== \f4\lang1033 r601\f5\lang1049 -\f4\lang1033 beta-230\f5\lang1049 89\f4\lang1033  \f0\lang1049 ====================\par
+\f5\fs16 21\f4\lang1033 .0\f5\lang1049 1\f4\lang1033 .2023\par
+\b0\f5\lang1049 * libtorrent\par
+\b\f0\fs18 =============== \f4\lang1033 r601\f5\lang1049 -\f4\lang1033 beta-230\f5\lang1049 8\f4\lang1033 4 \f0\lang1049 ====================\par
+\f4\fs16\lang1033 19.0\f5\lang1049 1\f4\lang1033 .2023\par
+\b0\f5\lang1049 * SQLite  3.40.1\par
+\b\f0\fs18 =============== \f4\lang1033 r601\f5\lang1049 -\f4\lang1033 beta-230\f5\lang1049 81\f4\lang1033  \f0\lang1049 ====================\par
+\f4\fs16\lang1033 1\f5\lang1049 8\f4\lang1033 .0\f5\lang1049 1\f4\lang1033 .2023\par
+\b0\f5\lang1049 * \'c8\'f1\'ef\'f0\'e0\'e2\'eb\'e5\'ed\'ee \'ef\'e0\'e4\'e5\'ed\'e8\'e5 \f4\lang1033 (\f5\lang1049\'f7\'e0\'f1\'f2\'fc 2)\par
+\b\f0\fs18 =============== \f4\lang1033 r601\f5\lang1049 -\f4\lang1033 beta-2307\f5\lang1049 7\f4\lang1033  \f0\lang1049 ====================\par
+\f4\fs16\lang1033 1\f5\lang1049 8\f4\lang1033 .0\f5\lang1049 1\f4\lang1033 .2023\par
+\b0\f5\lang1049 * \'c8\'f1\'ef\'f0\'e0\'e2\'eb\'e5\'ed\'ee \'ef\'e0\'e4\'e5\'ed\'e8\'e5 {{\field{\*\fldinst{HYPERLINK https://github.com/MediaArea/MediaInfoLib/commit/0333ecb73f6a8803544d32b4c9ac0b04ec9231b3 }}{\fldrslt{https://github.com/MediaArea/MediaInfoLib/commit/0333ecb73f6a8803544d32b4c9ac0b04ec9231b3\ul0\cf0}}}}\f5\fs16\par
+\b\f0\fs18 =============== \f4\lang1033 r601\f5\lang1049 -\f4\lang1033 beta-23073 \f0\lang1049 ====================\par
+\f4\fs16\lang1033 15.0\f5\lang1049 1\f4\lang1033 .2023\par
+\b0\f5\lang1049 * libtorrent\par
+\b\f0\fs18 =============== \f4\lang1033 r601\f5\lang1049 -\f4\lang1033 beta-230\f5\lang1049 6\f4\lang1033 4 \f0\lang1049 ====================\par
+\f4\fs16\lang1033 03.0\f5\lang1049 1\f4\lang1033 .2023\par
+\b0\f5\lang1049 * libtorrent\par
+\b\f0\fs18 =============== \f4\lang1033 r601\f5\lang1049 -\f4\lang1033 beta-230\f5\lang1049 60\f4\lang1033  \f0\lang1049 ====================\par
+\f4\fs16\lang1033 31.\f5\lang1049 12\f4\lang1033 .2022\par
+\b0\f5\lang1049 * openssl\par
 * libtorrent\par
-\b\f0\fs18 =============== \f2\lang1033 r601\f3\lang1049 -\f2\lang1033 beta-23051 \f0\lang1049 ====================\par
-\f2\fs16\lang1033 22.\f3\lang1049 12\f2\lang1033 .2022\par
-\b0\f3\lang1049 * openssl\par
+\b\f0\fs18 =============== \f4\lang1033 r601\f5\lang1049 -\f4\lang1033 beta-23051 \f0\lang1049 ====================\par
+\f4\fs16\lang1033 22.\f5\lang1049 12\f4\lang1033 .2022\par
+\b0\f5\lang1049 * openssl\par
 * libtorrent\par
-\f2\lang1033 * boost\par
-* mediainfolib\f3\lang1049\par
-\b\f0\fs18 =============== \f2\lang1033 r601\f3\lang1049 -\f2\lang1033 beta-230\f3\lang1049 4\f2\lang1033 5 \f0\lang1049 ====================\par
-\f3\fs16 1\f2\lang1033 8.\f3\lang1049 12\f2\lang1033 .2022\par
-\b0\f3\lang1049 * openssl\par
+\f4\lang1033 * boost\par
+* mediainfolib\f5\lang1049\par
+\b\f0\fs18 =============== \f4\lang1033 r601\f5\lang1049 -\f4\lang1033 beta-230\f5\lang1049 4\f4\lang1033 5 \f0\lang1049 ====================\par
+\f5\fs16 1\f4\lang1033 8.\f5\lang1049 12\f4\lang1033 .2022\par
+\b0\f5\lang1049 * openssl\par
 * libtorrent\par
-\b\f0\fs18 =============== \f2\lang1033 r601\f3\lang1049 -\f2\lang1033 beta-230\f3\lang1049 41\f2\lang1033  \f0\lang1049 ====================\par
-\f3\fs16 10\f2\lang1033 .\f3\lang1049 12\f2\lang1033 .2022\par
-\b0\f3\lang1049 * mediainfo\par
+\b\f0\fs18 =============== \f4\lang1033 r601\f5\lang1049 -\f4\lang1033 beta-230\f5\lang1049 41\f4\lang1033  \f0\lang1049 ====================\par
+\f5\fs16 10\f4\lang1033 .\f5\lang1049 12\f4\lang1033 .2022\par
+\b0\f5\lang1049 * mediainfo\par
 * openssl\par
 * libtorrent\par
-\b\f0\fs18 =============== \f2\lang1033 r601\f3\lang1049 -\f2\lang1033 beta-23037 \f0\lang1049 ====================\par
-\f2\fs16\lang1033 29.\f3\lang1049 1\f2\lang1033 1.2022\par
-\b0\f3\lang1049 * mediainfo\par
-\b\f0\fs18 =============== \f2\lang1033 r601\f3\lang1049 -\f2\lang1033 beta-23030 \f0\lang1049 ====================\par
-\f3\fs16 1\f2\lang1033 2.\f3\lang1049 1\f2\lang1033 1.2022\par
-\b0\f3\lang1049 * openssl\par
+\b\f0\fs18 =============== \f4\lang1033 r601\f5\lang1049 -\f4\lang1033 beta-23037 \f0\lang1049 ====================\par
+\f4\fs16\lang1033 29.\f5\lang1049 1\f4\lang1033 1.2022\par
+\b0\f5\lang1049 * mediainfo\par
+\b\f0\fs18 =============== \f4\lang1033 r601\f5\lang1049 -\f4\lang1033 beta-23030 \f0\lang1049 ====================\par
+\f5\fs16 1\f4\lang1033 2.\f5\lang1049 1\f4\lang1033 1.2022\par
+\b0\f5\lang1049 * openssl\par
 * mediainfo\par
-\b\f0\fs18 =============== \f2\lang1033 r601\f3\lang1049 -\f2\lang1033 beta-2301\f3\lang1049 6\f2\lang1033  \f0\lang1049 ====================\par
-\f3\fs16 1\f2\lang1033 4.\f3\lang1049 10\f2\lang1033 .2022\par
-\b0\f3\lang1049 * openssl\par
+\b\f0\fs18 =============== \f4\lang1033 r601\f5\lang1049 -\f4\lang1033 beta-2301\f5\lang1049 6\f4\lang1033  \f0\lang1049 ====================\par
+\f5\fs16 1\f4\lang1033 4.\f5\lang1049 10\f4\lang1033 .2022\par
+\b0\f5\lang1049 * openssl\par
 * zlib-ng\par
 * mediainfo\par
 * libtorrent\par
 * maxminddb\par
-\b\f0\fs18 =============== \f2\lang1033 r601\f3\lang1049 -\f2\lang1033 beta-2299\f3\lang1049 7\f2\lang1033  \f0\lang1049 ====================\par
-\f3\fs16 01\f2\lang1033 .\f3\lang1049 10\f2\lang1033 .2022\par
-\b0\f3\lang1049 * sqlite 3.39.4\par
-\b\f0\fs18 =============== \f2\lang1033 r601\f3\lang1049 -\f2\lang1033 beta-22993 \f0\lang1049 ====================\par
-\f2\fs16\lang1033 24.09.2022\par
-\b0\f3\lang1049 * libtorrent\par
-\b\f0\fs18 =============== \f2\lang1033 r601\f3\lang1049 -\f2\lang1033 beta-22992 \f0\lang1049 ====================\par
-\f2\fs16\lang1033 09.09.2022\par
-\b0\f3\lang1049 * mediainfo\par
+\b\f0\fs18 =============== \f4\lang1033 r601\f5\lang1049 -\f4\lang1033 beta-2299\f5\lang1049 7\f4\lang1033  \f0\lang1049 ====================\par
+\f5\fs16 01\f4\lang1033 .\f5\lang1049 10\f4\lang1033 .2022\par
+\b0\f5\lang1049 * sqlite 3.39.4\par
+\b\f0\fs18 =============== \f4\lang1033 r601\f5\lang1049 -\f4\lang1033 beta-22993 \f0\lang1049 ====================\par
+\f4\fs16\lang1033 24.09.2022\par
+\b0\f5\lang1049 * libtorrent\par
+\b\f0\fs18 =============== \f4\lang1033 r601\f5\lang1049 -\f4\lang1033 beta-22992 \f0\lang1049 ====================\par
+\f4\fs16\lang1033 09.09.2022\par
+\b0\f5\lang1049 * mediainfo\par
 * openssl\par
 * sqlite 3.39.3\par
-\b\f0\fs18 =============== \f2\lang1033 r601\f3\lang1049 -\f2\lang1033 beta-22990 \f0\lang1049 ====================\par
-\f2\fs16\lang1033 27.0\f3\lang1049 8\f2\lang1033 .2022\par
-\b0\f3\lang1049 * mediainfo\par
+\b\f0\fs18 =============== \f4\lang1033 r601\f5\lang1049 -\f4\lang1033 beta-22990 \f0\lang1049 ====================\par
+\f4\fs16\lang1033 27.0\f5\lang1049 8\f4\lang1033 .2022\par
+\b0\f5\lang1049 * mediainfo\par
 * libtorrent\par
-\b\f0\fs18 =============== \f2\lang1033 r601\f3\lang1049 -\f2\lang1033 beta-22988 \f0\lang1049 ====================\par
-\f2\fs16\lang1033 2\f3\lang1049 0\f2\lang1033 .0\f3\lang1049 8\f2\lang1033 .2022\par
-\b0\f3\lang1049 * mediainfo\par
-\f2\lang1033 * sqlite 3.39.2\f3\lang1049\par
+\b\f0\fs18 =============== \f4\lang1033 r601\f5\lang1049 -\f4\lang1033 beta-22988 \f0\lang1049 ====================\par
+\f4\fs16\lang1033 2\f5\lang1049 0\f4\lang1033 .0\f5\lang1049 8\f4\lang1033 .2022\par
+\b0\f5\lang1049 * mediainfo\par
+\f4\lang1033 * sqlite 3.39.2\f5\lang1049\par
 * libtorrent\par
-* \f2\lang1033 openssl\par
+* \f4\lang1033 openssl\par
 * boost\par
-{{\field{\*\fldinst{HYPERLINK https://github.com/pavel-pimenov/flylinkdc-r6xx/commits/master }}{\fldrslt{https://github.com/pavel-pimenov/flylinkdc-r6xx/commits/master\ul0\cf0}}}}\kerning0\f3\fs16\lang1049\par
-\kerning1\b\f0\fs18 =============== \f2\lang1033 r601\f3\lang1049 -\f2\lang1033 beta-22983 \f0\lang1049 ====================\par
-\f2\fs16\lang1033 23.07.2022\par
-\b0\f3\lang1049 * mediainfo\par
-\f2\lang1033 * sqlite 3.39.2\f3\lang1049\par
+{{\field{\*\fldinst{HYPERLINK https://github.com/pavel-pimenov/flylinkdc-r6xx/commits/master }}{\fldrslt{https://github.com/pavel-pimenov/flylinkdc-r6xx/commits/master\ul0\cf0}}}}\kerning0\f5\fs16\lang1049\par
+\kerning1\b\f0\fs18 =============== \f4\lang1033 r601\f5\lang1049 -\f4\lang1033 beta-22983 \f0\lang1049 ====================\par
+\f4\fs16\lang1033 23.07.2022\par
+\b0\f5\lang1049 * mediainfo\par
+\f4\lang1033 * sqlite 3.39.2\f5\lang1049\par
 * libtorrent\par
-* \f2\lang1033 openssl\par
-{{\field{\*\fldinst{HYPERLINK https://github.com/pavel-pimenov/flylinkdc-r6xx/commits/master }}{\fldrslt{https://github.com/pavel-pimenov/flylinkdc-r6xx/commits/master\ul0\cf0}}}}\kerning0\f3\fs16\lang1049\par
-\kerning1\b\f0\fs18 =============== \f2\lang1033 r601\f3\lang1049 -\f2\lang1033 beta-22978 \f0\lang1049 ====================\par
-\f2\fs16\lang1033 10.07.2022\par
-\b0\f3\lang1049 * mediainfo\par
+* \f4\lang1033 openssl\par
+{{\field{\*\fldinst{HYPERLINK https://github.com/pavel-pimenov/flylinkdc-r6xx/commits/master }}{\fldrslt{https://github.com/pavel-pimenov/flylinkdc-r6xx/commits/master\ul0\cf0}}}}\kerning0\f5\fs16\lang1049\par
+\kerning1\b\f0\fs18 =============== \f4\lang1033 r601\f5\lang1049 -\f4\lang1033 beta-22978 \f0\lang1049 ====================\par
+\f4\fs16\lang1033 10.07.2022\par
+\b0\f5\lang1049 * mediainfo\par
 * libtorrent\par
-* \f2\lang1033 openssl\par
-\b\f0\fs18\lang1049 =============== \f2\lang1033 r601\f3\lang1049 -\f2\lang1033 beta-22969 \f0\lang1049 ====================\par
-\f2\fs16\lang1033 26.05.2022\par
-\b0\f3\lang1049 * mediainfo\par
+* \f4\lang1033 openssl\par
+\b\f0\fs18\lang1049 =============== \f4\lang1033 r601\f5\lang1049 -\f4\lang1033 beta-22969 \f0\lang1049 ====================\par
+\f4\fs16\lang1033 26.05.2022\par
+\b0\f5\lang1049 * mediainfo\par
 * libtorrent\par
-\b\f0\fs18 =============== \f2\lang1033 r601\f3\lang1049 -\f2\lang1033 beta-22964 \f0\lang1049 ====================\par
-\f2\fs16\lang1033 21.05.2022\par
-\b0\f3\lang1049 * openssl\par
-\b\f0\fs18 =============== \f2\lang1033 r601\f3\lang1049 -\f2\lang1033 beta-22958 \f0\lang1049 ====================\par
-\f2\fs16\lang1033 11.05.2022\par
-\b0\f3\lang1049 * fix crash {{\field{\*\fldinst{HYPERLINK https://drdump.com/Problem.aspx?ProblemID=752992 }}{\fldrslt{https://drdump.com/Problem.aspx?ProblemID=752992\ul0\cf0}}}}\f3\fs16\par
-\b\f0\fs18 =============== \f2\lang1033 r601\f3\lang1049 -\f2\lang1033 beta-2295\f3\lang1049 3\f2\lang1033  \f0\lang1049 ====================\par
-\f2\fs16\lang1033 09.05.2022\par
-\cf3 * \f3\lang1049\'d1 \'e4\'ed\'e5\'ec \'ef\'ee\'e1\'e5\'e4\'fb!!!\par
+\b\f0\fs18 =============== \f4\lang1033 r601\f5\lang1049 -\f4\lang1033 beta-22964 \f0\lang1049 ====================\par
+\f4\fs16\lang1033 21.05.2022\par
+\b0\f5\lang1049 * openssl\par
+\b\f0\fs18 =============== \f4\lang1033 r601\f5\lang1049 -\f4\lang1033 beta-22958 \f0\lang1049 ====================\par
+\f4\fs16\lang1033 11.05.2022\par
+\b0\f5\lang1049 * fix crash {{\field{\*\fldinst{HYPERLINK https://drdump.com/Problem.aspx?ProblemID=752992 }}{\fldrslt{https://drdump.com/Problem.aspx?ProblemID=752992\ul0\cf0}}}}\f5\fs16\par
+\b\f0\fs18 =============== \f4\lang1033 r601\f5\lang1049 -\f4\lang1033 beta-2295\f5\lang1049 3\f4\lang1033  \f0\lang1049 ====================\par
+\f4\fs16\lang1033 09.05.2022\par
+\cf3 * \f5\lang1049\'d1 \'e4\'ed\'e5\'ec \'ef\'ee\'e1\'e5\'e4\'fb!!!\par
 \cf0\b0 * openssl\par
-\b\f0\fs18 =============== \f2\lang1033 r601\f3\lang1049 -\f2\lang1033 beta-22950 \f0\lang1049 ====================\par
-\f2\fs16\lang1033 09.05.2022\par
-\b0\f3\lang1049 * sqlite 3.38.4\par
+\b\f0\fs18 =============== \f4\lang1033 r601\f5\lang1049 -\f4\lang1033 beta-22950 \f0\lang1049 ====================\par
+\f4\fs16\lang1033 09.05.2022\par
+\b0\f5\lang1049 * sqlite 3.38.4\par
 * mediainfolib\par
-\b\f0\fs18 =============== \f2\lang1033 r601\f3\lang1049 -\f2\lang1033 beta-229\f3\lang1049 3\f2\lang1033 8 \f0\lang1049 ====================\par
-\f2\fs16\lang1033 2\f3\lang1049 3\f2\lang1033 .0\f3\lang1049 4\f2\lang1033 .2022\par
-\b0\f3\lang1049 * zlib-ng\par
+\b\f0\fs18 =============== \f4\lang1033 r601\f5\lang1049 -\f4\lang1033 beta-229\f5\lang1049 3\f4\lang1033 8 \f0\lang1049 ====================\par
+\f4\fs16\lang1033 2\f5\lang1049 3\f4\lang1033 .0\f5\lang1049 4\f4\lang1033 .2022\par
+\b0\f5\lang1049 * zlib-ng\par
 * mediainfo\par
 * libtorrent\par
-\b\f0\fs18 =============== \f2\lang1033 r601\f3\lang1049 -\f2\lang1033 beta-229\f3\lang1049 35\f2\lang1033  \f0\lang1049 ====================\par
-\f3\fs16 03\f2\lang1033 .0\f3\lang1049 4\f2\lang1033 .2022\par
-\b0\f3\lang1049 * mediainfo\par
-\b\f0\fs18 =============== \f2\lang1033 r601\f3\lang1049 -\f2\lang1033 beta-229\f3\lang1049 30\f2\lang1033  \f0\lang1049 ====================\par
-\f2\fs16\lang1033 2\f3\lang1049 8\f2\lang1033 .03.2022\par
-\b0\f3\lang1049 * zlib-ng\par
+\b\f0\fs18 =============== \f4\lang1033 r601\f5\lang1049 -\f4\lang1033 beta-229\f5\lang1049 35\f4\lang1033  \f0\lang1049 ====================\par
+\f5\fs16 03\f4\lang1033 .0\f5\lang1049 4\f4\lang1033 .2022\par
+\b0\f5\lang1049 * mediainfo\par
+\b\f0\fs18 =============== \f4\lang1033 r601\f5\lang1049 -\f4\lang1033 beta-229\f5\lang1049 30\f4\lang1033  \f0\lang1049 ====================\par
+\f4\fs16\lang1033 2\f5\lang1049 8\f4\lang1033 .03.2022\par
+\b0\f5\lang1049 * zlib-ng\par
 * mediainfo\par
-\b\f0\fs18 =============== \f2\lang1033 r601\f3\lang1049 -\f2\lang1033 beta-229\f3\lang1049 2\f2\lang1033 6 \f0\lang1049 ====================\par
-\f2\fs16\lang1033 23.03.2022\par
-\b0\f3\lang1049 * mediainfolib\par
-\b\f0\fs18 =============== \f2\lang1033 r601\f3\lang1049 -\f2\lang1033 beta\f0\lang1049 -\f2\lang1033 229\f3\lang1049 2\f2\lang1033 3 \f0\lang1049 ====================\par
-\f2\fs16\lang1033 19.03.2022\par
-\b0\f3\lang1049 * boost 1.79.b1\par
+\b\f0\fs18 =============== \f4\lang1033 r601\f5\lang1049 -\f4\lang1033 beta-229\f5\lang1049 2\f4\lang1033 6 \f0\lang1049 ====================\par
+\f4\fs16\lang1033 23.03.2022\par
+\b0\f5\lang1049 * mediainfolib\par
+\b\f0\fs18 =============== \f4\lang1033 r601\f5\lang1049 -\f4\lang1033 beta\f0\lang1049 -\f4\lang1033 229\f5\lang1049 2\f4\lang1033 3 \f0\lang1049 ====================\par
+\f4\fs16\lang1033 19.03.2022\par
+\b0\f5\lang1049 * boost 1.79.b1\par
 * mediainfolib\par
-\b\f0\fs18 =============== \f2\lang1033 r601\f3\lang1049 -\f2\lang1033 beta\f0\lang1049 -\f2\lang1033 229\f3\lang1049 20\f2\lang1033  \f0\lang1049 ====================\par
-\f2\fs16\lang1033 1\f3\lang1049 3\f2\lang1033 .03.2022\par
-\b0\f3\lang1049 * SQLite 3.38.1 {{\field{\*\fldinst{HYPERLINK https://www.sqlite.org/releaselog/3_38_1.html }}{\fldrslt{https://www.sqlite.org/releaselog/3_38_1.html\ul0\cf0}}}}\f3\fs16\par
-\b\f0\fs18 =============== \f2\lang1033 r601\f3\lang1049 -\f2\lang1033 beta-22917 \f0\lang1049 ====================\par
-\f2\fs16\lang1033 10.03.2022\par
-\b0\f3\lang1049 * fix {{\field{\*\fldinst{HYPERLINK https://github.com/pavel-pimenov/flylinkdc-r5xx/issues/1733 }}{\fldrslt{https://github.com/pavel-pimenov/flylinkdc-r5xx/issues/1733\ul0\cf0}}}}\f3\fs16\par
-\b\f0\fs18 =============== \f2\lang1033 r601\f3\lang1049 -\f2\lang1033 beta-22915 \f0\lang1049 ====================\par
-\f2\fs16\lang1033 02.03.2022\par
-\b0\f3\lang1049 * \'c8\'f1\'ef\'f0\'e0\'e2\'eb\'e5\'ed\'ee \'ef\'ee\'e4\'ea\'eb\'fe\'f7\'e5\'ed\'e8\'e5 \'ea \f2\lang1033 adc\f3\lang1049 -\'f5\'e0\'e1\'e0\'ec\par
-\b\f0\fs18 ================ \f2\lang1033 r601\f0\lang1049 -\f2\lang1033 beta-22910 \f0\lang1049 ====================\par
-\f2\fs16\lang1033 23.02.2022\par
-\b0\f3\lang1049 * SQLite 3.38.0\par
-\b\f0\fs18 ================ \f2\lang1033 r601\f0\lang1049 -\f2\lang1033 beta-229\f3\lang1049 0\f2\lang1033 6 \f0\lang1049 ====================\par
-\f2\fs16\lang1033 13.02.2022\par
-\b0\f3\lang1049 * libtorrent\par
-\b\f0\fs18 ================ \f2\lang1033 r601\f0\lang1049 -\f2\lang1033 beta-229\f3\lang1049 04\f2\lang1033  \f0\lang1049 ====================\par
-\f2\fs16\lang1033 0\f3\lang1049 8\f2\lang1033 .02.2022\par
-\b0\f3\lang1049 * libtorrent\par
+\b\f0\fs18 =============== \f4\lang1033 r601\f5\lang1049 -\f4\lang1033 beta\f0\lang1049 -\f4\lang1033 229\f5\lang1049 20\f4\lang1033  \f0\lang1049 ====================\par
+\f4\fs16\lang1033 1\f5\lang1049 3\f4\lang1033 .03.2022\par
+\b0\f5\lang1049 * SQLite 3.38.1 {{\field{\*\fldinst{HYPERLINK https://www.sqlite.org/releaselog/3_38_1.html }}{\fldrslt{https://www.sqlite.org/releaselog/3_38_1.html\ul0\cf0}}}}\f5\fs16\par
+\b\f0\fs18 =============== \f4\lang1033 r601\f5\lang1049 -\f4\lang1033 beta-22917 \f0\lang1049 ====================\par
+\f4\fs16\lang1033 10.03.2022\par
+\b0\f5\lang1049 * fix {{\field{\*\fldinst{HYPERLINK https://github.com/pavel-pimenov/flylinkdc-r5xx/issues/1733 }}{\fldrslt{https://github.com/pavel-pimenov/flylinkdc-r5xx/issues/1733\ul0\cf0}}}}\f5\fs16\par
+\b\f0\fs18 =============== \f4\lang1033 r601\f5\lang1049 -\f4\lang1033 beta-22915 \f0\lang1049 ====================\par
+\f4\fs16\lang1033 02.03.2022\par
+\b0\f5\lang1049 * \'c8\'f1\'ef\'f0\'e0\'e2\'eb\'e5\'ed\'ee \'ef\'ee\'e4\'ea\'eb\'fe\'f7\'e5\'ed\'e8\'e5 \'ea \f4\lang1033 adc\f5\lang1049 -\'f5\'e0\'e1\'e0\'ec\par
+\b\f0\fs18 ================ \f4\lang1033 r601\f0\lang1049 -\f4\lang1033 beta-22910 \f0\lang1049 ====================\par
+\f4\fs16\lang1033 23.02.2022\par
+\b0\f5\lang1049 * SQLite 3.38.0\par
+\b\f0\fs18 ================ \f4\lang1033 r601\f0\lang1049 -\f4\lang1033 beta-229\f5\lang1049 0\f4\lang1033 6 \f0\lang1049 ====================\par
+\f4\fs16\lang1033 13.02.2022\par
+\b0\f5\lang1049 * libtorrent\par
+\b\f0\fs18 ================ \f4\lang1033 r601\f0\lang1049 -\f4\lang1033 beta-229\f5\lang1049 04\f4\lang1033  \f0\lang1049 ====================\par
+\f4\fs16\lang1033 0\f5\lang1049 8\f4\lang1033 .02.2022\par
+\b0\f5\lang1049 * libtorrent\par
 * mediainfo\par
-\b\f0\fs18 ================ \f2\lang1033 r601\f0\lang1049 -\f2\lang1033 beta-22899 \f0\lang1049 ====================\par
-\f2\fs16\lang1033 05.02.2022\par
-\b0\f3\lang1049 * libtorrent\par
+\b\f0\fs18 ================ \f4\lang1033 r601\f0\lang1049 -\f4\lang1033 beta-22899 \f0\lang1049 ====================\par
+\f4\fs16\lang1033 05.02.2022\par
+\b0\f5\lang1049 * libtorrent\par
 * mediainfo\par
-\b\f0\fs18 ================ \f2\lang1033 r601\f0\lang1049 -\f2\lang1033 beta-22892 \f0\lang1049 ====================\par
-\f2\fs16\lang1033 31.01.2022\par
-\b0\f3\lang1049 * libtorrent\par
+\b\f0\fs18 ================ \f4\lang1033 r601\f0\lang1049 -\f4\lang1033 beta-22892 \f0\lang1049 ====================\par
+\f4\fs16\lang1033 31.01.2022\par
+\b0\f5\lang1049 * libtorrent\par
 * mediainfo\par
-\b\f0\fs18 ================ \f2\lang1033 r601\f0\lang1049 -\f2\lang1033 beta-22889 \f0\lang1049 ====================\par
-\f2\fs16\lang1033 30.01.2022\par
-\b0\f3\lang1049 * mediainfo\par
-\b\f0\fs18 ================ \f2\lang1033 r601\f0\lang1049 -\f2\lang1033 beta-2288\f3\lang1049 6\f2\lang1033  \f0\lang1049 ====================\par
-\f3\fs16 23\f2\lang1033 .01.2022\par
-\b0\f3\lang1049 * mediainfo\par
-\b\f0\fs18 ================ \f2\lang1033 r601\f0\lang1049 -\f2\lang1033 beta-2288\f3\lang1049 0\f2\lang1033  \f0\lang1049 ====================\par
-\f2\fs16\lang1033 1\f3\lang1049 3\f2\lang1033 .01.2022\par
-\b0\f3\lang1049 * libtorrent\par
-\b\f0\fs18 ================ \f2\lang1033 r601\f0\lang1049 -\f2\lang1033 beta-22878 \f0\lang1049 ====================\par
-\f2\fs16\lang1033 11.01.2022\par
-\b0\f3\lang1049 * libtorrent\par
-* \'c8\'f1\'ef\'f0\'e0\'e2\'eb\'e5\'ed\'ee \'f0\'e5\'e4\'ea\'ee\'e5 \'ef\'e0\'e4\'e5\'ed\'e8\'e5 \'e2 flylinkdc_x64!SearchFrame::SearchInfo::getText\f2\lang1033\par
-\b\f0\fs18\lang1049 ================ \f2\lang1033 r601\f0\lang1049 -\f2\lang1033 beta-2287\f3\lang1049 5\f2\lang1033  \f0\lang1049 ====================\par
-\f2\fs16\lang1033 09.01.2022\par
-\b0 * \f3\lang1049\'c8\'f1\'ef\'f0\'e0\'e2\'eb\'e5\'ed\'e8\'e5 \'ef\'e0\'e4\'e5\'ed\'e8\'e9 \'ef\'ee \'ee\'f2\'f7\'e5\'f2\'e0\'ec \f2\lang1033 drDump \f3\lang1049 (\'f7\'e0\'f1\'f2\'fc 2)\par
-\b\f0\fs18 ================ \f2\lang1033 r601\f0\lang1049 -\f2\lang1033 beta-22873 \f0\lang1049 ====================\par
-\f2\fs16\lang1033 09.01.2022\par
-\b0 * \f3\lang1049\'c8\'f1\'ef\'f0\'e0\'e2\'eb\'e5\'ed\'e8\'e5 \'ef\'e0\'e4\'e5\'ed\'e8\'e9 \'ef\'ee \'ee\'f2\'f7\'e5\'f2\'e0\'ec \f2\lang1033 drDump\par
-\b\f0\fs18\lang1049 ================ \f2\lang1033 r600\f0\lang1049 -\f2\lang1033 beta-22870 \f0\lang1049 ====================\par
-\f2\fs16\lang1033 08.01.2022\par
+\b\f0\fs18 ================ \f4\lang1033 r601\f0\lang1049 -\f4\lang1033 beta-22889 \f0\lang1049 ====================\par
+\f4\fs16\lang1033 30.01.2022\par
+\b0\f5\lang1049 * mediainfo\par
+\b\f0\fs18 ================ \f4\lang1033 r601\f0\lang1049 -\f4\lang1033 beta-2288\f5\lang1049 6\f4\lang1033  \f0\lang1049 ====================\par
+\f5\fs16 23\f4\lang1033 .01.2022\par
+\b0\f5\lang1049 * mediainfo\par
+\b\f0\fs18 ================ \f4\lang1033 r601\f0\lang1049 -\f4\lang1033 beta-2288\f5\lang1049 0\f4\lang1033  \f0\lang1049 ====================\par
+\f4\fs16\lang1033 1\f5\lang1049 3\f4\lang1033 .01.2022\par
+\b0\f5\lang1049 * libtorrent\par
+\b\f0\fs18 ================ \f4\lang1033 r601\f0\lang1049 -\f4\lang1033 beta-22878 \f0\lang1049 ====================\par
+\f4\fs16\lang1033 11.01.2022\par
+\b0\f5\lang1049 * libtorrent\par
+* \'c8\'f1\'ef\'f0\'e0\'e2\'eb\'e5\'ed\'ee \'f0\'e5\'e4\'ea\'ee\'e5 \'ef\'e0\'e4\'e5\'ed\'e8\'e5 \'e2 flylinkdc_x64!SearchFrame::SearchInfo::getText\f4\lang1033\par
+\b\f0\fs18\lang1049 ================ \f4\lang1033 r601\f0\lang1049 -\f4\lang1033 beta-2287\f5\lang1049 5\f4\lang1033  \f0\lang1049 ====================\par
+\f4\fs16\lang1033 09.01.2022\par
+\b0 * \f5\lang1049\'c8\'f1\'ef\'f0\'e0\'e2\'eb\'e5\'ed\'e8\'e5 \'ef\'e0\'e4\'e5\'ed\'e8\'e9 \'ef\'ee \'ee\'f2\'f7\'e5\'f2\'e0\'ec \f4\lang1033 drDump \f5\lang1049 (\'f7\'e0\'f1\'f2\'fc 2)\par
+\b\f0\fs18 ================ \f4\lang1033 r601\f0\lang1049 -\f4\lang1033 beta-22873 \f0\lang1049 ====================\par
+\f4\fs16\lang1033 09.01.2022\par
+\b0 * \f5\lang1049\'c8\'f1\'ef\'f0\'e0\'e2\'eb\'e5\'ed\'e8\'e5 \'ef\'e0\'e4\'e5\'ed\'e8\'e9 \'ef\'ee \'ee\'f2\'f7\'e5\'f2\'e0\'ec \f4\lang1033 drDump\par
+\b\f0\fs18\lang1049 ================ \f4\lang1033 r600\f0\lang1049 -\f4\lang1033 beta-22870 \f0\lang1049 ====================\par
+\f4\fs16\lang1033 08.01.2022\par
 \b0 * sqlite 3.37.2\par
-* openssl\f3\lang1049\par
-\b\f0\fs18 ================ \f2\lang1033 r600\f0\lang1049 -\f2\lang1033 beta-22867 \f0\lang1049 ====================\par
-\f2\fs16\lang1033 31.12.2021\par
+* openssl\f5\lang1049\par
+\b\f0\fs18 ================ \f4\lang1033 r600\f0\lang1049 -\f4\lang1033 beta-22867 \f0\lang1049 ====================\par
+\f4\fs16\lang1033 31.12.2021\par
 \b0 * libtorrent\par
 * zlib-ng\par
 * sqlite 3.37.1\par
 * openssl\par
-\b\f0\fs18\lang1049 ================ \f2\lang1033 r600\f0\lang1049 -\f2\lang1033 beta-22865 \f0\lang1049 ====================\par
-\f2\fs16\lang1033 18.12.2021\par
-\b0\f3\lang1049 * \f2\lang1033 libtorrent\par
-\b\f0\fs18\lang1049 ================ \f2\lang1033 r600\f0\lang1049 -\f2\lang1033 beta-22859 \f0\lang1049 ====================\par
-\f2\fs16\lang1033 04.12.2021\par
-\b0\f3\lang1049 * openssl\par
-\b\f0\fs18 ================ \f2\lang1033 r600\f0\lang1049 -\f2\lang1033 beta-22858 \f0\lang1049 ====================\par
-\f2\fs16\lang1033 28.11.2021\par
-\b0\f3\lang1049 * mediainfo\par
+\b\f0\fs18\lang1049 ================ \f4\lang1033 r600\f0\lang1049 -\f4\lang1033 beta-22865 \f0\lang1049 ====================\par
+\f4\fs16\lang1033 18.12.2021\par
+\b0\f5\lang1049 * \f4\lang1033 libtorrent\par
+\b\f0\fs18\lang1049 ================ \f4\lang1033 r600\f0\lang1049 -\f4\lang1033 beta-22859 \f0\lang1049 ====================\par
+\f4\fs16\lang1033 04.12.2021\par
+\b0\f5\lang1049 * openssl\par
+\b\f0\fs18 ================ \f4\lang1033 r600\f0\lang1049 -\f4\lang1033 beta-22858 \f0\lang1049 ====================\par
+\f4\fs16\lang1033 28.11.2021\par
+\b0\f5\lang1049 * mediainfo\par
 * libtorrent\par
 * sqlite 3.37.0\par
-\b\f0\fs18 ================ \f2\lang1033 r600\f0\lang1049 -\f2\lang1033 beta-2284\f3\lang1049 9\f2\lang1033  \f0\lang1049 ====================\par
-\f3\fs16 20\f2\lang1033 .11.2021\par
-\b0\f3\lang1049 * mediainfolib\par
-* \f2\lang1033 VC++ 2022\par
-\f3\lang1049\par
-\b\f0\fs18 ================ \f2\lang1033 r600\f0\lang1049 -\f2\lang1033 beta-22846 \f0\lang1049 ====================\par
-\f2\fs16\lang1033 13.11.2021\par
-\b0\f3\lang1049 * mediainfolib\par
-\b\f0\fs18 ================ \f2\lang1033 r600\f0\lang1049 -\f2\lang1033 beta-22844 \f0\lang1049 ====================\par
-\f2\fs16\lang1033 06.11.2021\par
-\b0\f3\lang1049 * libtorrent\par
-\b\f0\fs18 ================ \f2\lang1033 r600\f0\lang1049 -\f2\lang1033 beta-22842 \f0\lang1049 ====================\par
-\f2\fs16\lang1033 30.10.2021\par
-\b0\f3\lang1049 * Fix UTF-8 conversion in CTM NAT traversal reverse reply (RoLex)\par
-  {{\field{\*\fldinst{HYPERLINK https://github.com/pavel-pimenov/flylinkdc-r6xx/pull/26 }}{\fldrslt{https://github.com/pavel-pimenov/flylinkdc-r6xx/pull/26\ul0\cf0}}}}\f3\fs16\par
+\b\f0\fs18 ================ \f4\lang1033 r600\f0\lang1049 -\f4\lang1033 beta-2284\f5\lang1049 9\f4\lang1033  \f0\lang1049 ====================\par
+\f5\fs16 20\f4\lang1033 .11.2021\par
+\b0\f5\lang1049 * mediainfolib\par
+* \f4\lang1033 VC++ 2022\par
+\f5\lang1049\par
+\b\f0\fs18 ================ \f4\lang1033 r600\f0\lang1049 -\f4\lang1033 beta-22846 \f0\lang1049 ====================\par
+\f4\fs16\lang1033 13.11.2021\par
+\b0\f5\lang1049 * mediainfolib\par
+\b\f0\fs18 ================ \f4\lang1033 r600\f0\lang1049 -\f4\lang1033 beta-22844 \f0\lang1049 ====================\par
+\f4\fs16\lang1033 06.11.2021\par
+\b0\f5\lang1049 * libtorrent\par
+\b\f0\fs18 ================ \f4\lang1033 r600\f0\lang1049 -\f4\lang1033 beta-22842 \f0\lang1049 ====================\par
+\f4\fs16\lang1033 30.10.2021\par
+\b0\f5\lang1049 * Fix UTF-8 conversion in CTM NAT traversal reverse reply (RoLex)\par
+  {{\field{\*\fldinst{HYPERLINK https://github.com/pavel-pimenov/flylinkdc-r6xx/pull/26 }}{\fldrslt{https://github.com/pavel-pimenov/flylinkdc-r6xx/pull/26\ul0\cf0}}}}\f5\fs16\par
 * mediainfo\par
-\b\f0\fs18 ================ \f2\lang1033 r600\f0\lang1049 -\f2\lang1033 beta-22839 \f0\lang1049 ====================\par
-\f2\fs16\lang1033 16.10.2021\par
-\b0\f3\lang1049 * GdiOle\par
-\b\f0\fs18 ================ \f2\lang1033 r600\f0\lang1049 -\f2\lang1033 beta-22834 \f0\lang1049 ====================\par
-\f2\fs16\lang1033 16.10.2021\par
-\b0\f3\lang1049 * \'c8\'f1\'ef\'f0\'e0\'e2\'eb\'e5\'ed\'ee \'ee\'e1\'ed\'ee\'e2\'eb\'e5\'ed\'e8\'e5 GeoLite2-Country.mmdb\par
-\b\f0\fs18 ================ \f2\lang1033 r600\f0\lang1049 -\f2\lang1033 beta-22833 \f0\lang1049 ====================\par
-\f2\fs16\lang1033 16.10.2021\par
-\b0\f3\lang1049 * maxminddb\par
+\b\f0\fs18 ================ \f4\lang1033 r600\f0\lang1049 -\f4\lang1033 beta-22839 \f0\lang1049 ====================\par
+\f4\fs16\lang1033 16.10.2021\par
+\b0\f5\lang1049 * GdiOle\par
+\b\f0\fs18 ================ \f4\lang1033 r600\f0\lang1049 -\f4\lang1033 beta-22834 \f0\lang1049 ====================\par
+\f4\fs16\lang1033 16.10.2021\par
+\b0\f5\lang1049 * \'c8\'f1\'ef\'f0\'e0\'e2\'eb\'e5\'ed\'ee \'ee\'e1\'ed\'ee\'e2\'eb\'e5\'ed\'e8\'e5 GeoLite2-Country.mmdb\par
+\b\f0\fs18 ================ \f4\lang1033 r600\f0\lang1049 -\f4\lang1033 beta-22833 \f0\lang1049 ====================\par
+\f4\fs16\lang1033 16.10.2021\par
+\b0\f5\lang1049 * maxminddb\par
 * zlib-ng\par
-\b\f0\fs18 ================ \f2\lang1033 r600\f0\lang1049 -\f2\lang1033 beta-228\f3\lang1049 2\f2\lang1033 8 \f0\lang1049 ====================\par
-\f2\fs16\lang1033 04.10.2021\par
-\b0\f3\lang1049 * mediainfo\par
-\b\f0\fs18 ================ \f2\lang1033 r600\f0\lang1049 -\f2\lang1033 beta-22826 \f0\lang1049 ====================\par
-\f2\fs16\lang1033 29.0\f3\lang1049 9\f2\lang1033 .2021\par
-\b0\f3\lang1049 * libtorrent\par
-\b\f0\fs18 ================ \f2\lang1033 r600\f0\lang1049 -\f2\lang1033 beta-228\f3\lang1049 23\f2\lang1033  \f0\lang1049 ====================\par
-\f3\fs16 25\f2\lang1033 .0\f3\lang1049 9\f2\lang1033 .2021\par
-\b0\f3\lang1049 * mediainfo\par
-\b\f0\fs18 ================ \f2\lang1033 r600\f0\lang1049 -\f2\lang1033 beta-228\f3\lang1049 13\f2\lang1033  \f0\lang1049 ====================\par
-\f3\fs16 05\f2\lang1033 .0\f3\lang1049 9\f2\lang1033 .2021\par
-\b0\f3\lang1049 * mediainfo-git\par
+\b\f0\fs18 ================ \f4\lang1033 r600\f0\lang1049 -\f4\lang1033 beta-228\f5\lang1049 2\f4\lang1033 8 \f0\lang1049 ====================\par
+\f4\fs16\lang1033 04.10.2021\par
+\b0\f5\lang1049 * mediainfo\par
+\b\f0\fs18 ================ \f4\lang1033 r600\f0\lang1049 -\f4\lang1033 beta-22826 \f0\lang1049 ====================\par
+\f4\fs16\lang1033 29.0\f5\lang1049 9\f4\lang1033 .2021\par
+\b0\f5\lang1049 * libtorrent\par
+\b\f0\fs18 ================ \f4\lang1033 r600\f0\lang1049 -\f4\lang1033 beta-228\f5\lang1049 23\f4\lang1033  \f0\lang1049 ====================\par
+\f5\fs16 25\f4\lang1033 .0\f5\lang1049 9\f4\lang1033 .2021\par
+\b0\f5\lang1049 * mediainfo\par
+\b\f0\fs18 ================ \f4\lang1033 r600\f0\lang1049 -\f4\lang1033 beta-228\f5\lang1049 13\f4\lang1033  \f0\lang1049 ====================\par
+\f5\fs16 05\f4\lang1033 .0\f5\lang1049 9\f4\lang1033 .2021\par
+\b0\f5\lang1049 * mediainfo-git\par
 * libtorrent\par
-\b\f0\fs18 ================ \f2\lang1033 r600\f0\lang1049 -\f2\lang1033 beta-22808 \f0\lang1049 ====================\par
-\f2\fs16\lang1033 31.08.2021\par
+\b\f0\fs18 ================ \f4\lang1033 r600\f0\lang1049 -\f4\lang1033 beta-22808 \f0\lang1049 ====================\par
+\f4\fs16\lang1033 31.08.2021\par
 \b0 * VC++ 16.11.2\par
-\f3\lang1049 * boost 1.77\par
+\f5\lang1049 * boost 1.77\par
 * mediainfo-git\par
 * openssl-1.1.1l\par
-\b\f0\fs18 ================ \f2\lang1033 r600\f0\lang1049 -\f2\lang1033 beta-22802 \f0\lang1049 ====================\par
-\f2\fs16\lang1033 29.07.2021\par
+\b\f0\fs18 ================ \f4\lang1033 r600\f0\lang1049 -\f4\lang1033 beta-22802 \f0\lang1049 ====================\par
+\f4\fs16\lang1033 29.07.2021\par
 \b0 * VC++ 16.10.4\par
-\f3\lang1049 * libtorrent\par
-\b\f0\fs18 ================ \f2\lang1033 r600\f0\lang1049 -\f2\lang1033 beta-22797\f0\lang1049 ====================\par
-\f2\fs16\lang1033 30.06.2021\par
+\f5\lang1049 * libtorrent\par
+\b\f0\fs18 ================ \f4\lang1033 r600\f0\lang1049 -\f4\lang1033 beta-22797\f0\lang1049 ====================\par
+\f4\fs16\lang1033 30.06.2021\par
 \b0 * VC++ 16.10.2\par
 * sqlite 3.36.0\par
-\f3\lang1049 * libtorrent\par
-* mediainfolib\f2\fs18\lang1033\par
-\b\f0\lang1049 ================ \f2\lang1033 r600\f0\lang1049 -\f2\lang1033 beta-22791\f0\lang1049 ====================\par
-\f2\fs16\lang1033 27.05.2021\par
+\f5\lang1049 * libtorrent\par
+* mediainfolib\f4\fs18\lang1033\par
+\b\f0\lang1049 ================ \f4\lang1033 r600\f0\lang1049 -\f4\lang1033 beta-22791\f0\lang1049 ====================\par
+\f4\fs16\lang1033 27.05.2021\par
 \b0 * VC++ 16.10.0\par
 * sqlite 3.36.0\par
-\f3\lang1049 * libtorrent\par
-* mediainfolib\f2\fs18\lang1033\par
-\b\f0\lang1049 ================ \f2\lang1033 r600\f0\lang1049 -\f2\lang1033 beta-22788\f0\lang1049 ====================\par
-\f2\fs16\lang1033 26.05.2021\fs18\par
+\f5\lang1049 * libtorrent\par
+* mediainfolib\f4\fs18\lang1033\par
+\b\f0\lang1049 ================ \f4\lang1033 r600\f0\lang1049 -\f4\lang1033 beta-22788\f0\lang1049 ====================\par
+\f4\fs16\lang1033 26.05.2021\fs18\par
 \b0\fs16 * libtorrent\par
-\b\f0\fs18\lang1049 ================ \f2\lang1033 r600\f0\lang1049 -\f2\lang1033 beta-22785\f0\lang1049 ====================\par
-\f2\fs16\lang1033 10.05.2021\fs18\par
+\b\f0\fs18\lang1049 ================ \f4\lang1033 r600\f0\lang1049 -\f4\lang1033 beta-22785\f0\lang1049 ====================\par
+\f4\fs16\lang1033 10.05.2021\fs18\par
 \b0\fs16 * libtorrent\par
-* Fix timer leak in CGDIImage {{\field{\*\fldinst{HYPERLINK https://github.com/zipper9/blacklink/commit/2352c4457ccdf1e0c2e93e9c63c7e95466d754dc }}{\fldrslt{https://github.com/zipper9/blacklink/commit/2352c4457ccdf1e0c2e93e9c63c7e95466d754dc\ul0\cf0}}}}\f2\fs16\par
-\b\f0\fs18\lang1049 ================ \f2\lang1033 r600\f0\lang1049 -\f2\lang1033 beta-22780\f0\lang1049 ====================\par
-\f2\fs16\lang1033 30.04.2021\fs18\par
+* Fix timer leak in CGDIImage {{\field{\*\fldinst{HYPERLINK https://github.com/zipper9/blacklink/commit/2352c4457ccdf1e0c2e93e9c63c7e95466d754dc }}{\fldrslt{https://github.com/zipper9/blacklink/commit/2352c4457ccdf1e0c2e93e9c63c7e95466d754dc\ul0\cf0}}}}\f4\fs16\par
+\b\f0\fs18\lang1049 ================ \f4\lang1033 r600\f0\lang1049 -\f4\lang1033 beta-22780\f0\lang1049 ====================\par
+\f4\fs16\lang1033 30.04.2021\fs18\par
 \b0\fs16 * sqlite 3.35.5\par
-* maxminddb (AirDC++)\f3\lang1049\par
-\b\f0\fs18 ================ \f2\lang1033 r600\f0\lang1049 -\f2\lang1033 beta-22767\f0\lang1049 ====================\par
-\f2\fs16\lang1033 03.04.2021\fs18\par
+* maxminddb (AirDC++)\f5\lang1049\par
+\b\f0\fs18 ================ \f4\lang1033 r600\f0\lang1049 -\f4\lang1033 beta-22767\f0\lang1049 ====================\par
+\f4\fs16\lang1033 03.04.2021\fs18\par
 \b0\fs16 * sqlite 3.35.4\par
-\b\f0\fs18\lang1049 ================ \f2\lang1033 r600\f0\lang1049 -\f2\lang1033 beta-22762 \f0\lang1049 ====================\par
-\f2\lang1033 *\f3\lang1049  \f2\lang1033 30.03.2021\par
+\b\f0\fs18\lang1049 ================ \f4\lang1033 r600\f0\lang1049 -\f4\lang1033 beta-22762 \f0\lang1049 ====================\par
+\f4\lang1033 *\f5\lang1049  \f4\lang1033 30.03.2021\par
 \b0\fs16 * libtorrent\par
-\b\f0\fs18\lang1049 ================ \f2\lang1033 r600\f0\lang1049 -\f2\lang1033 beta-22757 \f0\lang1049 ====================\par
-\f2\lang1033 *\f3\lang1049  \f2\lang1033 28.03.2021\par
+\b\f0\fs18\lang1049 ================ \f4\lang1033 r600\f0\lang1049 -\f4\lang1033 beta-22757 \f0\lang1049 ====================\par
+\f4\lang1033 *\f5\lang1049  \f4\lang1033 28.03.2021\par
 \b0\fs16 * sqlite 3.35.3\b\fs18\par
-\f0\lang1049 ================ \f2\lang1033 r600\f0\lang1049 -\f2\lang1033 beta-22751 \f0\lang1049 ====================\par
-\f2\lang1033 *\f3\lang1049  \f2\lang1033 26.03.2021\par
-\b0\f3\fs16\lang1049 * openssl\f2\lang1033  1.1.1k\par
-\b\f0\fs18\lang1049 ================ \f2\lang1033 r600\f0\lang1049 -\f2\lang1033 beta-22746 \f0\lang1049 ====================\par
-\f2\lang1033 *\f3\lang1049  \f2\lang1033 23.03.2021\par
-\b0\f3\fs16\lang1049 * \'c4\'ee\'e1\'e0\'e2\'eb\'e5\'ed\'e0 \'e7\'e0\'f7\'e8\'f1\'f2\'ea\'e0 \'ea\'e0\'f2\'e0\'eb\'ee\'e3\'e0 \'f4\'e0\'e9\'eb-\'eb\'e8\'f1\'f2\'ee\'e2 Settings\\FileLists\f2\lang1033  (Delion)\f3\lang1049\par
+\f0\lang1049 ================ \f4\lang1033 r600\f0\lang1049 -\f4\lang1033 beta-22751 \f0\lang1049 ====================\par
+\f4\lang1033 *\f5\lang1049  \f4\lang1033 26.03.2021\par
+\b0\f5\fs16\lang1049 * openssl\f4\lang1033  1.1.1k\par
+\b\f0\fs18\lang1049 ================ \f4\lang1033 r600\f0\lang1049 -\f4\lang1033 beta-22746 \f0\lang1049 ====================\par
+\f4\lang1033 *\f5\lang1049  \f4\lang1033 23.03.2021\par
+\b0\f5\fs16\lang1049 * \'c4\'ee\'e1\'e0\'e2\'eb\'e5\'ed\'e0 \'e7\'e0\'f7\'e8\'f1\'f2\'ea\'e0 \'ea\'e0\'f2\'e0\'eb\'ee\'e3\'e0 \'f4\'e0\'e9\'eb-\'eb\'e8\'f1\'f2\'ee\'e2 Settings\\FileLists\f4\lang1033  (Delion)\f5\lang1049\par
 * Mediainfo\par
-* openssl\b\f2\fs18\lang1033\par
-\f0\lang1049 ================ \f2\lang1033 r600\f0\lang1049 -\f2\lang1033 beta-22736 \f0\lang1049 ====================\par
-\f2\lang1033 *\f3\lang1049  \f2\lang1033 21.03.2021\par
-\b0\f3\fs16\lang1049 * \'ce\'ef\'f2\'e8\'ec\'e8\'e7\'e0\'f6\'e8\'ff \'e4\'e5\'f2\'e5\'ea\'f2\'e0 VIDEO_TS \'e8\'eb\'e8 AUDIO_TS\par
-\b\f0\fs18 ================ \f2\lang1033 r600\f0\lang1049 -\f2\lang1033 beta-2272\f3\lang1049 8\f2\lang1033  \f0\lang1049 ====================\par
-\f2\lang1033 *\f3\lang1049  \f2\lang1033 21.03.2021\par
-\b0\fs16 * \f3\lang1049\'ce\'ef\'f2\'e8\'ec\'e8\'e7\'e8\'f0\'ee\'e2\'e0\'ed\'ee \'f2\'e5\'f1\'f2\'e8\'f0\'ee\'e2\'e0\'ed\'e8\'e5 \'ef\'ee\'f0\'f2\'ee\'e2\par
-\b\f0\fs18 ================ \f2\lang1033 r600\f0\lang1049 -\f2\lang1033 beta-22727 \f0\lang1049 ====================\par
-\f2\lang1033 *\f3\lang1049  \f2\lang1033 21.03.2021\par
-\b0\fs16 * DrDump 2.0.20 {{\field{\*\fldinst{HYPERLINK https://drdump.com/crash-reporting-system }}{\fldrslt{https://drdump.com/crash-reporting-system\ul0\cf0}}}}\f2\fs16\par
-\b\f0\fs18\lang1049 ================ \f2\lang1033 r600\f0\lang1049 -\f2\lang1033 beta-22723 \f0\lang1049 ====================\par
-\f2\lang1033 *\f3\lang1049  \f2\lang1033 20.03.2021\par
+* openssl\b\f4\fs18\lang1033\par
+\f0\lang1049 ================ \f4\lang1033 r600\f0\lang1049 -\f4\lang1033 beta-22736 \f0\lang1049 ====================\par
+\f4\lang1033 *\f5\lang1049  \f4\lang1033 21.03.2021\par
+\b0\f5\fs16\lang1049 * \'ce\'ef\'f2\'e8\'ec\'e8\'e7\'e0\'f6\'e8\'ff \'e4\'e5\'f2\'e5\'ea\'f2\'e0 VIDEO_TS \'e8\'eb\'e8 AUDIO_TS\par
+\b\f0\fs18 ================ \f4\lang1033 r600\f0\lang1049 -\f4\lang1033 beta-2272\f5\lang1049 8\f4\lang1033  \f0\lang1049 ====================\par
+\f4\lang1033 *\f5\lang1049  \f4\lang1033 21.03.2021\par
+\b0\fs16 * \f5\lang1049\'ce\'ef\'f2\'e8\'ec\'e8\'e7\'e8\'f0\'ee\'e2\'e0\'ed\'ee \'f2\'e5\'f1\'f2\'e8\'f0\'ee\'e2\'e0\'ed\'e8\'e5 \'ef\'ee\'f0\'f2\'ee\'e2\par
+\b\f0\fs18 ================ \f4\lang1033 r600\f0\lang1049 -\f4\lang1033 beta-22727 \f0\lang1049 ====================\par
+\f4\lang1033 *\f5\lang1049  \f4\lang1033 21.03.2021\par
+\b0\fs16 * DrDump 2.0.20 {{\field{\*\fldinst{HYPERLINK https://drdump.com/crash-reporting-system }}{\fldrslt{https://drdump.com/crash-reporting-system\ul0\cf0}}}}\f4\fs16\par
+\b\f0\fs18\lang1049 ================ \f4\lang1033 r600\f0\lang1049 -\f4\lang1033 beta-22723 \f0\lang1049 ====================\par
+\f4\lang1033 *\f5\lang1049  \f4\lang1033 20.03.2021\par
 \b0\fs16 * boost 1.76-b1\par
-\f3\lang1049 * zlib-ng {{\field{\*\fldinst{HYPERLINK https://github.com/zlib-ng/zlib-ng }}{\fldrslt{https://github.com/zlib-ng/zlib-ng\ul0\cf0}}}}\f2\fs16\lang1033\par
-\b\f0\fs18\lang1049 ================ \f2\lang1033 r600\f0\lang1049 -\f2\lang1033 beta-22718 \f0\lang1049 ====================\par
-\f2\lang1033 *\f3\lang1049  \f2\lang1033 20.03.2021\par
+\f5\lang1049 * zlib-ng {{\field{\*\fldinst{HYPERLINK https://github.com/zlib-ng/zlib-ng }}{\fldrslt{https://github.com/zlib-ng/zlib-ng\ul0\cf0}}}}\f4\fs16\lang1033\par
+\b\f0\fs18\lang1049 ================ \f4\lang1033 r600\f0\lang1049 -\f4\lang1033 beta-22718 \f0\lang1049 ====================\par
+\f4\lang1033 *\f5\lang1049  \f4\lang1033 20.03.2021\par
 \b0\fs16 * sqlite 3.35.2\par
-\b\f0\fs18\lang1049 ================ \f2\lang1033 r600\f0\lang1049 -\f2\lang1033 beta-22702 \f0\lang1049 ====================\par
-\f2\lang1033 *\f3\lang1049  \f2\lang1033 10.03.2021\par
+\b\f0\fs18\lang1049 ================ \f4\lang1033 r600\f0\lang1049 -\f4\lang1033 beta-22702 \f0\lang1049 ====================\par
+\f4\lang1033 *\f5\lang1049  \f4\lang1033 10.03.2021\par
 \b0\fs16 * libtorrent\par
-\b\f0\fs18\lang1049 ================ \f2\lang1033 r600\f0\lang1049 -\f2\lang1033 beta-22697 \f0\lang1049 ====================\par
-\f2\lang1033 *\f3\lang1049  \f2\lang1033 05.03.2021\par
+\b\f0\fs18\lang1049 ================ \f4\lang1033 r600\f0\lang1049 -\f4\lang1033 beta-22697 \f0\lang1049 ====================\par
+\f4\lang1033 *\f5\lang1049  \f4\lang1033 05.03.2021\par
 \b0\fs16 * MediaInfo\par
 * libtorrent\par
-\b\f0\fs18\lang1049 ================ \f2\lang1033 r600\f0\lang1049 -\f2\lang1033 beta-22694 \f0\lang1049 ====================\par
-\f2\lang1033 *\f3\lang1049  \f2\lang1033 28.02.2021\par
+\b\f0\fs18\lang1049 ================ \f4\lang1033 r600\f0\lang1049 -\f4\lang1033 beta-22694 \f0\lang1049 ====================\par
+\f4\lang1033 *\f5\lang1049  \f4\lang1033 28.02.2021\par
 \b0\fs16 * sqlite\par
-\b\f0\fs18\lang1049 ================ \f2\lang1033 r600\f0\lang1049 -\f2\lang1033 beta-22685 \f0\lang1049 ====================\par
-\f2\lang1033 *\f3\lang1049  \f2\lang1033 27.02.2021\par
+\b\f0\fs18\lang1049 ================ \f4\lang1033 r600\f0\lang1049 -\f4\lang1033 beta-22685 \f0\lang1049 ====================\par
+\f4\lang1033 *\f5\lang1049  \f4\lang1033 27.02.2021\par
 \b0\fs16 * leveldb\par
-* \f3\lang1049\'d3\'e1\'f0\'e0\'eb \'f1\'ee\'ee\'e1\'f9\'e5\'ed\'e8\'e5 Error in SharedFileStream::SharedFileStream\par
-\b\f0\fs18 ================ \f2\lang1033 r600-beta\f0\lang1049 -226\f2\lang1033 6\f0\lang1049 0====================\par
-\f2\lang1033 *\f3\lang1049  \f2\lang1033 21.02.2021\par
+* \f5\lang1049\'d3\'e1\'f0\'e0\'eb \'f1\'ee\'ee\'e1\'f9\'e5\'ed\'e8\'e5 Error in SharedFileStream::SharedFileStream\par
+\b\f0\fs18 ================ \f4\lang1033 r600-beta\f0\lang1049 -226\f4\lang1033 6\f0\lang1049 0====================\par
+\f4\lang1033 *\f5\lang1049  \f4\lang1033 21.02.2021\par
 \b0\fs16 * openssl 1.1.1j\par
 * jsoncpp\par
 * mediainfo\par
-\b\f0\fs18\lang1049 ================ \f2\lang1033 r600-beta\f0\lang1049 -22640====================\par
-\b0\f2\fs16\lang1033 * medianfo\b\f0\fs18\lang1049\par
-================ \f2\lang1033 r600-beta\f0\lang1049 -\f2\lang1033 22\f3\lang1049 6\f2\lang1033 38 \f0\lang1049 ====================\par
-\f2\lang1033 *\f3\lang1049  \f2\lang1033 11.02.2021 \par
+\b\f0\fs18\lang1049 ================ \f4\lang1033 r600-beta\f0\lang1049 -22640====================\par
+\b0\f4\fs16\lang1033 * medianfo\b\f0\fs18\lang1049\par
+================ \f4\lang1033 r600-beta\f0\lang1049 -\f4\lang1033 22\f5\lang1049 6\f4\lang1033 38 \f0\lang1049 ====================\par
+\f4\lang1033 *\f5\lang1049  \f4\lang1033 11.02.2021 \par
 \b0\fs16 * Fix {{\field{\*\fldinst{HYPERLINK https://github.com/MediaArea/MediaInfo/issues/518 }}{\fldrslt{https://github.com/MediaArea/MediaInfo/issues/518\ul0\cf0}}}}\b\f0\fs18\lang1049\par
-================ \f2\lang1033 r600-beta\f0\lang1049 -\f2\lang1033 22\f3\lang1049 6\f2\lang1033 21 \f0\lang1049 ====================\par
-\f2\lang1033 *\f3\lang1049  \f2\lang1033 29.01.2021 \par
+================ \f4\lang1033 r600-beta\f0\lang1049 -\f4\lang1033 22\f5\lang1049 6\f4\lang1033 21 \f0\lang1049 ====================\par
+\f4\lang1033 *\f5\lang1049  \f4\lang1033 29.01.2021 \par
 \b0\fs16  - libtorrent\par
  - sqlite\par
-\b\f0\fs18\lang1049 ================ \f2\lang1033 r600-beta\f0\lang1049 -\f2\lang1033 22\f3\lang1049 603\f2\lang1033  \f0\lang1049 ====================\par
-\f2\lang1033 *\f3\lang1049  31\f2\lang1033 .12.2020 \par
+\b\f0\fs18\lang1049 ================ \f4\lang1033 r600-beta\f0\lang1049 -\f4\lang1033 22\f5\lang1049 603\f4\lang1033  \f0\lang1049 ====================\par
+\f4\lang1033 *\f5\lang1049  31\f4\lang1033 .12.2020 \par
 \b0\fs16  - libtorrent\b\f0\fs18\lang1049\par
-================ \f2\lang1033 r600-beta\f0\lang1049 -\f2\lang1033 22599 \f0\lang1049 ====================\par
-\f2\lang1033 *\f3\lang1049  \f2\lang1033 29.12.2020 \par
+================ \f4\lang1033 r600-beta\f0\lang1049 -\f4\lang1033 22599 \f0\lang1049 ====================\par
+\f4\lang1033 *\f5\lang1049  \f4\lang1033 29.12.2020 \par
 \b0\fs16  - libtorrent\b\f0\fs18\lang1049\par
-================ \f2\lang1033 r600-beta\f0\lang1049 -\f2\lang1033 22595 \f0\lang1049 ====================\par
-\f2\lang1033 *\f3\lang1049  \f2\lang1033 25.12.2020 \par
+================ \f4\lang1033 r600-beta\f0\lang1049 -\f4\lang1033 22595 \f0\lang1049 ====================\par
+\f4\lang1033 *\f5\lang1049  \f4\lang1033 25.12.2020 \par
 \b0\fs16  - libtorrent\b\f0\fs18\lang1049\par
-================ \f2\lang1033 r600\f0\lang1049 -\f2\lang1033 beta-22591 \f0\lang1049 ====================\par
-\f2\lang1033 *\f3\lang1049  \f2\lang1033 21.12.2020\par
-\b0\f3\lang1049 * mediainfo\par
-\b\f0 ================ \f2\lang1033 r600\f0\lang1049 -\f2\lang1033 beta-22586 \f0\lang1049 ====================\par
-\f2\lang1033 *\f3\lang1049  \f2\lang1033 18.12.2020\par
-\b0\f3\lang1049 * mediainfo\par
+================ \f4\lang1033 r600\f0\lang1049 -\f4\lang1033 beta-22591 \f0\lang1049 ====================\par
+\f4\lang1033 *\f5\lang1049  \f4\lang1033 21.12.2020\par
+\b0\f5\lang1049 * mediainfo\par
+\b\f0 ================ \f4\lang1033 r600\f0\lang1049 -\f4\lang1033 beta-22586 \f0\lang1049 ====================\par
+\f4\lang1033 *\f5\lang1049  \f4\lang1033 18.12.2020\par
+\b0\f5\lang1049 * mediainfo\par
 * libtorrent\par
-\b\f0 ================ \f2\lang1033 r600\f0\lang1049 -\f2\lang1033 beta-22582 \f0\lang1049 ====================\par
-\f2\lang1033 *\f3\lang1049  \f2\lang1033 12.12.2020\par
-\b0\f3\lang1049 * boost 1.75\par
+\b\f0 ================ \f4\lang1033 r600\f0\lang1049 -\f4\lang1033 beta-22582 \f0\lang1049 ====================\par
+\f4\lang1033 *\f5\lang1049  \f4\lang1033 12.12.2020\par
+\b0\f5\lang1049 * boost 1.75\par
 * openSSL 1.1.1i\par
 * libtorrent\par
-\b\f0 ================ \f2\lang1033 r600\f0\lang1049 -\f2\lang1033 beta-22578 \f0\lang1049 ====================\par
-\f2\lang1033 *\f3\lang1049  \f2\lang1033 02.12.2020\par
+\b\f0 ================ \f4\lang1033 r600\f0\lang1049 -\f4\lang1033 beta-22578 \f0\lang1049 ====================\par
+\f4\lang1033 *\f5\lang1049  \f4\lang1033 02.12.2020\par
 \b0 * mediainfo\par
-\f3\lang1049 * sqlite-3\f2\lang1033 .\f3\lang1049 34\par
+\f5\lang1049 * sqlite-3\f4\lang1033 .\f5\lang1049 34\par
 * libtorrent\par
-\b\f0 ================ \f2\lang1033 r600\f0\lang1049 -\f2\lang1033 beta-22570 \f0\lang1049 ====================\par
-\f2\lang1033 *\f3\lang1049  \f2\lang1033 15.11.2020\par
+\b\f0 ================ \f4\lang1033 r600\f0\lang1049 -\f4\lang1033 beta-22570 \f0\lang1049 ====================\par
+\f4\lang1033 *\f5\lang1049  \f4\lang1033 15.11.2020\par
 
-\pard\nowidctlpar\b0\fs16 * \f3\lang1049\'ce\'e1\'ed\'ee\'e2\'eb\'e5\'ed\'fb\f2\lang1033  libtorrent,mediainfolib\par
+\pard\nowidctlpar\b0\fs16 * \f5\lang1049\'ce\'e1\'ed\'ee\'e2\'eb\'e5\'ed\'fb\f4\lang1033  libtorrent,mediainfolib\par
 
-\pard\b\f0\fs18\lang1049 ================ \f2\lang1033 r600\f0\lang1049 -\f2\lang1033 beta-22563 \f0\lang1049 ====================\par
-\f2\lang1033 *\f3\lang1049  \f2\lang1033 07.11.2020\par
+\pard\b\f0\fs18\lang1049 ================ \f4\lang1033 r600\f0\lang1049 -\f4\lang1033 beta-22563 \f0\lang1049 ====================\par
+\f4\lang1033 *\f5\lang1049  \f4\lang1033 07.11.2020\par
 
-\pard\nowidctlpar\b0\fs16 * \f3\lang1049\'ce\'e1\'ed\'ee\'e2\'eb\'e5\'ed\'fb\f2\lang1033  openssl, jsoncpp,mediainfolib, wtl\par
-* \f3\lang1049\'ce\'e1\'ed\'ee\'e2\'eb\'e5\'ed\'fb\f2\lang1033  libtorrent,mediainfolib\par
+\pard\nowidctlpar\b0\fs16 * \f5\lang1049\'ce\'e1\'ed\'ee\'e2\'eb\'e5\'ed\'fb\f4\lang1033  openssl, jsoncpp,mediainfolib, wtl\par
+* \f5\lang1049\'ce\'e1\'ed\'ee\'e2\'eb\'e5\'ed\'fb\f4\lang1033  libtorrent,mediainfolib\par
 
-\pard\b\f0\fs18\lang1049 ================ \f2\lang1033 r600\f0\lang1049 -\f2\lang1033 beta-224\f3\lang1049 33\f2\lang1033  \f0\lang1049 ====================\f2\lang1033\par
-*\f3\lang1049  14\f2\lang1033 .0\f3\lang1049 3\f2\lang1033 .2020\par
+\pard\b\f0\fs18\lang1049 ================ \f4\lang1033 r600\f0\lang1049 -\f4\lang1033 beta-224\f5\lang1049 33\f4\lang1033  \f0\lang1049 ====================\f4\lang1033\par
+*\f5\lang1049  14\f4\lang1033 .0\f5\lang1049 3\f4\lang1033 .2020\par
 
 \pard\nowidctlpar\b0\fs16 * ZenLib\par
 
-\pard\b\f0\fs18\lang1049 ================ \f2\lang1033 r600\f0\lang1049 -\f2\lang1033 beta-22427 \f0\lang1049 ====================\par
-\f2\lang1033 *\f3\lang1049  0\f2\lang1033 9.0\f3\lang1049 3\f2\lang1033 .2020\par
+\pard\b\f0\fs18\lang1049 ================ \f4\lang1033 r600\f0\lang1049 -\f4\lang1033 beta-22427 \f0\lang1049 ====================\par
+\f4\lang1033 *\f5\lang1049  0\f4\lang1033 9.0\f5\lang1049 3\f4\lang1033 .2020\par
 
 \pard\nowidctlpar\b0\fs16 * libtorrent\par
 
-\pard\b\f0\fs18\lang1049 ================ \f2\lang1033 r600\f0\lang1049 -\f2\lang1033 beta-22423 \f0\lang1049 ====================\par
-\f2\lang1033 *\f3\lang1049  0\f2\lang1033 8.0\f3\lang1049 3\f2\lang1033 .2020\par
+\pard\b\f0\fs18\lang1049 ================ \f4\lang1033 r600\f0\lang1049 -\f4\lang1033 beta-22423 \f0\lang1049 ====================\par
+\f4\lang1033 *\f5\lang1049  0\f4\lang1033 8.0\f5\lang1049 3\f4\lang1033 .2020\par
 
-\pard\nowidctlpar\b0\fs16 * \f3\lang1049\'c8\'f1\'ef\'f0\'e0\'e2\'eb\'e5\'ed\'ee \'e7\'e0\'e2\'e8\'f1\'e0\'ed\'e8\'e5 \'ef\'f0\'ee\'f6\'e5\'f1\'f1\'e0 \'ef\'ee\'f1\'eb\'e5 \'e2\'fb\'f5\'ee\'e4\'e0 \'e8\'e7 \'f1\'ef\'ff\'f9\'e5\'e3\'ee \'f0\'e5\'e6\'e8\'ec\'e0. (\f2\lang1033 KCAHDEP)\par
- {{\field{\*\fldinst{HYPERLINK https://github.com/arvidn/libtorrent/commit/9469913cb299b6a471df68112049e56d88869b90 }}{\fldrslt{https://github.com/arvidn/libtorrent/commit/9469913cb299b6a471df68112049e56d88869b90\ul0\cf0}}}}\f2\fs16\par
+\pard\nowidctlpar\b0\fs16 * \f5\lang1049\'c8\'f1\'ef\'f0\'e0\'e2\'eb\'e5\'ed\'ee \'e7\'e0\'e2\'e8\'f1\'e0\'ed\'e8\'e5 \'ef\'f0\'ee\'f6\'e5\'f1\'f1\'e0 \'ef\'ee\'f1\'eb\'e5 \'e2\'fb\'f5\'ee\'e4\'e0 \'e8\'e7 \'f1\'ef\'ff\'f9\'e5\'e3\'ee \'f0\'e5\'e6\'e8\'ec\'e0. (\f4\lang1033 KCAHDEP)\par
+ {{\field{\*\fldinst{HYPERLINK https://github.com/arvidn/libtorrent/commit/9469913cb299b6a471df68112049e56d88869b90 }}{\fldrslt{https://github.com/arvidn/libtorrent/commit/9469913cb299b6a471df68112049e56d88869b90\ul0\cf0}}}}\f4\fs16\par
 
-\pard\b\f0\fs18\lang1049 ================ \f2\lang1033 r600\f0\lang1049 -\f2\lang1033 beta-22399 \f0\lang1049 ====================\par
-\f2\lang1033 *\f3\lang1049  0\f2\lang1033 4.0\f3\lang1049 3\f2\lang1033 .2020\par
+\pard\b\f0\fs18\lang1049 ================ \f4\lang1033 r600\f0\lang1049 -\f4\lang1033 beta-22399 \f0\lang1049 ====================\par
+\f4\lang1033 *\f5\lang1049  0\f4\lang1033 4.0\f5\lang1049 3\f4\lang1033 .2020\par
 
 \pard\nowidctlpar\b0\fs16 * libtorrent\par
 * remove c.getParameters().erase(c.getParameters().begin())\par
-\f3\lang1049 * \'c8\'f1\'ef\'f0\'e0\'e2\'eb\'e5\'ed\'ee \'ef\'e0\'e4\'e5\'ed\'e8\'e5 ShareManager::getTree\par
+\f5\lang1049 * \'c8\'f1\'ef\'f0\'e0\'e2\'eb\'e5\'ed\'ee \'ef\'e0\'e4\'e5\'ed\'e8\'e5 ShareManager::getTree\par
 * bzip2 1.0.8\par
 
-\pard\b\f0\fs18 ================ \f2\lang1033 r600\f0\lang1049 -\f2\lang1033 beta-223\f3\lang1049 70\f2\lang1033  \f0\lang1049 ====================\par
-\f2\lang1033 *\f3\lang1049  01\f2\lang1033 .0\f3\lang1049 3\f2\lang1033 .2020 \par
+\pard\b\f0\fs18 ================ \f4\lang1033 r600\f0\lang1049 -\f4\lang1033 beta-223\f5\lang1049 70\f4\lang1033  \f0\lang1049 ====================\par
+\f4\lang1033 *\f5\lang1049  01\f4\lang1033 .0\f5\lang1049 3\f4\lang1033 .2020 \par
 
-\pard\nowidctlpar\b0\fs16 -\f3\lang1049  \'cd\'ee\'e2\'ee\'e5 (\'e2\'e5\'f1\'e5\'ed\'ed\'e5) \'f1\'ef\'eb\'e5\'f8 \'ee\'ea\'ed\'ee ;-)\f0\par
+\pard\nowidctlpar\b0\fs16 -\f5\lang1049  \'cd\'ee\'e2\'ee\'e5 (\'e2\'e5\'f1\'e5\'ed\'ed\'e5) \'f1\'ef\'eb\'e5\'f8 \'ee\'ea\'ed\'ee ;-)\f0\par
 
-\pard\f3\fs18 -\f2\lang1033  \f3\lang1049\'ce\'e1\'ed\'ee\'e2\'eb\'e5\'ed\'e0 \'ea\'ee\'ed\'f4\'e8\'e3\'f3\'f0\'e0\'f6\'e8\'ff \'ef\'ee\'e4\'ea\'eb\'fe\'f7\'e5\'ed\'e8\'ff \'ea \'ec\'e5\'e4\'e8\'e0-\'f1\'e5\'f0\'e2\'e5\'f0\'f3.\par
-\b\f0 ================ \f2\lang1033 r600\f0\lang1049 -\f2\lang1033 beta-223\f3\lang1049 63\f2\lang1033  \f0\lang1049 ====================\par
-\f2\lang1033 * 29.02.2020 \par
-\b0\f3\lang1049 -\f2\lang1033  \f3\lang1049\'d3\'e4\'e0\'eb\'e5\'ed http-\'f1\'e5\'f0\'e2\'e5\'f0 \'f3\'e4\'e0\'eb\'e5\'ed\'ed\'ee\'e3\'ee \'f3\'ef\'f0\'e0\'e2\'eb\'e5\'ed\'e8\'ff.\par
-- Fix {{\field{\*\fldinst{HYPERLINK https://github.com/arvidn/libtorrent/issues/4361 }}{\fldrslt{https://github.com/arvidn/libtorrent/issues/4361\ul0\cf0}}}}\f3\fs18\par
+\pard\f5\fs18 -\f4\lang1033  \f5\lang1049\'ce\'e1\'ed\'ee\'e2\'eb\'e5\'ed\'e0 \'ea\'ee\'ed\'f4\'e8\'e3\'f3\'f0\'e0\'f6\'e8\'ff \'ef\'ee\'e4\'ea\'eb\'fe\'f7\'e5\'ed\'e8\'ff \'ea \'ec\'e5\'e4\'e8\'e0-\'f1\'e5\'f0\'e2\'e5\'f0\'f3.\par
+\b\f0 ================ \f4\lang1033 r600\f0\lang1049 -\f4\lang1033 beta-223\f5\lang1049 63\f4\lang1033  \f0\lang1049 ====================\par
+\f4\lang1033 * 29.02.2020 \par
+\b0\f5\lang1049 -\f4\lang1033  \f5\lang1049\'d3\'e4\'e0\'eb\'e5\'ed http-\'f1\'e5\'f0\'e2\'e5\'f0 \'f3\'e4\'e0\'eb\'e5\'ed\'ed\'ee\'e3\'ee \'f3\'ef\'f0\'e0\'e2\'eb\'e5\'ed\'e8\'ff.\par
+- Fix {{\field{\*\fldinst{HYPERLINK https://github.com/arvidn/libtorrent/issues/4361 }}{\fldrslt{https://github.com/arvidn/libtorrent/issues/4361\ul0\cf0}}}}\f5\fs18\par
 - \'ce\'f2\'ea\'eb\'fe\'f7\'e8\'eb \'f1\'e1\'ee\'f0\'ea\'f3 x86 \'c2\'e5\'f0\'f1\'e8\'e8 \'e4\'eb\'ff \'e2\'e5\'f2\'ea\'e8 r600\par
--\f2\lang1033  sqlite 3.31.1\par
-\f3\lang1049 -\f2\lang1033  mediainfo\par
-\b\f0\lang1049 ================ \f2\lang1033 r600\f0\lang1049 -\f2\lang1033 beta-22324 \f0\lang1049 ====================\par
-\f2\lang1033 * 08.02.2020 \par
-\b0  - \f3\lang1049\'d1\'e1\'ee\'f0\'ea\'e0 \'e2 \f2\lang1033 VC++ 2019 - \cf3\b\f3\lang1049\'ed\'e5 \'ef\'ee\'e4\'e4\'e5\'f0\'e6\'e8\'e2\'e0\'e5\'f2\'f1\'ff \f2\lang1033 Windows XP\cf0\b0\par
-\f3\lang1049  - \'cf\'e5\'f0\'e5\'f5\'ee\'e4 \'ed\'e0 \f2\lang1033 libtorrent 1.2.4\f0\lang1049\par
+-\f4\lang1033  sqlite 3.31.1\par
+\f5\lang1049 -\f4\lang1033  mediainfo\par
+\b\f0\lang1049 ================ \f4\lang1033 r600\f0\lang1049 -\f4\lang1033 beta-22324 \f0\lang1049 ====================\par
+\f4\lang1033 * 08.02.2020 \par
+\b0  - \f5\lang1049\'d1\'e1\'ee\'f0\'ea\'e0 \'e2 \f4\lang1033 VC++ 2019 - \cf3\b\f5\lang1049\'ed\'e5 \'ef\'ee\'e4\'e4\'e5\'f0\'e6\'e8\'e2\'e0\'e5\'f2\'f1\'ff \f4\lang1033 Windows XP\cf0\b0\par
+\f5\lang1049  - \'cf\'e5\'f0\'e5\'f5\'ee\'e4 \'ed\'e0 \f4\lang1033 libtorrent 1.2.4\f0\lang1049\par
 \b ==================================================\par
 \par
 \'c1\'eb\'ee\'e3 FlylinkDC++\par
