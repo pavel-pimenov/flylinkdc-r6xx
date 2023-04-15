@@ -130,5 +130,19 @@ template<unsigned> struct static_assert_test {};
 
 #endif
 
+#if !defined(__has_cpp_attribute) || defined(__CUDACC__)
+#define BOOST_MOVE_HAS_MSVC_ATTRIBUTE(ATTR) 0
+#else
+#define BOOST_MOVE_HAS_MSVC_ATTRIBUTE(ATTR) __has_cpp_attribute(msvc::ATTR)
+#endif
+
+// See https://devblogs.microsoft.com/cppblog/improving-the-state-of-debug-performance-in-c/
+// for details on how MSVC has improved debug experience, specifically for move/forward-like utilities
+#if BOOST_MOVE_HAS_MSVC_ATTRIBUTE(intrinsic)
+#define BOOST_MOVE_INTRINSIC_CAST [[msvc::intrinsic]]
+#else
+#define BOOST_MOVE_INTRINSIC_CAST BOOST_MOVE_FORCEINLINE
+#endif
+
 #endif   //#ifndef BOOST_MOVE_DETAIL_WORKAROUND_HPP
 
