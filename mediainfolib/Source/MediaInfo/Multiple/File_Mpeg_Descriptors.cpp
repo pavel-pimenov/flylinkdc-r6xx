@@ -2178,8 +2178,7 @@ void File_Mpeg_Descriptors::Descriptor_3F_03()
             Element_Begin1("frequency");
             Info_B4(N,                                      "N");
             Info_B4(K,                                      "K");
-            if(K)
-               Element_Info1C(K, Ztring::ToZtring(N*27000000.0/K, 0)+__T(" Hz"));
+            Element_Info1C(K, Ztring::ToZtring(N*27000000.0/K, 0)+__T(" Hz"));
             Element_End0();
         }
         Skip_B4(                                            "num_units_in_tick");
