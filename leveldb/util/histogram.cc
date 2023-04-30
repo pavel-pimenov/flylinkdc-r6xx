@@ -247,7 +247,7 @@ std::string Histogram::ToString() const {
                 num_, Average(), StandardDeviation());
   r.append(buf);
   std::snprintf(buf, sizeof(buf), "Min: %.4f  Median: %.4f  Max: %.4f\n",
-           (num_ == 0.0 ? 0.0 : min_), Median(), max_);
+                (num_ == 0.0 ? 0.0 : min_), Median(), max_);
   r.append(buf);
   r.append("------------------------------------------------------\n");
   const double mult = 100.0 / num_;
@@ -256,11 +256,11 @@ std::string Histogram::ToString() const {
     if (buckets_[b] <= 0.0) continue;
     sum += buckets_[b];
     std::snprintf(buf, sizeof(buf), "[ %7.0f, %7.0f ) %7.0f %7.3f%% %7.3f%% ",
-             ((b == 0) ? 0.0 : kBucketLimit[b - 1]),  // left
-             kBucketLimit[b],                         // right
-             buckets_[b],                             // count
-             mult * buckets_[b],                      // percentage
-             mult * sum);                             // cumulative percentage
+                  ((b == 0) ? 0.0 : kBucketLimit[b - 1]),  // left
+                  kBucketLimit[b],                         // right
+                  buckets_[b],                             // count
+                  mult * buckets_[b],                      // percentage
+                  mult * sum);  // cumulative percentage
     r.append(buf);
 
     // Add hash marks based on percentage; 20 marks for 100%.

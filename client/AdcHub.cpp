@@ -117,7 +117,7 @@ OnlineUserPtr AdcHub::getUser(const uint32_t aSID, const CID& aCID, const string
 		{
 			messageYouHaweRightOperatorOnThisHub();
 		}
-	}	
+	}
 	else // User
 	{
 		UserPtr u = ClientManager::createUser(aCID, p_nick, getHubID());
@@ -1558,18 +1558,18 @@ void AdcHub::info(bool p_force)
 	const FavoriteHubEntry *fhe = FavoriteManager::getFavoriteHubEntry(getHubUrl());
 	if (fhe && fhe->getExclusiveHub())
 	{
-		uint8_t l_normal = 0, l_registered = 0, l_op = 0;
-		getCountsIndivid(l_normal, l_registered, l_op);
-		if (l_normal + l_registered + l_op == 0)
-		{
-			l_normal = 1;
-		}
-		addParam(c, "HN", Util::toString(l_normal));
-		addParam(c, "HR", Util::toString(l_registered));
-		addParam(c, "HO", Util::toString(l_op));
+	    uint8_t l_normal = 0, l_registered = 0, l_op = 0;
+	    getCountsIndivid(l_normal, l_registered, l_op);
+	    if (l_normal + l_registered + l_op == 0)
+	    {
+	        l_normal = 1;
+	    }
+	    addParam(c, "HN", Util::toString(l_normal));
+	    addParam(c, "HR", Util::toString(l_registered));
+	    addParam(c, "HO", Util::toString(l_op));
 	}
 	else
-*/ 
+	*/
 	{
 		if (getTotalCounts() == 0)
 		{

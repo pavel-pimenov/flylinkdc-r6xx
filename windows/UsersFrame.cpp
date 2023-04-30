@@ -134,7 +134,7 @@ LRESULT UsersFrame::onContextMenu(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, B
 		
 		OMenu usersMenu;
 		usersMenu.CreatePopupMenu();
-
+		
 		// Put Copy Items only if user Offline
 		if (ctrlUsers.GetSelectedCount() == 1)
 		{
@@ -143,10 +143,10 @@ LRESULT UsersFrame::onContextMenu(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, B
 			{
 				CString sCopy = CTSTRING(COPY);
 				sCopy = sCopy + " ";
-				sCopy = sCopy + CTSTRING(COPY_NICK);		// В одну строку упорно говорит об ошибке.
-
+				sCopy = sCopy + CTSTRING(COPY_NICK);        // В одну строку упорно говорит об ошибке.
+				
 				usersMenu.AppendMenu(MF_STRING, IDC_COPY_NICK, sCopy);
-			//	usersMenu.AppendMenu(MF_STRING, IDC_COPY_ALL, CTSTRING(COPY_ALL));
+				//  usersMenu.AppendMenu(MF_STRING, IDC_COPY_ALL, CTSTRING(COPY_ALL));
 				usersMenu.AppendMenu(MF_SEPARATOR);
 			}
 		}
@@ -685,34 +685,34 @@ LRESULT UsersFrame::onCopy(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOO
 {
 	if (ctrlUsers.GetSelectedCount() == 1)
 	{
-	//	string data;
+		//  string data;
 		int i = ctrlUsers.GetNextItem(-1, LVNI_SELECTED);
 		UserInfo* ui = ctrlUsers.getItemData(i);
 		dcassert(i != -1);
 		const auto l_user = ui->getUser();
-
+		
 		string sCopy;
 		switch (wID)
 		{
-		case IDC_COPY_NICK:
-			sCopy = l_user->getLastNick();
-			break;
-			case IDC_COPY_ALL:	// Короче я пока не понял как забрать время последнего входа юзера. Фичу не юзаем
+			case IDC_COPY_NICK:
+				sCopy = l_user->getLastNick();
+				break;
+			case IDC_COPY_ALL:  // Короче я пока не понял как забрать время последнего входа юзера. Фичу не юзаем
 				sCopy = l_user->getLastNick();
 				sCopy = sCopy + "/r/n";
 				break;
-		default:
-			dcdebug("USERSFRAME DON'T GO HERE\n");
-			return 0;
+			default:
+				dcdebug("USERSFRAME DON'T GO HERE\n");
+				return 0;
 		}
-
+		
 		if (!sCopy.empty())
 		{
 			WinUtil::setClipboard(sCopy);
 		}
 	}
-		return 0;
-	}
+	return 0;
+}
 
 /**
  * @file

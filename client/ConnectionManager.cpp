@@ -774,8 +774,8 @@ ConnectionManager::Server::Server(bool p_is_secure
 {
 	m_sock.create();
 	m_sock.setSocketOpt(SO_REUSEADDR, 1);
-	m_server_ip   = p_server_ip; 
-	m_server_port = m_sock.bind(p_port, p_server_ip); 
+	m_server_ip   = p_server_ip;
+	m_server_port = m_sock.bind(p_port, p_server_ip);
 	m_sock.listen();
 	start(64);
 }

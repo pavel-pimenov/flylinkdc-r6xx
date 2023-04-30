@@ -73,7 +73,7 @@ class AppearancePage : public CPropertyPage<IDD_APPEARANCE_PAGE>, public PropPag
 		CComboBox ctrlTheme;
 		ThemeMap m_ThemeList;
 		void GetThemeList();
-#endif		
+#endif
 		
 };
 

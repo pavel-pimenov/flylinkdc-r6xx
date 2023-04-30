@@ -29,6 +29,8 @@ struct cpu_features {
     struct power_cpu_features power;
 #elif defined(S390_FEATURES)
     struct s390_cpu_features s390;
+#else
+    char empty;
 #endif
 };
 
@@ -97,12 +99,12 @@ extern uint8_t* chunkmemset_safe_c(uint8_t *out, unsigned dist, unsigned len, un
 extern uint32_t chunksize_sse2(void);
 extern uint8_t* chunkmemset_safe_sse2(uint8_t *out, unsigned dist, unsigned len, unsigned left);
 #endif
-#ifdef X86_SSE41
-extern uint8_t* chunkmemset_safe_sse41(uint8_t *out, unsigned dist, unsigned len, unsigned left);
+#ifdef X86_SSSE3
+extern uint8_t* chunkmemset_safe_ssse3(uint8_t *out, unsigned dist, unsigned len, unsigned left);
 #endif
 #ifdef X86_AVX2
-extern uint32_t chunksize_avx(void);
-extern uint8_t* chunkmemset_safe_avx(uint8_t *out, unsigned dist, unsigned len, unsigned left);
+extern uint32_t chunksize_avx2(void);
+extern uint8_t* chunkmemset_safe_avx2(uint8_t *out, unsigned dist, unsigned len, unsigned left);
 #endif
 #ifdef ARM_NEON
 extern uint32_t chunksize_neon(void);
@@ -124,11 +126,11 @@ extern void inflate_fast_c(PREFIX3(stream) *strm, uint32_t start);
 #ifdef X86_SSE2
 extern void inflate_fast_sse2(PREFIX3(stream) *strm, uint32_t start);
 #endif
-#ifdef X86_SSE41
-extern void inflate_fast_sse41(PREFIX3(stream) *strm, uint32_t start);
+#ifdef X86_SSSE3
+extern void inflate_fast_ssse3(PREFIX3(stream) *strm, uint32_t start);
 #endif
 #ifdef X86_AVX2
-extern void inflate_fast_avx(PREFIX3(stream) *strm, uint32_t start);
+extern void inflate_fast_avx2(PREFIX3(stream) *strm, uint32_t start);
 #endif
 #ifdef ARM_NEON
 extern void inflate_fast_neon(PREFIX3(stream) *strm, uint32_t start);
@@ -153,7 +155,7 @@ extern uint32_t crc32_s390_vx(uint32_t crc, const uint8_t *buf, size_t len);
 typedef uint32_t (*compare256_func)(const uint8_t *src0, const uint8_t *src1);
 
 extern uint32_t compare256_c(const uint8_t *src0, const uint8_t *src1);
-#ifdef UNALIGNED_OK
+#if defined(UNALIGNED_OK) && BYTE_ORDER == LITTLE_ENDIAN
 extern uint32_t compare256_unaligned_16(const uint8_t *src0, const uint8_t *src1);
 #ifdef HAVE_BUILTIN_CTZ
 extern uint32_t compare256_unaligned_32(const uint8_t *src0, const uint8_t *src1);
@@ -179,14 +181,14 @@ extern uint32_t compare256_power9(const uint8_t *src0, const uint8_t *src1);
 /* insert_string */
 extern void insert_string_c(deflate_state *const s, const uint32_t str, uint32_t count);
 #ifdef X86_SSE42
-extern void insert_string_sse4(deflate_state *const s, const uint32_t str, uint32_t count);
+extern void insert_string_sse42(deflate_state *const s, const uint32_t str, uint32_t count);
 #elif defined(ARM_ACLE)
 extern void insert_string_acle(deflate_state *const s, const uint32_t str, uint32_t count);
 #endif
 
 /* longest_match */
 extern uint32_t longest_match_c(deflate_state *const s, Pos cur_match);
-#ifdef UNALIGNED_OK
+#if defined(UNALIGNED_OK) && BYTE_ORDER == LITTLE_ENDIAN
 extern uint32_t longest_match_unaligned_16(deflate_state *const s, Pos cur_match);
 #ifdef HAVE_BUILTIN_CTZ
 extern uint32_t longest_match_unaligned_32(deflate_state *const s, Pos cur_match);
@@ -210,7 +212,7 @@ extern uint32_t longest_match_power9(deflate_state *const s, Pos cur_match);
 
 /* longest_match_slow */
 extern uint32_t longest_match_slow_c(deflate_state *const s, Pos cur_match);
-#ifdef UNALIGNED_OK
+#if defined(UNALIGNED_OK) && BYTE_ORDER == LITTLE_ENDIAN
 extern uint32_t longest_match_slow_unaligned_16(deflate_state *const s, Pos cur_match);
 extern uint32_t longest_match_slow_unaligned_32(deflate_state *const s, Pos cur_match);
 #ifdef UNALIGNED64_OK
@@ -233,7 +235,7 @@ extern uint32_t longest_match_slow_power9(deflate_state *const s, Pos cur_match)
 /* quick_insert_string */
 extern Pos quick_insert_string_c(deflate_state *const s, const uint32_t str);
 #ifdef X86_SSE42
-extern Pos quick_insert_string_sse4(deflate_state *const s, const uint32_t str);
+extern Pos quick_insert_string_sse42(deflate_state *const s, const uint32_t str);
 #elif defined(ARM_ACLE)
 extern Pos quick_insert_string_acle(deflate_state *const s, const uint32_t str);
 #endif
@@ -259,7 +261,7 @@ extern void slide_hash_avx2(deflate_state *s);
 /* update_hash */
 extern uint32_t update_hash_c(deflate_state *const s, uint32_t h, uint32_t val);
 #ifdef X86_SSE42
-extern uint32_t update_hash_sse4(deflate_state *const s, uint32_t h, uint32_t val);
+extern uint32_t update_hash_sse42(deflate_state *const s, uint32_t h, uint32_t val);
 #elif defined(ARM_ACLE)
 extern uint32_t update_hash_acle(deflate_state *const s, uint32_t h, uint32_t val);
 #endif

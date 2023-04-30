@@ -64,7 +64,7 @@ std::string Status::ToString() const {
         break;
       default:
         std::snprintf(tmp, sizeof(tmp),
-                 "Unknown code(%d): ", static_cast<int>(code()));
+                      "Unknown code(%d): ", static_cast<int>(code()));
         type = tmp;
         break;
     }

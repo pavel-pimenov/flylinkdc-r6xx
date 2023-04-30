@@ -138,7 +138,7 @@ SharedFileStream::SharedFileStream(const string& aFileName, int aAccess, int aMo
 			m_sfh.reset();
 			const auto l_error = "error SharedFileStream::SharedFileStream aFileName = "
 			                     + aFileName + " Error = " + e.getError() + " Access = " + Util::toString(aAccess) + " Mode = " + Util::toString(aMode);
-  		    LogManager::message(l_error);
+			LogManager::message(l_error);
 			throw;
 		}
 		l_pool[aFileName] = m_sfh;

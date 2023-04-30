@@ -5,7 +5,7 @@
 
 #include "../../zbuild.h"
 
-#include "fallback_builtins.h"
+#include "../../fallback_builtins.h"
 
 #if defined(X86_SSE2) && defined(HAVE_BUILTIN_CTZ)
 

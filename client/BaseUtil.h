@@ -131,17 +131,17 @@ class LocalArray
 
 class BaseUtil
 {
-public:
-	static const tstring emptyStringT;
-	static const string emptyString;
-	static const wstring emptyStringW;
-	static const std::vector<uint8_t> emptyByteVector;
-
-	static string translateError(DWORD error);
-	static inline string translateError()
-	{
-		return translateError(GetLastError());
-	}
+	public:
+		static const tstring emptyStringT;
+		static const string emptyString;
+		static const wstring emptyStringW;
+		static const std::vector<uint8_t> emptyByteVector;
+		
+		static string translateError(DWORD error);
+		static inline string translateError()
+		{
+			return translateError(GetLastError());
+		}
 };
 
 #endif // BASE_UTIL_H_

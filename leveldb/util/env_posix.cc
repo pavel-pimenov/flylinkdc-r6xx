@@ -96,7 +96,7 @@ class Limiter {
     if (old_acquires_allowed > 0) return true;
 
     int pre_increment_acquires_allowed =
-    acquires_allowed_.fetch_add(1, std::memory_order_relaxed);
+        acquires_allowed_.fetch_add(1, std::memory_order_relaxed);
 
     // Silence compiler warnings about unused arguments when NDEBUG is defined.
     (void)pre_increment_acquires_allowed;

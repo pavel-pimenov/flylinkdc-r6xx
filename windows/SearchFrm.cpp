@@ -3111,409 +3111,409 @@ void SearchFrame::addSearchResult(SearchInfo* si)
 {
 	try
 	{
-	if (isSkipSearchResult(si))
-		return;
-	const SearchResult sr = si->m_sr;
-	SearchInfoList::ParentPair* pp = nullptr;
-	if (!si->m_is_torrent)
-	{
-		const auto l_user = sr.getUser();
-		if (!sr.getIP().is_unspecified())
+		if (isSkipSearchResult(si))
+			return;
+		const SearchResult sr = si->m_sr;
+		SearchInfoList::ParentPair* pp = nullptr;
+		if (!si->m_is_torrent)
 		{
-			l_user->setIP(sr.getIP(), true);
-		}
-		// Check previous search results for dupes
-		if (!si->getText(COLUMN_TTH).empty())
-		{
-			pp = ctrlResults.findParentPair(sr.getTTH());
-			if (pp)
+			const auto l_user = sr.getUser();
+			if (!sr.getIP().is_unspecified())
 			{
-				if (pp->parent && // fix https://drdump.com/DumpGroup.aspx?DumpGroupID=1052556
-				        l_user->getCID() == pp->parent->getUser()->getCID() && sr.getFile() == pp->parent->m_sr.getFile())
+				l_user->setIP(sr.getIP(), true);
+			}
+			// Check previous search results for dupes
+			if (!si->getText(COLUMN_TTH).empty())
+			{
+				pp = ctrlResults.findParentPair(sr.getTTH());
+				if (pp)
 				{
-					check_delete(si);
-					return;
-				}
-				for (auto k = pp->children.cbegin(); k != pp->children.cend(); ++k)
-				{
-					if (isSkipSearchResult(si))
+					if (pp->parent && // fix https://drdump.com/DumpGroup.aspx?DumpGroupID=1052556
+					        l_user->getCID() == pp->parent->getUser()->getCID() && sr.getFile() == pp->parent->m_sr.getFile())
+					{
+						check_delete(si);
 						return;
-					if (l_user->getCID() == (*k)->getUser()->getCID())
+					}
+					for (auto k = pp->children.cbegin(); k != pp->children.cend(); ++k)
 					{
-						if (sr.getFile() == (*k)->m_sr.getFile())
-						{
-							check_delete(si);
+						if (isSkipSearchResult(si))
 							return;
+						if (l_user->getCID() == (*k)->getUser()->getCID())
+						{
+							if (sr.getFile() == (*k)->m_sr.getFile())
+							{
+								check_delete(si);
+								return;
+							}
 						}
 					}
 				}
-			}
-		}
-		else
-		{
-			for (auto s = ctrlResults.getParents().cbegin(); s != ctrlResults.getParents().cend(); ++s)
-			{
-				if (isSkipSearchResult(si))
-					return;
-				const SearchInfo* si2 = s->second.parent;
-				const auto sr2 = si2->m_sr;
-				if (l_user && sr2.getUser())
-					if (l_user->getCID() == sr2.getUser()->getCID())
-					{
-						if (sr.getFile() == sr2.getFile())
-						{
-							check_delete(si);
-							return;
-						}
-					}
-			}
-		}
-	}
-	if (m_running || si->m_is_torrent)
-	{
-		m_resultsCount++;
-#ifdef FLYLINKDC_USE_TREE_SEARCH
-		if (si->m_is_top_torrent)
-		{
-			if (!m_RootTorrentRSSTreeItem)
-			{
-				m_RootTorrentRSSTreeItem = m_ctrlSearchFilterTree.InsertItem(TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_TEXT | TVIF_PARAM,
-				                                                             _T("Torrent RSS"),
-				                                                             0, // nImage
-				                                                             0, // nSelectedImage
-				                                                             0, // nState
-				                                                             0, // nStateMask
-				                                                             e_Root, // lParam
-				                                                             0, // aParent,
-				                                                             0  // hInsertAfter
-				                                                            );
-			}
-			if (sr.m_group_name.empty())
-			{
-				m_24HTopTorrentTreeItem = add_category("...in 24 hours", "Hits", si, sr, SearchResult::TYPE_TORRENT_MAGNET, m_RootTorrentRSSTreeItem, true, true);
 			}
 			else
 			{
-				add_category(sr.m_group_name, "Categories", si, sr, SearchResult::TYPE_TORRENT_MAGNET, m_RootTorrentRSSTreeItem, true, true);
-			}
-			const auto l_marker = make_pair(si, ".torrent-magnet-top");
-			{
-				CFlyLock(m_filter_map_cs);
-				for (auto const &c : m_category_map)
+				for (auto s = ctrlResults.getParents().cbegin(); s != ctrlResults.getParents().cend(); ++s)
 				{
-					m_filter_map[c.second].push_back(l_marker);
+					if (isSkipSearchResult(si))
+						return;
+					const SearchInfo* si2 = s->second.parent;
+					const auto sr2 = si2->m_sr;
+					if (l_user && sr2.getUser())
+						if (l_user->getCID() == sr2.getUser()->getCID())
+						{
+							if (sr.getFile() == sr2.getFile())
+							{
+								check_delete(si);
+								return;
+							}
+						}
 				}
-				m_filter_map[m_RootTorrentRSSTreeItem].push_back(l_marker);
 			}
 		}
-		else
+		if (m_running || si->m_is_torrent)
 		{
-			if (!m_RootTreeItem)
+			m_resultsCount++;
+#ifdef FLYLINKDC_USE_TREE_SEARCH
+			if (si->m_is_top_torrent)
 			{
-				m_RootTreeItem = m_ctrlSearchFilterTree.InsertItem(TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_TEXT | TVIF_PARAM,
-				                                                   _T("Search"),
-				                                                   0, // nImage
-				                                                   0, // nSelectedImage
-				                                                   0, // nState
-				                                                   0, // nStateMask
-				                                                   e_Root, // lParam
-				                                                   0, // aParent,
-				                                                   0  // hInsertAfter
-				                                                  );
-			}
-			if (sr.getType() == SearchResult::TYPE_FILE)
-			{
-				const auto l_file = sr.getFileName();
-				const auto l_file_type = ShareManager::getFType(l_file, true);
-				auto& l_type_node = m_tree_type[l_file_type];
-				if (l_type_node == nullptr)
+				if (!m_RootTorrentRSSTreeItem)
 				{
-					l_type_node = m_ctrlSearchFilterTree.InsertItem(TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_TEXT | TVIF_PARAM,
-					                                                Text::toT(SearchManager::getTypeStr(l_file_type)).c_str(),
-					                                                l_file_type, // nImage
-					                                                l_file_type, // nSelectedImage
-					                                                0, // nState
-					                                                0, // nStateMask
-					                                                l_file_type, // lParam
-					                                                m_RootTreeItem, // aParent,
-					                                                0  // hInsertAfter
-					                                               );
-					if (m_is_expand_tree == false)
-					{
-						m_ctrlSearchFilterTree.Expand(m_RootTreeItem);
-						m_is_expand_tree = true;
-					}
+					m_RootTorrentRSSTreeItem = m_ctrlSearchFilterTree.InsertItem(TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_TEXT | TVIF_PARAM,
+					                                                             _T("Torrent RSS"),
+					                                                             0, // nImage
+					                                                             0, // nSelectedImage
+					                                                             0, // nState
+					                                                             0, // nStateMask
+					                                                             e_Root, // lParam
+					                                                             0, // aParent,
+					                                                             0  // hInsertAfter
+					                                                            );
 				}
-				HTREEITEM l_item = nullptr;
-				const auto l_file_ext = Text::toLower(Util::getFileExtWithoutDot(l_file));
-				// Virus?
+				if (sr.m_group_name.empty())
 				{
-					if (l_file_ext.compare(0, 3, "exe", 3) == 0)
-					{
-						if ((si->m_sr.m_size <= CFlyServerConfig::g_max_size_search_v_detect) ||
-						        CFlyServerConfig::isVirusEnd(Text::toLower(l_file)))
-						{
-							if (!m_RootVirusTreeItem)
-							{
-								m_skull_index = 15;
-								m_RootVirusTreeItem = m_ctrlSearchFilterTree.InsertItem(TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_TEXT | TVIF_PARAM,
-								                                                        _T("Virus ???"),
-								                                                        m_skull_index, // nImage
-								                                                        m_skull_index, // nSelectedImage
-								                                                        0, // nState
-								                                                        0, // nStateMask
-								                                                        l_file_type, // lParam
-								                                                        NULL, // aParent,
-								                                                        0  // hInsertAfter
-								                                                       );
-							}
-							l_item = m_RootVirusTreeItem;
-							const auto l_marker = make_pair(si, l_file_ext);
-							CFlyLock(m_filter_map_cs);
-							m_filter_map[l_item].push_back(l_marker);
-						}
-						if (l_file_type == Search::TYPE_EXECUTABLE)
-						{
-							//const auto l_marker = make_pair(si, l_file_ext);
-							//CFlyLock(m_filter_map_cs);
-							//m_filter_map[l_type_node].push_back(l_marker);
-						}
-					}
+					m_24HTopTorrentTreeItem = add_category("...in 24 hours", "Hits", si, sr, SearchResult::TYPE_TORRENT_MAGNET, m_RootTorrentRSSTreeItem, true, true);
 				}
-				if (l_item == nullptr)
+				else
 				{
-					const auto l_ext_item = m_tree_ext_map.find(l_file_ext);
-					if (l_ext_item == m_tree_ext_map.end())
-					{
-						l_item = m_ctrlSearchFilterTree.InsertItem(TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_TEXT | TVIF_PARAM,
-						                                           Text::toT(l_file_ext).c_str(),
-						                                           0, // nImage
-						                                           0, // nSelectedImage
-						                                           0, // nState
-						                                           0, // nStateMask
-						                                           e_Ext, // lParam
-						                                           l_type_node, // aParent,
-						                                           0  // hInsertAfter
-						                                          );
-						m_tree_ext_map.insert(make_pair(l_file_ext, l_item));
-					}
-					else
-					{
-						l_item = l_ext_item->second;
-					}
-					const auto l_marker = make_pair(si, l_file_ext);
-					CFlyLock(m_filter_map_cs);
-					m_filter_map[l_item].push_back(l_marker);
-					m_filter_map[l_type_node].push_back(l_marker);
+					add_category(sr.m_group_name, "Categories", si, sr, SearchResult::TYPE_TORRENT_MAGNET, m_RootTorrentRSSTreeItem, true, true);
 				}
-			}
-			else if (sr.getType() == SearchResult::TYPE_TORRENT_MAGNET)
-			{
-				const auto l_file_type = Search::TYPE_TORRENT_MAGNET;
-				auto& l_torrent_node = m_tree_type[Search::TYPE_TORRENT_MAGNET];
-				if (l_torrent_node == nullptr)
-				{
-					l_torrent_node = m_ctrlSearchFilterTree.InsertItem(TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_TEXT | TVIF_PARAM,
-					                                                   _T("Torrents"),
-					                                                   l_file_type, // nImage
-					                                                   l_file_type, // nSelectedImage
-					                                                   0, // nState
-					                                                   0, // nStateMask
-					                                                   l_file_type, // lParam
-					                                                   m_RootTreeItem, // aParent,
-					                                                   0  // hInsertAfter
-					                                                  );
-					if (m_is_expand_tree == false)
-					{
-						m_ctrlSearchFilterTree.Expand(m_RootTreeItem);
-						m_is_expand_tree = true;
-					}
-				}
-				{
-					const auto l_file_name = sr.getFileName();
-					if (l_file_name.find(" PC ") != string::npos)
-					{
-						add_category("PC", "Soft", si, sr, l_file_type, l_torrent_node);
-						add_category("DVD-ISO", "Soft", si, sr, l_file_type, l_torrent_node);
-					}
-					add_category(sr.m_tracker, "Tracker", si, sr, l_file_type, l_torrent_node, true);
-					
-					for (int j = 2020; j > 1900; --j)
-					{
-						add_category(Util::toString(j), "Year", si, sr, l_file_type, l_torrent_node);
-					}
-					{
-						const char* l_doc_array[] = {
-							"PDF",
-							"RTF",
-							"DJVU",
-							"FB2"
-						};
-						for (const auto r : l_doc_array)
-						{
-							add_category(r, "Doc", si, sr, l_file_type, l_torrent_node);
-						}
-					}
-					{
-						const char* l_audio_rip_array[] = {
-							"MP3",
-							"FLAC"
-						};
-						for (const auto r : l_audio_rip_array)
-						{
-							add_category(r, "Audio", si, sr, l_file_type, l_torrent_node);
-						}
-					}
-					
-					{
-						const char* l_type_rip_array[] = {
-							"DVDRip",
-							"DVD-Audio",
-							"DVD-Video",
-							"DVD-5",
-							"DVD-9",
-							"HDRip",
-							"BDRip",
-							"XviD",
-							"BDRemux",
-							"HDVideo",
-							"HDTV",
-							"CAMRip",
-							"TS",
-							"SATRip",
-							"WEB-DLRip",
-							"VHSRip",
-							"iTunes",
-							"Amedia",
-							" œ "
-						};
-						for (const auto r : l_type_rip_array)
-						{
-							add_category(r, "Video", si, sr, l_file_type, l_torrent_node);
-						}
-					}
-					{
-						const char* l_type_team_array[] = { "MediaClub",
-						                                    "Files-x",
-						                                    "GeneralFilm",
-						                                    "MegaPeer",
-						                                    "Neofilm",
-						                                    "SeadLine Studio",
-						                                    "Scarabey",
-						                                    "den904",
-						                                    "qqss44",
-						                                    "HQ-ViDEO",
-						                                    "SMALL-RiP",
-						                                    "HQClub",
-						                                    "HELLYWOOD",
-						                                    "FreeHD",
-						                                    "HDReactor",
-						                                    "R.G."
-						                                  };
-						for (const auto t : l_type_team_array)
-						{
-							add_category(t, "Team", si, sr, l_file_type, l_torrent_node);
-						}
-					}
-					{
-						const char* l_type_resolution_array[] = {
-							"1080p",
-							"720p"
-							"x264",
-						};
-						for (const auto r : l_type_resolution_array)
-						{
-							add_category(r, "Resolution", si, sr, l_file_type, l_torrent_node);
-						}
-					}
-				}
-				const auto l_marker = make_pair(si, ".torrent-magnet");
+				const auto l_marker = make_pair(si, ".torrent-magnet-top");
 				{
 					CFlyLock(m_filter_map_cs);
 					for (auto const &c : m_category_map)
 					{
 						m_filter_map[c.second].push_back(l_marker);
 					}
-					m_filter_map[l_torrent_node].push_back(l_marker);
-				}
-			}
-		}
-#endif
-		{
-			CLockRedraw<> l_lock_draw(ctrlResults);
-			const SearchInfoList::ParentPair l_pp = { si, SearchInfoList::g_emptyVector };
-			if (si->m_is_torrent)
-			{
-				if (is_filter_item(si))
-				{
-					ctrlResults.insertItem(si, I_IMAGECALLBACK);
+					m_filter_map[m_RootTorrentRSSTreeItem].push_back(l_marker);
 				}
 			}
 			else
 			{
-				if (!si->getText(COLUMN_TTH).empty())
+				if (!m_RootTreeItem)
 				{
-#ifdef FLYLINKDC_USE_TREE_SEARCH
-					const bool l_is_filter_ok = is_filter_item(si);
-					if (l_is_filter_ok)
-#endif
+					m_RootTreeItem = m_ctrlSearchFilterTree.InsertItem(TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_TEXT | TVIF_PARAM,
+					                                                   _T("Search"),
+					                                                   0, // nImage
+					                                                   0, // nSelectedImage
+					                                                   0, // nState
+					                                                   0, // nStateMask
+					                                                   e_Root, // lParam
+					                                                   0, // aParent,
+					                                                   0  // hInsertAfter
+					                                                  );
+				}
+				if (sr.getType() == SearchResult::TYPE_FILE)
+				{
+					const auto l_file = sr.getFileName();
+					const auto l_file_type = ShareManager::getFType(l_file, true);
+					auto& l_type_node = m_tree_type[l_file_type];
+					if (l_type_node == nullptr)
 					{
-						if (isSkipSearchResult(si))
-							return;
-						ctrlResults.insertGroupedItem(si, m_expandSR, false, true);
-					}
-					else
-					{
-						dcassert(m_closed == false);
-						if (pp == nullptr)
+						l_type_node = m_ctrlSearchFilterTree.InsertItem(TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_TEXT | TVIF_PARAM,
+						                                                Text::toT(SearchManager::getTypeStr(l_file_type)).c_str(),
+						                                                l_file_type, // nImage
+						                                                l_file_type, // nSelectedImage
+						                                                0, // nState
+						                                                0, // nStateMask
+						                                                l_file_type, // lParam
+						                                                m_RootTreeItem, // aParent,
+						                                                0  // hInsertAfter
+						                                               );
+						if (m_is_expand_tree == false)
 						{
-							if (isSkipSearchResult(si))
-								return;
-							ctrlResults.getParents().insert(make_pair(sr.getTTH(), l_pp));
+							m_ctrlSearchFilterTree.Expand(m_RootTreeItem);
+							m_is_expand_tree = true;
+						}
+					}
+					HTREEITEM l_item = nullptr;
+					const auto l_file_ext = Text::toLower(Util::getFileExtWithoutDot(l_file));
+					// Virus?
+					{
+						if (l_file_ext.compare(0, 3, "exe", 3) == 0)
+						{
+							if ((si->m_sr.m_size <= CFlyServerConfig::g_max_size_search_v_detect) ||
+							        CFlyServerConfig::isVirusEnd(Text::toLower(l_file)))
+							{
+								if (!m_RootVirusTreeItem)
+								{
+									m_skull_index = 15;
+									m_RootVirusTreeItem = m_ctrlSearchFilterTree.InsertItem(TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_TEXT | TVIF_PARAM,
+									                                                        _T("Virus ???"),
+									                                                        m_skull_index, // nImage
+									                                                        m_skull_index, // nSelectedImage
+									                                                        0, // nState
+									                                                        0, // nStateMask
+									                                                        l_file_type, // lParam
+									                                                        NULL, // aParent,
+									                                                        0  // hInsertAfter
+									                                                       );
+								}
+								l_item = m_RootVirusTreeItem;
+								const auto l_marker = make_pair(si, l_file_ext);
+								CFlyLock(m_filter_map_cs);
+								m_filter_map[l_item].push_back(l_marker);
+							}
+							if (l_file_type == Search::TYPE_EXECUTABLE)
+							{
+								//const auto l_marker = make_pair(si, l_file_ext);
+								//CFlyLock(m_filter_map_cs);
+								//m_filter_map[l_type_node].push_back(l_marker);
+							}
+						}
+					}
+					if (l_item == nullptr)
+					{
+						const auto l_ext_item = m_tree_ext_map.find(l_file_ext);
+						if (l_ext_item == m_tree_ext_map.end())
+						{
+							l_item = m_ctrlSearchFilterTree.InsertItem(TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_TEXT | TVIF_PARAM,
+							                                           Text::toT(l_file_ext).c_str(),
+							                                           0, // nImage
+							                                           0, // nSelectedImage
+							                                           0, // nState
+							                                           0, // nStateMask
+							                                           e_Ext, // lParam
+							                                           l_type_node, // aParent,
+							                                           0  // hInsertAfter
+							                                          );
+							m_tree_ext_map.insert(make_pair(l_file_ext, l_item));
 						}
 						else
 						{
-							if (isSkipSearchResult(si))
-								return;
-							ctrlResults.insertChildNonVisual(si, pp, false, false, true);
+							l_item = l_ext_item->second;
 						}
+						const auto l_marker = make_pair(si, l_file_ext);
+						CFlyLock(m_filter_map_cs);
+						m_filter_map[l_item].push_back(l_marker);
+						m_filter_map[l_type_node].push_back(l_marker);
+					}
+				}
+				else if (sr.getType() == SearchResult::TYPE_TORRENT_MAGNET)
+				{
+					const auto l_file_type = Search::TYPE_TORRENT_MAGNET;
+					auto& l_torrent_node = m_tree_type[Search::TYPE_TORRENT_MAGNET];
+					if (l_torrent_node == nullptr)
+					{
+						l_torrent_node = m_ctrlSearchFilterTree.InsertItem(TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_TEXT | TVIF_PARAM,
+						                                                   _T("Torrents"),
+						                                                   l_file_type, // nImage
+						                                                   l_file_type, // nSelectedImage
+						                                                   0, // nState
+						                                                   0, // nStateMask
+						                                                   l_file_type, // lParam
+						                                                   m_RootTreeItem, // aParent,
+						                                                   0  // hInsertAfter
+						                                                  );
+						if (m_is_expand_tree == false)
+						{
+							m_ctrlSearchFilterTree.Expand(m_RootTreeItem);
+							m_is_expand_tree = true;
+						}
+					}
+					{
+						const auto l_file_name = sr.getFileName();
+						if (l_file_name.find(" PC ") != string::npos)
+						{
+							add_category("PC", "Soft", si, sr, l_file_type, l_torrent_node);
+							add_category("DVD-ISO", "Soft", si, sr, l_file_type, l_torrent_node);
+						}
+						add_category(sr.m_tracker, "Tracker", si, sr, l_file_type, l_torrent_node, true);
+						
+						for (int j = 2020; j > 1900; --j)
+						{
+							add_category(Util::toString(j), "Year", si, sr, l_file_type, l_torrent_node);
+						}
+						{
+							const char* l_doc_array[] = {
+								"PDF",
+								"RTF",
+								"DJVU",
+								"FB2"
+							};
+							for (const auto r : l_doc_array)
+							{
+								add_category(r, "Doc", si, sr, l_file_type, l_torrent_node);
+							}
+						}
+						{
+							const char* l_audio_rip_array[] = {
+								"MP3",
+								"FLAC"
+							};
+							for (const auto r : l_audio_rip_array)
+							{
+								add_category(r, "Audio", si, sr, l_file_type, l_torrent_node);
+							}
+						}
+						
+						{
+							const char* l_type_rip_array[] = {
+								"DVDRip",
+								"DVD-Audio",
+								"DVD-Video",
+								"DVD-5",
+								"DVD-9",
+								"HDRip",
+								"BDRip",
+								"XviD",
+								"BDRemux",
+								"HDVideo",
+								"HDTV",
+								"CAMRip",
+								"TS",
+								"SATRip",
+								"WEB-DLRip",
+								"VHSRip",
+								"iTunes",
+								"Amedia",
+								" œ "
+							};
+							for (const auto r : l_type_rip_array)
+							{
+								add_category(r, "Video", si, sr, l_file_type, l_torrent_node);
+							}
+						}
+						{
+							const char* l_type_team_array[] = { "MediaClub",
+							                                    "Files-x",
+							                                    "GeneralFilm",
+							                                    "MegaPeer",
+							                                    "Neofilm",
+							                                    "SeadLine Studio",
+							                                    "Scarabey",
+							                                    "den904",
+							                                    "qqss44",
+							                                    "HQ-ViDEO",
+							                                    "SMALL-RiP",
+							                                    "HQClub",
+							                                    "HELLYWOOD",
+							                                    "FreeHD",
+							                                    "HDReactor",
+							                                    "R.G."
+							                                  };
+							for (const auto t : l_type_team_array)
+							{
+								add_category(t, "Team", si, sr, l_file_type, l_torrent_node);
+							}
+						}
+						{
+							const char* l_type_resolution_array[] = {
+								"1080p",
+								"720p"
+								"x264",
+							};
+							for (const auto r : l_type_resolution_array)
+							{
+								add_category(r, "Resolution", si, sr, l_file_type, l_torrent_node);
+							}
+						}
+					}
+					const auto l_marker = make_pair(si, ".torrent-magnet");
+					{
+						CFlyLock(m_filter_map_cs);
+						for (auto const &c : m_category_map)
+						{
+							m_filter_map[c.second].push_back(l_marker);
+						}
+						m_filter_map[l_torrent_node].push_back(l_marker);
+					}
+				}
+			}
+#endif
+			{
+				CLockRedraw<> l_lock_draw(ctrlResults);
+				const SearchInfoList::ParentPair l_pp = { si, SearchInfoList::g_emptyVector };
+				if (si->m_is_torrent)
+				{
+					if (is_filter_item(si))
+					{
+						ctrlResults.insertItem(si, I_IMAGECALLBACK);
 					}
 				}
 				else
 				{
-					if (isSkipSearchResult(si))
-						return;
-#ifdef FLYLINKDC_USE_TREE_SEARCH
-					if (m_CurrentTreeItem == m_RootTreeItem || m_CurrentTreeItem == nullptr)
-#endif
+					if (!si->getText(COLUMN_TTH).empty())
 					{
-						ctrlResults.insertItem(si, I_IMAGECALLBACK);
+#ifdef FLYLINKDC_USE_TREE_SEARCH
+						const bool l_is_filter_ok = is_filter_item(si);
+						if (l_is_filter_ok)
+#endif
+						{
+							if (isSkipSearchResult(si))
+								return;
+							ctrlResults.insertGroupedItem(si, m_expandSR, false, true);
+						}
+						else
+						{
+							dcassert(m_closed == false);
+							if (pp == nullptr)
+							{
+								if (isSkipSearchResult(si))
+									return;
+								ctrlResults.getParents().insert(make_pair(sr.getTTH(), l_pp));
+							}
+							else
+							{
+								if (isSkipSearchResult(si))
+									return;
+								ctrlResults.insertChildNonVisual(si, pp, false, false, true);
+							}
+						}
 					}
-					ctrlResults.getParents().insert(make_pair(sr.getTTH(), l_pp));
+					else
+					{
+						if (isSkipSearchResult(si))
+							return;
+#ifdef FLYLINKDC_USE_TREE_SEARCH
+						if (m_CurrentTreeItem == m_RootTreeItem || m_CurrentTreeItem == nullptr)
+#endif
+						{
+							ctrlResults.insertItem(si, I_IMAGECALLBACK);
+						}
+						ctrlResults.getParents().insert(make_pair(sr.getTTH(), l_pp));
+					}
 				}
 			}
+			if (!m_filter.empty())
+			{
+				updateSearchList(si);
+			}
+			if (BOOLSETTING(BOLD_SEARCH))
+			{
+				setDirty(0);
+			}
+			m_need_resort = true;
 		}
-		if (!m_filter.empty())
+		else   // searching is paused, so store the result but don't show it in the GUI (show only information: visible/all results)
 		{
-			updateSearchList(si);
-		}
-		if (BOOLSETTING(BOLD_SEARCH))
-		{
-			setDirty(0);
-		}
-		m_need_resort = true;
-	}
-	else   // searching is paused, so store the result but don't show it in the GUI (show only information: visible/all results)
-	{
 #ifdef FLYLINK_DC_USE_PAUSED_SEARCH
-		m_pausedResults.push_back(si);
+			m_pausedResults.push_back(si);
 #endif
-	}
+		}
 	}
 	catch (std::bad_alloc&)
 	{
-	  ShareManager::tryFixBadAlloc(); // fix https://drdump.com/DumpGroup.aspx?DumpGroupID=2090689
-	  LogManager::message("Error bad_alloc SearchFrame::addSearchResult");
+		ShareManager::tryFixBadAlloc(); // fix https://drdump.com/DumpGroup.aspx?DumpGroupID=2090689
+		LogManager::message("Error bad_alloc SearchFrame::addSearchResult");
 	}
 }
 HTREEITEM SearchFrame::add_category(const std::string p_search, const std::string p_group, SearchInfo* p_si,

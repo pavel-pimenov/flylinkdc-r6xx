@@ -200,7 +200,7 @@ void shutdown(GUIINITPROC pGuiInitProc, void *pGuiParam)
 //	extern crash_rpt::CrashRpt g_crashRpt;
 //	g_crashRpt.SetCustomInfo(_T("StopCore"));
 #endif
-	
+
 	{
 #ifdef FLYLINKDC_COLLECT_UNKNOWN_TAG
 		string l_debugTag;

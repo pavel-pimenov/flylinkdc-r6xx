@@ -35,7 +35,7 @@ class ExCImage : public CImage
 		ExCImage()
 		{
 		}
-		explicit ExCImage(bool p_is_use_theme) 
+		explicit ExCImage(bool p_is_use_theme)
 #ifdef FLYLINKDC_USE_THEME_MANAGER
 			: m_is_use_theme(p_is_use_theme)
 #endif

@@ -561,9 +561,9 @@ int Socket::write(const void* aBuffer, int aLen)
 		}
 #endif
 		sent = ::send(m_sock, (const char*)aBuffer, aLen, 0);
-		// adguard.dll 
+		// adguard.dll
 		// dng.dll
-		// NetchartFilter.dll!100168ab() 
+		// NetchartFilter.dll!100168ab()
 	}
 	while (sent < 0 && getLastError() == EINTR);
 	

@@ -2777,13 +2777,13 @@ int FileImage::getIconIndex(const string& aFileName)
 	if (p_icon_index)
 		return p_icon_index;
 	if (BOOLSETTING(USE_SYSTEM_ICONS) && !l_x.empty())
-		{
-			//CFlyFastLock(m_cs);
+	{
+		//CFlyFastLock(m_cs);
 		const auto j = m_indexis.find(l_x);
-			if (j != m_indexis.end())
-			{
-				return j->second;
-			}
+		if (j != m_indexis.end())
+		{
+			return j->second;
+		}
 		const tstring file = _T("x.") + Text::toT(l_x);
 		SHFILEINFO fi = { };
 		if (SHGetFileInfo(file.c_str(), FILE_ATTRIBUTE_NORMAL, &fi, sizeof(fi), SHGFI_ICON | SHGFI_SMALLICON | SHGFI_USEFILEATTRIBUTES))

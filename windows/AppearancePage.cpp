@@ -80,7 +80,7 @@ void AppearancePage::write()
 			MessageBox(CTSTRING(THEME_CHANGE_THEME_INFO), CTSTRING(THEME_CHANGE_THEME), MB_OK | MB_ICONEXCLAMATION);
 	}
 	ctrlTheme.Detach();
-#endif	
+#endif
 }
 
 LRESULT AppearancePage::onInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
@@ -99,7 +99,7 @@ LRESULT AppearancePage::onInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*
 		
 	ctrlTheme.SetCurSel(WinUtil::getIndexFromMap(m_ThemeList, SETTING(THEME_MANAGER_THEME_DLL_NAME)));
 	ctrlTheme.Detach();
-#endif	
+#endif
 	// Do specialized reading here
 	return TRUE;
 }
@@ -163,7 +163,7 @@ void AppearancePage::GetThemeList()
 					::FreeLibrary(hModule);
 				hModule = NULL;
 			}
-		}	
+		}
 	}
 }
 #endif

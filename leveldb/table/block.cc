@@ -215,7 +215,7 @@ class Block::Iter : public Iterator {
     assert(current_key_compare == 0 || Valid());
     bool skip_seek = left == restart_index_ && current_key_compare < 0;
     if (!skip_seek) {
-    SeekToRestartPoint(left);
+      SeekToRestartPoint(left);
     }
     // Linear search (within restart block) for first key >= target
     while (true) {

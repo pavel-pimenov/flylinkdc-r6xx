@@ -13,6 +13,21 @@
   <ItemGroup>
     <ClCompile Include="zlib-ng\adler32.c" />
     <ClCompile Include="zlib-ng\adler32_fold.c" />
+    <ClCompile Include="zlib-ng\arch\x86\adler32_avx2.c" />
+    <ClCompile Include="zlib-ng\arch\x86\adler32_avx512.c" />
+    <ClCompile Include="zlib-ng\arch\x86\adler32_avx512_vnni.c" />
+    <ClCompile Include="zlib-ng\arch\x86\adler32_sse42.c" />
+    <ClCompile Include="zlib-ng\arch\x86\adler32_ssse3.c" />
+    <ClCompile Include="zlib-ng\arch\x86\chunkset_avx2.c" />
+    <ClCompile Include="zlib-ng\arch\x86\chunkset_sse2.c" />
+    <ClCompile Include="zlib-ng\arch\x86\chunkset_ssse3.c" />
+    <ClCompile Include="zlib-ng\arch\x86\compare256_avx2.c" />
+    <ClCompile Include="zlib-ng\arch\x86\compare256_sse2.c" />
+    <ClCompile Include="zlib-ng\arch\x86\crc32_pclmulqdq.c" />
+    <ClCompile Include="zlib-ng\arch\x86\crc32_vpclmulqdq.c" />
+    <ClCompile Include="zlib-ng\arch\x86\insert_string_sse42.c" />
+    <ClCompile Include="zlib-ng\arch\x86\slide_hash_avx2.c" />
+    <ClCompile Include="zlib-ng\arch\x86\slide_hash_sse2.c" />
     <ClCompile Include="zlib-ng\arch\x86\x86_features.c" />
     <ClCompile Include="zlib-ng\chunkset.c" />
     <ClCompile Include="zlib-ng\compare256.c" />
@@ -42,6 +57,15 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="zlib-ng\adler32_p.h" />
+    <ClInclude Include="zlib-ng\arch\x86\adler32_avx2_p.h" />
+    <ClInclude Include="zlib-ng\arch\x86\adler32_avx2_tpl.h" />
+    <ClInclude Include="zlib-ng\arch\x86\adler32_avx512_p.h" />
+    <ClInclude Include="zlib-ng\arch\x86\adler32_avx512_tpl.h" />
+    <ClInclude Include="zlib-ng\arch\x86\adler32_ssse3_p.h" />
+    <ClInclude Include="zlib-ng\arch\x86\crc32_fold_pclmulqdq_tpl.h" />
+    <ClInclude Include="zlib-ng\arch\x86\crc32_fold_vpclmulqdq_tpl.h" />
+    <ClInclude Include="zlib-ng\arch\x86\crc32_pclmulqdq_tpl.h" />
+    <ClInclude Include="zlib-ng\arch\x86\x86_features.h" />
     <ClInclude Include="zlib-ng\chunkset_tpl.h" />
     <ClInclude Include="zlib-ng\cpu_features.h" />
     <ClInclude Include="zlib-ng\crc32_braid_comb_p.h" />

@@ -706,8 +706,8 @@ class VersionSet::Builder {
           const InternalKey& this_begin = v->files_[level][i]->smallest;
           if (vset_->icmp_.Compare(prev_end, this_begin) >= 0) {
             std::fprintf(stderr, "overlapping ranges in same level %s vs. %s\n",
-                    prev_end.DebugString().c_str(),
-                    this_begin.DebugString().c_str());
+                         prev_end.DebugString().c_str(),
+                         this_begin.DebugString().c_str());
             std::abort();
           }
         }
@@ -1000,7 +1000,7 @@ bool VersionSet::ReuseManifest(const std::string& dscname,
   }
   FileType manifest_type;
   uint64_t manifest_number;
-  uint64_t manifest_size=0;
+  uint64_t manifest_size;
   if (!ParseFileName(dscbase, &manifest_number, &manifest_type) ||
       manifest_type != kDescriptorFile ||
       !env_->GetFileSize(dscname, &manifest_size).ok() ||
