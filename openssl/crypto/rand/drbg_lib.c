@@ -355,7 +355,7 @@ int RAND_DRBG_instantiate(RAND_DRBG *drbg,
     drbg->generate_counter = 1;
     drbg->reseed_time = time(NULL);
     if (drbg->enable_reseed_propagation && drbg->parent == NULL)
-            tsan_counter(&drbg->reseed_counter);
+        tsan_counter(&drbg->reseed_counter);
 
  end:
     if (entropy != NULL && drbg->cleanup_entropy != NULL)
@@ -440,7 +440,7 @@ int RAND_DRBG_reseed(RAND_DRBG *drbg,
     drbg->generate_counter = 1;
     drbg->reseed_time = time(NULL);
     if (drbg->enable_reseed_propagation && drbg->parent == NULL)
-            tsan_counter(&drbg->reseed_counter);
+        tsan_counter(&drbg->reseed_counter);
 
  end:
     if (entropy != NULL && drbg->cleanup_entropy != NULL)

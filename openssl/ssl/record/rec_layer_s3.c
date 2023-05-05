@@ -988,7 +988,7 @@ int do_ssl3_write(SSL *s, int type, const unsigned char *buf,
         * we are adding the MAC independently of the cipher algorithm, then the
         * max encrypted overhead does not need to include an allocation for that
         * MAC
-         */
+        */
         if (!WPACKET_reserve_bytes(thispkt,
                                    SSL3_RT_SEND_MAX_ENCRYPTED_OVERHEAD
                                    - mac_size,

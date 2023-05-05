@@ -533,7 +533,7 @@ static int check_chain_extensions(X509_STORE_CTX *ctx)
                 ret = 0;
             } else if (ret == 0) {
                 ctx->error = X509_V_ERR_EC_KEY_EXPLICIT_PARAMS;
-        }
+            }
         }
         if (ret > 0
             && (x->ex_flags & EXFLAG_CA) == 0
@@ -3005,10 +3005,10 @@ static int build_chain(X509_STORE_CTX *ctx)
      * this to change. ]
      */
     if (DANETLS_ENABLED(dane) && !augment_stack(dane->certs, &sktmp)) {
-            X509err(X509_F_BUILD_CHAIN, ERR_R_MALLOC_FAILURE);
-            ctx->error = X509_V_ERR_OUT_OF_MEM;
-            return 0;
-        }
+        X509err(X509_F_BUILD_CHAIN, ERR_R_MALLOC_FAILURE);
+        ctx->error = X509_V_ERR_OUT_OF_MEM;
+        return 0;
+    }
 
     /*
      * Shallow-copy the stack of untrusted certificates (with TLS, this is
@@ -3016,10 +3016,10 @@ static int build_chain(X509_STORE_CTX *ctx)
      * multiple passes over it, while free to remove elements as we go.
      */
     if (!augment_stack(ctx->untrusted, &sktmp)) {
-                X509err(X509_F_BUILD_CHAIN, ERR_R_MALLOC_FAILURE);
-                ctx->error = X509_V_ERR_OUT_OF_MEM;
-                return 0;
-            }
+        X509err(X509_F_BUILD_CHAIN, ERR_R_MALLOC_FAILURE);
+        ctx->error = X509_V_ERR_OUT_OF_MEM;
+        return 0;
+    }
 
     /*
      * Still absurdly large, but arithmetically safe, a lower hard upper bound

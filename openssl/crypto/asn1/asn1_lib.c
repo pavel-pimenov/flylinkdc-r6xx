@@ -380,7 +380,7 @@ int ASN1_STRING_cmp(const ASN1_STRING *a, const ASN1_STRING *b)
     i = (a->length - b->length);
     if (i == 0) {
         if (a->length != 0)
-        i = memcmp(a->data, b->data, a->length);
+            i = memcmp(a->data, b->data, a->length);
         if (i == 0)
             return a->type - b->type;
         else

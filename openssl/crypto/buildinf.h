@@ -9,7 +9,7 @@
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
  */
- 
+
 #define PLATFORM "platform: VC-WIN64A"
 #define DATE "built on: Sat Oct 16 17:41:22 2021 UTC"
 

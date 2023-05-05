@@ -305,12 +305,12 @@ BIGNUM *BN_mod_sqrt(BIGNUM *in, const BIGNUM *a, const BIGNUM *p, BN_CTX *ctx)
         /* Find the smallest i, 0 < i < e, such that b^(2^i) = 1. */
         for (i = 1; i < e; i++) {
             if (i == 1) {
-        if (!BN_mod_sqr(t, b, p, ctx))
-            goto end;
+                if (!BN_mod_sqr(t, b, p, ctx))
+                    goto end;
 
             } else {
                 if (!BN_mod_mul(t, t, t, p, ctx))
-                goto end;
+                    goto end;
             }
             if (BN_is_one(t))
                 break;
@@ -318,7 +318,7 @@ BIGNUM *BN_mod_sqrt(BIGNUM *in, const BIGNUM *a, const BIGNUM *p, BN_CTX *ctx)
         /* If not found, a is not a square or p is not prime. */
         if (i >= e) {
             BNerr(BN_F_BN_MOD_SQRT, BN_R_NOT_A_SQUARE);
-                goto end;
+            goto end;
         }
 
         /* t := y^2^(e - i - 1) */

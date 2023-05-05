@@ -241,7 +241,7 @@ int X509_REQ_add1_attr(X509_REQ *req, X509_ATTRIBUTE *attr)
     if (!X509at_add1_attr(&req->req_info.attributes, attr))
         return 0;
     req->req_info.enc.modified = 1;
-        return 1;
+    return 1;
 }
 
 int X509_REQ_add1_attr_by_OBJ(X509_REQ *req,
@@ -249,10 +249,10 @@ int X509_REQ_add1_attr_by_OBJ(X509_REQ *req,
                               const unsigned char *bytes, int len)
 {
     if (!X509at_add1_attr_by_OBJ(&req->req_info.attributes, obj,
-                                type, bytes, len))
+                                 type, bytes, len))
         return 0;
     req->req_info.enc.modified = 1;
-        return 1;
+    return 1;
 }
 
 int X509_REQ_add1_attr_by_NID(X509_REQ *req,
@@ -260,10 +260,10 @@ int X509_REQ_add1_attr_by_NID(X509_REQ *req,
                               const unsigned char *bytes, int len)
 {
     if (!X509at_add1_attr_by_NID(&req->req_info.attributes, nid,
-                                type, bytes, len))
+                                 type, bytes, len))
         return 0;
     req->req_info.enc.modified = 1;
-        return 1;
+    return 1;
 }
 
 int X509_REQ_add1_attr_by_txt(X509_REQ *req,
@@ -271,10 +271,10 @@ int X509_REQ_add1_attr_by_txt(X509_REQ *req,
                               const unsigned char *bytes, int len)
 {
     if (!X509at_add1_attr_by_txt(&req->req_info.attributes, attrname,
-                                type, bytes, len))
+                                 type, bytes, len))
         return 0;
     req->req_info.enc.modified = 1;
-        return 1;
+    return 1;
 }
 
 long X509_REQ_get_version(const X509_REQ *req)

@@ -65,10 +65,10 @@ typedef u32 u32_a1;
 #  elif defined(__aarch64__)
 #   if defined(__BYTE_ORDER__) && defined(__ORDER_LITTLE_ENDIAN__) && \
        __BYTE_ORDER__==__ORDER_LITTLE_ENDIAN__
-#   define BSWAP8(x) ({ u64 ret_;                       \
+#    define BSWAP8(x) ({ u64 ret_;                       \
                         asm ("rev %0,%1"                \
                         : "=r"(ret_) : "r"(x)); ret_;   })
-#   define BSWAP4(x) ({ u32 ret_;                       \
+#    define BSWAP4(x) ({ u32 ret_;                       \
                         asm ("rev %w0,%w1"              \
                         : "=r"(ret_) : "r"(x)); ret_;   })
 #   endif
