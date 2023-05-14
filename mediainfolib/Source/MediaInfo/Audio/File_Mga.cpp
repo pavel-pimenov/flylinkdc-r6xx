@@ -26,7 +26,7 @@
     #include "MediaInfo/Audio/File_Adm.h"
 #endif
 #if defined(MEDIAINFO_ADM_YES)
-    #include <zlib.h>
+    #include "zlib-ng.h"
 #endif
 #include <string>
 using namespace std;
@@ -197,7 +197,7 @@ void File_Mga::SerialAudioDefinitionModelMetadataPayload(int64u Length)
     if (Format==1)
     {
         //Uncompress init
-        z_stream strm;
+        zng_stream strm;
         strm.next_in=(Bytef*)Buffer+Buffer_Offset+(size_t)Element_Offset;
         strm.avail_in=(int)(Length-2);
         strm.next_out=NULL;
@@ -205,7 +205,7 @@ void File_Mga::SerialAudioDefinitionModelMetadataPayload(int64u Length)
         strm.total_out=0;
         strm.zalloc=Z_NULL;
         strm.zfree=Z_NULL;
-        inflateInit2(&strm, 15+16); // 15 + 16 are magic values for gzip
+        zng_inflateInit2(&strm, 15+16); // 15 + 16 are magic values for gzip
 
         //Prepare out
         strm.avail_out=0x10000; //Blocks of 64 KiB, arbitrary chosen, as a begin
@@ -215,7 +215,7 @@ void File_Mga::SerialAudioDefinitionModelMetadataPayload(int64u Length)
         for (;;)
         {
             //inflate
-            int inflate_Result=inflate(&strm, Z_NO_FLUSH);
+            int inflate_Result= zng_inflate(&strm, Z_NO_FLUSH);
             if (inflate_Result<0)
                 break;
 
