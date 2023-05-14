@@ -67,11 +67,15 @@ extern const char* Hevc_profile_idc(int32u profile_idc)
 
 //---------------------------------------------------------------------------
 #include "MediaInfo/Video/File_Hevc.h"
+#if defined(MEDIAINFO_AFDBARDATA_YES)
+    #include "MediaInfo/Video/File_AfdBarData.h"
+#endif //defined(MEDIAINFO_AFDBARDATA_YES)
 #if defined(MEDIAINFO_DTVCCTRANSPORT_YES)
     #include "MediaInfo/Text/File_DtvccTransport.h"
 #endif //defined(MEDIAINFO_DTVCCTRANSPORT_YES)
 #include <cmath>
 #include <algorithm>
+#include "MediaInfo/TimeCode.h"
 #include "MediaInfo/MediaInfo_Config_MediaInfo.h"
 #if MEDIAINFO_EVENTS
     #include "MediaInfo/MediaInfo_Config_PerPackage.h"
@@ -2137,6 +2141,7 @@ void File_Hevc::sei_message(int32u &seq_parameter_set_id)
         //case  32 :   sei_message_mainconcept(payloadSize); break;
         case 129 :   sei_message_active_parameter_sets(); break;
         case 132 :   sei_message_decoded_picture_hash(payloadSize); break;
+        case 136 :   sei_time_code(); break;
         case 137 :   sei_message_mastering_display_colour_volume(); break;
         case 144 :   sei_message_light_level(); break;
         case 147 :   sei_alternative_transfer_characteristics(); break;
@@ -2300,9 +2305,57 @@ void File_Hevc::sei_message_user_data_registered_itu_t_t35_B5_0031()
     Peek_B4(Identifier);
     switch (Identifier)
     {
+        case 0x44544731 :   sei_message_user_data_registered_itu_t_t35_B5_0031_DTG1(); return;
         case 0x47413934 :   sei_message_user_data_registered_itu_t_t35_B5_0031_GA94(); return;
         default         :   if (Element_Size-Element_Offset)
                                 Skip_XX(Element_Size-Element_Offset, "Unknown");
+    }
+}
+
+//---------------------------------------------------------------------------
+// SEI - 4 - USA - 0031 - DTG1
+void File_Hevc::sei_message_user_data_registered_itu_t_t35_B5_0031_DTG1()
+{
+    Element_Info1("Active Format Description");
+
+    //Parsing
+    Skip_C4(                                                    "afd_identifier");
+    if (Element_Offset<Element_Size)
+    {
+        File_AfdBarData DTG1_Parser;
+        for (auto seq_parameter_set_Item : seq_parameter_sets)
+        {
+            if (seq_parameter_set_Item && seq_parameter_set_Item->vui_parameters && seq_parameter_set_Item->vui_parameters->aspect_ratio_info_present_flag)
+            {
+                //TODO: avoid duplicated code
+                int32u Width = seq_parameter_set_Item->pic_width_in_luma_samples;
+                int32u Height= seq_parameter_set_Item->pic_height_in_luma_samples;
+                int8u chromaArrayType = seq_parameter_set_Item->ChromaArrayType();
+                if (chromaArrayType >= 4)
+                    chromaArrayType = 0;
+                int32u CropUnitX=Hevc_SubWidthC [chromaArrayType];
+                int32u CropUnitY=Hevc_SubHeightC[chromaArrayType];
+                Width -=(seq_parameter_set_Item->conf_win_left_offset+seq_parameter_set_Item->conf_win_right_offset)*CropUnitX;
+                Height-=(seq_parameter_set_Item->conf_win_top_offset +seq_parameter_set_Item->conf_win_bottom_offset)*CropUnitY;
+                if (Height)
+                {
+                    float64 PixelAspectRatio = 1;
+                    if (seq_parameter_set_Item->vui_parameters->aspect_ratio_idc<Avc_PixelAspectRatio_Size)
+                            PixelAspectRatio = Avc_PixelAspectRatio[seq_parameter_set_Item->vui_parameters->aspect_ratio_idc];
+                    else if (seq_parameter_set_Item->vui_parameters->aspect_ratio_idc == 0xFF && seq_parameter_set_Item->vui_parameters->sar_height)
+                            PixelAspectRatio = ((float64) seq_parameter_set_Item->vui_parameters->sar_width) / seq_parameter_set_Item->vui_parameters->sar_height;
+                    auto DAR=Width*PixelAspectRatio/Height;
+                    if (DAR>=4.0/3.0*0.95 && DAR<4.0/3.0*1.05) DTG1_Parser.aspect_ratio_FromContainer=0; //4/3
+                    if (DAR>=16.0/9.0*0.95 && DAR<16.0/9.0*1.05) DTG1_Parser.aspect_ratio_FromContainer=1; //16/9
+                }
+                break;
+            }
+        }
+        Open_Buffer_Init(&DTG1_Parser);
+        DTG1_Parser.Format=File_AfdBarData::Format_A53_4_DTG1;
+        Open_Buffer_Continue(&DTG1_Parser, Buffer+Buffer_Offset+(size_t)Element_Offset, Element_Size-Element_Offset);
+        Merge(DTG1_Parser, Stream_Video, 0, 0);
+        Element_Offset=Element_Size;
     }
 }
 
@@ -3132,6 +3185,65 @@ void File_Hevc::sei_message_active_parameter_sets()
     for (int32u i=0; i<=num_sps_ids_minus1; ++i)
     {
         Skip_UE(                                                "active_seq_parameter_set_id");
+    }
+    BS_End();
+}
+
+//---------------------------------------------------------------------------
+void File_Hevc::sei_time_code()
+{
+    Element_Info1("time_code");
+
+    //Parsing
+    int8u num_clock_ts;
+    BS_Begin();
+    Get_S1 (2, num_clock_ts,                                    "num_clock_ts");
+    for (int32u i=0; i<num_clock_ts; i++)
+    {
+        Element_Begin1("clock_ts");
+        bool clock_timestamp_flag;
+        Get_SB (clock_timestamp_flag,                           "clock_timestamp_flag");
+        if (clock_timestamp_flag)
+        {
+            int16u n_frames;
+            int8u counting_type, seconds_value, minutes_value, hours_value, time_offset_length;
+            bool units_field_based_flag, full_timestamp_flag, discontinuity_flag, cnt_dropped_flag, seconds_flag, minutes_flag, hours_flag;
+            Get_SB (units_field_based_flag,                     "units_field_based_flag");
+            Get_S1 (5, counting_type,                           "counting_type");
+            Get_SB (full_timestamp_flag,                        "full_timestamp_flag");
+            Get_SB (discontinuity_flag,                         "discontinuity_flag");
+            Get_SB (cnt_dropped_flag,                           "cnt_dropped_flag");
+            Get_S2 (9, n_frames,                                "n_frames");
+            if (full_timestamp_flag)
+            {
+                seconds_flag=true;
+                minutes_flag=true;
+                hours_flag=true;
+            }
+            if (!full_timestamp_flag)
+                Get_SB (seconds_flag,                           "seconds_flag");
+            if (seconds_flag)
+                Get_S1 (6, seconds_value,                       "seconds_value");
+            if (!full_timestamp_flag && seconds_flag)
+                Get_SB (minutes_flag,                           "minutes_flag");
+            if (minutes_flag)
+                Get_S1 (6, minutes_value,                       "minutes_value");
+            if (!full_timestamp_flag && minutes_flag)
+                Get_SB (hours_flag,                             "hours_flag");
+            if (hours_flag)
+                Get_S1 (5, hours_value,                         "hours_value");
+            Get_S1 (5, time_offset_length,                      "time_offset_length");
+            if (time_offset_length)
+                Skip_S1(time_offset_length,                     "time_offset_value");
+            FILLING_BEGIN();
+                if (!i && seconds_flag && minutes_flag && hours_flag && !Frame_Count)
+                {
+                    TimeCode TC(hours_value, minutes_value, seconds_value, n_frames, -1, counting_type==4);
+                    Fill(Stream_Video, 0, Video_TimeCode_FirstFrame, TC.ToString(), true, true);
+                }
+            FILLING_END();
+        }
+        Element_End0();
     }
     BS_End();
 }
