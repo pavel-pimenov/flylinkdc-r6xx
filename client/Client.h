@@ -431,7 +431,7 @@ class Client : public ClientBase, public Speaker<ClientListener>, public Buffere
 			return getHubOnlineUser()->getIdentity();
 		}
 		GETSET(string, defpassword, Password);
-
+		
 		GETSET(string, randomTempNick, RandomTempNick)
 		GETSET(string, name, Name)
 		GETSET(string, rawOne, RawOne);
@@ -477,7 +477,7 @@ class Client : public ClientBase, public Speaker<ClientListener>, public Buffere
 		{
 			return getMyIdentity().getEmail();
 		}
-
+		
 		string getCurrentDescription() const
 		{
 			return m_ClientDescription;
@@ -486,7 +486,7 @@ class Client : public ClientBase, public Speaker<ClientListener>, public Buffere
 		{
 			m_ClientDescription = desc;
 		}
-
+		
 		void setCurrentEmail(const string& email)
 		{
 			getMyIdentity().setEmail(email);
@@ -512,10 +512,10 @@ class Client : public ClientBase, public Speaker<ClientListener>, public Buffere
 #endif
 	private:
 		string m_ClientDescription;
-
+		
 	protected:
 		string getTagVersion() const;
-
+		
 #ifdef IRAINMAN_ENABLE_AUTO_BAN
 		virtual bool hubIsNotSupportSlot() const = 0;
 #endif // IRAINMAN_ENABLE_AUTO_BAN

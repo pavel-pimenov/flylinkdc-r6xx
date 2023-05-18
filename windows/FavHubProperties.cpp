@@ -111,7 +111,7 @@ LRESULT FavHubProperties::OnInitDialog(UINT, WPARAM, LPARAM, BOOL&)
 	SetDlgItemText(IDC_WIZARD_NICK_RND2, CTSTRING(DEFAULT));
 	
 	::EnableWindow(GetDlgItem(IDC_CLIENT_ID), FALSE);
-
+	
 	::EnableWindow(GetDlgItem(IDC_EXCLUSIVE_HUB), FALSE);
 	
 	CComboBox combo;
@@ -269,7 +269,7 @@ LRESULT FavHubProperties::OnCloseCmd(WORD /*wNotifyCode*/, WORD wID, HWND /*hWnd
 			entry->setGroup(Text::fromT(text));
 		}
 		combo.Detach();
-	
+		
 		int ct = -1;
 		if (IsDlgButtonChecked(IDC_DEFAULT))
 			ct = 0;
