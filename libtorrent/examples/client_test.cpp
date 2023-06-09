@@ -581,7 +581,8 @@ int print_peer_legend(std::string& out, int max_lines)
 #endif
 
 	char const* ip = "                               ";
-	char const* indentation = "                                                                     ";
+	char const* indentation = "                                                   ";
+	char const* peaks = "                  ";
 	int ret = 0;
 	for (auto const& l : lines)
 	{
@@ -592,6 +593,8 @@ int print_peer_legend(std::string& out, int max_lines)
 			out += ip;
 		if (print_local_ip)
 			out += ip;
+		if (print_peaks)
+			out += peaks;
 		out += l;
 	}
 	return ret;
@@ -1175,12 +1178,15 @@ bool handle_alert(client_state_t& client_state, lt::alert* a)
 
 	if (torrent_paused_alert* p = alert_cast<torrent_paused_alert>(a))
 	{
-		// write resume data for the finished torrent
-		// the alert handler for save_resume_data_alert
-		// will save it to disk
-		torrent_handle h = p->handle;
-		h.save_resume_data(torrent_handle::save_info_dict);
-		++num_outstanding_resume_data;
+		if (!quit)
+		{
+			// write resume data for the finished torrent
+			// the alert handler for save_resume_data_alert
+			// will save it to disk
+			torrent_handle h = p->handle;
+			h.save_resume_data(torrent_handle::save_info_dict);
+			++num_outstanding_resume_data;
+		}
 	}
 
 	if (state_update_alert* p = alert_cast<state_update_alert>(a))
@@ -1237,7 +1243,7 @@ void print_compact_piece(lt::partial_piece_info const& pp, std::string& out)
 	for (int j = 0; j < num_blocks; ++j)
 		if (pp.blocks[j].state == block_info::finished) blocks.set_bit(j);
 	int height = 0;
-	out += piece_matrix(blocks, num_blocks / 4, &height);
+	out += piece_matrix(blocks, num_blocks / 8, &height);
 	out += esc("0");
 	out += "]";
 }
@@ -1734,10 +1740,18 @@ int main(int argc, char* argv[])
 					}
 				}
 
-				if (c == ' ')
+				if (c == '<')
 				{
-					if (ses.is_paused()) ses.resume();
-					else ses.pause();
+					int const order = view.sort_order();
+					if (order > 0)
+						view.set_sort_order(order - 1);
+				}
+
+				if (c == '>')
+				{
+					int const order = view.sort_order();
+					if (order < 2)
+						view.set_sort_order(order + 1);
 				}
 
 				if (c == '[' && h.is_valid())
@@ -1806,6 +1820,7 @@ int main(int argc, char* argv[])
 							std::printf("failed to delete torrent, invalid handle: %s\n"
 								, st.name.c_str());
 						}
+						client_state.clear();
 					}
 				}
 
@@ -2128,7 +2143,19 @@ done:
 			{
 				h.post_piece_availability();
 				if (!client_state.piece_availability.empty())
-					print(avail_bar(client_state.piece_availability, terminal_width, pos).c_str());
+				{
+					int const num_pieces = int(client_state.piece_availability.size());
+					lt::bitfield avail(num_pieces);
+					for (int idx = 0; idx != num_pieces; ++idx)
+					{
+						if (client_state.piece_availability[idx] > 0)
+							avail.set_bit(idx);
+					}
+					int height_out = 0;
+					print(piece_matrix(avail, terminal_width, &height_out).c_str());
+					print("\n");
+					pos += height_out;
+				}
 			}
 
 			if (print_downloads)
@@ -2173,13 +2200,15 @@ done:
 				pos += 1;
 			}
 
-			if (print_file_progress && s.has_metadata)
+			if (print_file_progress && s.has_metadata && h.is_valid())
 			{
 				h.post_file_progress({});
 				std::vector<lt::open_file_state> file_status = h.file_status();
 				std::vector<lt::download_priority_t> file_prio = h.get_file_priorities();
 				auto f = file_status.begin();
 				std::shared_ptr<const lt::torrent_info> ti = s.torrent_file.lock();
+
+				// TODO: ti may be nullptr here, we should check
 
 				auto const& file_progress = client_state.file_progress;
 				int p = 0; // this is horizontal position
@@ -2275,6 +2304,7 @@ done:
 
 	resume_data_loader.join();
 
+	quit = true;
 	ses.pause();
 	std::printf("saving resume data\n");
 
