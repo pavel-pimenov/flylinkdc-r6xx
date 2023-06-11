@@ -5,11 +5,10 @@ call build_flylinkdc_x64_2017.bat
 
 if not exist .\compiled\FlylinkDC*.exe goto :builderror
 
-copy FlylinkDC-*-x64-*build-*-*.7z "Q:\ppa-doc\mailru\flylinkdc\r6xx\x64"
-
-move *-debug-info-*.7z "Q:\ppa-doc\mailru\flylinkdc-src"
-move *-src-*.7z "Q:\ppa-doc\mailru\flylinkdc-src"
-move *.7z "Q:\ppa-doc\mailru\flylinkdc-src"
+copy FlylinkDC-*-x64-*build-*-*.7z "O:\flylinkdc\r6xx\x64"
+move *-debug-info-*.7z "O:\flylinkdc-src"
+move *-src-*.7z "O:\flylinkdc-src"
+move *.7z "O:\flylinkdc-src"
 
 cd setup 
 rem call build_setup_base.bat
