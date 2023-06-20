@@ -852,6 +852,7 @@ namespace Elements
     const int64u moov_trak_mdia_minf_stbl_stsd_xxxx_sinf_imif=0x696D6966;
     const int64u moov_trak_mdia_minf_stbl_stsd_xxxx_sinf_schi=0x73636869;
     const int64u moov_trak_mdia_minf_stbl_stsd_xxxx_sinf_schm=0x7363686D;
+    const int64u moov_trak_mdia_minf_stbl_stsd_xxxx_udts=0x75647473;
     const int64u moov_trak_mdia_minf_stbl_stsd_xxxx_vvcC=0x76766343;
     const int64u moov_trak_mdia_minf_stbl_stsd_xxxx_wave=0x77617665;
     const int64u moov_trak_mdia_minf_stbl_stsd_xxxx_wave_acbf=0x61636266;
@@ -1268,6 +1269,9 @@ void File_Mpeg4::Data_Parse()
                                     ATOM(moov_trak_mdia_minf_stbl_stsd_xxxx_sinf_imif)
                                     ATOM(moov_trak_mdia_minf_stbl_stsd_xxxx_sinf_schi)
                                     ATOM(moov_trak_mdia_minf_stbl_stsd_xxxx_sinf_schm)
+                                    ATOM_END
+                                LIST(moov_trak_mdia_minf_stbl_stsd_xxxx_udts)
+                                    ATOM_BEGIN
                                     ATOM_END
                                 ATOM(moov_trak_mdia_minf_stbl_stsd_xxxx_vvcC)
                                 LIST(moov_trak_mdia_minf_stbl_stsd_xxxx_wave)
@@ -7912,6 +7916,367 @@ void File_Mpeg4::moov_trak_mdia_minf_stbl_stsd_xxxx_sinf_schm()
 }
 
 //---------------------------------------------------------------------------
+// ETSI TS 103 491 V1.2.1 (2019-05) B.2.2.3 DTSUHDSpecificBox
+void File_Mpeg4::moov_trak_mdia_minf_stbl_stsd_xxxx_udts()
+{
+    Element_Name("DTSUHDSpecificBox");
+    Fill(Stream_Audio, StreamPos_Last, Audio_Channel_s_, "", Unlimited, true, true); //Remove the value (is always wrong in the stsd atom)
+
+    if (moov_trak_mdia_minf_stbl_stsd_Pos>1)
+    {
+        return; //Handling only the first description
+    }
+
+    //Parsing
+    constexpr int32u FrequencyCodeTable[2] = { 44100, 48000 };
+    constexpr const char* RepresentationTypeTable[8] =
+    {
+        "Channel Mask Based Representation",
+        "Matrix 2D Channel Mask Based Representation",
+        "Matrix 3D Channel Mask Based Representation",
+        "Binaurally Processed Audio Representation",
+        "Ambisonic Representation Representation",
+        "Audio Tracks with Mixing Matrix Representation",
+        "3D Object with One 3D Source Per Waveform Representation",
+        "Mono 3D Object with Multiple 3D Sources Per Waveform Representation",
+    };
+    int32u ChannelMask;
+    int8u DecoderProfileCode, FrameDurationCode, MaxPayloadCode, NumPresentationsCode;
+    int8u BaseSamplingFrequencyCode, SampleRateMod, RepresentationType, StreamIndex;
+    bool ExpansionBoxPresent;
+    size_t IDTagPresent_TotalPresent = 0;
+    vector<bool> IDTagPresents;
+    BS_Begin();
+    Get_S1 ( 6, DecoderProfileCode,                             "DecoderProfileCode"); Param_Info1(DecoderProfileCode + 2);
+    Get_S1 ( 2, FrameDurationCode,                              "FrameDurationCode"); Param_Info2(512 << FrameDurationCode, " samples");
+    Get_S1 ( 3, MaxPayloadCode,                                 "MaxPayloadCode"); Param_Info2(2048 << MaxPayloadCode, " bytes");
+    Get_S1 ( 5, NumPresentationsCode,                           "NumPresentationsCode"); Param_Info1(NumPresentationsCode + 1);
+    Get_S4 (32, ChannelMask,                                    "ChannelMask");
+    Get_S1 ( 1, BaseSamplingFrequencyCode,                      "BaseSamplingFrequencyCode"); Param_Info2(FrequencyCodeTable[BaseSamplingFrequencyCode], " Hz");
+    Get_S1 ( 2, SampleRateMod,                                  "SampleRateMod"); Param_Info1(1 << SampleRateMod); Param_Info2(FrequencyCodeTable[BaseSamplingFrequencyCode] << SampleRateMod, " Hz");
+    Get_S1 ( 3, RepresentationType,                             "RepresentationType"); Param_Info1(RepresentationTypeTable[RepresentationType]);
+    Get_S1 ( 3, StreamIndex,                                    "StreamIndex");
+    Get_SB (    ExpansionBoxPresent,                            "ExpansionBoxPresent");
+    Element_Begin1("IDTagPresent[NumPresentations]");
+        for (size_t i = 0; i <= NumPresentationsCode; i++)
+        {
+            bool IDTagPresent;
+            Get_SB(IDTagPresent,                                "IDTagPresent");
+            IDTagPresents.push_back(IDTagPresent);
+            IDTagPresent_TotalPresent += IDTagPresent;
+        }
+    Element_End0();
+    auto ByteAlign = Data_BS_Remain() % 8;
+    if (ByteAlign)
+        Skip_S1(ByteAlign,                                      "ByteAlign");
+    BS_End();
+    if (IDTagPresent_TotalPresent)
+    {
+        Element_Begin1("PresentationIDTags");
+        for (size_t i = 0; i <= NumPresentationsCode; i++)
+            if (IDTagPresents[i])
+                Skip_B2(                                        "PresentationIDTag");
+        Element_End0();
+    }
+    if (ExpansionBoxPresent)
+        Element_ThisIsAList(); // this box can have embedded boxes from there
+    else if (Element_Offset<Element_Size)
+        Skip_XX(Element_Size-Element_Size,                      "Unknown");
+
+    string ChannelLayoutText, ChannelPositionsText, ChannelPositions2Text;
+    int32u CountFront = 0, CountSide = 0, CountRear = 0, CountLFE = 0, CountHeights = 0, CountLows = 0;
+    int16u FrameDuration = 512 << FrameDurationCode;
+    int32u MaxPayload = 2048 << MaxPayloadCode;
+    int32u SampleRate = FrequencyCodeTable[BaseSamplingFrequencyCode] << SampleRateMod;
+    float32 BitRate_Max = (float32)MaxPayload * 8 * SampleRate / FrameDuration;
+
+    // ETSI TS 103 491 V1.2.1 Table C-4: Speaker Labels for ChannelMask
+    if (ChannelMask)
+    {
+        if (ChannelMask & 0x00000003)
+        {
+            ChannelPositionsText += ", Front:";
+            if (ChannelMask & 0x00000002)
+            {
+                ChannelLayoutText += " L";
+                ChannelPositionsText += " L";
+                CountFront++;
+            }
+            if (ChannelMask & 0x00000001)
+            {
+                ChannelLayoutText += " C";
+                ChannelPositionsText += " C";
+                CountFront++;
+            }
+            if (ChannelMask & 0x00000004)
+            {
+                ChannelLayoutText += " R";
+                ChannelPositionsText += " R";
+                CountFront++;
+            }
+        }
+
+        if (ChannelMask & 0x00000020)
+            ChannelLayoutText += " LFE";
+        if (ChannelMask & 0x00010000)
+            ChannelLayoutText += " LFE2";
+
+        if (ChannelMask & 0x00000618)
+        {
+            ChannelPositionsText += ", Side:";
+            if (ChannelMask & 0x00000008)
+            {
+                ChannelLayoutText += " Ls";
+                ChannelPositionsText += " L";
+                CountSide++;
+            }
+            if (ChannelMask & 0x00000010)
+            {
+                ChannelLayoutText += " Rs";
+                ChannelPositionsText += " R";
+                CountSide++;
+            }
+            if (ChannelMask & 0x00000200)
+            {
+                ChannelLayoutText += " Lss";
+                ChannelPositionsText += " L";
+                CountSide++;
+            }
+            if (ChannelMask & 0x00000400)
+            {
+                ChannelLayoutText += " Rss";
+                ChannelPositionsText += " R";
+                CountSide++;
+            }
+        }
+
+        if (ChannelMask & 0x000001C0)
+        {
+            ChannelPositionsText += ", Rear:";
+            if (ChannelMask & 0x00000080)
+            {
+                ChannelLayoutText += " Lsr";
+                ChannelPositionsText += " L";
+                CountRear++;
+            }
+            if (ChannelMask & 0x00000040)
+            {
+                ChannelLayoutText += " Cs";
+                ChannelPositionsText += " C";
+                CountRear++;
+            }
+            if (ChannelMask & 0x00000100)
+            {
+                ChannelLayoutText += " Rsr";
+                ChannelPositionsText += " R";
+                CountRear++;
+            }
+        }
+
+        if (ChannelMask & 0x0E000000)
+        {
+            ChannelPositionsText += ", LowFront:";
+            if (ChannelMask & 0x04000000)
+            {
+                ChannelLayoutText += " Lb";
+                ChannelPositionsText += " L";
+                CountLows++;
+            }
+            if (ChannelMask & 0x02000000)
+            {
+                ChannelLayoutText += " Cb";
+                ChannelPositionsText += " C";
+                CountLows++;
+            }
+            if (ChannelMask & 0x08000000)
+            {
+                ChannelLayoutText += " Rb";
+                ChannelPositionsText += " R";
+                CountLows++;
+            }
+        }
+
+        if (ChannelMask & 0x0000E000)
+        {
+            ChannelPositionsText += ", High:";
+            if (ChannelMask & 0x00002000)
+            {
+                ChannelLayoutText += " Lh";
+                ChannelPositionsText += " L";
+                CountHeights++;
+            }
+            if (ChannelMask & 0x00004000)
+            {
+                ChannelLayoutText += " Ch";
+                ChannelPositionsText += " C";
+                CountHeights++;
+            }
+            if (ChannelMask & 0x00008000)
+            {
+                ChannelLayoutText += " Rh";
+                ChannelPositionsText += " R";
+                CountHeights++;
+            }
+        }
+
+        if (ChannelMask & 0x00060000)
+        {
+            ChannelPositionsText += ", Wide:";
+            if (ChannelMask & 0x00020000)
+            {
+                ChannelLayoutText += " Lw";
+                ChannelPositionsText += " L";
+                CountFront++;
+            }
+            if (ChannelMask & 0x00040000)
+            {
+                ChannelLayoutText += " Rw";
+                ChannelPositionsText += " R";
+                CountFront++;
+            }
+        }
+
+        if (ChannelMask & 0x30000000)
+        {
+            ChannelPositionsText += ", TopFront:";
+            if (ChannelMask & 0x10000000)
+            {
+                ChannelLayoutText += " Ltf";
+                ChannelPositionsText += " L";
+                CountHeights++;
+            }
+            if (ChannelMask & 0x20000000)
+            {
+                ChannelLayoutText += " Rtf";
+                ChannelPositionsText += " R";
+                CountHeights++;
+            }
+        }
+
+        if (ChannelMask & 0x00080000)
+        {
+            ChannelPositionsText += ", TopCtrSrrd";
+            ChannelLayoutText += " Oh";
+            CountHeights++;
+        }
+
+        if (ChannelMask & 0x00001800)
+        {
+            ChannelPositionsText += ", Center:";
+            if (ChannelMask & 0x00000800)
+            {
+                ChannelLayoutText += " Lc";
+                ChannelPositionsText += " L";
+                CountFront++;
+            }
+            if (ChannelMask & 0x00001000)
+            {
+                ChannelLayoutText += " Rc";
+                ChannelPositionsText += " R";
+                CountFront++;
+            }
+        }
+
+        if (ChannelMask & 0xC0000000)
+        {
+            ChannelPositionsText += ", TopRear:";
+            if (ChannelMask & 0x40000000)
+            {
+                ChannelLayoutText += " Ltr";
+                ChannelPositionsText += " L";
+                CountHeights++;
+            }
+            if (ChannelMask & 0x80000000)
+            {
+                ChannelLayoutText += " Rtr";
+                ChannelPositionsText += " R";
+                CountHeights++;
+            }
+        }
+
+        if (ChannelMask & 0x00300000)
+        {
+            ChannelPositionsText += ", HighSide:";
+            if (ChannelMask & 0x00100000)
+            {
+                ChannelLayoutText += " Lhs";
+                ChannelPositionsText += " L";
+                CountHeights++;
+            }
+            if (ChannelMask & 0x00200000)
+            {
+                ChannelLayoutText += " Rhs";
+                ChannelPositionsText += " R";
+                CountHeights++;
+            }
+        }
+
+        if (ChannelMask & 0x01C00000)
+        {
+            ChannelPositionsText += ", HighRear:";
+            if (ChannelMask & 0x00800000)
+            {
+                ChannelLayoutText += " Lhr";
+                ChannelPositionsText += " L";
+                CountHeights++;
+            }
+            if (ChannelMask & 0x00400000)
+            {
+                ChannelLayoutText += " Chr";
+                ChannelPositionsText += " C";
+                CountHeights++;
+            }
+            if (ChannelMask & 0x01000000)
+            {
+                ChannelLayoutText += " Rhr";
+                ChannelPositionsText += " R";
+                CountHeights++;
+            }
+        }
+
+        if (ChannelMask & 0x00000020)
+        {
+            ChannelPositionsText += ", LFE";
+            CountLFE++;
+        }
+        if (ChannelMask & 0x00010000)
+        {
+            ChannelPositionsText += ", LFE2";
+            CountLFE++;
+        }
+
+        ChannelLayoutText.erase(0, 1);
+        ChannelPositionsText.erase(0, 2);
+        ChannelPositions2Text = std::to_string(CountFront) + "/" +
+                std::to_string(CountSide) + "/" + std::to_string(CountRear) + "." +
+                std::to_string(CountLFE);
+        if (CountHeights)
+            ChannelPositions2Text += "." + std::to_string(CountHeights);
+        if (CountLows)
+            ChannelPositions2Text += "." + std::to_string(CountLows);
+    }
+
+    FILLING_BEGIN();
+        Fill(Stream_Audio, StreamPos_Last, Audio_Format, "DTS-UHD");
+        Fill(Stream_Audio, StreamPos_Last, Audio_BitRate_Mode, "VBR");
+        Fill(Stream_Audio, StreamPos_Last, Audio_Format_Profile, DecoderProfileCode + 2);
+        Fill(Stream_Audio, StreamPos_Last, Audio_Format_Settings, RepresentationTypeTable[RepresentationType]);
+        if (!DecoderProfileCode)
+            Fill(Stream_Audio, StreamPos_Last, Audio_Format_Commercial_IfAny, "DTS:X P2");
+        Fill(Stream_Audio, StreamPos_Last, Audio_SamplingRate, SampleRate, 10, true); //This is the maximum sampling frequency
+        Fill(Stream_Audio, StreamPos_Last, Audio_SamplesPerFrame, FrameDuration);
+        Fill(Stream_Audio, StreamPos_Last, Audio_BitRate_Maximum, BitRate_Max, 0, true);
+        if (ChannelMask)
+        {
+            Fill(Stream_Audio, StreamPos_Last, Audio_Channel_s_, CountFront+CountSide+CountRear+CountLFE+CountHeights+CountLows);
+            Fill(Stream_Audio, StreamPos_Last, Audio_ChannelLayout, ChannelLayoutText);
+            Fill(Stream_Audio, StreamPos_Last, Audio_ChannelPositions, ChannelPositionsText);
+            Fill(Stream_Audio, StreamPos_Last, Audio_ChannelPositions_String2, ChannelPositions2Text);
+        }
+    FILLING_END();
+}
+
+//---------------------------------------------------------------------------
 void File_Mpeg4::moov_trak_mdia_minf_stbl_stsd_xxxx_vvcC()
 {
     Element_Name("VVC decode");
@@ -9445,10 +9810,12 @@ void File_Mpeg4::moov_udta_xxxx()
                             }
                             else if (value=="forced-subtitle")
                             {
-                                Fill(StreamKind_Last, StreamPos_Last, "Forced", "Yes");
+                                if (Retrieve_Const(StreamKind_Last, StreamPos_Last, "Forced")!=__T("Yes"))
+                                    Fill(StreamKind_Last, StreamPos_Last, "Forced", "Yes");
                             }
                             else if (value=="subtitle")
                             {
+                                 FinalValue_String=FinalValue="Translation";
                             }
                             else if (value=="supplementary")
                             {
@@ -9619,12 +9986,90 @@ void File_Mpeg4::moov_udta_xxxx()
                             if (Retrieve(Stream_General, 0, Parameter.c_str()).empty())
                                 Fill(Stream_General, 0, Parameter.c_str(), Value);
                         }
+                        else if (Value.empty())
+                        {
+                        }
+                        else if (Parameter=="ServiceKind")
+                        {
+                            auto& Field=Streams[moov_trak_tkhd_TrackID].Infos["ServiceKind"];
+                            auto& Field_String=Streams[moov_trak_tkhd_TrackID].Infos["ServiceKind/String"];
+                            if (Field.To_UTF8()=="Supplementary")
+                            {
+                                Field.clear();
+                                Field_String.clear();
+                            }
+                            string FinalValue, FinalValue_String;
+                            auto value=Value.To_UTF8();
+                                 if (false) {}
+                            else if (value=="public.auxiliary-content")
+                            {
+                                if (Field.empty())
+                                    FinalValue_String=FinalValue="Supplementary";
+                            }
+                            else if (value=="public.accessibility.describes-music-and-sound")
+                            {
+                                FinalValue=string(AC3_Mode[StreamKind_Last==Stream_Audio?2:3])+'-'+AC3_Mode[1];
+                                FinalValue_String=string(AC3_Mode_String[StreamKind_Last==Stream_Audio?2:3])+" - "+AC3_Mode_String[1];
+                            }
+                            else if (value=="public.accessibility.describes-video")
+                            {
+                                FinalValue=AC3_Mode[2];
+                                FinalValue_String=AC3_Mode_String[2];
+                            }
+                            else if (value=="public.easy-to-read")
+                            {
+                                FinalValue="EasyReader";
+                                FinalValue_String="Easy reader";
+                            }
+                            else if (value=="public.subtitles.forced-only")
+                            {
+                                if (Retrieve_Const(StreamKind_Last, StreamPos_Last, "Forced")!=__T("Yes"))
+                                    Fill(StreamKind_Last, StreamPos_Last, "Forced", "Yes");
+                            }
+                            else if (value=="public.accessibility.transcribes-spoken-dialog")
+                            {
+                                FinalValue=string(AC3_Mode[StreamKind_Last==Stream_Audio?2:3])+'-'+AC3_Mode[4];
+                                FinalValue_String=string(AC3_Mode_String[StreamKind_Last==Stream_Audio?2:3])+" - "+AC3_Mode_String[4];
+                            }
+                            else if (value=="public.main-program-content")
+                            {
+                                FinalValue=AC3_Mode[0];
+                                FinalValue_String=AC3_Mode_String[0];
+                            }
+                            else if (value=="public.translation")
+                            {
+                                FinalValue_String=FinalValue=StreamKind_Last==Stream_Audio?"Dubbed":"Translation";
+                            }
+                            else
+                                FinalValue_String=FinalValue=value;
+                            if (!FinalValue.empty())
+                            {
+                                if (!Field.empty())
+                                {
+                                    Field+=__T(" / ");
+                                    Field_String+=__T(" / ");
+                                }
+                                Field+=Ztring().From_UTF8(FinalValue);
+                                Field_String+=Ztring().From_UTF8(FinalValue_String);
+                            }
+                            if (MediaInfoLib::Config.Verbosity_Get()>=(float32)1.0)
+                            {
+                                auto Field= (Ztring().From_CC4(Element[Element_Level-1].Code).To_UTF8()+'_'+ Ztring().From_CC4(Element[Element_Level].Code).To_UTF8()+'_'+value);
+                                Fill(StreamKind_Last, StreamPos_Last, Field.c_str(), "Yes");
+                                Fill_SetOptions(StreamKind_Last, StreamPos_Last, Field.c_str(), "N NTY");
+                            }
+                        }
                         else
                         {
                             if (Parameter!="Omud" // Some complex data is in Omud, but nothing interessant found
                              && Parameter!="_SGI" // Found "_SGIxV4" with DM_IMAGE_PIXEL_ASPECT, in RLE, ignoring it for the moment
                              && Parameter!="hway") // Unknown
-                                Streams[moov_trak_tkhd_TrackID].Infos[Parameter]=Value;
+                            {
+                                auto& Field=Streams[moov_trak_tkhd_TrackID].Infos[Parameter];
+                                if (!Field.empty())
+                                    Field+=__T(" / ");
+                                Field+=Value;
+                            }
                         }
                     FILLING_END();
                 }
