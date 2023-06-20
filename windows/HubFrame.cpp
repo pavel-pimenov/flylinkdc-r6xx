@@ -1676,14 +1676,15 @@ void HubFrame::updateUserJoin(const OnlineUserPtr& p_ou)
 			{
 				dcassert(!id.getNickT().empty());
 				const bool isFavorite = !FavoriteManager::isNoFavUserOrUserBanUpload(p_ou->getUser()); // [!] TODO: в ядро!
-				if (isFavorite)
+				const bool isFavNotBan = !FavoriteManager::isNoFavUserOrUserIgnorePrivate(p_ou->getUser());
+				if (isFavorite && isFavNotBan)
 				{
 					PLAY_SOUND(SOUND_FAVUSER);
 					SHOW_POPUP(POPUP_FAVORITE_CONNECTED, id.getNickT() + _T(" - ") + Text::toT(m_client->getHubName()), TSTRING(FAVUSER_ONLINE));
 				}
 				if (!id.isBotOrHub())
 				{
-					if (m_showJoins || (m_favShowJoins && isFavorite))
+					if (m_showJoins || (m_favShowJoins && isFavorite && isFavNotBan))
 					{
 						BaseChatFrame::addLine(_T("*** ") + TSTRING(JOINS) + _T(' ') + id.getNickT(), 1, Colors::g_ChatTextSystem);
 					}
@@ -1829,15 +1830,16 @@ LRESULT HubFrame::onSpeaker(UINT /*uMsg*/, WPARAM /* wParam */, LPARAM /* lParam
 							if (!id.isBotOrHub())
 							{
 								const bool isFavorite = !FavoriteManager::isNoFavUserOrUserBanUpload(u.m_ou->getUser());
-								
+								const bool isFavNotBan = !FavoriteManager::isNoFavUserOrUserIgnorePrivate(u.m_ou->getUser());
+
 								const tstring& l_userNick = id.getNickT();
-								if (isFavorite)
+								if (isFavorite && isFavNotBan)
 								{
 									PLAY_SOUND(SOUND_FAVUSER_OFFLINE);
 									SHOW_POPUP(POPUP_FAVORITE_DISCONNECTED, l_userNick + _T(" - ") + Text::toT(m_client->getHubName()), TSTRING(FAVUSER_OFFLINE));
 								}
 								
-								if (m_showJoins || (m_favShowJoins && isFavorite))
+								if (m_showJoins || (m_favShowJoins && isFavorite && isFavNotBan))
 								{
 									BaseChatFrame::addLine(_T("*** ") + TSTRING(PARTS) + _T(' ') + l_userNick, 1, Colors::g_ChatTextSystem);
 								}
