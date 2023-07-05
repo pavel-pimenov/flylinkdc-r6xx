@@ -48,11 +48,20 @@ std::string URL_Encoded_Encode(const std::string& URL)
     for (std::string::size_type Pos=0; Pos<URL.size(); Pos++)
     {
         auto Char=URL[Pos];
-        if (Char<=0x40
-#if defined(__APPLE__) && defined(__MACH__)
+        if (Char<=0x2C
+         || Char==0x2E
+         || Char==0x2F
+         || Char==0x3A
+         || Char==0x3B
+         || Char==0x3D
+         || Char==0x3F
+         || Char==0x40
+         || Char==0x5B
+         || Char==0x5D
+//#if defined(__APPLE__) && defined(__MACH__) // URL is rejected by API on macOS, not considered as URL by Thunderbird
          || Char=='{'
          || Char=='}'
-#endif
+//#endif
         )
         {
             Result+='%';
@@ -640,19 +649,19 @@ void File__ReferenceFilesHelper::ParseReferences()
                 if (Names[Pos].find(__T("file:///"))==0)
                 {
                     Names[Pos].erase(0, 8); //Removing "file:///", this is the default behaviour and this makes comparison easier
-                    Names[Pos]=URL_Encoded_Decode(Names[Pos]);
+                    Names[Pos].From_Unicode(URL_Encoded_Decode(Names[Pos].To_Unicode()));
                     IsUrlEncoded=true;
                 }
                 if (Names[Pos].find(__T("file://"))==0)
                 {
                     Names[Pos].erase(0, 7); //Removing "file://", this is the default behaviour and this makes comparison easier
-                    Names[Pos]=URL_Encoded_Decode(Names[Pos]);
+                    Names[Pos].From_Unicode(URL_Encoded_Decode(Names[Pos].To_Unicode()));
                     IsUrlEncoded=true;
                 }
                 if (Names[Pos].find(__T("file:"))==0)
                 {
                     Names[Pos].erase(0, 5); //Removing "file:", this is the default behaviour and this makes comparison easier
-                    Names[Pos]=URL_Encoded_Decode(Names[Pos]);
+                    Names[Pos].From_Unicode(URL_Encoded_Decode(Names[Pos].To_Unicode()));
                     IsUrlEncoded=true;
                 }
                 Ztring AbsoluteName;
@@ -685,7 +694,7 @@ void File__ReferenceFilesHelper::ParseReferences()
                 //Configuring file name (this time, we try to force URL decode in all cases)
                 for (size_t Pos=0; Pos<Names.size(); Pos++)
                 {
-                    Names[Pos]=URL_Encoded_Decode(Names[Pos]);
+                    Names[Pos].From_Unicode(URL_Encoded_Decode(Names[Pos].To_Unicode()));
                     IsUrlEncoded=true;
                     Ztring AbsoluteName;
                     if (Names[Pos].find(__T(':'))!=1 && Names[Pos].find(__T("/"))!=0 && Names[Pos].find(__T("\\\\"))!=0) //If absolute patch
@@ -803,7 +812,7 @@ void File__ReferenceFilesHelper::ParseReferences()
                     }
                 }
             }
-            Sequences[Sequences_Current]->Source=IsUrlEncoded?URL_Encoded_Decode(Sequences[Sequences_Current]->FileNames.Read(0)).c_str():Sequences[Sequences_Current]->FileNames.Read(0);
+            Sequences[Sequences_Current]->Source=IsUrlEncoded?Ztring().From_Unicode(URL_Encoded_Decode(Sequences[Sequences_Current]->FileNames.Read(0).To_Unicode())).c_str():Sequences[Sequences_Current]->FileNames.Read(0);
             if (Sequences[Sequences_Current]->StreamKind!=Stream_Max && !Sequences[Sequences_Current]->Source.empty())
             {
                 if (Sequences[Sequences_Current]->StreamPos==(size_t)-1)

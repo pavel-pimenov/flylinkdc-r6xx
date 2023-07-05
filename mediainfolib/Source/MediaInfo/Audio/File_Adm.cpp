@@ -1465,7 +1465,15 @@ void File_Adm::Streams_Fill()
         FILL_E(audioProgramme, audioProgrammeLabel, "Label");
         FILL_A(audioProgramme, audioProgrammeLanguage, "Language");
         FILL_A(audioProgramme, start, "Start");
+        FILL_A(audioProgramme, start, "Start/String");
+        FILL_A(audioProgramme, start, "Start/TimeCode");
+        FILL_A(audioProgramme, start, "Start/TimeCodeSubFrames");
+        FILL_A(audioProgramme, start, "Start/TimeCodeSamples");
         FILL_A(audioProgramme, end, "End");
+        FILL_A(audioProgramme, end, "End/String");
+        FILL_A(audioProgramme, end, "End/TimeCode");
+        FILL_A(audioProgramme, end, "End/TimeCodeSubFrames");
+        FILL_A(audioProgramme, end, "End/TimeCodeSamples");
         FILL_E(audioProgramme, loudnessMetadata_integratedLoudness, "IntegratedLoudness");
         LINK(audioProgramme, "Content", audioContentIDRef, audioContent);
         LINK(audioProgramme, "PackFormat", authoringInformation_referenceLayout_audioPackFormatIDRef, audioPackFormat);

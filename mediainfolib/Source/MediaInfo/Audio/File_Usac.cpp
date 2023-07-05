@@ -1485,6 +1485,7 @@ File_Usac::File_Usac()
         FirstOutputtedDecodedSample=nullptr;
         roll_distance_Values=nullptr;
         roll_distance_FramePos=nullptr;
+        roll_distance_FramePos_IsPresent=nullptr;
     #endif
 }
 
@@ -1541,17 +1542,17 @@ int32u File_Usac::arith_decode(int16u& low, int16u& high, int16u& value, const i
     int32u cm=((((int)(value32-low+1))<<14)-((int)1))/range;
     const int16u* p=cf-1;
 
-     do
-     {
-         const int16u* q=p+(cfl>>1);
-         if (*q>cm)
-         {
-             p=q;
-             cfl++;
-         }
-         cfl>>=1;
-     }
-     while (cfl>1);
+    do
+    {
+        const int16u* q=p+(cfl>>1);
+        if (*q>cm)
+        {
+            p=q;
+            cfl++;
+        }
+        cfl>>=1;
+    }
+    while (cfl>1);
 
     int32u symbol=(int32u)(p-cf+1);
     if (symbol)
@@ -3590,7 +3591,7 @@ void File_Usac::streamId()
 void File_Usac::UsacFrame(size_t BitsNotIncluded)
 {
     #if MEDIAINFO_CONFORMANCE
-        if (roll_distance_Values && roll_distance_FramePos && roll_distance_Values && !roll_distance_Values->empty())
+        if (roll_distance_FramePos_IsPresent && *roll_distance_FramePos_IsPresent && roll_distance_Values && roll_distance_FramePos && roll_distance_Values && !roll_distance_Values->empty())
         {
             if (find(roll_distance_FramePos->begin(), roll_distance_FramePos->end(), Frame_Count_NotParsedIncluded) != roll_distance_FramePos->end())
             {
@@ -3617,14 +3618,14 @@ void File_Usac::UsacFrame(size_t BitsNotIncluded)
                 auto ContainerSaysNonImmediate = find(roll_distance_FramePos->begin(), roll_distance_FramePos->end(), Frame_Count_NotParsedIncluded) != roll_distance_FramePos->end();
                 if (usacIndependencyFlag)
                 {
-                    if (!ContainerSaysImmediate && !ContainerSaysNonImmediate)
+                    if (!ContainerSaysImmediate && !ContainerSaysNonImmediate && roll_distance_FramePos_IsPresent && *roll_distance_FramePos_IsPresent)
                         Fill_Conformance("Crosscheck stss sample_number", "MP4 stss or MP4 sbgp does not indicate this frame is independent but USAC UsacFrame usacIndependencyFlag 1 indicates this frame is independent");
                 }
                 else
                 {
                     if (ContainerSaysImmediate)
                         Fill_Conformance("Crosscheck stss sample_number", "MP4 stss indicates this frame is an immediate play-out frame (IPF) but USAC UsacFrame usacIndependencyFlag 0 indicates this frame is not an immediate play-out frame (IPF)");
-                    if (ContainerSaysNonImmediate)
+                    if (ContainerSaysNonImmediate && roll_distance_FramePos_IsPresent && *roll_distance_FramePos_IsPresent)
                         Fill_Conformance("Crosscheck sbgp group_description_index", "MP4 sbgp indicates this frame is an independent frame (IF) but USAC UsacFrame usacIndependencyFlag 0 indicates this frame is not an independent frame (IF)");
                 }
             }
@@ -3758,7 +3759,7 @@ void File_Usac::UsacFrame(size_t BitsNotIncluded)
                         //Immediate
                         if (!ContainerSaysImmediate)
                             Fill_Conformance("Crosscheck stss sample_number", "MP4 stss does not indicate this frame is an immediate play-out frame (IPF) but USAC AudioPreRoll is present");
-                        if (ContainerSaysNonImmediate)
+                        if (ContainerSaysNonImmediate && roll_distance_FramePos_IsPresent && *roll_distance_FramePos_IsPresent)
                             Fill_Conformance("Crosscheck sbgp group_description_index", "MP4 sbgp indicates this frame is an independent frame (IF) but USAC AudioPreRoll is present");
                     }
                     else
@@ -3766,7 +3767,7 @@ void File_Usac::UsacFrame(size_t BitsNotIncluded)
                         //NonImmediate
                         if (ContainerSaysImmediate)
                             Fill_Conformance("Crosscheck stss sample_number", "MP4 stss indicates this frame is an immediate play-out frame (IPF) but USAC AudioPreRoll is not present");
-                        if (!ContainerSaysNonImmediate)
+                        if (!ContainerSaysNonImmediate && roll_distance_FramePos_IsPresent && *roll_distance_FramePos_IsPresent)
                             Fill_Conformance("Crosscheck sbgp group_description_index", "MP4 sbgp does not indicate this frame is an independent frame (IF) but USAC AudioPreRoll is not present");
                     }
                 }
@@ -3948,19 +3949,16 @@ void File_Usac::arithData(size_t ch, int16u N, int16u lg, int16u lg_max, bool ar
         return;
     }
 
-    if (lg==0)
-    {
-        memset(&C.arithContext[ch].q[1], 1, sizeof(C.arithContext[ch].q[1]));
-        return;
-    }
+    if (!arith_reset_flag && C.arithContext[ch].previous_window_size==(int16u)-1)
+        return; //TODO: conformance error?
 
     // arith_map_context
     {
-        if (arith_reset_flag || C.arithContext[ch].previous_window_size==(int16u)-1)
-            memset(&C.arithContext[ch].q, 0, sizeof(C.arithContext[ch].q));
-        else if (N != C.arithContext[ch].previous_window_size)
+        if (arith_reset_flag)
+            memset(&C.arithContext[ch].q[0], 0, sizeof(C.arithContext[ch].q[0]));
+        else
         {
-            if (!N)
+            if (!N && lg)
             {
                 #if MEDIAINFO_CONFORMANCE
                     Fill_Conformance("arithData GeneralCompliance", "N is 0");
@@ -3973,16 +3971,22 @@ void File_Usac::arithData(size_t ch, int16u N, int16u lg, int16u lg_max, bool ar
             if (ratio>1)
             {
                 for (int pos=0; pos<N/4; pos++)
-                    C.arithContext[ch].q[1][pos]=C.arithContext[ch].q[1][(int)((float)pos*ratio)];
+                    C.arithContext[ch].q[0][pos]=C.arithContext[ch].q[1][(int)((float)pos*ratio)];
             }
             else
             {
                 for (int pos=N/4-1; pos>=0; pos--)
-                    C.arithContext[ch].q[1][pos]=C.arithContext[ch].q[1][(int)((float)pos*ratio)];
+                    C.arithContext[ch].q[0][pos]=C.arithContext[ch].q[1][(int)((float)pos*ratio)];
             }
 
         }
         C.arithContext[ch].previous_window_size=N;
+    }
+
+    if (lg==0)
+    {
+        memset(&C.arithContext[ch].q[1], 1, sizeof(C.arithContext[ch].q[1]));
+        return;
     }
 
     Element_Begin1("arithData");
@@ -3999,7 +4003,7 @@ void File_Usac::arithData(size_t ch, int16u N, int16u lg, int16u lg_max, bool ar
         value<<=TooMuch;
     }
 
-    int16u context=C.arithContext[ch].q[1][0] << 12;
+    int16u context=C.arithContext[ch].q[0][0] << 12;
     int32u state=0;
     vector<int32s> x_ac_dec(lg);
 
@@ -4009,7 +4013,7 @@ void File_Usac::arithData(size_t ch, int16u N, int16u lg, int16u lg_max, bool ar
         // arith_get_context
         {
             state=context>>8;
-            state=state+((offset>=lg_max/2-1?0:C.arithContext[ch].q[1][offset+1])<<8);
+            state=state+((offset>=lg_max/2-1?0:C.arithContext[ch].q[0][offset+1])<<8);
             state=(state<<4)+(offset?C.arithContext[ch].q[1][offset-1]:0);
 
             context=state;
@@ -4241,12 +4245,12 @@ void File_Usac::tnsData()
 
             if (num_windows==1)
             {
-                Skip_S1(6,                                       "lenght[w][filt]");
+                Skip_S1(6,                                       "length[w][filt]");
                 Get_S1 (4, order,                                "order[w][filt]");
             }
             else
             {
-                Skip_S1(4,                                       "lenght[w][filt]");
+                Skip_S1(4,                                       "length[w][filt]");
                 Get_S1 (3, order,                                "order[w][filt]");
             }
 

@@ -33,11 +33,11 @@ public:
         buffer=NULL;
         ptr=NULL;
         storage=0;
-    };
+    }
 
     BitStream_LE (const int8u* Buffer_, size_t Size_)                           :BitStream(Buffer_, Size_) {
         Attach(Buffer_, Size_);
-    };
+    }
 
     void Attach(const int8u* Buffer_, size_t Size_)
     {
@@ -53,7 +53,7 @@ public:
         ptr_BeforeLastCall=ptr;
 
         long ret;
-        static const int32u Mask[33]={
+        static const int32u Mask[33] = {
           0x00000000,
           0x00000001, 0x00000003, 0x00000007, 0x0000000f,
           0x0000001f, 0x0000003f, 0x0000007f, 0x000000ff,
@@ -145,7 +145,7 @@ private :
 
     const unsigned char *buffer;
     const unsigned char *ptr;
-    const unsigned char *ptr_BeforeLastCall;
+    const unsigned char* ptr_BeforeLastCall = nullptr;
     long storage;
 };
 

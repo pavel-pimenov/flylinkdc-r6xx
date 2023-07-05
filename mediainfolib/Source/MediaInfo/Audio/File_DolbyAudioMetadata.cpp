@@ -109,6 +109,9 @@ static const char* phaseshift_90deg_5to2_Values[] =
 };
 static size_t phaseshift_90deg_5to2_Size=sizeof(phaseshift_90deg_5to2_Values)/sizeof(const char*);
 
+//---------------------------------------------------------------------------
+void Merge_FillTimeCode(File__Analyze& In, const string& Prefix, const TimeCode& TC_Time, float FramesPerSecondF, bool DropFrame, TimeCode::rounding Rounding=TimeCode::Nearest, int32u Frequency=0);
+
 //***************************************************************************
 // Constructor/Destructor
 //***************************************************************************
@@ -317,23 +320,12 @@ void File_DolbyAudioMetadata::Dolby_Atmos_Metadata_Segment()
         }
         if (first_action_time_HH!=(int8u)-1)
         {
-            TimeCode TC;
-            if (((int8s)first_action_time_HH)<0)
-            {
-                TC.SetNegative();
-                TC.SetHours(-((int8s)first_action_time_HH));
-            }
-            else
-                TC.SetHours(first_action_time_HH);
-            const int32u FrameRate=100000;
-            TC.SetMinutes(first_action_time_MM);
-            TC.SetSeconds(first_action_time_SS/FrameRate);
-            TC.SetFrames(first_action_time_SS%FrameRate);
-            TC.SetFramesMax(FrameRate-1);
-            TC.SetIsTime();
-            TC.SetIsValid();
-            Fill(Stream_Audio, 0, "Dolby_Atmos_Metadata FirstFrameOfAction", TC.ToString());
-            Fill_SetOptions(Stream_Audio, 0, "Dolby_Atmos_Metadata FirstFrameOfAction", "Y NTY");
+            bool IsNegative=((int8s)first_action_time_HH)<0;
+            if (IsNegative)
+                first_action_time_HH=(int8u)((-((int8s)first_action_time_HH)));
+            const int32u FrameRate = 100000;
+            TimeCode TC(first_action_time_HH, first_action_time_MM, first_action_time_SS/FrameRate, first_action_time_SS%FrameRate, FrameRate-1, TimeCode::Timed().Negative(IsNegative));
+            Merge_FillTimeCode(*this, "Dolby_Atmos_Metadata FirstFrameOfAction", TC, frames_per_second_Values[frames_per_second], frames_per_second==4, TimeCode::Ceil, 48000);
         }
         FILLING_END()
 }
@@ -502,31 +494,14 @@ void File_DolbyAudioMetadata::Merge(File__Analyze& In, size_t StreamPos)
     const auto& FirstFrameOfAction=In.Retrieve_Const(Stream_Audio, 0, "Dolby_Atmos_Metadata FirstFrameOfAction");
     if (!FirstFrameOfAction.empty())
     {
-        TimeCode TC(FirstFrameOfAction.To_UTF8());
         const auto& Start=In.Retrieve_Const(Stream_Audio, 0, "Programme0 Start");
         if (!Start.empty())
         {
-            TimeCode TC2(Start.To_UTF8());
-            TC+=TC2;
+            TimeCode TC_FirstFrameOfAction(FirstFrameOfAction.To_UTF8());
+            TimeCode TC_Start_Time(Start.To_UTF8());
+            auto TC=TC_FirstFrameOfAction+TC_Start_Time;
+            In.Fill(Stream_Audio, 0, "Dolby_Atmos_Metadata FirstFrameOfAction", TC.ToString(), true, true);
         }
-        auto FramesPerSecond=In.Retrieve_Const(Stream_Audio, 0, "Dolby_Atmos_Metadata AssociatedVideo_FrameRate").To_int64u();
-        auto DropFrame=In.Retrieve_Const(Stream_Audio, 0, "Dolby_Atmos_Metadata AssociatedVideo_FrameRate_DropFrame")==__T("Yes");
-        if (FramesPerSecond)
-        {
-            TimeCode TC_Frames(0, FramesPerSecond-1, DropFrame);
-            TC_Frames+=TC;
-            if (TC_Frames.ToMilliseconds()<TC.ToMilliseconds())
-            {
-                TC_Frames++;
-                string Warning("First frame of action ");
-                Warning+=TC.ToString();
-                Warning+=" has been rounded to nearest frame ";
-                Warning+=TC_Frames.ToString();
-                In.Fill(Stream_Audio, 0, "Warning", Warning);
-            }
-            TC=TC_Frames;
-        }
-        In.Fill(Stream_Audio, 0, "Dolby_Atmos_Metadata FirstFrameOfAction", TC.ToString(), false, true);
     }
 
     if (BinauralRenderModes.empty())

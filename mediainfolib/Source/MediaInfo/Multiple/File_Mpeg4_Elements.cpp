@@ -2122,17 +2122,24 @@ void File_Mpeg4::mdat_xxxx()
                     File_Offset_Next_IsValid=false;
                 }
                 mdat_pos mdat_Pos_New;
-                mdat_Pos_Max=mdat_Pos.empty()?NULL:(&mdat_Pos[0]+mdat_Pos.size());
                 if (!mdat_Pos.empty())
                 {
                     for (mdat_Pos_Type* mdat_Pos_Item=&mdat_Pos[0]; mdat_Pos_Item<mdat_Pos_Max; ++mdat_Pos_Item)
                         if (mdat_Pos_Item->StreamID!=(int32u)Element_Code)
                             mdat_Pos_New.push_back(*mdat_Pos_Item);
                 }
-                mdat_Pos=mdat_Pos_New;
+                mdat_Pos=move(mdat_Pos_New);
                 std::sort(mdat_Pos.begin(), mdat_Pos.end(), &mdat_pos_sort);
-                mdat_Pos_Temp=mdat_Pos.empty()?NULL:&mdat_Pos[0];
-                mdat_Pos_Max=mdat_Pos_Temp+mdat_Pos.size();
+                if (mdat_Pos.empty())
+                {
+                    mdat_Pos_Temp=nullptr;
+                    mdat_Pos_Max=nullptr;
+                }
+                else
+                {
+                    mdat_Pos_Temp=&mdat_Pos[0];
+                    mdat_Pos_Max=mdat_Pos_Temp+mdat_Pos.size();
+                }
                 if (File_Offset_Next_IsValid)
                     for (; mdat_Pos_Temp<mdat_Pos_Max; ++mdat_Pos_Temp)
                     {
@@ -3104,6 +3111,7 @@ void File_Mpeg4::moof_traf_trun()
                 sample_is_non_sync_sample_PresenceAndValue=Stream->second.default_sample_is_non_sync_sample_PresenceAndValue;
             if (sample_is_non_sync_sample_PresenceAndValue==1) //Present and sync
                 Stream->second.stss.push_back(Stream->second.FramePos_Offset+Pos);
+            Streams[moov_trak_tkhd_TrackID].stss_IsPresent=true; // Spec does not indicate that but we may consider trun presence as enough for considering that stts is present and empty
         #endif
         if (sample_composition_time_offset_present)
         {
@@ -3597,6 +3605,44 @@ void File_Mpeg4::moov_meta_ilst_xxxx_data()
                     Value.From_Number(Data);
                     }
                     break;
+        case 0x47 : // Blackmagic RAW - 32-bit Float Array
+                    {
+                        int64u ArrayTotalSize = Element_Size - Element_Offset;
+                        int64u ArrayElementCount = ArrayTotalSize / 4;
+                        ZtringList ValueList = ZtringList();
+                        ValueList.Separator_Set(0, ",");
+                        for (int64u ElementIndex = 0; ElementIndex < ArrayElementCount; ElementIndex++) {
+                            float32 Element;
+                            Get_BF4(Element, "Element");
+                            ValueList.push_back(Ztring().From_Number(Element));
+                        }
+                        Value = ValueList.Read();
+                        break;
+                    }
+        case 0x4C: // Blackmagic RAW - Signed Integer
+                    {
+                        switch (Element_Size - Element_Offset)
+                        {
+                        case 1: {int8u  ValueI; Get_B1(ValueI, "Value"); Value.From_Number((int8s)ValueI);}; break;
+                        case 2: {int16u ValueI; Get_B2(ValueI, "Value"); Value.From_Number((int16s)ValueI);}; break;
+                        case 4: {int32u ValueI; Get_B4(ValueI, "Value"); Value.From_Number((int32s)ValueI);}; break;
+                        case 8: {int64u ValueI; Get_B8(ValueI, "Value"); Value.From_Number((int64s)ValueI);}; break;
+                        default: Value = __T("Unknown kind of integer value!");
+                        }
+                    }
+                    break;
+        case 0x4D: // Blackmagic RAW - Unsigned Integer
+                    {
+                        switch (Element_Size - Element_Offset)
+                        {
+                        case 1: {int8u  ValueI; Get_B1(ValueI, "Value"); Value.From_Number(ValueI);}; break;
+                        case 2: {int16u ValueI; Get_B2(ValueI, "Value"); Value.From_Number(ValueI);}; break;
+                        case 4: {int32u ValueI; Get_B4(ValueI, "Value"); Value.From_Number(ValueI);}; break;
+                        case 8: {int64u ValueI; Get_B8(ValueI, "Value"); Value.From_Number(ValueI);}; break;
+                        default: Value = __T("Unknown kind of integer value!");
+                        }
+                    }
+        break;
         default: Value=__T("Unknown kind of value!");
    }
 
@@ -4914,6 +4960,7 @@ void File_Mpeg4::moov_trak_mdia_minf_stbl_sbgp()
     Get_B4 (Count,                                              "entry_count");
     auto& Stream=Streams[moov_trak_tkhd_TrackID];
     #if MEDIAINFO_CONFORMANCE
+        Streams[moov_trak_tkhd_TrackID].sbgp_IsPresent=true;
         auto& sbgp=Stream.sbgp;
     #endif
     for (int32u Pos=0; Pos<Count; Pos++)
@@ -5142,6 +5189,14 @@ void File_Mpeg4::moov_trak_mdia_minf_stbl_stsd_mebx()
     //Parsing
     Skip_B6(                                                    "Reserved");
     Skip_B2(                                                    "Data reference index");
+
+    if (StreamKind_Last == Stream_Max)
+    {
+        Stream_Prepare(Stream_Other);
+        Streams[moov_trak_tkhd_TrackID].StreamKind=StreamKind_Last;
+        Streams[moov_trak_tkhd_TrackID].StreamPos=StreamPos_Last;
+    }
+    CodecID_Fill(Ztring().From_CC4((int32u)Element_Code), StreamKind_Last, StreamPos_Last, InfoCodecID_Format_Mpeg4);
 
     Element_ThisIsAList();
 }
@@ -5563,11 +5618,20 @@ void File_Mpeg4::moov_trak_mdia_minf_stbl_stsd_xxxx()
             case Stream_Audio : moov_trak_mdia_minf_stbl_stsd_xxxxSound(); break;
             case Stream_Text  : moov_trak_mdia_minf_stbl_stsd_xxxxText (); break;
             default           :
-                                CodecID_Fill(Ztring().From_CC4((int32u)Element_Code), StreamKind_Last, StreamPos_Last, InfoCodecID_Format_Mpeg4);
-                                switch (Element_Code)
+                                if (StreamKind_Last==Stream_Max)
                                 {
-                                    case Elements::moov_trak_mdia_minf_stbl_stsd_mp4s : moov_trak_mdia_minf_stbl_stsd_xxxxStream(); break;
-                                    default                                           : Skip_XX(Element_TotalSize_Get()-Element_Offset, "Unknown");
+                                    Stream_Prepare(Stream_Other);
+                                    Streams[moov_trak_tkhd_TrackID].StreamKind=StreamKind_Last;
+                                    Streams[moov_trak_tkhd_TrackID].StreamPos=StreamPos_Last;
+                                }
+                                if (Element_Code)
+                                {
+                                    CodecID_Fill(Ztring().From_CC4((int32u)Element_Code), StreamKind_Last, StreamPos_Last, InfoCodecID_Format_Mpeg4);
+                                    switch (Element_Code)
+                                    {
+                                        case Elements::moov_trak_mdia_minf_stbl_stsd_mp4s : moov_trak_mdia_minf_stbl_stsd_xxxxStream(); break;
+                                        default                                           : Skip_XX(Element_TotalSize_Get()-Element_Offset, "Unknown");
+                                    }
                                 }
         }
 
@@ -5748,6 +5812,7 @@ void File_Mpeg4::moov_trak_mdia_minf_stbl_stsd_xxxxSound()
                 Parser->FirstOutputtedDecodedSample=&Stream.FirstOutputtedDecodedSample;
                 Parser->roll_distance_Values=&Stream.sgpd_prol;
                 Parser->roll_distance_FramePos=&Stream.sbgp;
+                Parser->roll_distance_FramePos_IsPresent=&Stream.sbgp_IsPresent;
             #endif
             Streams[moov_trak_tkhd_TrackID].Parsers.push_back(Parser);
         }
@@ -8257,9 +8322,9 @@ void File_Mpeg4::moov_trak_mdia_minf_stbl_stsd_xxxx_udts()
     }
 
     FILLING_BEGIN();
-        Fill(Stream_Audio, StreamPos_Last, Audio_Format, "DTS-UHD");
-        Fill(Stream_Audio, StreamPos_Last, Audio_BitRate_Mode, "VBR");
-        Fill(Stream_Audio, StreamPos_Last, Audio_Format_Profile, DecoderProfileCode + 2);
+        Fill(Stream_Audio, StreamPos_Last, Audio_Format, "DTS-UHD", Unlimited, true, true);
+        Fill(Stream_Audio, StreamPos_Last, Audio_BitRate_Mode, "VBR", Unlimited, true, true);
+        Fill(Stream_Audio, StreamPos_Last, Audio_Format_Profile, DecoderProfileCode + 2, 10, true);
         Fill(Stream_Audio, StreamPos_Last, Audio_Format_Settings, RepresentationTypeTable[RepresentationType]);
         if (!DecoderProfileCode)
             Fill(Stream_Audio, StreamPos_Last, Audio_Format_Commercial_IfAny, "DTS:X P2");
@@ -8850,6 +8915,12 @@ void File_Mpeg4::moov_trak_tkhd()
     NAME_VERSION_FLAG("Track Header")
 
     //Parsing
+    if (moov_trak_tkhd_TrackID!=(int32u)-1)
+    {
+        Skip_XX(Element_Size-Element_Offset,                    "(Not parsed)");
+        Element_Info1("(Duplicate, skipping)");
+        return;
+    }
     Ztring Date_Created, Date_Modified;
     float32 a, b, u, c, d, v, x, y, w;
     int64u Duration;
@@ -8885,6 +8956,24 @@ void File_Mpeg4::moov_trak_tkhd()
     Get_BFP4(16, moov_trak_tkhd_Height,                         "Track height");
 
     FILLING_BEGIN();
+        //Handle tracks with same ID than a previous track
+        bool tkhd_SameID=false;
+        std::map<int32u, stream>::iterator PreviousTrack=Streams.find(moov_trak_tkhd_TrackID);
+        if (PreviousTrack!=Streams.end() && PreviousTrack->second.tkhd_Found)
+        {
+            auto TrackID_Temp=((int32u)-1)/2+1;
+            for (; TrackID_Temp<(int32u)-1; TrackID_Temp++)
+            {
+                std::map<int32u, stream>::iterator PreviousTrack=Streams.find(TrackID_Temp);
+                if (PreviousTrack==Streams.end())
+                    break;
+            }
+            Streams[TrackID_Temp].TrackID=moov_trak_tkhd_TrackID;
+            moov_trak_tkhd_TrackID=TrackID_Temp;
+        }
+        else
+            Streams[moov_trak_tkhd_TrackID].TrackID=moov_trak_tkhd_TrackID;
+        Streams[moov_trak_tkhd_TrackID].tkhd_Found=true;
         //Case of header is after main part
         std::map<int32u, stream>::iterator Temp=Streams.find((int32u)-1);
         if (Temp!=Streams.end())
