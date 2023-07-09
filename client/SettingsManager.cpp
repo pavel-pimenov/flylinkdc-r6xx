@@ -1139,7 +1139,6 @@ void SettingsManager::setDefaults()
 	setDefault(AUTOUPDATE_LANG, TRUE);
 	setDefault(AUTOUPDATE_PORTALBROWSER, TRUE);
 	setDefault(AUTOUPDATE_EMOPACKS, TRUE);
-	// setDefault(AUTOUPDATE_TIME,false);
 	setDefault(AUTOUPDATE_SHOWUPDATEREADY, TRUE);
 	setDefault(AUTOUPDATE_RUNONSTARTUP, TRUE);
 	setDefault(AUTOUPDATE_SOUNDS, TRUE);
@@ -1448,9 +1447,6 @@ void SettingsManager::load(const string& aFileName)
 		set(PM_PASSWORD_HINT, l_result);
 	}
 	//  set(PM_PASSWORD_HINT, STRING(DEF_PASSWORD_HINT));    //Жёстко заменить всю строку.
-#ifdef HOURLY_CHECK_UPDATE
-	set(AUTOUPDATE_TIME, 24);
-#endif // HOURLY_CHECK_UPDATE
 	
 	//удалить через несколько релизов
 	if (strstr(get(TEMP_DOWNLOAD_DIRECTORY).c_str(), "%[targetdir]\\") != 0)
@@ -1899,11 +1895,6 @@ bool SettingsManager::set(IntSetting key, int value)
 		}
 		case AUTOUPDATE_TIME:
 		{
-#ifdef HOURLY_CHECK_UPDATE
-			VERIFI(0, 24);
-#else
-			VERIFI(0, 23);
-#endif
 			break;
 		}
 		case BANDWIDTH_LIMIT_START:

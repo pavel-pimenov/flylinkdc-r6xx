@@ -39,7 +39,6 @@ class ClientManager : public Speaker<ClientManagerListener>,
 		static StringList getHubs(const CID& cid, const string& hintUrl);
 		static StringList getHubNames(const CID& cid, const string& hintUrl);
 		static StringList getNicks(const CID& cid, const string& hintUrl);
-#ifndef IRAINMAN_NON_COPYABLE_CLIENTS_IN_CLIENT_MANAGER
 		struct HubInfo
 		{
 			string m_hub_url;
@@ -49,7 +48,7 @@ class ClientManager : public Speaker<ClientManagerListener>,
 		typedef std::vector<HubInfo> HubInfoArray;
 		static void getConnectedHubInfo(HubInfoArray& p_hub_info);
 		static void getConnectedHubUrls(StringList& p_hub_url);
-#endif // IRAINMAN_NON_COPYABLE_CLIENTS_IN_CLIENT_MANAGER
+		
 #ifdef FLYLINKDC_USE_ANTIVIRUS_DB
 		static void resetAntivirusInfo();
 #endif
@@ -210,12 +209,6 @@ class ClientManager : public Speaker<ClientManagerListener>,
 		
 		static int getMode(const FavoriteHubEntry* p_hub, bool& pbWantAutodetect);
 		static bool isActive(const FavoriteHubEntry* p_hub, bool& pbWantAutodetect);
-#ifdef IRAINMAN_NON_COPYABLE_CLIENTS_IN_CLIENT_MANAGER
-		const Client::List& getClientsL() const
-		{
-			return g_clients;
-		}
-#endif
 		static const CID& getMyCID();
 		static void generateNewMyCID();
 		static const CID& getMyPID();

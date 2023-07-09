@@ -22,10 +22,7 @@
 #pragma once
 
 #include "../client/SettingsManager.h"
-#include "../client/TimerManager.h"
 #include "../XMLParser/xmlParser.h"
-
-
 
 class AutoUpdateFile
 {
@@ -84,7 +81,7 @@ class AutoUpdateObject
 
 enum AutoUpdateTasks
 {
-	START_UPDATE,
+	START_UPDATE
 };
 
 class AutoUpdateGUIMethod
@@ -97,8 +94,7 @@ class AutoUpdateGUIMethod
 
 class AutoUpdate :
 	public Singleton<AutoUpdate>,
-	public BackgroundTaskExecuter<AutoUpdateTasks, 10000>,
-	private TimerManagerListener
+	public BackgroundTaskExecuter<AutoUpdateTasks, 10000>
 {
 		friend class AutoUpdateObject;
 	public:
@@ -149,8 +145,7 @@ class AutoUpdate :
 		static void message(const string& p_message);
 		void execute(const AutoUpdateTasks& p_task);
 		
-		virtual void on(TimerManagerListener::Hour, uint64_t aTick) noexcept override;
-		
+	
 		void startUpdateThisThread();
 		
 		void runFlyUpdate();

@@ -187,7 +187,9 @@ SearchFrame::SearchFrame() :
 	//doSearchContainer(WC_COMBOBOX, this, SEARCH_MESSAGE_MAP),
 	//doSearchPassiveContainer(WC_COMBOBOX, this, SEARCH_MESSAGE_MAP),
 	resultsContainer(WC_LISTVIEW, this, SEARCH_MESSAGE_MAP),
+#ifdef FLYLINKDC_USE_HUB_UPDATE_FOR_SEARCH_FRAME
 	hubsContainer(WC_LISTVIEW, this, SEARCH_MESSAGE_MAP),
+#endif
 	ctrlFilterContainer(WC_EDIT, this, SEARCH_FILTER_MESSAGE_MAP),
 	ctrlFilterSelContainer(WC_COMBOBOX, this, SEARCH_FILTER_MESSAGE_MAP),
 	m_initialSize(0), m_initialMode(Search::SIZE_ATLEAST), m_initialType(Search::TYPE_ANY),
@@ -422,10 +424,12 @@ LRESULT SearchFrame::onCreate(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*
 		ctrlResults.SetImageList(images, LVSIL_SMALL);
 	}
 	
+#ifdef FLYLINKDC_USE_HUB_UPDATE_FOR_SEARCH_FRAME
 	ctrlHubs.Create(l_lHwnd, rcDefault, NULL, WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN |
 	                WS_HSCROLL | WS_VSCROLL | LVS_REPORT | LVS_NOCOLUMNHEADER, WS_EX_CLIENTEDGE, IDC_HUB);
 	SET_EXTENDENT_LIST_VIEW_STYLE_WITH_CHECK(ctrlHubs);
 	hubsContainer.SubclassWindow(ctrlHubs.m_hWnd);
+#endif
 	
 #ifdef FLYLINKDC_USE_ADVANCED_GRID_SEARCH
 	ctrlGridFilters.Create(m_hWnd, rcDefault, NULL, WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_VSCROLL | LVS_REPORT | LVS_NOCOLUMNHEADER, WS_EX_CLIENTEDGE);
@@ -480,12 +484,14 @@ LRESULT SearchFrame::onCreate(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*
 	optionLabel.Create(l_lHwnd, rcDefault, NULL, WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN);
 	optionLabel.SetFont(Fonts::g_systemFont, FALSE);
 	optionLabel.SetWindowText(CTSTRING(SEARCH_OPTIONS));
+#ifdef FLYLINKDC_USE_HUB_UPDATE_FOR_SEARCH_FRAME
 	if (!CompatibilityManager::isWine())
 	{
 		hubsLabel.Create(l_lHwnd, rcDefault, NULL, WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN);
 		hubsLabel.SetFont(Fonts::g_systemFont, FALSE);
 		hubsLabel.SetWindowText(CTSTRING(HUBS));
 	}
+#endif
 	ctrlSlots.Create(l_lHwnd, rcDefault, NULL, WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN, NULL, IDC_FREESLOTS);
 	ctrlSlots.SetButtonStyle(BS_AUTOCHECKBOX, FALSE);
 	ctrlSlots.SetFont(Fonts::g_systemFont, FALSE);
@@ -676,9 +682,12 @@ LRESULT SearchFrame::onCreate(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*
 	ctrlResults.setColumnOwnerDraw(COLUMN_P2P_GUARD);
 #endif
 	
+#ifdef FLYLINKDC_USE_HUB_UPDATE_FOR_SEARCH_FRAME
+	
 	ctrlHubs.InsertColumn(0, _T("Dummy"), LVCFMT_LEFT, LVSCW_AUTOSIZE, 0);
 	SET_LIST_COLOR(ctrlHubs);
 	ctrlHubs.SetFont(Fonts::g_systemFont, FALSE); // use Util::font instead to obey Appearace settings
+#endif
 	
 	copyMenu.CreatePopupMenu();
 	copyMenuTorrent.CreatePopupMenu();
@@ -779,7 +788,9 @@ LRESULT SearchFrame::onCreate(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*
 	}
 	onSizeMode();   //Get Mode, and turn ON or OFF controlls Size
 	SearchManager::getInstance()->addListener(this);
+#ifdef FLYLINKDC_USE_HUB_UPDATE_FOR_SEARCH_FRAME
 	initHubs();
+#endif
 #ifdef FLYLINKDC_USE_TREE_SEARCH
 	m_RootTreeItem = nullptr;
 	m_RootVirusTreeItem = nullptr;
@@ -1073,6 +1084,7 @@ void SearchFrame::onEnter()
 	{
 		SET_SETTING(FREE_SLOTS_DEFAULT, m_onlyFree);
 	}
+#ifdef FLYLINKDC_USE_HUB_UPDATE_FOR_SEARCH_FRAME
 	const int n = ctrlHubs.GetItemCount();
 	if (!CompatibilityManager::isWine())
 	{
@@ -1088,6 +1100,8 @@ void SearchFrame::onEnter()
 			return;
 	}
 	m_search_param.check_clients(ctrlHubs.GetItemCount() - 1);
+#endif
+	
 	
 	tstring size;
 	WinUtil::GetWindowText(size, ctrlSize);
@@ -2503,10 +2517,12 @@ LRESULT SearchFrame::onClose(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/
 		TimerManager::getInstance()->removeListener(this);
 #endif
 		SettingsManager::getInstance()->removeListener(this);
+#ifdef FLYLINKDC_USE_HUB_UPDATE_FOR_SEARCH_FRAME
 		if (!CompatibilityManager::isWine())
 		{
 			ClientManager::getInstance()->removeListener(this);
 		}
+#endif
 		SearchManager::getInstance()->removeListener(this);
 		g_search_frames.erase(m_hWnd);
 #ifdef FLYLINKDC_USE_MEDIAINFO_SERVER
@@ -2514,7 +2530,9 @@ LRESULT SearchFrame::onClose(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/
 #endif
 		ctrlResults.DeleteAndClearAllItems(); // https://drdump.com/DumpGroup.aspx?DumpGroupID=358387
 		clearPausedResults();
+#ifdef FLYLINKDC_USE_HUB_UPDATE_FOR_SEARCH_FRAME
 		ctrlHubs.DeleteAndCleanAllItems();
+#endif
 		clear_tree_filter_contaners();
 		ctrlResults.saveHeaderOrder(SettingsManager::SEARCHFRAME_ORDER, SettingsManager::SEARCHFRAME_WIDTHS,
 		                            SettingsManager::SEARCHFRAME_VISIBLE);
@@ -2720,6 +2738,8 @@ void SearchFrame::UpdateLayout(BOOL bResizeBars)
 		rc.bottom += 17;
 		m_ctrlUseTorrentRSS.MoveWindow(rc);
 		
+		
+#ifdef FLYLINKDC_USE_HUB_UPDATE_FOR_SEARCH_FRAME
 		// "Hubs".
 		rc.left = lMargin;
 		rc.right = width - rMargin;
@@ -2733,6 +2753,7 @@ void SearchFrame::UpdateLayout(BOOL bResizeBars)
 		{
 			hubsLabel.MoveWindow(rc.left + lMargin, rc.top - labelH, width - rMargin, labelH - 1);
 		}
+#endif
 	}
 	else
 	{
@@ -2759,13 +2780,15 @@ void SearchFrame::UpdateLayout(BOOL bResizeBars)
 		m_ctrlUseTorrentSearch.MoveWindow(rc);
 		m_ctrlUseTorrentRSS.MoveWindow(rc);
 		
-		ctrlHubs.MoveWindow(rc);
 		//  srLabel.MoveWindow(rc);
 		//  ctrlFilterSel.MoveWindow(rc);
 		//  ctrlFilter.MoveWindow(rc);
 		ctrlDoSearch.MoveWindow(rc);
 		typeLabel.MoveWindow(rc);
+#ifdef FLYLINKDC_USE_HUB_UPDATE_FOR_SEARCH_FRAME
+		ctrlHubs.MoveWindow(rc);
 		hubsLabel.MoveWindow(rc);
+#endif
 		sizeLabel.MoveWindow(rc);
 		searchLabel.MoveWindow(rc);
 		optionLabel.MoveWindow(rc);
@@ -2876,7 +2899,10 @@ LRESULT SearchFrame::onCtlColor(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, BOO
 	const HWND hWnd = (HWND)lParam;
 	const HDC hDC = (HDC)wParam;
 	if (hWnd == searchLabel.m_hWnd || hWnd == sizeLabel.m_hWnd || hWnd == optionLabel.m_hWnd || hWnd == typeLabel.m_hWnd
-	        || hWnd == hubsLabel.m_hWnd || hWnd == ctrlSlots.m_hWnd ||
+#ifdef FLYLINKDC_USE_HUB_UPDATE_FOR_SEARCH_FRAME
+	        || hWnd == hubsLabel.m_hWnd
+#endif
+	        || hWnd == ctrlSlots.m_hWnd ||
 #ifdef FLYLINKDC_USE_LASTIP_AND_USER_RATIO
 	        hWnd == m_ctrlStoreIP.m_hWnd ||
 #endif
@@ -3624,6 +3650,7 @@ LRESULT SearchFrame::onSpeaker(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, BOOL
 			addSearchResult(l_ptr);
 		}
 		break;
+#ifdef FLYLINKDC_USE_HUB_UPDATE_FOR_SEARCH_FRAME
 		case HUB_ADDED:
 			onHubAdded((HubInfo*)(lParam));
 			break;
@@ -3633,6 +3660,7 @@ LRESULT SearchFrame::onSpeaker(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, BOOL
 		case HUB_REMOVED:
 			onHubRemoved((HubInfo*)(lParam));
 			break;
+#endif
 		case UPDATE_STATUS:
 		{
 			const size_t l_totalResult = m_resultsCount
@@ -3906,6 +3934,7 @@ LRESULT SearchFrame::onContextMenu(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, 
 	return FALSE;
 }
 
+#ifdef FLYLINKDC_USE_HUB_UPDATE_FOR_SEARCH_FRAME
 void SearchFrame::initHubs()
 {
 	if (!CompatibilityManager::isWine())
@@ -3915,25 +3944,13 @@ void SearchFrame::initHubs()
 		ctrlHubs.insertItem(new HubInfo(BaseUtil::emptyStringT, TSTRING(ONLY_WHERE_OP), false), 0);
 		ctrlHubs.SetCheckState(0, false);
 		ClientManager::getInstance()->addListener(this);
-#ifdef IRAINMAN_NON_COPYABLE_CLIENTS_IN_CLIENT_MANAGER
-		{
-			ClientManager::LockInstanceClients l_CMinstanceClients;
-			const auto& clients = l_CMinstanceClients->getClientsL();
-			for (auto it = clients.cbegin(); it != clients.cend(); ++it)
-			{
-				const auto& client = it->second;
-				if (client->isConnected())
-					onHubAdded(new HubInfo(Text::toT(client->getHubUrl()), Text::toT(client->getHubName()), client->getMyIdentity().isOp()));
-			}
-		}
-#else
+		
 		ClientManager::HubInfoArray l_hub_info;
 		ClientManager::getConnectedHubInfo(l_hub_info);
 		for (auto i = l_hub_info.cbegin(); i != l_hub_info.cend(); ++i)
 		{
 			onHubAdded(new HubInfo(Text::toT(i->m_hub_url), Text::toT(i->m_hub_name), i->m_is_op));
 		}
-#endif // IRAINMAN_NON_COPYABLE_CLIENTS_IN_CLIENT_MANAGER
 		ctrlHubs.SetColumnWidth(0, LVSCW_AUTOSIZE);
 	}
 	else
@@ -3941,7 +3958,6 @@ void SearchFrame::initHubs()
 		ctrlHubs.ShowWindow(FALSE);
 	}
 }
-
 void SearchFrame::onHubAdded(HubInfo* info)
 {
 	if (!CompatibilityManager::isWine())
@@ -4005,6 +4021,8 @@ void SearchFrame::onHubRemoved(HubInfo* info)
 	}
 }
 
+#endif
+
 LRESULT SearchFrame::onGetList(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
 	ctrlResults.forEachSelected(&SearchInfo::getList);
@@ -4055,6 +4073,7 @@ LRESULT SearchFrame::onPause(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*
 	}
 	return 0;
 }
+#ifdef FLYLINKDC_USE_HUB_UPDATE_FOR_SEARCH_FRAME
 
 LRESULT SearchFrame::onItemChangedHub(int /* idCtrl */, LPNMHDR pnmh, BOOL& /* bHandled */)
 {
@@ -4076,6 +4095,7 @@ LRESULT SearchFrame::onItemChangedHub(int /* idCtrl */, LPNMHDR pnmh, BOOL& /* b
 	}
 	return 0;
 }
+#endif
 
 LRESULT SearchFrame::onPurge(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
@@ -4791,9 +4811,11 @@ void SearchFrame::on(SettingsManagerListener::Repaint)
 		if (ctrlResults.isRedraw())
 		{
 			ctrlResults.setFlickerFree(Colors::g_bgBrush);
+#ifdef FLYLINKDC_USE_HUB_UPDATE_FOR_SEARCH_FRAME
 			ctrlHubs.SetBkColor(Colors::g_bgColor);
 			ctrlHubs.SetTextBkColor(Colors::g_bgColor);
 			ctrlHubs.SetTextColor(Colors::g_textColor);
+#endif
 			RedrawWindow(NULL, NULL, RDW_ERASE | RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
 		}
 	}

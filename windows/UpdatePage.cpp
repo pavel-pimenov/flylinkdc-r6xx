@@ -79,35 +79,13 @@ UpdatePage::ListItem UpdatePage::listComponents[] =
 
 LRESULT UpdatePage::onInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 {
-#ifdef AUTOUPDATE_NOT_DISABLE
-	::EnableWindow(GetDlgItem(IDC_AUTOUPDATE_USE), FALSE);
-	::EnableWindow(GetDlgItem(IDC_AUTOUPDATE_RUNONSTARTUP), FALSE);
-	::EnableWindow(GetDlgItem(IDC_AUTOUPDATE_STARTATTIME), FALSE);
-#endif
-#ifdef HOURLY_CHECK_UPDATE
-	::EnableWindow(GetDlgItem(IDC_AUTOUPDATE_AT), FALSE);
-#endif
 	PropPage::translate((HWND)(*this), texts);
 	PropPage::read(*this, items, listItems, GetDlgItem(IDC_AUTOUPDATE_LIST));
 	PropPage::read(*this, NULL, listComponents, GetDlgItem(IDC_AUTOUPDATE_COMPONENTS));
 	
 	ctrlComponents.Attach(GetDlgItem(IDC_AUTOUPDATE_LIST));
 	ctrlAutoupdates.Attach(GetDlgItem(IDC_AUTOUPDATE_COMPONENTS));
-	
-	
-	ctrlTime.Attach(GetDlgItem(IDC_AUTOUPDATE_AT));
-	WinUtil::GetTimeValues(ctrlTime);
-#ifdef HOURLY_CHECK_UPDATE
-	ctrlTime.AddString(CTSTRING(AUTOUPDATE_HOURLY));
-#endif // HOURLY_CHECK_UPDATE
-	ctrlTime.SetCurSel(SETTING(AUTOUPDATE_TIME));
-	ctrlTime.Detach();
-	
-#ifdef AUTOUPDATE_NOT_DISABLE
-	EnableAutoUpdate(TRUE);
-#else
 	EnableAutoUpdate(BOOLSETTING(AUTOUPDATE_ENABLE));
-#endif
 	
 	CheckUseCustomURL();
 	// Do specialized reading here
@@ -118,29 +96,23 @@ void UpdatePage::write()
 {
 	PropPage::write(*this, items, listItems, GetDlgItem(IDC_AUTOUPDATE_LIST));
 	PropPage::write(*this, NULL, listComponents, GetDlgItem(IDC_AUTOUPDATE_COMPONENTS));
-	ctrlTime.Attach(GetDlgItem(IDC_AUTOUPDATE_AT));
-	SET_SETTING(AUTOUPDATE_TIME, ctrlTime.GetCurSel());
-	ctrlTime.Detach();
 }
 
-#ifndef AUTOUPDATE_NOT_DISABLE
 LRESULT UpdatePage::onClickedUseAutoUpdate(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
-	EnableAutoUpdate(IsDlgButtonChecked(IDC_AUTOUPDATE_USE) == BST_CHECKED);
+	EnableAutoUpdate(TRUE);
 	
 	return 0;
 }
-#endif
+
 void UpdatePage::EnableAutoUpdate(BOOL isEnabled)
 {
 	::EnableWindow(GetDlgItem(IDC_AUTOUPDATE_URL_LABEL), isEnabled);
 	::EnableWindow(GetDlgItem(IDC_AUTOUPDATE_SERVER_BETA), isEnabled);
 	::EnableWindow(GetDlgItem(IDC_AUTOUPDATE_SCHEDULE_LABEL), isEnabled);
-#ifndef AUTOUPDATE_NOT_DISABLE
 	::EnableWindow(GetDlgItem(IDC_AUTOUPDATE_RUNONSTARTUP), isEnabled);
 	::EnableWindow(GetDlgItem(IDC_AUTOUPDATE_STARTATTIME), isEnabled);
 	::EnableWindow(GetDlgItem(IDC_AUTOUPDATE_AT), isEnabled);
-#endif
 	::EnableWindow(GetDlgItem(IDC_AUTOUPDATE_LIST), isEnabled);
 	::EnableWindow(GetDlgItem(IDC_AUTOUPDATE_COMPONENT_LABEL), isEnabled);
 	::EnableWindow(GetDlgItem(IDC_AUTOUPDATE_COMPONENTS), isEnabled);
@@ -154,17 +126,6 @@ LRESULT UpdatePage::onClickedUseCustomURL(WORD /*wNotifyCode*/, WORD /*wID*/, HW
 
 void UpdatePage::CheckUseCustomURL()
 {
-#ifndef AUTOUPDATE_NOT_DISABLE
-	if (IsDlgButtonChecked(IDC_AUTOUPDATE_USE) == BST_CHECKED)
-	{
-#endif
-		::EnableWindow(GetDlgItem(IDC_AUTOUPDATE_URL), IsDlgButtonChecked(IDC_AUTOUPDATE_USE_CUSTOM_SERVER) == BST_CHECKED);
-		::EnableWindow(GetDlgItem(IDC_AUTOUPDATE_SERVER_BETA), IsDlgButtonChecked(IDC_AUTOUPDATE_USE_CUSTOM_SERVER) != BST_CHECKED);
-#ifndef AUTOUPDATE_NOT_DISABLE
-	}
-	else
-	{
-		::EnableWindow(GetDlgItem(IDC_AUTOUPDATE_URL), FALSE);
-	}
-#endif
+	::EnableWindow(GetDlgItem(IDC_AUTOUPDATE_URL), IsDlgButtonChecked(IDC_AUTOUPDATE_USE_CUSTOM_SERVER) == BST_CHECKED);
+	::EnableWindow(GetDlgItem(IDC_AUTOUPDATE_SERVER_BETA), IsDlgButtonChecked(IDC_AUTOUPDATE_USE_CUSTOM_SERVER) != BST_CHECKED);
 }

@@ -216,45 +216,9 @@ bool ClientManager::getUserParams(const UserPtr& user, UserParams& p_params)
 	return false;
 }
 
-#ifndef IRAINMAN_NON_COPYABLE_CLIENTS_IN_CLIENT_MANAGER
-void ClientManager::getConnectedHubUrls(StringList& p_hub_url)
-{
-	CFlyReadLock(*g_csClients);
-	for (auto i = g_clients.cbegin(); i != g_clients.cend(); ++i)
-	{
-		if (i->second->isConnected())
-			p_hub_url.push_back(i->second->getHubUrl());
-	}
-}
 
-void ClientManager::getConnectedHubInfo(HubInfoArray& p_hub_info)
-{
-	CFlyReadLock(*g_csClients);
-	for (auto i = g_clients.cbegin(); i != g_clients.cend(); ++i)
-	{
-		if (i->second->isConnected())
-		{
-			HubInfo l_info;
-			l_info.m_hub_url  = i->second->getHubUrl();
-			l_info.m_hub_name = i->second->getHubName();
-			l_info.m_is_op = i->second->getMyIdentity().isOp();
-			p_hub_info.push_back(l_info);
-		}
-	}
-}
-#endif // IRAINMAN_NON_COPYABLE_CLIENTS_IN_CLIENT_MANAGER
 void ClientManager::prepareClose()
 {
-	// http://www.flickr.com/photos/96019675@N02/11475592005/
-	/*
-	{
-	    CFlyReadLock(*g_csClients);
-	    for (auto i = g_clients.cbegin(); i != g_clients.cend(); ++i)
-	    {
-	        i->second->removeListeners();
-	    }
-	}
-	*/
 	{
 		CFlyWriteLock(*g_csClients);
 		g_clients.clear();

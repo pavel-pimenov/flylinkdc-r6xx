@@ -1831,7 +1831,7 @@ LRESULT HubFrame::onSpeaker(UINT /*uMsg*/, WPARAM /* wParam */, LPARAM /* lParam
 							{
 								const bool isFavorite = !FavoriteManager::isNoFavUserOrUserBanUpload(u.m_ou->getUser());
 								const bool isFavNotBan = !FavoriteManager::isNoFavUserOrUserIgnorePrivate(u.m_ou->getUser());
-
+								
 								const tstring& l_userNick = id.getNickT();
 								if (isFavorite && isFavNotBan)
 								{

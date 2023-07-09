@@ -68,47 +68,13 @@ void AutoUpdate::initialize(HWND p_mainFrameHWND, AutoUpdateGUIMethod* p_guiDele
 {
 	m_mainFrameHWND = p_mainFrameHWND;
 	m_guiDelegate = p_guiDelegate;
-	TimerManager::getInstance()->addListener(this);
-#ifndef AUTOUPDATE_NOT_DISABLE
-	if (BOOLSETTING(AUTOUPDATE_ENABLE) && BOOLSETTING(AUTOUPDATE_RUNONSTARTUP))
-#endif
-	{
-		addTask(START_UPDATE);
-	}
+	addTask(START_UPDATE);
 }
 void AutoUpdate::shutdownAndUpdate()
 {
 	m_guiDelegate = nullptr; // https://drdump.com/Problem.aspx?ProblemID=106436
 	forceStop();
-	TimerManager::getInstance()->removeListener(this);
 	runFlyUpdate();
-}
-
-void AutoUpdate::on(TimerManagerListener::Hour, uint64_t tick) noexcept
-{
-	if (isUpdateStarted())
-		return;
-		
-#ifndef AUTOUPDATE_NOT_DISABLE
-	if (BOOLSETTING(AUTOUPDATE_ENABLE) && BOOLSETTING(AUTOUPDATE_STARTATTIME))
-#endif
-	{
-		// Check Current Time
-		time_t currentTime = GET_TIME();
-		tm*  currentLocalTime = localtime(&currentTime);
-		if (currentLocalTime)
-		{
-			const int l_settings = SETTING(AUTOUPDATE_TIME);
-			if (
-#ifdef HOURLY_CHECK_UPDATE
-			    24 == l_settings ||
-#endif
-			    currentLocalTime->tm_hour == l_settings)
-			{
-				addTask(START_UPDATE);
-			}
-		}
-	}
 }
 
 void AutoUpdate::startUpdateManually()

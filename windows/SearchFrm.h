@@ -60,7 +60,10 @@ using namespace net::r_eg::text::wildcards;
 // С виндовым таймером у меня иногда вешается на ноуте.
 class HIconWrapper;
 class SearchFrame : public MDITabChildWindowImpl < SearchFrame, RGB(127, 127, 255), IDR_SEARCH >,
-	private SearchManagerListener, private ClientManagerListener,
+	private SearchManagerListener,
+#ifdef FLYLINKDC_USE_HUB_UPDATE_FOR_SEARCH_FRAME
+	private ClientManagerListener,
+#endif
 	public UCHandler<SearchFrame>, public UserInfoBaseHandler<SearchFrame, UserInfoGuiTraits::NO_COPY>,
 	private SettingsManagerListener
 #ifdef SSA_VIDEO_PREVIEW_FEATURE
@@ -95,13 +98,15 @@ class SearchFrame : public MDITabChildWindowImpl < SearchFrame, RGB(127, 127, 25
 		NOTIFY_HANDLER(IDC_RESULTS, LVN_GETDISPINFO, ctrlResults.onGetDispInfo)
 		NOTIFY_HANDLER(IDC_RESULTS, LVN_COLUMNCLICK, ctrlResults.onColumnClick)
 		NOTIFY_HANDLER(IDC_RESULTS, LVN_GETINFOTIP, ctrlResults.onInfoTip)
+#ifdef FLYLINKDC_USE_HUB_UPDATE_FOR_SEARCH_FRAME
 		NOTIFY_HANDLER(IDC_HUB, LVN_GETDISPINFO, ctrlHubs.onGetDispInfo)
+		NOTIFY_HANDLER(IDC_HUB, LVN_ITEMCHANGED, onItemChangedHub)
+#endif
 #ifdef FLYLINKDC_USE_LIST_VIEW_MATTRESS
 		NOTIFY_HANDLER(IDC_HUB, NM_CUSTOMDRAW, ctrlHubs.onCustomDraw)
 #endif
 		NOTIFY_HANDLER(IDC_RESULTS, NM_DBLCLK, onDoubleClickResults)
 		NOTIFY_HANDLER(IDC_RESULTS, LVN_KEYDOWN, onKeyDown)
-		NOTIFY_HANDLER(IDC_HUB, LVN_ITEMCHANGED, onItemChangedHub)
 		NOTIFY_HANDLER(IDC_RESULTS, NM_CUSTOMDRAW, onCustomDraw)
 #ifdef FLYLINKDC_USE_ADVANCED_GRID_SEARCH
 		NOTIFY_CODE_HANDLER(PIN_ITEMCHANGED, onGridItemChanged);
@@ -587,9 +592,11 @@ class SearchFrame : public MDITabChildWindowImpl < SearchFrame, RGB(127, 127, 25
 		enum Speakers
 		{
 			ADD_RESULT,
+#ifdef FLYLINKDC_USE_HUB_UPDATE_FOR_SEARCH_FRAME
 			HUB_ADDED,
 			HUB_CHANGED,
 			HUB_REMOVED,
+#endif
 			QUEUE_STATS,
 			UPDATE_STATUS,
 			PREPARE_RESULT_TORRENT,
@@ -647,12 +654,15 @@ class SearchFrame : public MDITabChildWindowImpl < SearchFrame, RGB(127, 127, 25
 		//CContainedWindow doSearchPassiveContainer;
 		
 		CContainedWindow resultsContainer;
+#ifdef FLYLINKDC_USE_HUB_UPDATE_FOR_SEARCH_FRAME
 		CContainedWindow hubsContainer;
+		CStatic hubsLabel;
+#endif
 		CContainedWindow ctrlFilterContainer;
 		CContainedWindow ctrlFilterSelContainer;
 		tstring m_filter;
 		
-		CStatic searchLabel, sizeLabel, optionLabel, typeLabel, hubsLabel, srLabel;
+		CStatic searchLabel, sizeLabel, optionLabel, typeLabel, srLabel;
 #ifdef FLYLINKDC_USE_ADVANCED_GRID_SEARCH
 		CStatic srLabelExcl;
 		/** from bitbucket.org/3F/sandbox */
@@ -669,7 +679,9 @@ class SearchFrame : public MDITabChildWindowImpl < SearchFrame, RGB(127, 127, 25
 		bool m_need_resort;
 		CImageList images;
 		SearchInfoList ctrlResults;
+#ifdef FLYLINKDC_USE_HUB_UPDATE_FOR_SEARCH_FRAME
 		TypedListViewCtrl<HubInfo, IDC_HUB> ctrlHubs;
+#endif
 		
 #ifdef FLYLINKDC_USE_TREE_SEARCH
 		
@@ -845,6 +857,7 @@ class SearchFrame : public MDITabChildWindowImpl < SearchFrame, RGB(127, 127, 25
 		
 		//void on(SearchManagerListener::Searching, SearchQueueItem* aSearch) noexcept override;
 		
+#ifdef FLYLINKDC_USE_HUB_UPDATE_FOR_SEARCH_FRAME
 		// ClientManagerListener
 		void on(ClientConnected, const Client* c) noexcept override
 		{
@@ -861,12 +874,16 @@ class SearchFrame : public MDITabChildWindowImpl < SearchFrame, RGB(127, 127, 25
 				speak(HUB_REMOVED, c);
 			}
 		}
+		LRESULT onItemChangedHub(int idCtrl, LPNMHDR pnmh, BOOL& bHandled);
+#endif
 		void on(SettingsManagerListener::Repaint) override;
 		
+#ifdef FLYLINKDC_USE_HUB_UPDATE_FOR_SEARCH_FRAME
 		void initHubs();
 		void onHubAdded(HubInfo* info);
 		void onHubChanged(HubInfo* info);
 		void onHubRemoved(HubInfo* info);
+#endif
 		bool matchFilter(const SearchInfo* si, int sel, bool doSizeCompare = false, FilterModes mode = NONE, int64_t size = 0);
 		bool parseFilter(FilterModes& mode, int64_t& size);
 		void updateSearchList(SearchInfo* si = NULL);
@@ -877,7 +894,6 @@ class SearchFrame : public MDITabChildWindowImpl < SearchFrame, RGB(127, 127, 25
 		void addSearchResult(SearchInfo* si);
 		bool isSkipSearchResult(SearchInfo*& si);
 		
-		LRESULT onItemChangedHub(int idCtrl, LPNMHDR pnmh, BOOL& bHandled);
 		
 		void speak(Speakers s, const Client* aClient);
 	private:
