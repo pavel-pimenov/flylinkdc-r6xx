@@ -1187,6 +1187,8 @@
     <Image Include="res\vip_ozerki.ico" />
     <Image Include="res\vip_swalka.ico" />
     <Image Include="res\osago.png" />
+    <Image Include="res\vip_ranetka.ico" />
+    <Image Include="res\vip_vostokhub.ico" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="compiled\Settings\common\IPTrust.ini">

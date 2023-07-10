@@ -563,11 +563,13 @@
     <Image Include="res\vip_piter.ico" />
     <Image Include="res\vip_prime.ico" />
     <Image Include="res\vip_prostoigra24.ico" />
+    <Image Include="res\vip_ranetka.ico" />
     <Image Include="res\vip_scalolaz.ico" />
     <Image Include="res\vip_sibfiles.ico" />
     <Image Include="res\vip_stealthhub.ico" />
     <Image Include="res\vip_swalka.ico" />
     <Image Include="res\vip_titankaluga.ico" />
+    <Image Include="res\vip_vostokhub.ico" />
     <Image Include="res\vip_zhigandc.ico" />
     <Image Include="res\wifi-router.ico" />
     <Image Include="res\xxx.ico" />

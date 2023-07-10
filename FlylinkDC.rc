@@ -32,7 +32,7 @@ IDR_IPGUARD_EXAMPLE     RCDATA                  "compiled\\Settings\\common\\IPG
 
 IDR_IPTRUST_EXAMPLE     RCDATA                  "compiled\\Settings\\common\\IPTrust.ini"
 
-IDR_ISP_HUB_LIST_EXAMPLE RCDATA                 "compiled\\Settings\\common\\isp-hub-list.txt"
+IDR_ISP_HUB_LIST_EXAMPLE RCDATA                  "compiled\\Settings\\common\\isp-hub-list.txt"
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1379,21 +1379,14 @@ EXSTYLE WS_EX_STATICEDGE
 CAPTION "Auto Update"
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
-    CONTROL         "Use Autoupdate",IDC_AUTOUPDATE_USE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,11,4,258,10
     GROUPBOX        "Update Server",IDC_AUTOUPDATE_URL_LABEL,4,14,316,59
     CONTROL         "Update to beta versions",IDC_AUTOUPDATE_SERVER_BETA,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,11,27,252,10
     CONTROL         "Use a custom Update Server URL",IDC_AUTOUPDATE_USE_CUSTOM_SERVER,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,11,40,256,10
     EDITTEXT        IDC_AUTOUPDATE_URL,10,53,304,14,ES_AUTOHSCROLL | WS_DISABLED
-    GROUPBOX        "Update Schedule",IDC_AUTOUPDATE_SCHEDULE_LABEL,4,75,316,42
-    CONTROL         "Run Autoupdate on Startup",IDC_AUTOUPDATE_RUNONSTARTUP,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,11,87,256,10
-    CONTROL         "Run Autoupdate once a day at: ",IDC_AUTOUPDATE_STARTATTIME,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,11,100,170,8
-    COMBOBOX        IDC_AUTOUPDATE_AT,234,98,80,26,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    GROUPBOX        "Components to update",IDC_AUTOUPDATE_COMPONENT_LABEL,4,119,316,124
-    CONTROL         "",IDC_AUTOUPDATE_COMPONENTS,"SysListView32",LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS | LVS_ALIGNLEFT | LVS_NOCOLUMNHEADER | LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP,10,130,304,108
+    GROUPBOX        "Components to update",IDC_AUTOUPDATE_COMPONENT_LABEL,4,79,316,164
+    CONTROL         "",IDC_AUTOUPDATE_COMPONENTS,"SysListView32",LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS | LVS_ALIGNLEFT | LVS_NOCOLUMNHEADER | LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP,10,92,304,146
     CONTROL         "",IDC_AUTOUPDATE_LIST,"SysListView32",LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS | LVS_ALIGNLEFT | LVS_NOCOLUMNHEADER | LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP,4,246,316,28
 END
 
@@ -2965,7 +2958,7 @@ IDR_ONLINE_ICO          ICON                    "res\\online.ico"
 
 IDR_VIP_ICO_SCALOLAZ    ICON                    "res\\vip_scalolaz.ico"
 
-IDR_VIP_ICO_RANETKA   ICON                      "res\\vip_ranetka.ico"
+IDR_VIP_ICO_RANETKA     ICON                    "res\\vip_ranetka.ico"
 
 IDR_VIP_ICO_VOSTOKHUB   ICON                    "res\\vip_vostokhub.ico"
 
@@ -3164,6 +3157,11 @@ BEGIN
 END
 
 IDD_FAKEDETECT_PAGE AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_UPDATE_PAGE AFX_DIALOG_LAYOUT
 BEGIN
     0
 END
