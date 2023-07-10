@@ -653,9 +653,10 @@ void ConnectionManager::on(TimerManagerListener::Second, uint64_t aTick) noexcep
 	l_error_download.clear();
 	
 #ifdef USING_IDLERS_IN_CONNECTION_MANAGER
-	for (auto i = l_idlers.cbegin(); i != l_idlers.cend(); ++i)
+	for (auto i = l_idlers.cbegin(); i != l_idlers.cend(); ++i )
 	{
-		DownloadManager::checkIdle(*i);
+		if(!ClientManager::isBeforeShutdown())
+		    DownloadManager::checkIdle(*i);
 	}
 #endif
 }

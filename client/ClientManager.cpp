@@ -1426,6 +1426,8 @@ void ClientManager::fileListDisconnected(const UserPtr& p)
 
 void ClientManager::connectionTimeout(const UserPtr& p)
 {
+	if (ClientManager::isBeforeShutdown())
+		return;
 	string report;
 	bool remove = false;
 	Client* c = nullptr;
@@ -1454,7 +1456,8 @@ void ClientManager::connectionTimeout(const UserPtr& p)
 			}
 		}
 	}
-	cheatMessage(c, report);
+	if(!ClientManager::isBeforeShutdown())
+	   cheatMessage(c, report);
 }
 
 #ifdef FLYLINKDC_USE_DETECT_CHEATING

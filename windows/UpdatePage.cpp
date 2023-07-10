@@ -25,9 +25,6 @@
 
 PropPage::TextItem UpdatePage::texts[] =
 {
-	{ IDC_AUTOUPDATE_USE, ResourceManager::AUTOUPDATE_ENABLE},
-	{ IDC_AUTOUPDATE_RUNONSTARTUP, ResourceManager::AUTOUPDATE_RUNONSTARTUP},
-	{ IDC_AUTOUPDATE_STARTATTIME, ResourceManager::AUTOUPDATE_STARTATTIME},
 	{ IDC_AUTOUPDATE_URL_LABEL, ResourceManager::AUTOUPDATE_URL_LABEL},
 	{ IDC_AUTOUPDATE_SCHEDULE_LABEL, ResourceManager::AUTOUPDATE_SCHEDULE_LABEL},
 	{ IDC_AUTOUPDATE_COMPONENT_LABEL, ResourceManager::AUTOUPDATE_COMPONENT_LABEL},
@@ -39,9 +36,6 @@ PropPage::TextItem UpdatePage::texts[] =
 
 PropPage::Item UpdatePage::items[] =
 {
-	{ IDC_AUTOUPDATE_USE, SettingsManager::AUTOUPDATE_ENABLE, PropPage::T_BOOL},
-	{ IDC_AUTOUPDATE_RUNONSTARTUP, SettingsManager::AUTOUPDATE_RUNONSTARTUP, PropPage::T_BOOL},
-	{ IDC_AUTOUPDATE_STARTATTIME, SettingsManager::AUTOUPDATE_STARTATTIME, PropPage::T_BOOL},
 	{ IDC_AUTOUPDATE_SERVER_BETA, SettingsManager::AUTOUPDATE_TO_BETA, PropPage::T_BOOL },
 	{ IDC_AUTOUPDATE_URL, SettingsManager::AUTOUPDATE_SERVER_URL, PropPage::T_STR},
 	{ IDC_AUTOUPDATE_USE_CUSTOM_SERVER, SettingsManager::AUTOUPDATE_USE_CUSTOM_URL, PropPage::T_BOOL},
@@ -98,21 +92,11 @@ void UpdatePage::write()
 	PropPage::write(*this, NULL, listComponents, GetDlgItem(IDC_AUTOUPDATE_COMPONENTS));
 }
 
-LRESULT UpdatePage::onClickedUseAutoUpdate(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
-{
-	EnableAutoUpdate(TRUE);
-	
-	return 0;
-}
-
 void UpdatePage::EnableAutoUpdate(BOOL isEnabled)
 {
 	::EnableWindow(GetDlgItem(IDC_AUTOUPDATE_URL_LABEL), isEnabled);
 	::EnableWindow(GetDlgItem(IDC_AUTOUPDATE_SERVER_BETA), isEnabled);
 	::EnableWindow(GetDlgItem(IDC_AUTOUPDATE_SCHEDULE_LABEL), isEnabled);
-	::EnableWindow(GetDlgItem(IDC_AUTOUPDATE_RUNONSTARTUP), isEnabled);
-	::EnableWindow(GetDlgItem(IDC_AUTOUPDATE_STARTATTIME), isEnabled);
-	::EnableWindow(GetDlgItem(IDC_AUTOUPDATE_AT), isEnabled);
 	::EnableWindow(GetDlgItem(IDC_AUTOUPDATE_LIST), isEnabled);
 	::EnableWindow(GetDlgItem(IDC_AUTOUPDATE_COMPONENT_LABEL), isEnabled);
 	::EnableWindow(GetDlgItem(IDC_AUTOUPDATE_COMPONENTS), isEnabled);

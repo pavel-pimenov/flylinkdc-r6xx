@@ -934,7 +934,6 @@
 #define IDC_TIMEOUT_T                   1725
 #define IDC_CLIENT_ID                   1727
 #define IDC_FAKESHARE_T                 1728
-#define IDC_AUTOUPDATE_STARTATTIME      1729
 #define IDC_WIZARD_NETA_USE_DHT         1730
 #define IDC_GEOIP_CUSTOM_URL_USE        1731
 #define IDC_FILELIST_DIFF               1733
@@ -1016,7 +1015,6 @@
 #define IDC_SETTINGS_TABS_OPTIONS       1809
 #define IDC_FAVGROUP_BOX                1810
 #define IDC_PARAMS                      1811
-#define IDC_AUTOUPDATE_USE              1812
 #define IDC_DETECT_ID                   1813
 #define IDC_PERCENT_FAKE_SHARE_TOLERATED 1815
 #define IDC_TIMEOUTS_NO                 1816
@@ -1117,8 +1115,6 @@
 #define IDC_AUTOUPDATE_URL_LABEL        1915
 #define IDC_AUTOUPDATE_URL              1916
 #define IDC_AUTOUPDATE_SCHEDULE_LABEL   1917
-#define IDC_AUTOUPDATE_RUNONSTARTUP     1918
-#define IDC_AUTOUPDATE_AT               1919
 #define IDC_AUTOUPDATE_LIST             1920
 #define IDC_RSSFEED_CODEING_LBL         1921
 #define IDC_RSSFEED_CODEING             1922

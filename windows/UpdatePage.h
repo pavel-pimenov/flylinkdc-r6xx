@@ -47,13 +47,11 @@ class UpdatePage : public CPropertyPage<IDD_UPDATE_PAGE>, public PropPage
 		MESSAGE_HANDLER(WM_INITDIALOG, onInitDialog)
 		NOTIFY_HANDLER(IDC_AUTOUPDATE_LIST, NM_CUSTOMDRAW, ctrlComponents.onCustomDraw)
 		NOTIFY_HANDLER(IDC_AUTOUPDATE_COMPONENTS, NM_CUSTOMDRAW, ctrlAutoupdates.onCustomDraw)
-		COMMAND_ID_HANDLER(IDC_AUTOUPDATE_USE, onClickedUseAutoUpdate)
 		COMMAND_ID_HANDLER(IDC_AUTOUPDATE_USE_CUSTOM_SERVER, onClickedUseCustomURL)
 		CHAIN_MSG_MAP(PropPage)
 		END_MSG_MAP()
 		
 		LRESULT onInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/);
-		LRESULT onClickedUseAutoUpdate(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
 		LRESULT onClickedUseCustomURL(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
 		
 		// Common PropPage interface
