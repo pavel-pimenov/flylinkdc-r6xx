@@ -299,6 +299,9 @@ void ConnectionManager::putCQI_L(ConnectionQueueItemPtr& cqi)
 		g_uploads.erase(cqi);
 		DETECTION_DEBUG("[ConnectionManager][putCQI][upload] " + cqi->getHintedUser().to_string());
 	}
+}
+void ConnectionManager::putCQIRemoveToken(ConnectionQueueItemPtr& cqi)
+{
 #ifdef FLYLINKDC_USE_LASTIP_AND_USER_RATIO
 	// ¬ешаемс€ при активной закачке cqi->getUser()->flushRatio();
 #endif
@@ -626,6 +629,7 @@ void ConnectionManager::on(TimerManagerListener::Second, uint64_t aTick) noexcep
 				CFlyLock(g_csUploads);
 				putCQI_L(*m);
 			}
+			putCQIRemoveToken(*m);
 			if (!ClientManager::isBeforeShutdown())
 			{
 				fly_fire3(ConnectionManagerListener::Removed(), l_hinted_user, l_is_download, l_token);
@@ -1810,6 +1814,7 @@ void ConnectionManager::failed(UserConnection* aSource, const string& aError, bo
 		}
 		else if (aSource->isSet(UserConnection::FLAG_UPLOAD))
 		{
+			ConnectionQueueItemPtr cqi;
 			{
 				//CFlyWriteLock(*g_csUploads);
 				CFlyLock(g_csUploads);
@@ -1822,11 +1827,15 @@ void ConnectionManager::failed(UserConnection* aSource, const string& aError, bo
 				}
 				else
 				{
-					ConnectionQueueItemPtr cqi = *i;
+					cqi = *i;
 					l_user = cqi->getHintedUser();
 					l_token = cqi->getConnectionQueueToken();
 					putCQI_L(cqi);
 				}
+			}
+			if (!l_token.empty())
+			{
+				putCQIRemoveToken(cqi);
 			}
 			l_is_fire_faled = false;
 			// такого удалени€ нет в ApexDC++

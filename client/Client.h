@@ -265,15 +265,9 @@ class Client : public ClientBase, public Speaker<ClientListener>, public Buffere
 			return m_searchQueue.m_interval_passive;
 		}
 		
-		void cheatMessage(const string& msg)
-		{
-			fly_fire1(ClientListener::CheatMessage(), msg);
-		}
+		void cheatMessage(const string& msg);
 		
-		void reportUser(const string& report)
-		{
-			fly_fire2(ClientListener::UserReport(), this, report);
-		}
+		void reportUser(const string& report);
 		
 		void reconnect();
 		void shutdown();
@@ -580,10 +574,7 @@ class Client : public ClientBase, public Speaker<ClientListener>, public Buffere
 		virtual void on(TimerManagerListener::Second, uint64_t aTick) noexcept override;
 		virtual void on(TimerManagerListener::Minute, uint64_t aTick) noexcept override;
 		// BufferedSocketListener
-		virtual void on(Connecting) noexcept override
-		{
-			fly_fire1(ClientListener::Connecting(), this);
-		}
+		virtual void on(Connecting) noexcept override;
 		virtual void on(Connected) noexcept override;
 		virtual void on(Line, const string& aLine) noexcept override;
 		virtual void on(Failed, const string&) noexcept override;

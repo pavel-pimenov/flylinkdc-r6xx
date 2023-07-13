@@ -21,6 +21,7 @@
 #include "ThrottleManager.h"
 #include "CompatibilityManager.h"
 #include "ConnectionManager.h"
+#include "ClientManager.h"
 #include "MappingManager.h"
 #include "QueueManager.h"
 #include "SearchManager.h"
@@ -1194,9 +1195,27 @@ void Client::setSearchIntervalPassive(uint32_t aIntervalPassive, bool p_is_searc
 
 string Client::getTagVersion() const
 {
-	string l_version = getClientVersion();
+	const string l_version = getClientVersion();
 	return l_version;
 }
+void Client::cheatMessage(const string& msg)
+{
+	if (!ClientManager::isBeforeShutdown())
+		fly_fire1(ClientListener::CheatMessage(), msg);
+}
+
+void Client::reportUser(const string& report)
+{
+	if (!ClientManager::isBeforeShutdown())
+		fly_fire2(ClientListener::UserReport(), this, report);
+}
+void Client::on(Connecting) noexcept
+{
+	if (!ClientManager::isBeforeShutdown())
+		fly_fire1(ClientListener::Connecting(), this);
+}
+
+
 /**
  * @file
  * $Id: Client.cpp 568 2011-07-24 18:28:43Z bigmuscle $
