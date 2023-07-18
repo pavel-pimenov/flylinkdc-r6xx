@@ -31,8 +31,7 @@
 uint16_t ConnectionManager::g_ConnToMeCount = 0;
 bool ConnectionManager::g_is_test_tcp_port = false;
 std::unique_ptr<webrtc::RWLockWrapper> ConnectionManager::g_csConnection = std::unique_ptr<webrtc::RWLockWrapper> (webrtc::RWLockWrapper::CreateRWLock());
-std::unique_ptr<webrtc::RWLockWrapper> ConnectionManager::g_csDownloads = std::unique_ptr<webrtc::RWLockWrapper> (webrtc::RWLockWrapper::CreateRWLock());
-//std::unique_ptr<webrtc::RWLockWrapper> ConnectionManager::g_csUploads = std::unique_ptr<webrtc::RWLockWrapper> (webrtc::RWLockWrapper::CreateRWLock());
+CriticalSection ConnectionManager::g_csDownloads;
 CriticalSection ConnectionManager::g_csUploads;
 FastCriticalSection ConnectionManager::g_csDdosCheck;
 std::unique_ptr<webrtc::RWLockWrapper> ConnectionManager::g_csDdosCTM2HUBCheck = std::unique_ptr<webrtc::RWLockWrapper>(webrtc::RWLockWrapper::CreateRWLock());
@@ -241,7 +240,7 @@ void ConnectionManager::getDownloadConnection(const UserPtr& aUser)
 	if (!ClientManager::isBeforeShutdown())
 	{
 		{
-			CFlyWriteLock(*g_csDownloads);
+			CFlyLock(g_csDownloads);
 			const auto i = find(g_downloads.begin(), g_downloads.end(), aUser);
 			if (i == g_downloads.end())
 			{
@@ -440,7 +439,7 @@ void ConnectionManager::onUserUpdated(const UserPtr& aUser)
 		std::vector<CFlyTokenItem> l_download_users;
 		std::vector<CFlyTokenItem> l_upload_users;
 		{
-			CFlyReadLock(*g_csDownloads);
+			CFlyLock(g_csDownloads);
 			for (auto i = g_downloads.cbegin(); i != g_downloads.cend(); ++i)
 			{
 				if ((*i)->getUser() == aUser) // todo - map
@@ -450,7 +449,6 @@ void ConnectionManager::onUserUpdated(const UserPtr& aUser)
 			}
 		}
 		{
-			//CFlyReadLock(*g_csUploads);
 			CFlyLock(g_csUploads);
 			for (auto i = g_uploads.cbegin(); i != g_uploads.cend(); ++i)
 			{
@@ -491,7 +489,7 @@ void ConnectionManager::on(TimerManagerListener::Second, uint64_t aTick) noexcep
 	std::vector< CFlyTokenItem > l_status_changed;
 	std::vector< CFlyReasonItem > l_error_download;
 	{
-		CFlyReadLock(*g_csDownloads);
+		CFlyLock(g_csDownloads);
 		uint16_t l_attempts = 0;
 #ifdef USING_IDLERS_IN_CONNECTION_MANAGER
 		l_idlers.swap(m_checkIdle);
@@ -621,7 +619,7 @@ void ConnectionManager::on(TimerManagerListener::Second, uint64_t aTick) noexcep
 			const auto l_token = (*m)->getConnectionQueueToken();
 			if (l_is_download)
 			{
-				CFlyWriteLock(*g_csDownloads);
+				CFlyLock(g_csDownloads);
 				putCQI_L(*m);
 			}
 			else
@@ -1409,7 +1407,7 @@ void ConnectionManager::on(UserConnectionListener::MyNick, UserConnection* aSour
 	// First, we try looking in the pending downloads...hopefully it's one of them...
 	if (!ClientManager::isBeforeShutdown())
 	{
-		CFlyReadLock(*g_csDownloads);
+		CFlyLock(g_csDownloads);
 		for (auto i = g_downloads.cbegin(); i != g_downloads.cend(); ++i)
 		{
 			const ConnectionQueueItemPtr& cqi = *i;
@@ -1537,8 +1535,7 @@ void ConnectionManager::addDownloadConnection(UserConnection* p_conn)
 	ConnectionQueueItemPtr cqi;
 	bool l_is_active = false;
 	{
-		CFlyReadLock(*g_csDownloads);
-		
+		CFlyLock(g_csDownloads);		
 		const auto i = find(g_downloads.begin(), g_downloads.end(), p_conn->getUser());
 		if (i != g_downloads.end())
 		{
@@ -1587,7 +1584,6 @@ void ConnectionManager::addUploadConnection(UserConnection* p_conn)
 	
 	ConnectionQueueItemPtr l_cqi;
 	{
-		//CFlyWriteLock(*g_csUploads);
 		CFlyLock(g_csUploads);
 		const auto i = find(g_uploads.begin(), g_uploads.end(), p_conn->getUser());
 		if (i == g_uploads.cend())
@@ -1694,7 +1690,7 @@ void ConnectionManager::on(AdcCommand::INF, UserConnection* aSource, const AdcCo
 	dcassert(!l_token.empty());
 	bool down;
 	{
-		CFlyReadLock(*g_csDownloads);
+		CFlyLock(g_csDownloads);
 		const auto i = find(g_downloads.begin(), g_downloads.end(), aSource->getUser());
 		
 		if (i != g_downloads.cend())
@@ -1757,15 +1753,11 @@ void ConnectionManager::on(AdcCommand::INF, UserConnection* aSource, const AdcCo
 
 void ConnectionManager::force(const UserPtr& aUser)
 {
-	CFlyReadLock(*g_csDownloads);
+	CFlyLock(g_csDownloads);
 	
 	const auto i = find(g_downloads.begin(), g_downloads.end(), aUser);
 	if (i != g_downloads.end())
 	{
-#ifdef FLYLINKDC_USE_FORCE_CONNECTION
-		// TODO унести из лока
-		fly_fire1(ConnectionManagerListener::Forced(), *i);
-#endif
 		(*i)->setLastAttempt(0);
 	}
 }
@@ -1789,7 +1781,7 @@ void ConnectionManager::failed(UserConnection* aSource, const string& aError, bo
 		bool l_is_fire_faled = true;
 		if (l_is_download)
 		{
-			CFlyWriteLock(*g_csDownloads);
+			CFlyLock(g_csDownloads);
 			auto i = find(g_downloads.begin(), g_downloads.end(), aSource->getUser());
 			//dcassert(i != g_downloads.end());
 			if (i == g_downloads.end())
@@ -1816,7 +1808,6 @@ void ConnectionManager::failed(UserConnection* aSource, const string& aError, bo
 		{
 			ConnectionQueueItemPtr cqi;
 			{
-				//CFlyWriteLock(*g_csUploads);
 				CFlyLock(g_csUploads);
 				auto i = find(g_uploads.begin(), g_uploads.end(), aSource->getUser());
 				dcassert(i != g_uploads.end());
@@ -1933,7 +1924,7 @@ void ConnectionManager::shutdown()
 	// Сбрасываем рейтинг в базу пока не нашли причину почему тут остаются записи.
 	{
 		{
-			CFlyReadLock(*g_csDownloads);
+			CFlyLock(g_csDownloads);
 			for (auto i = g_downloads.cbegin(); i != g_downloads.cend(); ++i)
 			{
 				const ConnectionQueueItemPtr& cqi = *i;
@@ -1941,7 +1932,6 @@ void ConnectionManager::shutdown()
 			}
 		}
 		{
-			//CFlyReadLock(*g_csUploads);
 			CFlyLock(g_csUploads);
 			for (auto i = g_uploads.cbegin(); i != g_uploads.cend(); ++i)
 			{

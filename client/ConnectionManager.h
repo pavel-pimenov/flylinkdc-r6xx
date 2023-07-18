@@ -269,7 +269,7 @@ class ConnectionManager :
 		friend class Server;
 	private:
 		static std::unique_ptr<webrtc::RWLockWrapper> g_csConnection;
-		static std::unique_ptr<webrtc::RWLockWrapper> g_csDownloads;
+		static CriticalSection g_csDownloads;
 		static CriticalSection g_csUploads;
 		static FastCriticalSection g_csDdosCheck;
 		static std::unique_ptr<webrtc::RWLockWrapper> g_csDdosCTM2HUBCheck;

@@ -39,9 +39,6 @@ class ConnectionManagerListener
 		typedef X<3> FailedDownload;
 		typedef X<4> ConnectionStatusChanged;
 		typedef X<5> UserUpdated;
-#ifdef FLYLINKDC_USE_FORCE_CONNECTION
-		typedef X<6> Forced;
-#endif
 		
 #ifdef RIP_USE_CONNECTION_AUTODETECT
 		typedef X<7> OpenTCPPortDetected;
@@ -60,9 +57,6 @@ class ConnectionManagerListener
 		virtual void on(OpenTCPPortDetected, const string&) noexcept {}
 #endif
 		virtual void on(UserUpdated, const HintedUser& p_hinted_user, bool p_is_download, const string& p_token) noexcept { }
-#ifdef FLYLINKDC_USE_FORCE_CONNECTION
-		virtual void on(Forced, const ConnectionQueueItemPtr&) noexcept { }
-#endif
 		
 };
 

@@ -1391,11 +1391,12 @@ void ClientManager::setListLength(const UserPtr& p, const string& listLen)
 }
 void ClientManager::cheatMessage(Client* p_client, const string& p_report)
 {
-	if (p_client && !p_report.empty() && BOOLSETTING(DISPLAY_CHEATS_IN_MAIN_CHAT))
-	{
-		p_client->cheatMessage(p_report);
-	}
+	//if (p_client && !p_report.empty() && BOOLSETTING(DISPLAY_CHEATS_IN_MAIN_CHAT))
+	//{
+	//	p_client->cheatMessage(p_report);
+	//}
 }
+
 #ifdef IRAINMAN_INCLUDE_USER_CHECK
 void ClientManager::fileListDisconnected(const UserPtr& p)
 {
@@ -1456,8 +1457,8 @@ void ClientManager::connectionTimeout(const UserPtr& p)
 			}
 		}
 	}
-	if(!ClientManager::isBeforeShutdown())
-	   cheatMessage(c, report);
+	//if(!ClientManager::isBeforeShutdown())
+	//   cheatMessage(c, report);
 }
 
 #ifdef FLYLINKDC_USE_DETECT_CHEATING
