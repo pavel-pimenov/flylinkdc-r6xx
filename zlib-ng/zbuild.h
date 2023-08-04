@@ -221,7 +221,7 @@
 #  elif defined(__i386__) || defined(__i486__) || defined(__i586__) || \
         defined(__i686__) || defined(_X86_) || defined(_M_IX86)
 #    define UNALIGNED_OK
-#  elif defined(__aarch64__) || defined(_M_ARM64)
+#  elif defined(__aarch64__) || defined(_M_ARM64) || defined(_M_ARM64EC)
 #    if (defined(__GNUC__) && defined(__ARM_FEATURE_UNALIGNED)) || !defined(__GNUC__)
 #      define UNALIGNED_OK
 #      define UNALIGNED64_OK
@@ -243,6 +243,10 @@
 #    define Z_MEMORY_SANITIZER 1
 #    include <sanitizer/msan_interface.h>
 #  endif
+#endif
+
+#ifndef Z_MEMORY_SANITIZER
+#  define __msan_unpoison(a, size) do { Z_UNUSED(a); Z_UNUSED(size); } while (0)
 #endif
 
 #endif

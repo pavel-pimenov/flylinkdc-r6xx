@@ -210,7 +210,7 @@ std::wstring URL_Encoded_Decode (const std::wstring& URL)
             if (Char>=0xC2 && Char<=0xF4)
             {
                 //Handle as UTF-8
-                auto AdditionalBytes_Real=0;
+                //auto AdditionalBytes_Real=0;
                 auto AdditionalBytes_Theory=Char>=0xF0?3:(Char>=0xE0?2:1);
                 Char&=AdditionalBytes_Theory>0xF0?0x1F:0x0F;
                 if (Pos+(AdditionalBytes_Theory+1)*3<=URL.size())
