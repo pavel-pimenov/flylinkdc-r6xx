@@ -1946,7 +1946,7 @@ void File_Usac::Streams_Finish_Conformance()
 
 //---------------------------------------------------------------------------
 #if MEDIAINFO_CONFORMANCE
-void File_Usac::numPreRollFrames_Check(usac_config& CurrentConf, int32u numPreRollFrames, const string numPreRollFramesConchString)
+void File_Usac::numPreRollFrames_Check(usac_config& CurrentConf, int32u numPreRollFrames, const string& numPreRollFramesConchString)
 {
     string FieldName = numPreRollFramesConchString.substr(numPreRollFramesConchString.rfind(' ') + 1);
     int numPreRollFrames_Max;
@@ -2848,17 +2848,17 @@ void File_Usac::uniDrcConfigExtension()
                     int8u drcInstructionsUniDrcV1Count;
                     Get_S1 (6, drcInstructionsUniDrcV1Count,    "drcInstructionsUniDrcV1Count");
                     #if MEDIAINFO_CONFORMANCE
-                        C.drcRequired_Present = 0;
+                        C.drcSetEffect = 0;
                     #endif
                     for (int8u i=0; i<drcInstructionsUniDrcV1Count; i++)
                         drcInstructionsUniDrc(true);
                     #if MEDIAINFO_CONFORMANCE
-                        if (C.drcRequired_Present != 0x27)
+                        if (C.drcSetEffect && (C.drcSetEffect & 0x27) != 0x27) // If one of the 8 first bits is set, bits (1 is LSB) 1, 2, 3, 6 must be set
                         {
                             string Value;
                             for (int8u i = 0; i < 6; i++)
                             {
-                                if (!(C.drcRequired_Present & (1 << i)))
+                                if (!(C.drcSetEffect & (1 << i)))
                                     Fill_Conformance("drcInstructions drcSetEffect", (string(drcSetEffect_List[i]) + " isn't in at least one DRC").c_str());
                                 if (i == 2)
                                     i += 2;
@@ -3177,9 +3177,9 @@ bool File_Usac::drcInstructionsUniDrc(bool V1, bool NoV0)
         downmixId=0; // 0 is default
     Get_S2 (16, drcSetEffect,                                   "drcSetEffect");
     #if MEDIAINFO_CONFORMANCE
-        C.drcRequired_Present |= (drcSetEffect & 0x27); //Bits (1 is LSB) 1, 2, 3, 6;
+        C.drcSetEffect |= (int8u)drcSetEffect; // We need only the 8 first bits
     #endif
-    bool IsNOK=false;
+    //bool IsNOK=false;
     if ((drcSetEffect & (3<<10)) == 0)
     {
         TESTELSE_SB_SKIP(                                       "limiterPeakTargetPresent");
@@ -3900,7 +3900,7 @@ void File_Usac::icsInfo()
 {
     Element_Begin1("ics_info");
 
-    int8u window_sequence, scale_factor_grouping;
+    int8u window_sequence=0, scale_factor_grouping=0;
     Get_S1 (2, window_sequence,                                 "window_sequence");
     Skip_SB(                                                    "window_shape");
 
@@ -4260,7 +4260,7 @@ void File_Usac::tnsData()
 
     for (int8u win=0; win<num_windows; win++)
     {
-        int8u n_filt, coef_res;
+        int8u n_filt, coef_res=0;
         if (num_windows==1)
             Get_S1 (2, n_filt,                                  "n_filt[w]");
         else
@@ -4738,7 +4738,7 @@ void File_Usac::pvcEnvelope(bool usacIndependencyFlag)
     }
     else
     {
-        int8u num_grid_info;
+        int8u num_grid_info=0;
         switch (divMode)
         {
         case 4:
@@ -5594,7 +5594,7 @@ void File_Usac::LsbData(ec_data_type dataType, bool bsQuantCoarseXXX, int8u data
 //---------------------------------------------------------------------------
 void File_Usac::EcDataPair(ec_data_type dataType, int8u paramIdx, int8u setIdx, int8u dataBands, bool bsDataPairXXX, bool bsQuantCoarseXXX, bool usacIndependencyFlag)
 {
-    int8u numQuantSteps;
+    int8u numQuantSteps=0;
     switch (dataType)
     {
     case CLD:

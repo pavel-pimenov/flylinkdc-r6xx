@@ -800,6 +800,9 @@
     <ClCompile Include="Source\MediaInfo\Audio\File_Mga.cpp">
       <Filter>Source Files\Audio</Filter>
     </ClCompile>
+    <ClCompile Include="Source\MediaInfo\Audio\File_DtsUhd.cpp">
+      <Filter>Source Files\Audio</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\MediaInfo\File__Analyse_Automatic.h">
@@ -1493,6 +1496,9 @@
       <Filter>Header Files\Audio</Filter>
     </ClInclude>
     <ClInclude Include="Source\MediaInfo\Audio\File_Mga.h">
+      <Filter>Header Files\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\MediaInfo\Audio\File_DtsUhd.h">
       <Filter>Header Files\Audio</Filter>
     </ClInclude>
   </ItemGroup>

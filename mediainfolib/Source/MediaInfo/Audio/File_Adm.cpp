@@ -518,7 +518,7 @@ struct Items_Struct {
 };
 
 static string Apply_Init(File__Analyze& F, const char* Name, size_t i, const Items_Struct& audioProgramme_List, Ztring Summary) {
-    const Item_Struct& audioProgramme = audioProgramme_List.Items[i];
+    //const Item_Struct& audioProgramme = audioProgramme_List.Items[i];
     string P = Name + to_string(i);
     F.Fill(Stream_Audio, 0, P.c_str(), Summary.empty() ? __T("Yes") : Summary);
     F.Fill(Stream_Audio, 0, (P + " Pos").c_str(), i);

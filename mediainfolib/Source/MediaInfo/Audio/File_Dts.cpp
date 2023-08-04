@@ -957,12 +957,12 @@ void File_Dts_Common::FileHeader_Parse()
     if (IsSub || CC8(Buffer)!=CHUNK_DTSHDHDR || CC4(Buffer+8))
         return;
     int64u StreamSize=-1;
-    int16u Bitw_Stream_Metadata;
-    bool Header_Parsed=false;
+    int16u Bitw_Stream_Metadata=0;
+    //bool Header_Parsed=false;
     int64u Num_Samples_Orig_Audio_At_Max_Fs=0;
-    int32u Num_Frames_Total, TimeStamp, Max_Sample_Rate_Hz=0, Ext_Ss_Avg_Bit_Rate_Kbps=0, Ext_Ss_Peak_Bit_Rate_Kbps=0;
+    int32u Num_Frames_Total=0, TimeStamp=0, Max_Sample_Rate_Hz=0, Ext_Ss_Avg_Bit_Rate_Kbps=0, Ext_Ss_Peak_Bit_Rate_Kbps=0;
     int16u Core_Ss_Bit_Rate_Kbps=0, Samples_Per_Frame_At_Max_Fs=0, Codec_Delay_At_Max_Fs=0;
-    int8u RefClockCode, TC_Frame_Rate=-1;
+    int8u RefClockCode=0, TC_Frame_Rate=-1;
     while (StreamSize==-1 && Element_Size-Element_Offset>=16)
     {
         int64u Name, Size;
@@ -1839,7 +1839,7 @@ void File_Dts::LBR()
 void File_Dts::X96()
 {
     //Coherency check
-    auto MaxSize=Element_Size-Element_Offset+3;
+    //auto MaxSize=Element_Size-Element_Offset+3;
     if (Element_Code)
     {
         // HD
@@ -1921,7 +1921,7 @@ void File_Dts::XLL()
 
     // Parsing
     int32u LLFrameSize;
-    int16u ChSetHeaderSize;
+    //int16u ChSetHeaderSize;
     int8u Bits4FrameFsize, NumChSetsInFrame, SegmentsInFrame, Bits4SSize, Bits4ChMask;
     bool ScalableLSBs;
     Element_Begin1("Header");

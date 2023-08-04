@@ -1702,7 +1702,7 @@ void File_Ac4::Streams_Fill()
                     {
                         //Channel based
                         b_channel_coded=true;
-                        const de_info& D=Substream_Info->second.DeInfo;
+                        //const de_info& D=Substream_Info->second.DeInfo;
                         //b_de_data_present=D.b_de_data_present;
                         //if (b_de_data_present)
                         //{
@@ -3770,7 +3770,7 @@ void File_Ac4::metadata(audio_substream& AudioSubstream, size_t Substream_Index)
         {
             Element_Begin1("umd_payload");
             int32u umd_payload_id,  umd_payload_size;
-            int8u extSizeBits;
+            //int8u extSizeBits;
             bool b_smpoffst, b_discard_unknown_payload;
             Get_S4 (5, umd_payload_id,                          "umd_payload_id");
             if (!umd_payload_id)

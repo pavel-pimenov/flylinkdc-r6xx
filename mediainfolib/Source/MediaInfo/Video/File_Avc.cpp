@@ -3090,49 +3090,43 @@ void File_Avc::sei_message_pic_timing(int32u /*payloadSize*/, int32u seq_paramet
         {
             Element_Begin1("ClockTS");
             TEST_SB_SKIP(                                       "clock_timestamp_flag");
-                Ztring TimeStamp;
                 int32u time_offset=0;
                 int8u n_frames;
-                bool full_timestamp_flag, nuit_field_based_flag;
+                bool nuit_field_based_flag, full_timestamp_flag, cnt_dropped_flag, seconds_flag, minutes_flag, hours_flag;
                 Info_S1(2, ct_type,                             "ct_type"); Param_Info1(Avc_ct_type[ct_type]);
                 Get_SB (   nuit_field_based_flag,               "nuit_field_based_flag");
                 Skip_S1(5,                                      "counting_type");
                 Get_SB (   full_timestamp_flag,                 "full_timestamp_flag");
                 Skip_SB(                                        "discontinuity_flag");
-                Skip_SB(                                        "cnt_dropped_flag");
+                Get_SB (   cnt_dropped_flag,                    "cnt_dropped_flag");
                 Get_S1 (8, n_frames,                            "n_frames");
-                if (full_timestamp_flag)
-                {
-                    Get_S1 (6, seconds_value,                    "seconds_value");
-                    Get_S1 (6, minutes_value,                    "minutes_value");
-                    Get_S1 (5, hours_value,                      "hours_value");
-                }
-                else
-                {
-                    TEST_SB_SKIP(                               "seconds_flag");
-                        Get_S1 (6, seconds_value,               "seconds_value");
-                        TEST_SB_SKIP(                           "minutes_flag");
-                            Get_S1 (6, minutes_value,           "minutes_value");
-                            TEST_SB_SKIP(                       "hours_flag");
-                                Get_S1 (5, hours_value,         "hours_value");
-                            TEST_SB_END();
-                        TEST_SB_END();
-                    TEST_SB_END();
-                }
-                TimeStamp=Ztring::ToZtring(hours_value)+__T(':')+Ztring::ToZtring(minutes_value)+__T(':')+Ztring::ToZtring(seconds_value);
+                seconds_flag=minutes_flag=hours_flag=full_timestamp_flag;
+                if (!full_timestamp_flag)
+                    Get_SB (seconds_flag,                       "seconds_flag");
+                if (seconds_flag)
+                    Get_S1 (6, seconds_value,                   "seconds_value");
+                if (!full_timestamp_flag && seconds_flag)
+                    Get_SB (minutes_flag,                       "minutes_flag");
+                if (minutes_flag)
+                    Get_S1 (6, minutes_value,                   "minutes_value");
+                if (!full_timestamp_flag && minutes_flag)
+                    Get_SB (hours_flag,                         "hours_flag");
+                if (hours_flag)
+                    Get_S1 (5, hours_value,                     "hours_value");
                 if ((*seq_parameter_set_Item)->CpbDpbDelaysPresentFlag())
                 {
                     int8u time_offset_length=(*seq_parameter_set_Item)->vui_parameters->NAL?(*seq_parameter_set_Item)->vui_parameters->NAL->time_offset_length:(*seq_parameter_set_Item)->vui_parameters->VCL->time_offset_length; //Spec is not precise, I am not sure
                     if (time_offset_length)
                         Get_S4 (time_offset_length, time_offset,    "time_offset");
                 }
-                if ((*seq_parameter_set_Item)->vui_parameters && (*seq_parameter_set_Item)->vui_parameters->timing_info_present_flag && (*seq_parameter_set_Item)->vui_parameters->time_scale)
-                {
-                    float32 Milliseconds=((float32)(n_frames*((*seq_parameter_set_Item)->vui_parameters->num_units_in_tick*(1+(nuit_field_based_flag?1:0)))+time_offset))/(*seq_parameter_set_Item)->vui_parameters->time_scale;
-                    TimeStamp+=__T('.');
-                    TimeStamp+=Ztring::ToZtring(Milliseconds);
-                }
-                Element_Info1(TimeStamp);
+                FILLING_BEGIN();
+                    if (!i && seconds_flag && minutes_flag && hours_flag && !Frame_Count)
+                    {
+                        TimeCode TC(hours_value, minutes_value, seconds_value, n_frames, -1, TimeCode::DropFrame(cnt_dropped_flag));
+                        Fill(Stream_Video, 0, Video_TimeCode_FirstFrame, TC.ToString(), true, true);
+                        Element_Info1(TC.ToString());
+                    }
+                FILLING_END();
             TEST_SB_END();
             Element_End0();
         }
@@ -4250,7 +4244,7 @@ File_Avc::seq_parameter_set_struct* File_Avc::seq_parameter_set_data(int32u &Dat
     seq_parameter_set_struct::vui_parameters_struct* vui_parameters_Item=NULL;
     int32u  chroma_format_idc=1, bit_depth_luma_minus8=0, bit_depth_chroma_minus8=0, log2_max_frame_num_minus4, pic_order_cnt_type, log2_max_pic_order_cnt_lsb_minus4=(int32u)-1, max_num_ref_frames, pic_width_in_mbs_minus1, pic_height_in_map_units_minus1, frame_crop_left_offset=0, frame_crop_right_offset=0, frame_crop_top_offset=0, frame_crop_bottom_offset=0;
     int8u   profile_idc, constraint_set_flags, level_idc;
-    bool    constraint_set1_flag, constraint_set3_flag, separate_colour_plane_flag=false, delta_pic_order_always_zero_flag=false, frame_mbs_only_flag, mb_adaptive_frame_field_flag=false;
+    bool    constraint_set1_flag=false, constraint_set3_flag=false, separate_colour_plane_flag=false, delta_pic_order_always_zero_flag=false, frame_mbs_only_flag, mb_adaptive_frame_field_flag=false;
     Get_B1 (profile_idc,                                        "profile_idc");
     Get_B1 (constraint_set_flags,                               "constraint_sett_flags");
         Skip_Flags(constraint_set_flags, 7,                     "constraint_sett0_flag");

@@ -4292,8 +4292,8 @@ void File_Ac3::HD()
                 if (HasExtend)
                 {
                     unsigned char Extend = 0;
-                    unsigned char Unknown = 0;
-                    bool HasContent = false;
+                    //unsigned char Unknown = 0;
+                    //bool HasContent = false;
                     BS_Begin();
                     Get_S1( 4, Extend,                          "extra_channel_meaning_length");
                     size_t After=(((size_t)Extend)+1)*16-4;

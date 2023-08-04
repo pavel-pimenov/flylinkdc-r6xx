@@ -1278,7 +1278,7 @@ void File_SmpteSt0337::Data_Parse()
                 int8u multiple_chunk_flag=data_type_dependent>>3;               //2-bit
                 bool format_flag=((data_type_dependent>>2)&1)?true:false;       //1-bit
                 bool assemble_flag=((data_type_dependent>>1)&1)?true:false;     //1-bit
-                bool changedMetadata_flag=(data_type_dependent&1)?true:false;   //1-bit
+                //bool changedMetadata_flag=(data_type_dependent&1)?true:false;   //1-bit
                 Param_Info1(Smpte_St0337_Adm_multiple_chunk_flag[multiple_chunk_flag]);
                 int8u format_type=0, Track_ID=0, track_numbers=0, in_timeline_flag=0;
                 if (format_flag)
