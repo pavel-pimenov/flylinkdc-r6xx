@@ -384,7 +384,7 @@ class ConnectionManager :
 		ConnectionQueueItemPtr getCQI_L(const HintedUser& aHintedUser, bool download);
 		void putCQI_L(ConnectionQueueItemPtr& cqi);
 		void putCQIRemoveToken(ConnectionQueueItemPtr& cqi);
-
+		
 		void accept(const Socket& sock, bool secure, Server* p_server) noexcept;
 		
 		bool checkKeyprint(UserConnection *aSource);

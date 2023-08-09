@@ -1393,7 +1393,7 @@ void ClientManager::cheatMessage(Client* p_client, const string& p_report)
 {
 	//if (p_client && !p_report.empty() && BOOLSETTING(DISPLAY_CHEATS_IN_MAIN_CHAT))
 	//{
-	//	p_client->cheatMessage(p_report);
+	//  p_client->cheatMessage(p_report);
 	//}
 }
 

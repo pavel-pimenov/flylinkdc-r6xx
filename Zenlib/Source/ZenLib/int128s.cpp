@@ -56,7 +56,7 @@ namespace ZenLib
 
 // IMPLEMENTATION
 
-const char * int128::toString (unsigned int radix) const throw () {
+const char * int128::toString (unsigned int radix) const noexcept {
     if (!*this) return "0";
     if (radix < 2 || radix > 37) return "(invalid radix)";
 
@@ -78,7 +78,7 @@ const char * int128::toString (unsigned int radix) const throw () {
     return &sz [i];
 }
 
-int128::int128 (const char * sz) throw ()
+int128::int128 (const char * sz) noexcept
     : lo (0u), hi (0) {
 
     if (!sz) return;
@@ -123,7 +123,7 @@ int128::int128 (const char * sz) throw ()
     return;
 }
 
-int128::int128 (const float a) throw ()
+int128::int128 (const float a) noexcept
     #if defined (__mips__)       || defined (__mipsel__)
     : lo ((int64u) fmodf ((const double)a, 18446744073709551616.0)),
     #else
@@ -131,11 +131,11 @@ int128::int128 (const float a) throw ()
     #endif
       hi ((int64s) (a / 18446744073709551616.0f)) {}
 
-int128::int128 (const double & a) throw ()
+int128::int128 (const double & a) noexcept
     : lo ((int64u) fmod (a, 18446744073709551616.0)),
       hi ((int64s) (a / 18446744073709551616.0)) {}
 
-int128::int128 (const long double & a) throw ()
+int128::int128 (const long double & a) noexcept
     #if defined (__mips__)       || defined (__mipsel__)
     : lo ((int64u) fmod ((const double)a, 18446744073709551616.0)),
     #else
@@ -143,22 +143,22 @@ int128::int128 (const long double & a) throw ()
     #endif
       hi ((int64s) (a / 18446744073709551616.0l)) {}
 
-float int128::toFloat () const throw () {
+float int128::toFloat () const noexcept {
     return (float) this->hi * 18446744073709551616.0f
          + (float) this->lo;
 }
 
-double int128::toDouble () const throw () {
+double int128::toDouble () const noexcept {
     return (double) this->hi * 18446744073709551616.0
          + (double) this->lo;
 }
 
-long double int128::toLongDouble () const throw () {
+long double int128::toLongDouble () const noexcept {
     return (long double) this->hi * 18446744073709551616.0l
          + (long double) this->lo;
 }
 
-int128 int128::operator - () const throw () {
+int128 int128::operator - () const noexcept {
     if (!this->hi && !this->lo)
         // number is 0, just return 0
         return *this;
@@ -167,7 +167,7 @@ int128 int128::operator - () const throw () {
         return int128 (0-this->lo, ~this->hi);
 }
 
-int128 int128::operator ~ () const throw () {
+int128 int128::operator ~ () const noexcept {
     return int128 (~this->lo, ~this->hi);
 }
 
@@ -201,7 +201,7 @@ int128 int128::operator -- (int) {
     return b;
 }
 
-int128 & int128::operator += (const int128 & b) throw () {
+int128 & int128::operator += (const int128 & b) noexcept {
     int64u old_lo = this->lo;
 
     this->lo += b.lo;
@@ -210,7 +210,7 @@ int128 & int128::operator += (const int128 & b) throw () {
     return *this;
 }
 
-int128 & int128::operator *= (const int128 & b) throw () {
+int128 & int128::operator *= (const int128 & b) noexcept {
     if (!b)
         return *this = 0u;
     if (b == 1u)
@@ -233,7 +233,7 @@ int128 & int128::operator *= (const int128 & b) throw () {
 }
 
 
-int128 int128::div (const int128 & divisor, int128 & remainder) const throw () {
+int128 int128::div (const int128 & divisor, int128 & remainder) const noexcept {
     if (!divisor)
         return 1u / (unsigned int) divisor.lo;
         // or RaiseException (EXCEPTION_INT_DIVIDE_BY_ZERO,
@@ -281,7 +281,7 @@ int128 int128::div (const int128 & divisor, int128 & remainder) const throw () {
     return q;
 }
 
-bool int128::bit (unsigned int n) const throw () {
+bool int128::bit (unsigned int n) const noexcept {
     n &= 0x7F;
 
     if (n < 64)
@@ -290,7 +290,7 @@ bool int128::bit (unsigned int n) const throw () {
         return (this->hi & (1ull << (n - 64)))?true:false;
 }
 
-void int128::bit (unsigned int n, bool val) throw () {
+void int128::bit (unsigned int n, bool val) noexcept {
     n &= 0x7F;
 
     if (val) {
@@ -303,7 +303,7 @@ void int128::bit (unsigned int n, bool val) throw () {
 }
 
 
-int128 & int128::operator >>= (unsigned int n) throw () {
+int128 & int128::operator >>= (unsigned int n) noexcept {
     n &= 0x7F;
 
     if (n > 63) {
@@ -332,7 +332,7 @@ int128 & int128::operator >>= (unsigned int n) throw () {
     return *this;
 }
 
-int128 & int128::operator <<= (unsigned int n) throw () {
+int128 & int128::operator <<= (unsigned int n) noexcept {
     n &= 0x7F;
 
     if (n > 63) {
@@ -359,32 +359,32 @@ int128 & int128::operator <<= (unsigned int n) throw () {
     return *this;
 }
 
-bool int128::operator ! () const throw () {
+bool int128::operator ! () const noexcept {
     return !(this->hi || this->lo);
 }
 
-int128 & int128::operator |= (const int128 & b) throw () {
+int128 & int128::operator |= (const int128 & b) noexcept {
     this->hi |= b.hi;
     this->lo |= b.lo;
 
     return *this;
 }
 
-int128 & int128::operator &= (const int128 & b) throw () {
+int128 & int128::operator &= (const int128 & b) noexcept {
     this->hi &= b.hi;
     this->lo &= b.lo;
 
     return *this;
 }
 
-int128 & int128::operator ^= (const int128 & b) throw () {
+int128 & int128::operator ^= (const int128 & b) noexcept {
     this->hi ^= b.hi;
     this->lo ^= b.lo;
 
     return *this;
 }
 
-bool operator <  (const int128 & a, const int128 & b) throw () {
+bool operator <  (const int128 & a, const int128 & b) noexcept {
     if (a.hi == b.hi) {
         if (a.hi < 0)
             return (int64s) a.lo < (int64s) b.lo;
@@ -394,13 +394,13 @@ bool operator <  (const int128 & a, const int128 & b) throw () {
         return a.hi < b.hi;
 }
 
-bool operator == (const int128 & a, const int128 & b) throw () {
+bool operator == (const int128 & a, const int128 & b) noexcept {
     return a.hi == b.hi && a.lo == b.lo;
 }
-bool operator && (const int128 & a, const int128 & b) throw () {
+bool operator && (const int128 & a, const int128 & b) noexcept {
     return (a.hi || a.lo) && (b.hi || b.lo);
 }
-bool operator || (const int128 & a, const int128 & b) throw () {
+bool operator || (const int128 & a, const int128 & b) noexcept {
     return (a.hi || a.lo) || (b.hi || b.lo);
 }
 

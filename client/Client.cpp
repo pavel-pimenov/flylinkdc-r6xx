@@ -1201,7 +1201,7 @@ string Client::getTagVersion() const
 void Client::cheatMessage(const string& msg)
 {
 	//if (!ClientManager::isBeforeShutdown())
-	//	fly_fire1(ClientListener::CheatMessage(), msg);
+	//  fly_fire1(ClientListener::CheatMessage(), msg);
 }
 
 void Client::reportUser(const string& report)

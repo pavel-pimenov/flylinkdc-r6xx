@@ -655,10 +655,10 @@ void ConnectionManager::on(TimerManagerListener::Second, uint64_t aTick) noexcep
 	l_error_download.clear();
 	
 #ifdef USING_IDLERS_IN_CONNECTION_MANAGER
-	for (auto i = l_idlers.cbegin(); i != l_idlers.cend(); ++i )
+	for (auto i = l_idlers.cbegin(); i != l_idlers.cend(); ++i)
 	{
-		if(!ClientManager::isBeforeShutdown())
-		    DownloadManager::checkIdle(*i);
+		if (!ClientManager::isBeforeShutdown())
+			DownloadManager::checkIdle(*i);
 	}
 #endif
 }
@@ -1535,7 +1535,7 @@ void ConnectionManager::addDownloadConnection(UserConnection* p_conn)
 	ConnectionQueueItemPtr cqi;
 	bool l_is_active = false;
 	{
-		CFlyLock(g_csDownloads);		
+		CFlyLock(g_csDownloads);
 		const auto i = find(g_downloads.begin(), g_downloads.end(), p_conn->getUser());
 		if (i != g_downloads.end())
 		{
