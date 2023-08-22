@@ -262,11 +262,11 @@ void file_descriptor_impl::close_impl(bool close_flag, bool throw_) {
         bool success = true;
 
         if (close_flag) {
-                #ifdef BOOST_IOSTREAMS_WINDOWS
+#ifdef BOOST_IOSTREAMS_WINDOWS
             success = ::CloseHandle(handle_) == 1;
-                #else
+#else
             success = BOOST_IOSTREAMS_FD_CLOSE(handle_) != -1;
-                #endif
+#endif
         }
     //  Even if the close fails, we want nothing more to do with the handle
         handle_ = invalid_handle();
