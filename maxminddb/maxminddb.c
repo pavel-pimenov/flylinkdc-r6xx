@@ -1,3 +1,7 @@
+#ifndef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
+#endif
+
 #if HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -1928,7 +1932,7 @@ dump_entry_data_list(FILE *stream,
                 }
                 char *key =
                     mmdb_strndup(entry_data_list->entry_data.utf8_string,
-                    entry_data_list->entry_data.data_size);
+                                 entry_data_list->entry_data.data_size);
                 if (NULL == key) {
                     *status = MMDB_OUT_OF_MEMORY_ERROR;
                     return NULL;
@@ -1974,7 +1978,7 @@ dump_entry_data_list(FILE *stream,
         } break;
         case MMDB_DATA_TYPE_UTF8_STRING: {
             char *string = mmdb_strndup(entry_data_list->entry_data.utf8_string,
-                             entry_data_list->entry_data.data_size);
+                                        entry_data_list->entry_data.data_size);
             if (NULL == string) {
                 *status = MMDB_OUT_OF_MEMORY_ERROR;
                 return NULL;

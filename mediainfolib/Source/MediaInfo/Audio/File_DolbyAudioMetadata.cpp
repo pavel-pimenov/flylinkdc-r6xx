@@ -346,7 +346,7 @@ void File_DolbyAudioMetadata::Dolby_Atmos_Supplemental_Metadata_Segment()
     Element_Begin1("trim_metadata");
     Skip_L1(                                                    "reserved");
     bitset<2> TrimAutoSet;
-    bool TrimNotAlwaysManual=false;
+    // bool TrimNotAlwaysManual=false;
     Fill(Stream_Audio, 0, "Dolby_Atmos_Metadata TrimMode", "Yes");
     for (int cfg=0; cfg<9; cfg++)
     {
@@ -529,7 +529,7 @@ void File_DolbyAudioMetadata::Merge(File__Analyze& In, size_t StreamPos)
         for (const auto& Pos : TrackUID_Pos)
         {
             string Name=TrackUID_String+Pos.To_UTF8();
-            auto PosI=(size_t)Pos.To_int64u();
+            //auto PosI=(size_t)Pos.To_int64u();
             Name+=BinauralRenderMode_String;
             In.Fill(Stream_Audio, 0, Name.c_str(), BinauralRenderMode);
         }
