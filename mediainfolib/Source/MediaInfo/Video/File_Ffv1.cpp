@@ -1967,7 +1967,15 @@ void File_Ffv1::copy_plane_states_to_slice(int8u plane_count)
                 current_slice->plane_states[i][j] = new int8u [states_size];
             for (size_t k = 0; k < states_size; k++)
             {
-                current_slice->plane_states[i][j][k] = plane_states[idx][j][k];
+                const auto ps = plane_states[idx];
+                if (ps) // https://github.com/MediaArea/MediaInfoLib/issues/1853
+                {
+                    current_slice->plane_states[i][j][k] = ps[j][k];
+                }
+                else
+                {
+                    current_slice->plane_states[i][j][k] = 0;
+                }
             }
         }
     }
