@@ -1,0 +1,23 @@
+#pragma once
+
+#include "libtorrent/config.hpp"
+#include "libtorrent/alert_types.hpp"
+#include "libtorrent/torrent_handle.hpp"
+#include "libtorrent/torrent_info.hpp"
+#include "libtorrent/sha1_hash.hpp"
+#include "libtorrent/socket.hpp"
+#include "libtorrent/bencode.hpp"
+#include "libtorrent/aux_/escape_string.hpp"
+#include "libtorrent/aux_/socket_type.hpp"
+#include "libtorrent/aux_/ssl.hpp"
+#include "libtorrent/aux_/ssl_stream.hpp"
+#include "libtorrent/aux_/utp_socket_manager.hpp"
+#include "libtorrent/aux_/session_udp_sockets.hpp"
+#include "libtorrent/aux_/torrent.hpp"
+#include "libtorrent/aux_/session_impl.hpp"
+#include "libtorrent/aux_/peer_connection.hpp"
+#include "libtorrent/aux_/tracker_manager.hpp"
+#include "libtorrent/aux_/piece_picker.hpp"
+#include "libtorrent/kademlia/routing_table.hpp"
+
+#include "boost/asio.hpp"

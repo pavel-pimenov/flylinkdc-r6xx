@@ -19,6 +19,10 @@
 #if defined(_MSC_VER) || defined(__BORLANDC__)
  #include "MediaInfo/Setup.h"
  #include "MediaInfo/File__Analyze.h"
+ #include "MediaInfo/TimeCode.h"
+ #include "MediaInfo/MediaInfo_Config_MediaInfo.h"
+ #include "MediaInfo/MediaInfo_Internal.h"
+ #include "MediaInfo/Tag/File__Tags.h"
 #endif //_MSC_VER
 #ifdef __BORLANDC__
     #pragma hdrstop

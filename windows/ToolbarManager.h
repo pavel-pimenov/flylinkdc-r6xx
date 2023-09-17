@@ -24,7 +24,7 @@ class ToolbarEntry
 {
 	public:
 		typedef ToolbarEntry* Ptr;
-		typedef vector<Ptr> List;
+		typedef std::vector<Ptr> List;
 		
 		ToolbarEntry()
 		{

@@ -58,7 +58,7 @@ class DirectoryListing : public UserInfoBase
 						return _stricmp(a->getName().c_str(), b->getName().c_str()) < 0;
 					}
 				};
-				typedef vector<Ptr> List;
+				typedef std::vector<Ptr> List;
 				
 				File(Directory* p_Dir, const string& p_Name, int64_t p_Size, const TTHValue& p_TTH, uint32_t p_Hit, uint32_t p_ts, std::shared_ptr<CFlyMediaInfo>& p_media) noexcept :
 					name(p_Name), size(p_Size), parent(p_Dir), tthRoot(p_TTH), hit(p_Hit), ts(p_ts), m_media(p_media), adls(false)
@@ -109,7 +109,7 @@ class DirectoryListing : public UserInfoBase
 						return _stricmp(a->getName().c_str(), b->getName().c_str()) < 0;
 					}
 				};
-				typedef vector<Ptr> List;
+				typedef std::vector<Ptr> List;
 				
 				typedef std::unordered_set<TTHValue> TTHSet;
 				

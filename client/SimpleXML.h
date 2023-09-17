@@ -266,7 +266,7 @@ class SimpleXML
 		{
 			public:
 				typedef Tag* Ptr;
-				typedef vector<Ptr> List;
+				typedef std::vector<Ptr> List;
 				typedef List::const_iterator Iter;
 				
 				/**

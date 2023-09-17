@@ -116,13 +116,13 @@ class ADLSearchManager : public Singleton<ADLSearchManager>
 			bool fileAdded;
 			DestDir() : dir(NULL), subdir(NULL), fileAdded(false) {}
 		};
-		typedef vector<DestDir> DestDirList;
+		typedef std::vector<DestDir> DestDirList;
 		
 		ADLSearchManager();
 		~ADLSearchManager();
 		
 		// Search collection
-		typedef vector<ADLSearch> SearchCollection;
+		typedef std::vector<ADLSearch> SearchCollection;
 		SearchCollection collection;
 		
 		// Load/save search collection to XML file

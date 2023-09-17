@@ -173,7 +173,7 @@ void DownloadManager::on(TimerManagerListener::Second, uint64_t aTick) noexcept
 	if (ClientManager::isBeforeShutdown())
 		return;
 		
-	typedef vector<pair<std::string, UserPtr> > TargetList;
+	typedef std::vector<pair<std::string, UserPtr> > TargetList;
 	TargetList dropTargets;
 	
 	DownloadArray l_tickList;

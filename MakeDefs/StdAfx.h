@@ -14,10 +14,6 @@
 
 #include <windows.h>
 
-#ifdef _DEBUG
-#include <crtdbg.h>
-#endif
-
 #include <time.h>
 #include <stdio.h>
 #include <stdarg.h>

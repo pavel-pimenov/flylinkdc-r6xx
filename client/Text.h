@@ -25,6 +25,7 @@
 #include "typedefs.h"
 #include <cctype>
 #include <tchar.h>
+#include <algorithm>
 
 /**
  * Text handling routines for DC++. DC++ internally uses UTF-8 for

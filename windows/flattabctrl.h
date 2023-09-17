@@ -999,7 +999,7 @@ class ATL_NO_VTABLE FlatTabCtrlImpl : public CWindowImpl< T, TBase, TWinTraits>
 		class TabInfo
 		{
 			public:
-				typedef vector<TabInfo*> List;
+				typedef std::vector<TabInfo*> List;
 				
 				static const size_t MAX_LENGTH = 20;
 				

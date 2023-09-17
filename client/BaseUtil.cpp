@@ -1,11 +1,14 @@
-#include "stdinc.h"
-#include "BaseUtil.h"
-#include "StrUtil.h"
 
-const string BaseUtil::emptyString;
-const wstring BaseUtil::emptyStringW;
+#include "stdinc.h"
+
+#include "BaseUtil.h"
+#include "Util.h"
+#include "Text.h"
+
+const std::string BaseUtil::emptyString;
+const std::wstring BaseUtil::emptyStringW;
 const tstring BaseUtil::emptyStringT;
-const vector<uint8_t> BaseUtil::emptyByteVector;
+const std::vector<uint8_t> BaseUtil::emptyByteVector;
 
 string BaseUtil::translateError(DWORD error)
 {

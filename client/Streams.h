@@ -24,6 +24,7 @@
 
 #include "Exception.h"
 #include "ResourceManager.h"
+#include <utility>
 
 STANDARD_EXCEPTION(FileException);
 

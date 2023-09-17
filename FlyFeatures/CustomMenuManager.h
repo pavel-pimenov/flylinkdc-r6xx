@@ -43,7 +43,7 @@ class CustomMenuManager
 {
 	public:
 	
-		typedef vector<CustomMenuItem> MenuList;
+		typedef std::vector<CustomMenuItem> MenuList;
 		typedef std::map<int, string> URLList;
 		
 		CustomMenuManager(void);

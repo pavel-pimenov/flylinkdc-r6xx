@@ -302,7 +302,7 @@ private :
         seq_parameter_set_struct(const seq_parameter_set_struct &);
         seq_parameter_set_struct();
     };
-    typedef vector<seq_parameter_set_struct*> seq_parameter_set_structs;
+    typedef std::vector<seq_parameter_set_struct*> seq_parameter_set_structs;
 
     //Structures - pic_parameter_set
     struct pic_parameter_set_struct : public iso14496_base
@@ -343,7 +343,7 @@ private :
         pic_parameter_set_struct(const pic_parameter_set_struct &);
         pic_parameter_set_struct();
     };
-    typedef vector<pic_parameter_set_struct*> pic_parameter_set_structs;
+    typedef std::vector<pic_parameter_set_struct*> pic_parameter_set_structs;
 
     //Streams management
     void Streams_Fill();
@@ -497,7 +497,7 @@ private :
             #endif //MEDIAINFO_DTVCCTRANSPORT_YES
         }
     };
-    typedef vector<temporal_reference*> temporal_references;
+    typedef std::vector<temporal_reference*> temporal_references;
     temporal_references                 TemporalReferences; //per pic_order_cnt_lsb
     void Clean_Temp_References();
     temporal_reference*                 TemporalReferences_DelayedElement;

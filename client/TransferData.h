@@ -11,6 +11,8 @@
 #ifdef _DEBUG
 #include "LogManager.h"
 #endif
+
+#ifndef _CONSOLE
 #include "libtorrent/torrent_status.hpp"
 
 class TransferData
@@ -89,5 +91,6 @@ class TransferData
 typedef std::vector<TransferData> UploadArray;
 typedef std::vector<TransferData> DownloadArray;
 
+#endif
 
 #endif /*DCPLUSPLUS_DCPP_TRANSFER_DATA_H_*/

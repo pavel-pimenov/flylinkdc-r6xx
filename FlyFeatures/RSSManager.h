@@ -62,7 +62,7 @@ class RSSFeed
 		{}
 		virtual ~RSSFeed();
 		
-		typedef vector<RSSItem*> RSSItemList;
+		typedef std::vector<RSSItem*> RSSItemList;
 
 		bool UpdateFeedNewXML();
 		
@@ -134,9 +134,9 @@ class RSSManager :
 {
 	public:
 	
-		typedef vector<const RSSItem*> NewsList;
+		typedef std::vector<const RSSItem*> NewsList;
 		
-		typedef vector<RSSFeed*> FeedList;
+		typedef std::vector<RSSFeed*> FeedList;
 		
 		static void updateFeeds();
 		

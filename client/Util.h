@@ -34,6 +34,7 @@
 #include "MerkleTree.h"
 #include "LogManager.h"
 #include "BaseUtil.h"
+#include <algorithm>
 
 # define PATH_SEPARATOR '\\'
 # define PATH_SEPARATOR_STR "\\"

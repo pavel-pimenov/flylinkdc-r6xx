@@ -74,7 +74,7 @@ static const Tags g_EndBBTag[] =
 //	Interval (long s = 0, long e = 0) : start(s), end(e) {}
 //	long start, end;
 //};
-//typedef vector<Interval> Intervals;
+//typedef std::vector<Interval> Intervals;
 //typedef Intervals::const_iterator CIterIntervals;
 #endif // IRAINMAN_USE_BB_CODES
 

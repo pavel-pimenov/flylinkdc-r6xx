@@ -36,7 +36,7 @@
 class PreviewApplication
 {
 	public:
-		typedef vector<PreviewApplication*> List;
+		typedef std::vector<PreviewApplication*> List;
 		
 		PreviewApplication() noexcept {}
 		PreviewApplication(const string& n, const string& a, const string& r, const string& e) : name(n), application(a), arguments(r), extension(Text::toLower(e))
@@ -250,7 +250,7 @@ class FavoriteManager : private Speaker<FavoriteManagerListener>,
 			string dir;
 			string name;
 		};
-		typedef vector<FavoriteDirectory> FavDirList;
+		typedef std::vector<FavoriteDirectory> FavDirList;
 		
 		static bool addFavoriteDir(string aDirectory, const string& aName, const string& aExt);
 		static bool removeFavoriteDir(const string& aName);

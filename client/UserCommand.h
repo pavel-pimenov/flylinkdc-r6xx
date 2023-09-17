@@ -22,13 +22,15 @@
 #ifndef DCPLUSPLUS_CLIENT_USER_COMMAND_H
 #define DCPLUSPLUS_CLIENT_USER_COMMAND_H
 
+#include <vector>
+
 #include "Flags.h"
 #include "Util.h"
 
 class UserCommand : public Flags
 {
 	public:
-		typedef vector<UserCommand> List;
+		typedef std::vector<UserCommand> List;
 		
 		enum
 		{

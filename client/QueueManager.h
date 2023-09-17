@@ -289,7 +289,7 @@ class QueueManager : public Singleton<QueueManager>,
 				}
 		} m_mover;
 		
-		typedef vector<pair<QueueItem::SourceConstIter, const QueueItemPtr> > PFSSourceList;
+		typedef std::vector<pair<QueueItem::SourceConstIter, const QueueItemPtr> > PFSSourceList;
 		
 		class Rechecker : public BackgroundTaskExecuter<string>
 		{

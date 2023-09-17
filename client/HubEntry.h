@@ -22,6 +22,7 @@
 #ifndef DCPLUSPLUS_DCPP_HUBENTRY_H_
 #define DCPLUSPLUS_DCPP_HUBENTRY_H_
 
+#include <vector>
 
 #ifdef IRAINMAN_ENABLE_CON_STATUS_ON_FAV_HUBS
 #include "TimerManager.h"
@@ -168,7 +169,7 @@ class HubEntry
 class FavoriteHubEntry
 {
 	public:
-		typedef vector<FavoriteHubEntry*> List;
+		typedef std::vector<FavoriteHubEntry*> List;
 		
 		FavoriteHubEntry() noexcept :
 			connect(false), encoding(Text::g_systemCharset), windowposx(0), windowposy(0), windowsizex(0),
@@ -272,7 +273,7 @@ class RecentHubEntry
 {
 	public:
 		typedef RecentHubEntry* Ptr;
-		typedef vector<Ptr> List;
+		typedef std::vector<Ptr> List;
 		typedef List::const_iterator Iter;
 		
 		explicit RecentHubEntry() : name("*"),

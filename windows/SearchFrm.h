@@ -476,7 +476,7 @@ class SearchFrame : public MDITabChildWindowImpl < SearchFrame, RGB(127, 127, 25
 		{
 			public:
 				typedef SearchInfo* Ptr;
-				typedef vector<Ptr> Array;
+				typedef std::vector<Ptr> Array;
 				
 				SearchInfo(const SearchResult &aSR) : m_sr(aSR), collapsed(true), parent(nullptr),
 					m_hits(0), m_icon_index(-1),

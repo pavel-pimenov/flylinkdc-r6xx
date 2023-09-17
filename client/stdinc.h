@@ -53,14 +53,6 @@
 // #define _CRTDBG_MAP_ALLOC
 // #include <crtdbg.h>
 
-#include "util_flylinkdc.h"
-
-// --- Shouldn't have to change anything under here...
-
-#ifndef BZ_NO_STDIO
-#define BZ_NO_STDIO 1
-#endif
-
 #include "w.h"
 
 #include <algorithm>
@@ -73,6 +65,27 @@ using std::string;
 using std::wstring;
 using std::unique_ptr;
 using std::make_pair;
+
+
+#include "util_flylinkdc.h"
+#include "Util.h"
+
+#ifndef _CONSOLE
+#include "Transfer.h"
+#include "UserConnection.h"
+#include "CFlylinkDBManager.h"
+#include "libtorrent/sha1_hash.hpp"
+#include "libtorrent/socket.hpp"
+#endif
+
+
+// --- Shouldn't have to change anything under here...
+
+#ifndef BZ_NO_STDIO
+#define BZ_NO_STDIO 1
+#endif
+
+
 
 inline int stricmp(const string& a, const string& b)
 {

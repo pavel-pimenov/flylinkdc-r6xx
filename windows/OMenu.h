@@ -28,7 +28,7 @@ class OMenu;
 
 struct OMenuItem
 {
-	typedef vector<OMenuItem*> List;
+	typedef std::vector<OMenuItem*> List;
 	
 	OMenuItem() : m_is_ownerdrawn(true), m_parent(nullptr), m_data(nullptr)
 	{

@@ -232,6 +232,7 @@
     <ClInclude Include="include\libtorrent\kademlia\sample_infohashes.hpp" />
     <ClInclude Include="include\libtorrent\kademlia\traversal_algorithm.hpp" />
     <ClInclude Include="include\libtorrent\kademlia\types.hpp" />
+    <ClInclude Include="include\libtorrent\libtorrent_pch.hpp" />
     <ClInclude Include="include\libtorrent\lsd.hpp" />
     <ClInclude Include="include\libtorrent\magnet_uri.hpp" />
     <ClInclude Include="include\libtorrent\mmap_disk_io.hpp" />
@@ -369,6 +370,12 @@
     <ClCompile Include="src\kademlia\rpc_manager.cpp" />
     <ClCompile Include="src\kademlia\sample_infohashes.cpp" />
     <ClCompile Include="src\kademlia\traversal_algorithm.cpp" />
+    <ClCompile Include="src\libtorrent_pch.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">libtorrent/libtorrent_pch.hpp</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">libtorrent/libtorrent_pch.hpp</PrecompiledHeaderFile>
+    </ClCompile>
     <ClCompile Include="src\listen_socket_handle.cpp" />
     <ClCompile Include="src\load_torrent.cpp" />
     <ClCompile Include="src\lsd.cpp" />
@@ -489,19 +496,22 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <PreprocessorDefinitions>xTORRENT_DISABLE_LOGGING;xTORRENT_DISABLE_EXTENSIONS;TORRENT_USE_BOOST_DATE_TIME;TORRENT_BUILDING_SHARED;TORRENT_LINKING_SHARED;TORRENT_USE_OPENSSL;BOOST_ASIO_ENABLE_CANCELIO;BOOST_ASIO_SEPARATE_COMPILATION;BOOST_ALL_NO_LIB;BOOST_NO_RTTI;BOOST_SYSTEM_USE_UTF8;BOOST_ASIO_HEADER_ONLY;BOOST_ASIO_NO_DEPRECATED;BOOST_ASIO_HAS_STD_CHRONO;TORRENT_DISABLE_GEO_IP;TORRENT_DISABLE_ENCRYPTION;x_TORRENT_USE_LIBCRYPTO;_WIN32_WINNT=0x0600;WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\boost;..\libtorrent\include;..\libtorrent\deps\try_signal;$(SolutionDir)\boost;$(SolutionDir)\libtorrent\include;$(SolutionDir)\openssl\include;$(SolutionDir)\libtorrent\deps\try_signal</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)boost;$(SolutionDir)libtorrent\include;$(SolutionDir)openssl\include;$(SolutionDir)libtorrent\deps\try_signal</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <Optimization>Disabled</Optimization>
       <OmitFramePointers>false</OmitFramePointers>
       <AdditionalOptions>/bigobj</AdditionalOptions>
       <WarningLevel>Level4</WarningLevel>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>libtorrent/libtorrent_pch.hpp</PrecompiledHeaderFile>
+      <ForcedIncludeFiles>libtorrent/libtorrent_pch.hpp;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <PreprocessorDefinitions>xTORRENT_DISABLE_LOGGING;xTORRENT_DISABLE_EXTENSIONS;TORRENT_USE_BOOST_DATE_TIME;TORRENT_BUILDING_SHARED;TORRENT_LINKING_SHARED;TORRENT_USE_OPENSSL;BOOST_ASIO_ENABLE_CANCELIO;BOOST_ASIO_SEPARATE_COMPILATION;BOOST_ALL_NO_LIB;BOOST_NO_RTTI;BOOST_SYSTEM_USE_UTF8;BOOST_ASIO_HEADER_ONLY;BOOST_ASIO_NO_DEPRECATED;BOOST_ASIO_HAS_STD_CHRONO;TORRENT_DISABLE_GEO_IP;TORRENT_DISABLE_ENCRYPTION;x_TORRENT_USE_LIBCRYPTO;_WIN32_WINNT=0x0600;WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)\boost;$(SolutionDir)\libtorrent\include;$(SolutionDir)\openssl\include;$(SolutionDir)\libtorrent\deps\try_signal</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)boost;$(SolutionDir)libtorrent\include;$(SolutionDir)openssl\include;$(SolutionDir)libtorrent\deps\try_signal</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <OmitFramePointers>false</OmitFramePointers>
@@ -515,6 +525,9 @@
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>libtorrent/libtorrent_pch.hpp</PrecompiledHeaderFile>
+      <ForcedIncludeFiles>libtorrent/libtorrent_pch.hpp;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
     <Lib>
       <LinkTimeCodeGeneration>true</LinkTimeCodeGeneration>

@@ -195,11 +195,11 @@ restart_response:
 			std::get<1>(ret) += int(newline - (m_recv_buffer.data() + start_pos));
 			pos = newline;
 
-			m_protocol = read_until(line, ' ', line_end);
+			m_protocol = libtorrent::read_until(line, ' ', line_end);
 			if (m_protocol.substr(0, 5) == "HTTP/")
 			{
-				m_status_code = atoi(read_until(line, ' ', line_end).c_str());
-				m_server_message = read_until(line, '\r', line_end);
+				m_status_code = atoi(libtorrent::read_until(line, ' ', line_end).c_str());
+				m_server_message = libtorrent::read_until(line, '\r', line_end);
 
 				// HTTP 1.0 always closes the connection after
 				// each request
@@ -212,8 +212,8 @@ restart_response:
 				// the content length is assumed to be 0 for requests
 				m_content_length = 0;
 				m_protocol.clear();
-				m_path = read_until(line, ' ', line_end);
-				m_protocol = read_until(line, ' ', line_end);
+				m_path = libtorrent::read_until(line, ' ', line_end);
+				m_protocol = libtorrent::read_until(line, ' ', line_end);
 				m_status_code = 0;
 			}
 			m_state = read_header;

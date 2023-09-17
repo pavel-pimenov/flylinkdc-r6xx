@@ -29,8 +29,15 @@
     #include <iomanip>
     #include <cmath>
 */
+    #undef __TEXT
+    #include <windows.h>
     #include "ZenLib/Conf.h"
     #include "ZenLib/Conf_Internal.h"
+    #include "ZenLib/Ztring.h"
+    #include "ZenLib/ZtringList.h"
+    #include "ZenLib/File.h"
+    #include "ZenLib/OS_Utils.h"
+
 #endif //defined(_MSC_VER) || defined(__BORLANDC__)
 //---------------------------------------------------------------------------
 

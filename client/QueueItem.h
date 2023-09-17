@@ -570,7 +570,7 @@ class CFlySegment
 			dcassert(m_id);
 		}
 };
-typedef vector<CFlySegment> CFlySegmentArray;
+typedef std::vector<CFlySegment> CFlySegmentArray;
 
 #endif // !defined(QUEUE_ITEM_H)
 

@@ -267,7 +267,7 @@ class Socket
 		{
 			return BaseUtil::emptyString;
 		}
-		virtual vector<uint8_t> getKeyprint() const noexcept
+		virtual std::vector<uint8_t> getKeyprint() const noexcept
 		{
 			return Util::emptyByteVector;
 		}

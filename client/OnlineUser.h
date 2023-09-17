@@ -835,7 +835,7 @@ class Identity
 		mutable FastCriticalSection m_si_fcs;
 		InfMap m_stringInfo;
 		
-		typedef vector<string> StringDictionaryReductionPointers;
+		typedef std::vector<string> StringDictionaryReductionPointers;
 		typedef std::unordered_map<string, uint16_t> StringDictionaryIndex;
 		
 		static StringDictionaryReductionPointers g_infoDic;

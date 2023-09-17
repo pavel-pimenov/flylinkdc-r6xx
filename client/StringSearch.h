@@ -34,7 +34,7 @@
 class StringSearch
 {
 	public:
-		typedef vector<StringSearch> List;
+		typedef std::vector<StringSearch> List;
 		
 		explicit StringSearch(const string& aPattern) noexcept :
 			pattern(Text::toLower(aPattern))
