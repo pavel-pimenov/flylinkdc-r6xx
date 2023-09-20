@@ -20,7 +20,7 @@
 #include "PublicHubsFrm.h"
 #include "HubFrame.h"
 #include "../client/BZUtils.h"
-#include "../FlyFeatures/flyServer.h"
+#include "../client/FlyFeatures/flyServer.h"
 
 int PublicHubsFrame::columnIndexes[] =
 {

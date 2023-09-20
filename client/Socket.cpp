@@ -24,7 +24,7 @@
 #include "CompatibilityManager.h"
 #include <iphlpapi.h>
 
-#include "../FlyFeatures/flyServer.h"
+#include "../client/FlyFeatures/flyServer.h"
 
 #pragma comment(lib, "iphlpapi.lib")
 

@@ -18,7 +18,7 @@
 
 #include "stdinc.h"
 #include "ResourceManager.h"
-#include "../XMLParser/XMLParser.h"
+#include "../client/XMLParser/XMLParser.h"
 #include "Text.h"
 
 dcdrun(bool ResourceManager::g_debugStarted = false;)

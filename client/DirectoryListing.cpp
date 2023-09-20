@@ -22,7 +22,7 @@
 #include "FilteredFile.h"
 #include "BZUtils.h"
 #include "ShareManager.h"
-#include "../FlyFeatures/flyServer.h"
+#include "../client/FlyFeatures/flyServer.h"
 
 #ifdef FLYLINKDC_USE_DIRLIST_FILE_EXT_STAT
 std::unordered_map<string, DirectoryListing::CFlyStatExt> DirectoryListing::g_ext_stat;

@@ -22,7 +22,7 @@
 #include "../client/DownloadManager.h"
 #include "../client/QueueManager.h"
 #include "../client/ThrottleManager.h"
-#include "../FlyFeatures/CFlyTorrentDialog.h"
+#include "../client/FlyFeatures/CFlyTorrentDialog.h"
 
 #include "UsersFrame.h"
 

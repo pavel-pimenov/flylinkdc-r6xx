@@ -47,7 +47,7 @@
 // AirDC++
 #include "BarShader.h"
 #ifdef FLYLINKDC_USE_CUSTOM_MENU
-#include "../FlyFeatures/CustomMenuManager.h"
+#include "../client/FlyFeatures/CustomMenuManager.h"
 #endif
 #include "DirectoryListingFrm.h"
 #include "HTMLColors.h"

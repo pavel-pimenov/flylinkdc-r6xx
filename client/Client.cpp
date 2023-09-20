@@ -26,7 +26,7 @@
 #include "QueueManager.h"
 #include "SearchManager.h"
 #include "Wildcards.h"
-#include "../FlyFeatures/flyServer.h"
+#include "../client/FlyFeatures/flyServer.h"
 
 std::atomic<std::uint32_t> Client::g_counts[COUNT_UNCOUNTED];
 string   Client::g_last_search_string;

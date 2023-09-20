@@ -597,7 +597,7 @@ bool AutoUpdate::needUpdateFile(const AutoUpdateFile& p_file, const string& p_ou
 		{
 			// Calculate TTH (in string)
 			const int c_size_buf = std::min(p_file.m_size, static_cast<int64_t>(1024 * 1024));
-			unique_ptr<TigerTree>  tth;
+			unique_ptr<TigerTree> tth;
 			if (Util::getTTH_MD5(filePath, c_size_buf, &tth))
 			{
 				const string l_TTH_str = tth.get()->getRoot().toBase32();

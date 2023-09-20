@@ -53,16 +53,18 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
+      <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>NO_WINDOWS_BRAINDEATH;OPENSSL_THREADS;DSO_WIN32;OPENSSL_SYSNAME_WIN32;WIN32_LEAN_AND_MEAN;L_ENDIAN;_CRT_SECURE_NO_DEPRECATE;OPENSSL_NO_SSL2;OPENSSL_NO_SSL3;;_DEBUG;_LIB;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NO_WINDOWS_BRAINDEATH;OPENSSL_THREADS;USE_BCRYPTGENRANDOM;DSO_WIN32;OPENSSL_SYSNAME_WIN32;WIN32_LEAN_AND_MEAN;L_ENDIAN;_CRT_SECURE_NO_DEPRECATE;OPENSSL_NO_SSL2;OPENSSL_NO_SSL3;_DEBUG;_LIB;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)openssl;$(SolutionDir)openssl\crypto;$(SolutionDir)openssl\crypto\asn1;$(SolutionDir)openssl\crypto\modes;$(SolutionDir)openssl\crypto\evp;$(SolutionDir)openssl\include;$(SolutionDir)openssl\crypto\include;$(SolutionDir)openssl\crypto\ec\curve448\arch_32;$(SolutionDir)openssl\crypto\ec\curve448</AdditionalIncludeDirectories>
       <CompileAs>CompileAsC</CompileAs>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <DisableSpecificWarnings>4244;4267</DisableSpecificWarnings>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <PrecompiledHeaderFile>openssl_pch.h</PrecompiledHeaderFile>
+      <ForcedIncludeFiles>openssl_pch.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ShowIncludes>false</ShowIncludes>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -72,12 +74,11 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
+      <PrecompiledHeader>Use</PrecompiledHeader>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>NO_WINDOWS_BRAINDEATH;OPENSSL_THREADS;DSO_WIN32;OPENSSL_SYSNAME_WIN32;WIN32_LEAN_AND_MEAN;L_ENDIAN;_CRT_SECURE_NO_DEPRECATE;OPENSSL_NO_SSL2;OPENSSL_NO_SSL3;;NDEBUG;_LIB;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NO_WINDOWS_BRAINDEATH;OPENSSL_THREADS;USE_BCRYPTGENRANDOM;DSO_WIN32;OPENSSL_SYSNAME_WIN32;WIN32_LEAN_AND_MEAN;L_ENDIAN;_CRT_SECURE_NO_DEPRECATE;OPENSSL_NO_SSL2;OPENSSL_NO_SSL3;NDEBUG;_LIB;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)openssl;$(SolutionDir)openssl\crypto;$(SolutionDir)openssl\crypto\asn1;$(SolutionDir)openssl\crypto\modes;$(SolutionDir)openssl\crypto\evp;$(SolutionDir)openssl\include;$(SolutionDir)openssl\crypto\include;$(SolutionDir)openssl\crypto\ec\curve448\arch_32;$(SolutionDir)openssl\crypto\ec\curve448</AdditionalIncludeDirectories>
       <CompileAs>CompileAsC</CompileAs>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -90,6 +91,8 @@
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <OmitFramePointers>false</OmitFramePointers>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <PrecompiledHeaderFile>openssl_pch.h</PrecompiledHeaderFile>
+      <ForcedIncludeFiles>openssl_pch.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -177,6 +180,7 @@
     <ClInclude Include="include\openssl\x509.h" />
     <ClInclude Include="include\openssl\x509v3.h" />
     <ClInclude Include="include\openssl\x509_vfy.h" />
+    <ClInclude Include="openssl_pch.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="crypto\aes\aes_cbc.c" />
@@ -828,6 +832,10 @@
     <ClCompile Include="crypto\x509\x_req.c" />
     <ClCompile Include="crypto\x509\x_x509.c" />
     <ClCompile Include="crypto\x509\x_x509a.c" />
+    <ClCompile Include="openssl_pch.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="ssl\bio_ssl.c" />
     <ClCompile Include="ssl\d1_lib.c" />
     <ClCompile Include="ssl\d1_msg.c" />

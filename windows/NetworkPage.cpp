@@ -21,7 +21,7 @@
 #include <comdef.h>
 
 #include "NetworkPage.h"
-#include "../FlyFeatures/flyServer.h"
+#include "../client/FlyFeatures/flyServer.h"
 #include "../client/CryptoManager.h"
 #include "../client/MappingManager.h"
 #include "../client/DownloadManager.h"
@@ -29,7 +29,7 @@
 //#define FLYLINKDC_USE_SSA_WINFIREWALL
 
 #ifdef FLYLINKDC_USE_SSA_WINFIREWALL
-#include "../FlyFeatures/WinFirewall.h"
+#include "../client/FlyFeatures/WinFirewall.h"
 #else
 #include "../client/webrtc/talk/base/winfirewall.h"
 #endif

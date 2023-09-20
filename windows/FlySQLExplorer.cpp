@@ -12,7 +12,7 @@
 #include "PrivateFrame.h"
 #include "dclstGenDlg.h"
 #include "MainFrm.h"
-#include "../FlyFeatures/flyServer.h"
+#include "../client/FlyFeatures/flyServer.h"
 
 namespace FlyWindow
 {

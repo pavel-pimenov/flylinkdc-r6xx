@@ -25,7 +25,7 @@
 #include "CFlylinkDBManager.h"
 #include "Wildcards.h"
 #include "UserConnection.h"
-#include "../FlyFeatures/flyServer.h"
+#include "../client/FlyFeatures/flyServer.h"
 
 
 std::unique_ptr<webrtc::RWLockWrapper> Identity::g_rw_cs = std::unique_ptr<webrtc::RWLockWrapper> (webrtc::RWLockWrapper::CreateRWLock());

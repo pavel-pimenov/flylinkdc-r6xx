@@ -283,6 +283,18 @@
     <ClCompile Include="maxminddb\maxminddb.c">
       <Filter>Source Files\maxminddb</Filter>
     </ClCompile>
+    <ClCompile Include="client\FlyFeatures\AutoUpdate.cpp" />
+    <ClCompile Include="client\FlyFeatures\CustomMenuManager.cpp" />
+    <ClCompile Include="client\FlyFeatures\FileRoadMap.cpp" />
+    <ClCompile Include="client\FlyFeatures\flyfeatures.cpp" />
+    <ClCompile Include="client\FlyFeatures\flyServer.cpp" />
+    <ClCompile Include="client\FlyFeatures\fuSearch.cpp" />
+    <ClCompile Include="client\FlyFeatures\InetDownloaderReporter.cpp" />
+    <ClCompile Include="client\FlyFeatures\SettingsAutoUpdate.cpp" />
+    <ClCompile Include="client\FlyFeatures\WinFirewall.cpp" />
+    <ClCompile Include="client\XMLParser\xmlParser.cpp">
+      <Filter>Source Files\xmlparser</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="client\AdcCommand.h">
@@ -795,6 +807,21 @@
     <ClInclude Include="maxminddb\data-pool.h">
       <Filter>Header Files\maxminddb</Filter>
     </ClInclude>
+    <ClInclude Include="client\FlyFeatures\AutoUpdate.h" />
+    <ClInclude Include="client\FlyFeatures\CFlyServerDialogNavigator.h" />
+    <ClInclude Include="client\FlyFeatures\CFlyTorrentDialog.h" />
+    <ClInclude Include="client\FlyFeatures\CProgressDlg.h" />
+    <ClInclude Include="client\FlyFeatures\CustomMenuManager.h" />
+    <ClInclude Include="client\FlyFeatures\FileRoadMap.h" />
+    <ClInclude Include="client\FlyFeatures\flyfeatures.h" />
+    <ClInclude Include="client\FlyFeatures\flyServer.h" />
+    <ClInclude Include="client\FlyFeatures\fuSearch.h" />
+    <ClInclude Include="client\FlyFeatures\InetDownloaderReporter.h" />
+    <ClInclude Include="client\FlyFeatures\SettingsAutoUpdate.h" />
+    <ClInclude Include="client\FlyFeatures\WinFirewall.h" />
+    <ClInclude Include="client\XMLParser\xmlParser.h">
+      <Filter>Header Files\xmlparser</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">
@@ -850,6 +877,12 @@
     </Filter>
     <Filter Include="Header Files\maxminddb">
       <UniqueIdentifier>{e60f94cf-0188-4aee-892a-7c19c193e09f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\xmlparser">
+      <UniqueIdentifier>{18a82bd5-e24a-4c04-952d-624e82fc75c4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\xmlparser">
+      <UniqueIdentifier>{75d906a0-e736-45b6-a40b-2a3adb560f99}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

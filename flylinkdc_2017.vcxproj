@@ -697,9 +697,6 @@
     <ProjectReference Include="client_2017.vcxproj">
       <Project>{f8d0e5fe-babd-4fc8-b3fe-b48978d23feb}</Project>
     </ProjectReference>
-    <ProjectReference Include="FlyFeatures_2017.vcxproj">
-      <Project>{2c060b35-3af9-4a70-8052-8699911b9322}</Project>
-    </ProjectReference>
     <ProjectReference Include="GdiOle\GdiOle_2017.vcxproj">
       <Project>{22c938c3-474a-4bf5-9b28-482683f98ea1}</Project>
     </ProjectReference>
@@ -717,9 +714,6 @@
     </ProjectReference>
     <ProjectReference Include="openssl\openssl_2017.vcxproj">
       <Project>{b9f644c2-f9de-4648-b613-43755d81ea3b}</Project>
-    </ProjectReference>
-    <ProjectReference Include="XMLParser\XMLParser_2017.vcxproj">
-      <Project>{e2c19239-c1b8-40ab-9714-36342a013d66}</Project>
     </ProjectReference>
     <ProjectReference Include="zenlib\ZenLib_2017.vcxproj">
       <Project>{0da1da7d-f393-4e7c-a7ce-cb5c6a67bc94}</Project>

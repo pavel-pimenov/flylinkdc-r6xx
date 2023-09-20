@@ -24,7 +24,7 @@
 #ifdef SSA_WIZARD_FEATURE
 
 #include "Resource.h"
-#include "../FlyFeatures/WinFirewall.h"
+#include "../client/FlyFeatures/WinFirewall.h"
 //#include "UPNPCheckDlg.h"
 #include "WinUtil.h"
 #include "../client/ConnectionManager.h"

@@ -203,10 +203,10 @@ typedef unsigned __int64 uint64_t;
 
 #define SPEED_APPROXIMATION_INTERVAL_S 30
 
-# define IRAINMAN_ENABLE_AUTO_BAN
-# define IRAINMAN_INCLUDE_SMILE // Disable this to cut all smile support from code.
-# define IRAINMAN_INCLUDE_RSS // Disable this to cut rss-manager from code.
-# define FLYLINKDC_USE_PROVIDER_RESOURCES
+#define IRAINMAN_ENABLE_AUTO_BAN
+#define IRAINMAN_INCLUDE_SMILE // Disable this to cut all smile support from code.
+// #define IRAINMAN_INCLUDE_RSS // Disable this to cut rss-manager from code.
+#define FLYLINKDC_USE_PROVIDER_RESOURCES
 //# define FLYLINKDC_USE_THEME_MANAGER
 
 #define IRAINMAN_ENABLE_OP_VIP_MODE

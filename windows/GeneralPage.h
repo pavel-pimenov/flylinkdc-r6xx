@@ -25,7 +25,7 @@
 #include "wtl_flylinkdc.h"
 #include "PropPage.h"
 #include "ExListViewCtrl.h"
-#include "../XMLParser/XMLParser.h"
+#include "../client/XMLParser/XMLParser.h"
 
 class GeneralPage : public CPropertyPage<IDD_GENERAL_PAGE>, public PropPage
 {

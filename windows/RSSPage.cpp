@@ -21,7 +21,7 @@
 #ifdef IRAINMAN_INCLUDE_RSS
 
 #include "RSSPage.h"
-#include "../FlyFeatures/RSSManager.h"
+#include "../client/FlyFeatures/RSSManager.h"
 #include "RSSSetFeedDlg.h"
 
 // Переводы элементов интерфейса.

@@ -22,8 +22,8 @@
 #include "Socket.h"
 #include "ResourceManager.h"
 #include "../windows/resource.h"
-#include "../XMLParser/xmlParser.h"
-#include "../FlyFeatures/flyServer.h"
+#include "../client/XMLParser/xmlParser.h"
+#include "../client/FlyFeatures/flyServer.h"
 
 IPList IpGuard::g_ipGuardList;
 int IpGuard::g_ipGuardListLoad = 0;

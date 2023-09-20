@@ -23,7 +23,7 @@
 #include "CryptoManager.h"
 #include "SearchManager.h"
 #include "ScopedFunctor.h"
-#include "../FlyFeatures/flyServer.h"
+#include "../client/FlyFeatures/flyServer.h"
 
 string MappingManager::g_externalIP;
 string MappingManager::g_defaultGatewayIP;

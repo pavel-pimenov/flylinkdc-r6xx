@@ -28,9 +28,9 @@
 #include "../client/StringSearch.h"
 #include "../client/ADLSearch.h"
 #include "../client/ShareManager.h"
-#include "../FlyFeatures/VideoPreview.h"
+//#include "../client/FlyFeatures/VideoPreview.h"
 #include "../client/SettingsManager.h"
-#include "../FlyFeatures/flyServer.h"
+#include "../client/FlyFeatures/flyServer.h"
 
 class ThreadedDirectoryListing;
 

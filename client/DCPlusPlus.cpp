@@ -34,7 +34,7 @@
 //#include "GPGPUManager.h"
 #include "GeoManager.h"
 
-#include "../FlyFeatures/flyServer.h"
+#include "../client/FlyFeatures/flyServer.h"
 #include "../windows/ToolbarManager.h"
 
 #include "IpGuard.h"

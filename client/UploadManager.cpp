@@ -27,7 +27,7 @@
 #include "FinishedManager.h"
 #include "PGLoader.h"
 #include "IPGrant.h"
-#include "../FlyFeatures/flyServer.h"
+#include "../client/FlyFeatures/flyServer.h"
 #include "SharedFileStream.h"
 
 STANDARD_EXCEPTION(BZ2Exception);

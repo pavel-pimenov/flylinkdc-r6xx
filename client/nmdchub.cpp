@@ -25,7 +25,7 @@
 #include "MappingManager.h"
 #include "CompatibilityManager.h"
 
-#include "../FlyFeatures/flyServer.h"
+#include "../client/FlyFeatures/flyServer.h"
 #include "../jsoncpp/include/json/json.h"
 
 CFlyUnknownCommand NmdcHub::g_unknown_command;

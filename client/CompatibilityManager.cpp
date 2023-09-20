@@ -38,7 +38,7 @@
 #include "UploadManager.h"
 #include "CompatibilityManager.h"
 #include "ShareManager.h"
-#include "../FlyFeatures/flyServer.h"
+#include "../client/FlyFeatures/flyServer.h"
 
 #include <iphlpapi.h>
 #include <direct.h>

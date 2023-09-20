@@ -35,8 +35,7 @@ CustomMenuManager::~CustomMenuManager(void)
 	clearList();
 }
 
-void
-CustomMenuManager::clearList()
+void CustomMenuManager::clearList()
 {
 	m_menuList.clear();
 	m_urlList.clear();
@@ -90,8 +89,7 @@ void CustomMenuManager::load(/* SimpleXML&*/ /*aXml*/)
 	}
 	
 }
-void
-CustomMenuManager::ProcessXMLSubMenu(SimpleXML& xml, int& i)
+void CustomMenuManager::ProcessXMLSubMenu(SimpleXML& xml, int& i)
 {
 	while (xml.findChild("MenuItem"))
 	{

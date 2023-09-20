@@ -22,7 +22,7 @@
 #include "wtl_flylinkdc.h"
 #include "PreviewDlg.h"
 #include "WinUtil.h"
-#include "../FlyFeatures/flyServer.h"
+#include "../client/FlyFeatures/flyServer.h"
 
 LRESULT PreviewDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 {

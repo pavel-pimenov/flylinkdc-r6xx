@@ -66,14 +66,14 @@
 #include "../client/ThrottleManager.h"
 #include "../client/MD5Calc.h"
 #ifdef FLYLINKDC_USE_CUSTOM_MENU
-#include "../FlyFeatures/CustomMenuManager.h"
+#include "../client/FlyFeatures/CustomMenuManager.h"
 #endif
 #include "../client/MappingManager.h"
 #include "../client/Text.h"
 #include "../client/NmdcHub.h"
 #include "HIconWrapper.h"
 #include "FlyUpdateDlg.h"
-#include "../FlyFeatures/AutoUpdate.h"
+#include "../client/FlyFeatures/AutoUpdate.h"
 #ifdef SSA_WIZARD_FEATURE
 # include "Wizards/FlyWizard.h"
 #endif
@@ -84,8 +84,8 @@
 #ifdef SCALOLAZ_SPEEDLIMIT_DLG
 # include "SpeedVolDlg.h"
 #endif
-#include "../FlyFeatures/CProgressDlg.h"
-#include "../FlyFeatures/flyfeatures.h"
+#include "../client/FlyFeatures/CProgressDlg.h"
+#include "../client/FlyFeatures/flyfeatures.h"
 #ifdef FLYLINKDC_USE_LOCATION_DIALOG
 #include "CFlyLocationDlg.h"
 #endif

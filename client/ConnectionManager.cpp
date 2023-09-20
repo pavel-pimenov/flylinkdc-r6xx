@@ -26,7 +26,7 @@
 #ifdef RIP_USE_CONNECTION_AUTODETECT
 #include "nmdchub.h"
 #endif
-#include "../FlyFeatures/flyServer.h"
+#include "../client/FlyFeatures/flyServer.h"
 
 uint16_t ConnectionManager::g_ConnToMeCount = 0;
 bool ConnectionManager::g_is_test_tcp_port = false;

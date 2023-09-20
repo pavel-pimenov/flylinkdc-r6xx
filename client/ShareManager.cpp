@@ -28,7 +28,7 @@
 #include "Wildcards.h"
 #include "HashBloom.h"
 #include "UploadManager.h"
-#include "../FlyFeatures/flyServer.h"
+#include "../client/FlyFeatures/flyServer.h"
 #include "../windows/resource.h"
 
 bool ShareManager::g_ignoreFileSizeHFS = false; // http://www.fly-server.ru/2015/01/hfs-mac-windows.html

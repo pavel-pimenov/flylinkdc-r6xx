@@ -450,6 +450,9 @@
     <ClInclude Include="crypto\asn1\asn1_local.h">
       <Filter>Header Files\openssl</Filter>
     </ClInclude>
+    <ClInclude Include="openssl_pch.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="crypto\buffer\buffer.c">
@@ -2482,6 +2485,9 @@
     </ClCompile>
     <ClCompile Include="crypto\async\arch\async_win.c">
       <Filter>Source Files\crypto\async\arch</Filter>
+    </ClCompile>
+    <ClCompile Include="openssl_pch.c">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

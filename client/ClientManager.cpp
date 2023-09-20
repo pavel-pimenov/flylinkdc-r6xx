@@ -21,8 +21,8 @@
 #include "AdcHub.h"
 #include "NmdcHub.h"
 #include "MappingManager.h"
-#include "../FlyFeatures/flyServer.h"
-#include "../FlyFeatures/AutoUpdate.h"
+#include "../client/FlyFeatures/flyServer.h"
+#include "../client/FlyFeatures/AutoUpdate.h"
 
 // #ifndef _DEBUG
 // #include "DbgHelp.h"

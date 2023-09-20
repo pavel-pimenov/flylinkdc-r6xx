@@ -3,7 +3,7 @@
 #include "ResourceLoader.h"
 #include "Resource.h"
 #include "File.h"
-#include "../FlyFeatures/ThemeManager.h"
+#include "../client/FlyFeatures/ThemeManager.h"
 
 
 ExCImage::ExCImage(LPCTSTR pszFileName):

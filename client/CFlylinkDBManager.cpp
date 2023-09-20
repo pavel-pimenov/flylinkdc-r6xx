@@ -7,7 +7,7 @@
 #include "ShareManager.h"
 #include "QueueManager.h"
 #include "CompatibilityManager.h"
-#include "../FlyFeatures/flyServer.h"
+#include "../client/FlyFeatures/flyServer.h"
 #include "FinishedManager.h"
 
 #include "libtorrent/read_resume_data.hpp"

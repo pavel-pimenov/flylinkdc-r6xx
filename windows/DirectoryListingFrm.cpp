@@ -27,7 +27,7 @@
 #include "MainFrm.h"
 #include "BarShader.h"
 #ifdef FLYLINKDC_USE_MEDIAINFO_SERVER
-#include "../FlyFeatures/CFlyServerDialogNavigator.h"
+#include "../client/FlyFeatures/CFlyServerDialogNavigator.h"
 #include "../jsoncpp/include/json/json.h"
 #endif
 

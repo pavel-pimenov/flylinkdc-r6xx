@@ -25,7 +25,7 @@
 
 #ifdef SSA_VIDEO_PREVIEW_FEATURE
 
-#include "../FlyFeatures/VideoPreview.h"
+#include "../client/FlyFeatures/VideoPreview.h"
 
 class PreviewLogDlg : public CDialogImpl<PreviewLogDlg>
 {

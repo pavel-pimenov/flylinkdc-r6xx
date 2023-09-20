@@ -20,7 +20,7 @@
 #include "BaseChatFrame.h"
 #include "../client/QueueManager.h"
 #include "../client/GeoManager.h"
-#include "../FlyFeatures/flyServer.h"
+#include "../client/FlyFeatures/flyServer.h"
 
 LRESULT BaseChatFrame::OnCreate(HWND p_hWnd, RECT &rcDefault)
 {

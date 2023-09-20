@@ -25,7 +25,7 @@
 
 #include "FlatTabCtrl.h"
 #include "TypedListViewCtrl.h"
-#include "../FlyFeatures/RSSManager.h"
+//#include "../client/FlyFeatures/RSSManager.h"
 
 class RSSNewsFrame : public MDITabChildWindowImpl < RSSNewsFrame, RGB(0, 0, 0), IDR_RSS >, public StaticFrame<RSSNewsFrame, ResourceManager::RSS_NEWS, IDC_RSS>,
 	private SettingsManagerListener, private RSSListener

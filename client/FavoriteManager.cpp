@@ -21,7 +21,7 @@
 #include "BZUtils.h"
 #include "FilteredFile.h"
 #include "ConnectionManager.h"
-#include "../FlyFeatures/flyServer.h"
+#include "../client/FlyFeatures/flyServer.h"
 
 bool FavoriteManager::g_SupportsHubExist = false;
 bool FavoriteManager::g_isNotEmpty = false;

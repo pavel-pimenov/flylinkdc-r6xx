@@ -23,7 +23,7 @@
 #include "../client/Util.h"
 #include "Resource.h"
 #include "ResourceLoader.h"
-#include "../FlyFeatures/AutoUpdate.h"
+#include "../client/FlyFeatures/AutoUpdate.h"
 #include "ExListViewCtrl.h"
 
 class FlyUpdateDlg : public CDialogImpl<FlyUpdateDlg>, CFlyRichEditLoader

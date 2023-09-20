@@ -111,7 +111,7 @@ template <class T> bool safe_post_message(HWND p_wnd, int p_x, T* p_ptr)
 	return true;
 }
 
-inline int WINAPI MessageBox(HWND hWnd, LPCWSTR lpText, LPCWSTR lpCaption, LPCWSTR lpQuestion, UINT uType, UINT& bCheck)
+inline int WINAPI MessageBox(HWND hWnd, LPCWSTR lpText, LPCWSTR lpCaption, LPCWSTR /*lpQuestion*/, UINT uType, UINT& /*bCheck*/)
 {
 	return ::MessageBox(hWnd, lpText, lpCaption, uType);
 }

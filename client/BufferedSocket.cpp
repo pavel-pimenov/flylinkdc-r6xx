@@ -23,7 +23,7 @@
 #include "ShareManager.h"
 #include "SSLSocket.h"
 #include "UserConnection.h"
-#include "../FlyFeatures/flyServer.h"
+#include "../client/FlyFeatures/flyServer.h"
 
 // Polling is used for tasks...should be fixed...
 static const uint64_t POLL_TIMEOUT = 250;

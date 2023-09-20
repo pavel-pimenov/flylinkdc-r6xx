@@ -27,9 +27,9 @@
 #include "ShareManager.h"
 #include "SettingsManager.h"
 
-#include "../FlyFeatures/AutoUpdate.h"
-#include "../FlyFeatures/flyServer.h"
-#include "../FlyFeatures/RSSManager.h"
+#include "../client/FlyFeatures/AutoUpdate.h"
+#include "../client/FlyFeatures/flyServer.h"
+#include "../client/FlyFeatures/RSSManager.h"
 #include "../windows/ToolbarManager.h"
 
 StringList SettingsManager::g_connectionSpeeds;
@@ -1483,7 +1483,9 @@ void SettingsManager::loadOtherSettings()
 #ifdef IRAINMAN_ENABLE_AUTO_BAN
 		UserManager::reloadProtUsers();
 #endif
+#ifdef IRAINMAN_INCLUDE_RSS
 		RSSManager::load(xml);
+#endif
 		ToolbarManager::load(xml);
 		ShareManager::load(xml);
 		FavoriteManager::recentload(xml);
@@ -1962,7 +1964,10 @@ void SettingsManager::save(const string& aFileName)
 	
 	ToolbarManager::save(xml);
 	
+#ifdef IRAINMAN_INCLUDE_RSS
 	RSSManager::save(xml);
+#endif
+
 	
 	if (!ClientManager::isBeforeShutdown())
 	{

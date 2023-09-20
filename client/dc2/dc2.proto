@@ -1,0 +1,163 @@
+syntax = "proto3";
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+option (gogoproto.protosizer_all) = true;
+option (gogoproto.marshaler_all) = true;
+option (gogoproto.unmarshaler_all) =  true;
+
+message Time {
+    int64 sec  = 1;
+    int32 nsec = 2;
+}
+message Dur {
+    int64 sec  = 1;
+    int32 nsec = 2;
+}
+message SID {
+    int64 id = 1;
+}
+message CID {
+    bytes id = 1;
+}
+
+// Digest is used to describe the whole file contents.
+message Digest {
+    bytes tth     = 1; // 24 byte
+    bytes md5     = 2; // 16 byte
+    bytes sha1    = 3; // 20 byte
+    bytes sha256  = 4; // 32 byte
+    bytes sha3    = 5; // 28, 32, 48, 64 byte
+    bytes blake2b = 6; // 32, 48, 64 byte
+}
+
+// StringFilter is a filter for string parameters used in queries.
+message StringFilter {
+    repeated string include = 1;
+    repeated string exclude = 2;
+    repeated string contains_all = 3;
+    repeated string contains_any = 4;
+    repeated string not_contains = 5;
+}
+
+// IntFilter is a filter for int parameters used in queries.
+//
+// It is executed the following way:
+// (eq != nil && v == eq) || (eq == nil && (ge == nil || v >= ge) && (le == nil || v <= le))
+message IntFilter {
+    int64 eq = 1;
+    int64 ge = 2;
+    int64 le = 3;
+}
+
+// FileKindFilter is used to filter files by kinds.
+// Logic is "and" for all not-nil fields.
+message FileKindFilter {
+    bool directory = 1;
+    bool file = 2;
+    bool compressed = 3;
+    bool document   = 4;
+    bool executable = 5;
+    bool audio = 6;
+    bool image = 7;
+    bool video = 8;
+    bool book  = 9;
+}
+
+// DigestFilter is used to check if file has one of the digests.
+// Logic is "or" for any of digests in the list.
+message DigestFilter {
+    repeated Digest digest = 1;
+}
+
+message SearchRequest {
+    StringFilter    name   = 1; // file path
+    StringFilter    ext    = 2; // file extension
+    IntFilter       size   = 3; // file size
+    FileKindFilter  kind   = 4;
+    DigestFilter    digest = 5;
+}
+
+message SearchResult {
+    string source = 1;
+    FileInfo file = 2;
+    WebResult web = 3;
+}
+
+message FileInfo {
+    message Audio {
+        Dur duration    = 1;
+        int64 bitrate   = 2;
+        string codec    = 3;
+        string channels = 4; // TODO: float? or two ints?
+        string lang     = 5;
+    }
+    message Video {
+        Dur    duration = 1;
+        int64  bitrate  = 2;
+        int32  width    = 3;
+        int32  height   = 4;
+        string codec    = 5;
+        float  fps      = 6;
+    }
+    FileId id   = 1;
+    string name = 2;
+    bool   dir  = 3;
+    Time   mod  = 4;
+
+    // directory-specific fields
+
+    bool incomplete = 5;
+    repeated FileInfo child = 6;
+
+    // file-specific fields
+
+    int64  size   = 7;
+    Digest digest = 8;
+    repeated Audio audio = 9;
+    repeated Video video = 10;
+}
+
+message WebResult {
+    string url = 1;
+}
+
+message FileId {
+    string path = 1;
+}
+
+message FileInfoRequest {
+    FileId id = 1;
+}
+
+message ListFilesRequest {
+    FileId root = 1;
+    int32 depth = 2;
+}
+
+message ReadFileRequest {
+    FileId id     = 1;
+    int64  offset = 2;
+    int64  size   = 3;
+    int32 max_chunk_size = 4;
+}
+
+message DataChunk {
+    bytes data = 1;
+}
+
+message ChatMsg {
+    string text = 1;
+    Time   ts   = 2;
+    SID    channel = 3;
+    SID    user = 4;
+    bool   me = 5;
+}
+message ChatChannel {
+    SID sid = 1;
+    string name = 2;
+    string desc = 3;
+}
+
+message Channels {
+    repeated ChatChannel channels = 1;
+}

@@ -12,7 +12,7 @@
 #include "../client/StringSearch.h"
 #include "../client/ADLSearch.h"
 #include "../client/ShareManager.h"
-#include "../FlyFeatures/VideoPreview.h"
+#include "../client/FlyFeatures/VideoPreview.h"
 #include "../client/SettingsManager.h"
 
 namespace FlyWindow

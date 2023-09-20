@@ -21,7 +21,7 @@
 #ifndef _CONSOLE
 #include "FilteredFile.h"
 #include "BZUtils.h"
-#include "../FlyFeatures/flyServer.h"
+#include "../client/FlyFeatures/flyServer.h"
 #include "ClientManager.h"
 #include "CompatibilityManager.h"
 #else

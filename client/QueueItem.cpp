@@ -20,7 +20,7 @@
 #include "HashManager.h"
 #include "ClientManager.h"
 #include "UserConnection.h"
-#include "../FlyFeatures/flyServer.h"
+#include "../client/FlyFeatures/flyServer.h"
 
 #ifdef FLYLINKDC_USE_RWLOCK
 std::unique_ptr<webrtc::RWLockWrapper> QueueItem::g_cs = std::unique_ptr<webrtc::RWLockWrapper> (webrtc::RWLockWrapper::CreateRWLock());

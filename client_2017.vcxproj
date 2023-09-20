@@ -57,7 +57,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(SolutionDir)\boost;$(SolutionDir)\bzip2;$(SolutionDir)\wtl;$(SolutionDir)\zlib-ng;$(SolutionDir)\openssl\include;$(SolutionDir)\MediaInfoLib\Source;$(SolutionDir)\Zenlib\Source;$(SolutionDir)\leveldb;$(SolutionDir)\leveldb\include;$(SolutionDir)\leveldb\port\win;$(SolutionDir)\jsoncpp\include\;$(SolutionDir)\client;$(SolutionDir)\client\webrtc;$(SolutionDir)\libtorrent\include;$(SolutionDir)\maxminddb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\boost;$(SolutionDir)\bzip2;$(SolutionDir)\wtl;$(SolutionDir)\zlib-ng;$(SolutionDir)\openssl\include;$(SolutionDir)\MediaInfoLib\Source;$(SolutionDir)\Zenlib\Source;$(SolutionDir)\leveldb;$(SolutionDir)\leveldb\include;$(SolutionDir)\leveldb\port\win;$(SolutionDir)\jsoncpp\include\;$(SolutionDir)\client;$(SolutionDir)\client\webrtc;$(SolutionDir)\libtorrent\include;$(SolutionDir)\maxminddb;$(SolutionDir)selene\include;$(SolutionDir)lua;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <StringPooling>true</StringPooling>
       <ExceptionHandling>Sync</ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -104,7 +104,7 @@
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>false</OmitFramePointers>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
-      <AdditionalIncludeDirectories>$(SolutionDir)\boost;$(SolutionDir)\bzip2;$(SolutionDir)\wtl;$(SolutionDir)\zlib-ng;$(SolutionDir)\openssl\include;$(SolutionDir)\MediaInfoLib\Source;$(SolutionDir)\Zenlib\Source;$(SolutionDir)\leveldb;$(SolutionDir)\leveldb\include;$(SolutionDir)\leveldb\port\win;$(SolutionDir)\jsoncpp\include\;$(SolutionDir)\client;$(SolutionDir)\client\webrtc;$(SolutionDir)\libtorrent\include;$(SolutionDir)\maxminddb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\boost;$(SolutionDir)\bzip2;$(SolutionDir)\wtl;$(SolutionDir)\zlib-ng;$(SolutionDir)\openssl\include;$(SolutionDir)\MediaInfoLib\Source;$(SolutionDir)\Zenlib\Source;$(SolutionDir)\leveldb;$(SolutionDir)\leveldb\include;$(SolutionDir)\leveldb\port\win;$(SolutionDir)\jsoncpp\include\;$(SolutionDir)\client;$(SolutionDir)\client\webrtc;$(SolutionDir)\libtorrent\include;$(SolutionDir)\maxminddb;$(SolutionDir)selene\include;$(SolutionDir)lua;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <StringPooling>true</StringPooling>
       <ExceptionHandling>Sync</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -231,11 +231,21 @@
     <ClCompile Include="client\UserInfoBase.cpp" />
     <ClCompile Include="client\UserManager.cpp" />
     <ClCompile Include="client\Util.cpp" />
+    <ClCompile Include="client\FlyFeatures\AutoUpdate.cpp" />
+    <ClCompile Include="client\FlyFeatures\CustomMenuManager.cpp" />
+    <ClCompile Include="client\FlyFeatures\FileRoadMap.cpp" />
+    <ClCompile Include="client\FlyFeatures\flyfeatures.cpp" />
+    <ClCompile Include="client\FlyFeatures\flyServer.cpp" />
+    <ClCompile Include="client\FlyFeatures\fuSearch.cpp" />
+    <ClCompile Include="client\FlyFeatures\InetDownloaderReporter.cpp" />
+    <ClCompile Include="client\FlyFeatures\SettingsAutoUpdate.cpp" />
+    <ClCompile Include="client\FlyFeatures\WinFirewall.cpp" />
     <ClCompile Include="client\webrtc\rtc_base\synchronization\condition_variable_event_win.cc" />
     <ClCompile Include="client\webrtc\rtc_base\synchronization\rw_lock_win.cc" />
     <ClCompile Include="client\webrtc\rtc_base\synchronization\rw_lock_winxp_win.cc" />
     <ClCompile Include="client\webrtc\rtc_base\synchronization\rw_lock_wrapper.cc" />
     <ClCompile Include="client\webrtc\talk\base\winfirewall.cc" />
+    <ClCompile Include="client\XMLParser\xmlParser.cpp" />
     <ClCompile Include="client\ZUtils.cpp" />
     <ClCompile Include="client\CFlylinkDBManager.cpp" />
     <ClCompile Include="client\sqlite\sqlite3.c">
@@ -259,6 +269,18 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="client\FlyFeatures\AutoUpdate.h" />
+    <ClInclude Include="client\FlyFeatures\CFlyServerDialogNavigator.h" />
+    <ClInclude Include="client\FlyFeatures\CFlyTorrentDialog.h" />
+    <ClInclude Include="client\FlyFeatures\CProgressDlg.h" />
+    <ClInclude Include="client\FlyFeatures\CustomMenuManager.h" />
+    <ClInclude Include="client\FlyFeatures\FileRoadMap.h" />
+    <ClInclude Include="client\FlyFeatures\flyfeatures.h" />
+    <ClInclude Include="client\FlyFeatures\flyServer.h" />
+    <ClInclude Include="client\FlyFeatures\fuSearch.h" />
+    <ClInclude Include="client\FlyFeatures\InetDownloaderReporter.h" />
+    <ClInclude Include="client\FlyFeatures\SettingsAutoUpdate.h" />
+    <ClInclude Include="client\FlyFeatures\WinFirewall.h" />
     <ClInclude Include="client\AdcSupports.h" />
     <ClInclude Include="client\BaseUtil.h" />
     <ClInclude Include="client\CFlyLockProfiler.h" />
@@ -356,6 +378,7 @@
     <ClInclude Include="client\webrtc\talk\base\winfirewall.h" />
     <ClInclude Include="client\WildcardsReg.h" />
     <ClInclude Include="client\w_flylinkdc.h" />
+    <ClInclude Include="client\XMLParser\xmlParser.h" />
     <ClInclude Include="jsoncpp\include\json\json.h" />
     <ClInclude Include="maxminddb\data-pool.h" />
     <ClInclude Include="maxminddb\maxminddb-compat-util.h" />

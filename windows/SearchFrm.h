@@ -32,8 +32,8 @@
 #include "../client/QueueManager.h"
 #include "../client/SearchResult.h"
 #include "../client/ShareManager.h"
-#include "../FlyFeatures/GradientLabel.h"
-#include "../FlyFeatures/flyServer.h"
+#include "../client/FlyFeatures/GradientLabel.h"
+#include "../client/FlyFeatures/flyServer.h"
 
 //#include "wtlbuilder/Panel.h"
 

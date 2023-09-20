@@ -27,7 +27,7 @@
 #include "FinishedManager.h"
 #include "PGLoader.h"
 #include "MappingManager.h"
-#include "../FlyFeatures/flyServer.h"
+#include "../client/FlyFeatures/flyServer.h"
 
 #ifdef FLYLINKDC_USE_TORRENT
 #include "libtorrent/session.hpp"

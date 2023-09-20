@@ -20,7 +20,7 @@
 #include "stdinc.h"
 #include "SharedFileStream.h"
 #include "ClientManager.h"
-#include "../FlyFeatures/flyServer.h"
+#include "../client/FlyFeatures/flyServer.h"
 
 FastCriticalSection SharedFileStream::g_shares_file_cs;
 std::unordered_set<char> SharedFileStream::g_error_map_file;

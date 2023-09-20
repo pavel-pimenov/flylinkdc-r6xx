@@ -21,7 +21,7 @@
 #include "UpdatePage.h"
 #include "CommandDlg.h"
 
-#include "../FlyFeatures/AutoUpdate.h"
+#include "../client/FlyFeatures/AutoUpdate.h"
 
 PropPage::TextItem UpdatePage::texts[] =
 {

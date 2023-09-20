@@ -40,8 +40,8 @@
 #include "../client/MappingManager.h"
 #include "../client/CompatibilityManager.h"
 #include "../client/ThrottleManager.h"
-#include "../FlyFeatures/AutoUpdate.h"
-#include "../FlyFeatures/flyfeatures.h"
+#include "../client/FlyFeatures/AutoUpdate.h"
+#include "../client/FlyFeatures/flyfeatures.h"
 
 
 CAppModule _Module;

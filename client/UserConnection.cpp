@@ -24,7 +24,7 @@
 #include "QueueManager.h"
 #include "PGLoader.h"
 #include "IpGuard.h"
-#include "../FlyFeatures/flyServer.h"
+#include "../client/FlyFeatures/flyServer.h"
 
 const string UserConnection::FEATURE_MINISLOTS = "MiniSlots";
 const string UserConnection::FEATURE_XML_BZLIST = "XmlBZList";

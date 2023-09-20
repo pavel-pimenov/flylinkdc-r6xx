@@ -22,7 +22,7 @@
 #pragma once
 
 #include "../client/SettingsManager.h"
-#include "../XMLParser/xmlParser.h"
+#include "../client/XMLParser/xmlParser.h"
 
 class AutoUpdateFile
 {

@@ -21,7 +21,7 @@
 #include "ClientManager.h"
 #include "CompatibilityManager.h"
 #include "ShareManager.h"
-#include "../FlyFeatures/flyServer.h"
+#include "../client/FlyFeatures/flyServer.h"
 
 #ifdef IRAINMAN_NTFS_STREAM_TTH
 

@@ -25,7 +25,7 @@
 #include "DownloadManager.h"
 #include "UploadManager.h"
 #include "MerkleCheckOutputStream.h"
-#include "../FlyFeatures/flyServer.h"
+#include "../client/FlyFeatures/flyServer.h"
 #include "ShareManager.h"
 #include "SharedFileStream.h"
 

@@ -23,7 +23,7 @@
 #include "StringTokenizer.h"
 #include "FinishedManager.h"
 #include "DebugManager.h"
-#include "../FlyFeatures/flyServer.h"
+#include "../client/FlyFeatures/flyServer.h"
 
 
 uint16_t SearchManager::g_search_port = 0;

@@ -23,7 +23,7 @@
 #include "MappingManager.h"
 #include "SearchManager.h"
 #include "DownloadManager.h"
-#include "../FlyFeatures/flyServer.h"
+#include "../client/FlyFeatures/flyServer.h"
 #include "dcformat.h"
 
 string ConnectivityManager::g_status;

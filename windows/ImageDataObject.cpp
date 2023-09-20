@@ -14,7 +14,7 @@
 #include "stdafx.h"
 #include "ImageDataObject.h"
 #include "../client/LogManager.h"
-#include "../FlyFeatures/flyServer.h"
+#include "../client/FlyFeatures/flyServer.h"
 
 // Static member functions
 void CImageDataObject::InsertBitmap(HWND hWnd, IRichEditOle* pRichEditOle, IOleClientSite *& pOleClientSite, IStorage *pStorage, IOleObject *& pOleObject, bool& p_out_of_memory)//IRichEditOle* pRichEditOle, HBITMAP hBitmap, LPCTSTR pszPath)
