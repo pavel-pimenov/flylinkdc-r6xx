@@ -5,6 +5,8 @@ client.key
 *.sqlite-wal
 *.sqlite-journal
 *.7z
+*.bz2
+*.zip
 /client/StringDefs.cpp
 /compiled/*.exp
 /vc17/*
@@ -24,3 +26,13 @@ compiled/flylinkdc_x64.lib
 compiled/FlylinkDC_x64.exe
 flylinkdc_2017.vcxproj.user
 MakeDefs/MakeDefs.exe
+/compiled/Settings/ADLSearch.xml
+/compiled/Settings/DCPlusPlus.xml
+/compiled/Settings/Favorites.xml
+/compiled/Settings/FlylinkDCShutdownMarker.txt
+/compiled/Settings/IPTrust.ini
+/compiled/Settings/tth-history.leveldb/CURRENT
+/compiled/Settings/tth-history.leveldb/LOCK
+/compiled/Settings/tth-history.leveldb/LOG
+/compiled/Settings/tth-history.leveldb/MANIFEST-*
+
