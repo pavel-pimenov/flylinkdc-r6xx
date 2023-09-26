@@ -35,4 +35,4 @@ MakeDefs/MakeDefs.exe
 /compiled/Settings/tth-history.leveldb/LOCK
 /compiled/Settings/tth-history.leveldb/LOG
 /compiled/Settings/tth-history.leveldb/MANIFEST-*
-
+/compiled/Settings/tth-history.leveldb/LOG.old

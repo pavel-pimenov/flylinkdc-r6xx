@@ -159,12 +159,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="GdiOle.def" />
-    <None Include="GDIImage.bmp" />
-    <None Include="GDIImage.rgs" />
-    <None Include="GdiOle.rgs" />
-  </ItemGroup>
-  <ItemGroup>
     <Midl Include="GdiOle.idl" />
   </ItemGroup>
   <ItemGroup>

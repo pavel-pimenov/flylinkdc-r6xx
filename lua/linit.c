@@ -1,5 +1,5 @@
 /*
-** $Id: linit.c,v 1.39 2016/12/04 20:17:24 roberto Exp $
+** $Id: linit.c $
 ** Initialization of libraries for lua.c and other clients
 ** See Copyright Notice in lua.h
 */
@@ -40,29 +40,16 @@
 ** program
 */
 static const luaL_Reg loadedlibs[] = {
-  {"_G", luaopen_base},
-#ifdef FLYLINKDC_USE_LUA_PACKAGE
+  {LUA_GNAME, luaopen_base},
   {LUA_LOADLIBNAME, luaopen_package},
-#endif
-#ifdef FLYLINKDC_USE_LUA_COROUTINE
-   {LUA_COLIBNAME, luaopen_coroutine},
-#endif
+  {LUA_COLIBNAME, luaopen_coroutine},
   {LUA_TABLIBNAME, luaopen_table},
-#ifdef FLYLINKDC_USE_LUA_IO
   {LUA_IOLIBNAME, luaopen_io},
-#endif
-#ifdef FLYLINKDC_USE_LUA_OS
   {LUA_OSLIBNAME, luaopen_os},
-#endif
   {LUA_STRLIBNAME, luaopen_string},
   {LUA_MATHLIBNAME, luaopen_math},
   {LUA_UTF8LIBNAME, luaopen_utf8},
-#ifdef FLYLINKDC_USE_LUA_DEBUG
   {LUA_DBLIBNAME, luaopen_debug},
-#endif
-#if defined(LUA_COMPAT_BITLIB)
-  {LUA_BITLIBNAME, luaopen_bit32},
-#endif
   {NULL, NULL}
 };
 
