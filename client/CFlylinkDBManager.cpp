@@ -1,5 +1,5 @@
 //-----------------------------------------------------------------------------
-//(c) 2007-2019 pavel.pimenov@gmail.com
+//(c) 2007-2023 pavel.pimenov@gmail.com
 //-----------------------------------------------------------------------------
 #include "stdinc.h"
 #include <Shellapi.h>
@@ -430,7 +430,8 @@ CFlylinkDBManager::CFlylinkDBManager()
 				// https://crash-server.com/Problem.aspx?ClientID=guest&ProblemID=17660
 				if (BOOLSETTING(LOG_SQLITE_TRACE) || g_EnableSQLtrace)
 				{
-					sqlite3_trace(m_flySQLiteDB.get_db(), gf_trace_callback, NULL);
+					// TODO sqlite3_trace_v2(m_flySQLiteDB.get_db(), gf_trace_callback, NULL);
+					// sqlite3_trace(m_flySQLiteDB.get_db(), gf_trace_callback, NULL);
 					// sqlite3_profile(m_flySQLiteDB.get_db(), profile_callback, NULL);
 				}
 #ifdef FLYLINKDC_LOG_IN_SQLITE_BASE
