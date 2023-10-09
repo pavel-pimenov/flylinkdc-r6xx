@@ -57,15 +57,9 @@ class AdcHub : public Client, public CommandHandler<AdcHub>
 			return AdcCommand::fromSID(m_sid);
 		}
 		
-		static const vector<StringList>& getSearchExts();
+		static const std::vector<StringList>& getSearchExts();
 		static StringList parseSearchExts(int flag);
 		
-#ifdef IRAINMAN_ENABLE_AUTO_BAN
-		bool hubIsNotSupportSlot() const
-		{
-			return false;
-		}
-#endif // IRAINMAN_ENABLE_AUTO_BAN
 	private:
 		friend class ClientManager;
 		friend class CommandHandler<AdcHub>;

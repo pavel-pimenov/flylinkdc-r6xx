@@ -148,9 +148,6 @@ LRESULT NetworkPage::onInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lPa
 {
 	PropPage::translate((HWND)(*this), texts);
 	
-#ifndef IRAINMAN_IP_AUTOUPDATE
-	::EnableWindow(GetDlgItem(IDC_IPUPDATE), FALSE);
-#endif
 #ifdef FLYLINKDC_USE_TORRENT
 	SET_SETTING(DHT_PORT, DownloadManager::getInstance()->listen_torrent_port());
 #endif
@@ -259,9 +256,7 @@ void NetworkPage::fixControls()
 	
 	::EnableWindow(GetDlgItem(IDC_IP_GET_IP), !auto_detect && (upnp || nat) && !m_is_manual);
 	::EnableWindow(GetDlgItem(IDC_NO_IP_OVERRIDE), false); // !auto_detect && (direct || upnp || nat || nat_traversal));
-#ifdef IRAINMAN_IP_AUTOUPDATE
 	::EnableWindow(GetDlgItem(IDC_IPUPDATE), (upnp || nat));
-#endif
 	const BOOL ipupdate = (upnp || nat) && (IsDlgButtonChecked(IDC_IPUPDATE) == BST_CHECKED);
 	::EnableWindow(GetDlgItem(IDC_SETTINGS_UPDATE_IP_INTERVAL), ipupdate);
 	::EnableWindow(GetDlgItem(IDC_UPDATE_IP_INTERVAL), ipupdate);

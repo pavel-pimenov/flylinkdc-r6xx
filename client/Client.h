@@ -320,33 +320,6 @@ class Client : public ClientBase, public Speaker<ClientListener>, public Buffere
 		{
 			return Text::fromUtf8(str, getEncoding());
 		}
-#ifdef IRAINMAN_USE_UNICODE_IN_NMDC
-		string toUtf8(const string& str) const
-		{
-			string out;
-			string::size_type i = 0;
-			while (true)
-			{
-				auto f = str.find_first_of("\n\r" /* "\n\r\t:<>[] |" */, i);
-				if (f == string::npos)
-				{
-					out += toUtf8IfNeeded(str.substr(i));
-					break;
-				}
-				else
-				{
-					++f;
-					out += toUtf8IfNeeded(str.substr(i, f - i));
-					i = f;
-				}
-			};
-			return out;
-		}
-		const string& fromUtf8Chat(const string& str) const
-		{
-			return str;
-		}
-#else
 		string toUtf8(const string& str) const
 		{
 			return toUtf8IfNeeded(str);
@@ -359,7 +332,6 @@ class Client : public ClientBase, public Speaker<ClientListener>, public Buffere
 		{
 			return fromUtf8(str);
 		}
-#endif
 		
 		bool NmdcPartialSearch(const SearchParam& p_search_param);
 		
@@ -486,8 +458,6 @@ class Client : public ClientBase, public Speaker<ClientListener>, public Buffere
 			getMyIdentity().setEmail(email);
 		}
 		
-#ifdef IRAINMAN_INCLUDE_HIDE_SHARE_MOD
-		
 		bool getHideShare() const
 		{
 			return m_is_hide_share;
@@ -503,16 +473,12 @@ class Client : public ClientBase, public Speaker<ClientListener>, public Buffere
 	private:
 		bool m_is_hide_share;
 		
-#endif
 	private:
 		string m_ClientDescription;
 		
 	protected:
 		string getTagVersion() const;
 		
-#ifdef IRAINMAN_ENABLE_AUTO_BAN
-		virtual bool hubIsNotSupportSlot() const = 0;
-#endif // IRAINMAN_ENABLE_AUTO_BAN
 		
 		friend class ClientManager;
 		friend class User;

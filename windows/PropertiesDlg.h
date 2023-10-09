@@ -28,7 +28,7 @@ class NetworkPage;
 class PropertiesDlg : public TreePropertySheet
 {
 	public:
-		static const size_t g_numPages = 40;
+		static const size_t g_numPages = 37;
 		
 		BEGIN_MSG_MAP(PropertiesDlg)
 		COMMAND_ID_HANDLER(IDOK, onOK)

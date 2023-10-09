@@ -48,9 +48,7 @@ class TypedListViewCtrl : public CWindowImpl<TypedListViewCtrl<T, ctrlId>, CList
 {
 	public:
 		TypedListViewCtrl() : sortColumn(-1), sortAscending(true), hBrBg(Colors::g_bgBrush), leftMargin(0), m_is_destroy_items(false)
-#ifndef IRAINMAN_NOT_USE_COUNT_UPDATE_INFO_IN_LIST_VIEW_CTRL
 			, m_count_update_info(0)
-#endif
 		{
 		}
 		~TypedListViewCtrl()
@@ -644,12 +642,10 @@ class TypedListViewCtrl : public CWindowImpl<TypedListViewCtrl<T, ctrlId>, CList
 			sortColumn = aSortColumn;
 			updateArrow();
 		}
-#ifndef IRAINMAN_NOT_USE_COUNT_UPDATE_INFO_IN_LIST_VIEW_CTRL
 		int getCountUpdateInfo() const
 		{
 			return m_count_update_info;
 		}
-#endif
 		int getSortColumn() const
 		{
 			return sortColumn;
@@ -797,9 +793,7 @@ class TypedListViewCtrl : public CWindowImpl<TypedListViewCtrl<T, ctrlId>, CList
 		{
 			ColumnInfo& ci = m_columnList[wParam];
 			ci.m_is_visible = ! ci.m_is_visible;
-#ifndef IRAINMAN_NOT_USE_COUNT_UPDATE_INFO_IN_LIST_VIEW_CTRL
 			m_count_update_info++;
-#endif
 			{
 				CLockRedraw<true> l_lock_draw(m_hWnd);
 				if (!ci.m_is_visible)
@@ -821,9 +815,7 @@ class TypedListViewCtrl : public CWindowImpl<TypedListViewCtrl<T, ctrlId>, CList
 				}
 				
 				updateColumnIndexes();
-#ifndef IRAINMAN_NOT_USE_COUNT_UPDATE_INFO_IN_LIST_VIEW_CTRL
 				m_count_update_info--;
-#endif
 			}
 			
 			UpdateWindow();
@@ -958,9 +950,7 @@ class TypedListViewCtrl : public CWindowImpl<TypedListViewCtrl<T, ctrlId>, CList
 		bool m_is_destroy_items;
 	private:
 		int sortColumn;
-#ifndef IRAINMAN_NOT_USE_COUNT_UPDATE_INFO_IN_LIST_VIEW_CTRL
 		int m_count_update_info;
-#endif
 		bool sortAscending;
 		int leftMargin;
 		HBRUSH hBrBg;

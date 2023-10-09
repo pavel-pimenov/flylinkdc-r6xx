@@ -36,14 +36,8 @@ const string UserConnection::FEATURE_ADC_BAS0 = "BAS0";
 const string UserConnection::FEATURE_ADC_BASE = "BASE";
 const string UserConnection::FEATURE_ADC_BZIP = "BZIP";
 const string UserConnection::FEATURE_ADC_TIGR = "TIGR";
-#ifdef SMT_ENABLE_FEATURE_BAN_MSG
-const string UserConnection::FEATURE_BANMSG = "BanMsg";
-#endif
 
 const string UserConnection::g_FILE_NOT_AVAILABLE = "File Not Available";
-#if defined (FLYLINKDC_USE_DOS_GUARD) && defined (IRAINMAN_DISALLOWED_BAN_MSG)
-const string UserConnection::g_PLEASE_UPDATE_YOUR_CLIENT = "Please update your DC++ https://www.fly-server.ru";
-#endif
 
 #ifdef FLYLINKDC_USE_BLOCK_ERROR_CMD
 FastCriticalSection UserConnection::g_error_cs;

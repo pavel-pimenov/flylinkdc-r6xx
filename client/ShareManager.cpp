@@ -19,6 +19,7 @@
 #include "stdinc.h"
 
 #include <list>
+#include <fstream>
 
 #include "ShareManager.h"
 #include "QueueManager.h"
@@ -78,7 +79,6 @@ ShareManager::ShareManager() : xmlListLen(0), bzXmlListLen(0),
 	m_is_refreshing.clear();
 	m_updateXmlListInProcess.clear();
 	m_lastXmlUpdate = m_lastFullUpdate = GET_TICK();
-#ifdef IRAINMAN_INCLUDE_HIDE_SHARE_MOD
 	const string emptyXmlName = getEmptyBZXmlFile();
 	if (!File::isExist(emptyXmlName))
 	{
@@ -95,7 +95,6 @@ ShareManager::ShareManager() : xmlListLen(0), bzXmlListLen(0),
 			LogManager::message("Error create: " + emptyXmlName + " error = " + e.getError());
 		}
 	}
-#endif // IRAINMAN_INCLUDE_HIDE_SHARE_MOD
 	
 	TimerManager::getInstance()->addListener(this);
 	QueueManager::getInstance()->addListener(this);
@@ -131,9 +130,7 @@ ShareManager::~ShareManager()
 			LogManager::message("Error renameFile: " + l_curFileName + " error = " + e.getError());
 		}
 	}
-#ifdef IRAINMAN_INCLUDE_HIDE_SHARE_MOD
 	File::deleteFile(getEmptyBZXmlFile()); // needs to update Client version in empty file list.
-#endif
 	
 }
 void ShareManager::shutdown()
@@ -354,9 +351,7 @@ string ShareManager::toVirtual(const TTHValue& tth)
 #endif
 
 string ShareManager::toReal(const string& virtualFile
-#ifdef IRAINMAN_INCLUDE_HIDE_SHARE_MOD
                             , bool ishidingShare
-#endif
                            )
 {
 	if (virtualFile == "MyList.DcLst")
@@ -365,12 +360,10 @@ string ShareManager::toReal(const string& virtualFile
 	}
 	else if (virtualFile == Transfer::g_user_list_name_bz || virtualFile == Transfer::g_user_list_name)
 	{
-#ifdef IRAINMAN_INCLUDE_HIDE_SHARE_MOD
 		if (ishidingShare)
 		{
 			return getEmptyBZXmlFile();
 		}
-#endif // IRAINMAN_INCLUDE_HIDE_SHARE_MOD
 		generateXmlList();
 		{
 			return getBZXmlFile();
@@ -1913,9 +1906,7 @@ void ShareManager::generateXmlList()
 }
 
 MemoryInputStream* ShareManager::generatePartialList(const string& dir, bool recurse
-#ifdef IRAINMAN_INCLUDE_HIDE_SHARE_MOD
                                                      , bool ishidingShare
-#endif
                                                     ) const
 {
 	if (dir[0] != '/' || dir[dir.size() - 1] != '/')
@@ -1923,13 +1914,11 @@ MemoryInputStream* ShareManager::generatePartialList(const string& dir, bool rec
 	string xml = SimpleXML::utf8Header;
 	string tmp;
 	xml += "<FileListing Version=\"1\" CID=\"" + ClientManager::getMyCID().toBase32() + "\" Base=\"" + SimpleXML::escape(dir, tmp, false) + "\" Generator=\"DC++ "  DCVERSIONSTRING  "\">\r\n";
-#ifdef IRAINMAN_INCLUDE_HIDE_SHARE_MOD
 	if (ishidingShare)
 	{
 		xml += "</FileListing>";
 		return new MemoryInputStream(xml);
 	}
-#endif
 	if (recurse == false)
 	{
 		CFlyFastLock(g_csPartialCache);

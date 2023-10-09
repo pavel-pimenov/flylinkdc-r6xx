@@ -1,11 +1,8 @@
 #ifndef __EMOTICONS_DLG
 #define __EMOTICONS_DLG
 
-
 #pragma once
 
-
-#ifdef IRAINMAN_INCLUDE_SMILE
 
 #include "../GdiOle/GDIImage.h"
 #include "wtl_flylinkdc.h"
@@ -91,6 +88,5 @@ class EmoticonsDlg : public CDialogImpl<EmoticonsDlg>
 		tBTN_LIST m_BtnList;
 };
 
-#endif // IRAINMAN_INCLUDE_SMILE
 
 #endif // __EMOTICONS_DLG

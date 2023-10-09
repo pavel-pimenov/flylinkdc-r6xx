@@ -117,9 +117,6 @@ class NmdcHub : public Client, private Flags
 		CFlySearchArrayTTH m_delay_search;
 		void clear_delay_search();
 		char m_modeChar;
-#ifdef IRAINMAN_ENABLE_AUTO_BAN
-		bool m_hubSupportsSlots;
-#endif
 		
 #ifdef RIP_USE_CONNECTION_AUTODETECT
 		bool m_bAutodetectionPending;
@@ -270,13 +267,6 @@ class NmdcHub : public Client, private Flags
 		void on(BufferedSocketListener::SearchArrayTTH, CFlySearchArrayTTH&) noexcept override;
 		void on(BufferedSocketListener::SearchArrayFile, const CFlySearchArrayFile&) noexcept override;
 		void on(BufferedSocketListener::Failed, const string&) noexcept override;
-#ifdef IRAINMAN_ENABLE_AUTO_BAN
-	public:
-		bool hubIsNotSupportSlot() const
-		{
-			return m_hubSupportsSlots;
-		}
-#endif // IRAINMAN_ENABLE_AUTO_BAN
 };
 
 #endif // !defined(NMDC_HUB_H)

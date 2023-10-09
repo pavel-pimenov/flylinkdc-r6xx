@@ -149,9 +149,6 @@ ConnectionManager::ConnectionManager() : m_floodCounter(0), server(nullptr),
 	nmdcFeatures.push_back(UserConnection::FEATURE_ADCGET);
 	nmdcFeatures.push_back(UserConnection::FEATURE_TTHL);
 	nmdcFeatures.push_back(UserConnection::FEATURE_TTHF);
-#ifdef SMT_ENABLE_FEATURE_BAN_MSG
-	nmdcFeatures.push_back(UserConnection::FEATURE_BANMSG);
-#endif
 	adcFeatures.reserve(4);
 	adcFeatures.push_back("AD" + UserConnection::FEATURE_ADC_BAS0);
 	adcFeatures.push_back("AD" + UserConnection::FEATURE_ADC_BASE);
@@ -1199,12 +1196,10 @@ void ConnectionManager::adcConnect(const OnlineUser& aUser, uint16_t aPort, uint
 	uc->setEncoding(Text::g_utf8);
 	uc->setState(UserConnection::STATE_CONNECT);
 	uc->setHubUrl(&aUser.getClient() == nullptr ? "DHT" : aUser.getClient().getHubUrl());
-#ifdef IRAINMAN_ENABLE_OP_VIP_MODE
 	if (aUser.getIdentity().isOp())
 	{
 		uc->setFlag(UserConnection::FLAG_OP);
 	}
-#endif
 	try
 	{
 		uc->connect(aUser.getIdentity().getIpAsString(), aPort, localPort, natRole);
@@ -1401,7 +1396,7 @@ void ConnectionManager::on(UserConnectionListener::MyNick, UserConnection* aSour
 		aSource->setEncoding(l_encoding);
 	}
 	
-	const string nick = Text::toUtf8(aNick, aSource->getEncoding());// TODO IRAINMAN_USE_UNICODE_IN_NMDC
+	const string nick = Text::toUtf8(aNick, aSource->getEncoding());
 	const CID cid = ClientManager::makeCid(nick, aSource->getHubUrl());
 	
 	// First, we try looking in the pending downloads...hopefully it's one of them...
@@ -1440,10 +1435,8 @@ void ConnectionManager::on(UserConnectionListener::MyNick, UserConnection* aSour
 	
 	ClientManager::setIPUser(aSource->getUser(), aSource->getRemoteIp());
 	
-#ifdef IRAINMAN_ENABLE_OP_VIP_MODE_ON_NMDC
 	if (ClientManager::isOp(aSource->getUser(), aSource->getHubUrl()))
 		aSource->setFlag(UserConnection::FLAG_OP);
-#endif
 		
 	if (aSource->isSet(UserConnection::FLAG_INCOMING))
 	{
@@ -1574,13 +1567,6 @@ void ConnectionManager::addUploadConnection(UserConnection* p_conn)
 {
 	dcassert(p_conn->isSet(UserConnection::FLAG_UPLOAD));
 	
-#ifdef IRAINMAN_DISALLOWED_BAN_MSG
-	if (uc->isSet(UserConnection::FLAG_SUPPORTS_BANMSG))
-	{
-		uc->error(UserConnection::g_PLEASE_UPDATE_YOUR_CLIENT);
-		return;
-	}
-#endif
 	
 	ConnectionQueueItemPtr l_cqi;
 	{
@@ -1703,40 +1689,12 @@ void ConnectionManager::on(AdcCommand::INF, UserConnection* aSource, const AdcCo
 			else
 			{
 				down = false;
-#ifdef IRAINMAN_CONNECTION_MANAGER_TOKENS_DEBUG
-				dcassert(0);
-#endif
 			}
 		}
 		else
-#ifndef IRAINMAN_CONNECTION_MANAGER_TOKENS_DEBUG
 		{
 			down = false;
 		}
-#else
-		{
-			const ConnectionQueueItem::Iter j = find(uploads.begin(), uploads.end(), aSource->getUser());
-		
-			if (j != uploads.cend())
-			{
-				const string& to = (*j)->getToken();
-		
-				if (to == token)
-				{
-					down = false;
-				}
-				else
-				{
-					down = false;
-					dcassert(0);
-				}
-			}
-			else
-			{
-				down = false;
-			}
-		}
-#endif
 	}
 	
 	if (down)

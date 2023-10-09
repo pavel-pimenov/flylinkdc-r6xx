@@ -38,11 +38,6 @@
 #include "../windows/resource.h"
 #include "../client/FavoriteManager.h"
 
-
-#ifdef IRAINMAN_INCLUDE_GDI_OLE
-//#include "../GdiOle/GDIImage.h"
-#endif
-
 #include "ZenLib/ZtringListList.h"
 
 #ifndef _DEBUG
@@ -2193,21 +2188,6 @@ bool CFlyServerJSON::pushStatistic(const bool p_is_sync_run)
 				}
 			}
 		}
-#if 0// IRAINMAN_INCLUDE_GDI_OLE
-		if (CGDIImage::g_AnimationDeathDetectCount || CGDIImage::g_AnimationCount || CGDIImage::g_AnimationCountMax)
-		{
-			Json::Value& l_debug_info = l_info["Debug"];
-			if (CGDIImage::g_AnimationDeathDetectCount)
-			{
-				l_debug_info["AnimationDeathDetectCount"] = Util::toString(CGDIImage::g_AnimationDeathDetectCount);
-			}
-			if (CGDIImage::g_AnimationCount || CGDIImage::g_AnimationCountMax)
-			{
-				l_debug_info["AnimationCount"] = Util::toString(CGDIImage::g_AnimationCount);
-				l_debug_info["AnimationCountMax"] = Util::toString(CGDIImage::g_AnimationCountMax);
-			}
-		}
-#endif // IRAINMAN_INCLUDE_GDI_OLE
 		// Сетевые настройки
 		{
 			Json::Value& l_net_info = l_info["Net"];

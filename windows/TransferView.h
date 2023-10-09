@@ -69,10 +69,6 @@ class TransferView : public CWindowImpl<TransferView>, private DownloadManagerLi
 		MESSAGE_HANDLER(WM_CONTEXTMENU, onContextMenu)
 		MESSAGE_HANDLER(WM_SIZE, onSize)
 		MESSAGE_HANDLER(WM_NOTIFYFORMAT, onNotifyFormat)
-#ifdef IRAINMAN_ENABLE_WHOIS
-		COMMAND_ID_HANDLER(IDC_WHOIS_IP, onWhoisIP)
-		COMMAND_ID_HANDLER(IDC_WHOIS_IP2, onWhoisIP)
-#endif
 		COMMAND_ID_HANDLER(IDC_FORCE, onForce)
 		COMMAND_ID_HANDLER(IDC_SEARCH_ALTERNATES, onSearchAlternates)
 #ifdef FLYLINKDC_USE_P2P_GUARD
@@ -137,9 +133,6 @@ class TransferView : public CWindowImpl<TransferView>, private DownloadManagerLi
 		LRESULT onPreviewCommand(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
 		LRESULT onOpenWindows(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
 		
-#ifdef IRAINMAN_ENABLE_WHOIS
-		LRESULT onWhoisIP(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
-#endif
 		void runUserCommand(UserCommand& uc);
 		void prepareClose();
 		void doTimerTask() override;
@@ -236,9 +229,6 @@ class TransferView : public CWindowImpl<TransferView>, private DownloadManagerLi
 		{
 			return ctrlTransfers;
 		}
-#ifdef IRAINMAN_ENABLE_WHOIS
-		static tstring g_sSelectedIP;
-#endif
 	private:
 		enum
 		{

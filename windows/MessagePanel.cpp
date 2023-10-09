@@ -21,15 +21,11 @@
 #include "atlwin.h"
 #include "ResourceLoader.h"
 #include "MessagePanel.h"
-#ifdef IRAINMAN_INCLUDE_SMILE
 #include "AGEmotionSetup.h"
-#endif
 
 HIconWrapper MessagePanel::g_hSendMessageIco(IDR_SENDMESSAGES_ICON);
 HIconWrapper MessagePanel::g_hMultiChatIco(IDR_MULTI_CHAT_ICON);
-#ifdef IRAINMAN_INCLUDE_SMILE
 HIconWrapper MessagePanel::g_hEmoticonIco(IDR_SMILE_ICON);
-#endif
 HIconWrapper MessagePanel::g_hBoldIco(IDR_BOLD_ICON);
 HIconWrapper MessagePanel::g_hUndelineIco(IDR_UNDERLINE_ICON);
 HIconWrapper MessagePanel::g_hStrikeIco(IDR_STRIKE_ICON);
@@ -38,9 +34,7 @@ HIconWrapper MessagePanel::g_hTransCodeIco(IDR_TRANSCODE_ICON);
 #ifdef SCALOLAZ_BB_COLOR_BUTTON
 HIconWrapper MessagePanel::g_hColorIco(IDR_COLOR_ICON);
 #endif
-#ifdef IRAINMAN_INCLUDE_SMILE
 CEmotionMenu MessagePanel::g_emoMenu;
-#endif
 
 MessagePanel::MessagePanel(CEdit*& p_ctrlMessage)
 	: m_hWnd(nullptr), m_ctrlMessage(p_ctrlMessage), m_isShutdown(false)
@@ -54,9 +48,7 @@ MessagePanel::~MessagePanel()
 void MessagePanel::DestroyPanel(bool p_is_shutdown)
 {
 	m_isShutdown = p_is_shutdown; // TODO - убрать?
-#ifdef IRAINMAN_INCLUDE_SMILE
 	ctrlEmoticons.DestroyWindow();
-#endif // IRAINMAN_INCLUDE_SMILE
 	ctrlSendMessageBtn.DestroyWindow();
 	ctrlMultiChatBtn.DestroyWindow();
 	ctrlBoldBtn.DestroyWindow();
@@ -79,11 +71,9 @@ LRESULT MessagePanel::InitPanel(HWND& p_hWnd, RECT &p_rcDefault)
 	m_tooltip.Create(m_hWnd, p_rcDefault, NULL, WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP | TTS_BALLOON, WS_EX_TOPMOST);
 	m_tooltip.SetDelayTime(TTDT_AUTOPOP, 15000);
 	dcassert(m_tooltip.IsWindow());
-#ifdef IRAINMAN_INCLUDE_SMILE
 	ctrlEmoticons.Create(m_hWnd, p_rcDefault, NULL, WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | BS_ICON | BS_CENTER, 0, IDC_EMOT);
 	ctrlEmoticons.SetIcon(g_hEmoticonIco);
 	m_tooltip.AddTool(ctrlEmoticons, ResourceManager::BBCODE_PANEL_EMOTICONS);
-#endif // IRAINMAN_INCLUDE_SMILE
 	
 	ctrlSendMessageBtn.Create(m_hWnd, p_rcDefault, NULL, WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | BS_ICON | BS_CENTER, 0, IDC_SEND_MESSAGE);
 	ctrlSendMessageBtn.SetIcon(g_hSendMessageIco);
@@ -197,7 +187,6 @@ LRESULT MessagePanel::UpdatePanel(CRect& rect)
 	{
 		ctrlMultiChatBtn.ShowWindow(SW_HIDE);
 	}
-#ifdef IRAINMAN_INCLUDE_SMILE
 	if (BOOLSETTING(SHOW_EMOTIONS_BTN))
 	{
 		ctrlEmoticons.ShowWindow(SW_SHOW);
@@ -209,7 +198,6 @@ LRESULT MessagePanel::UpdatePanel(CRect& rect)
 	{
 		ctrlEmoticons.ShowWindow(SW_HIDE);
 	}
-#endif // IRAINMAN_INCLUDE_SMILE
 	if (BOOLSETTING(SHOW_BBCODE_PANEL))
 	{
 		// Transcode
@@ -280,9 +268,7 @@ int MessagePanel::GetPanelWidth()
 {
 	int iButtonPanelLength = 0;
 	iButtonPanelLength += BOOLSETTING(SHOW_EMOTIONS_BTN) ? 22 : 0;
-#ifdef IRAINMAN_INCLUDE_SMILE
 	iButtonPanelLength += BOOLSETTING(SHOW_EMOTIONS_BTN) ? 22 : 0;
-#endif
 	iButtonPanelLength += BOOLSETTING(SHOW_SEND_MESSAGE_BUTTON) ? 22 : 0;
 	iButtonPanelLength += BOOLSETTING(SHOW_BBCODE_PANEL) ? 22 *
 #ifdef SCALOLAZ_BB_COLOR_BUTTON
@@ -295,7 +281,7 @@ int MessagePanel::GetPanelWidth()
 	
 	return iButtonPanelLength;
 }
-#ifdef IRAINMAN_INCLUDE_SMILE
+
 LRESULT MessagePanel::onEmoticons(WORD /*wNotifyCode*/, WORD /*wID*/, HWND hWndCtl, BOOL& bHandled)
 {
 	dcassert(!m_isShutdown);
@@ -360,16 +346,14 @@ LRESULT MessagePanel::onEmoPackChange(WORD wNotifyCode, WORD wID, HWND hWndCtl, 
 	}
 	return 0;
 }
-#endif // IRAINMAN_INCLUDE_SMILE
+
 BOOL MessagePanel::OnContextMenu(POINT& pt, WPARAM& wParam)
 {
 	dcassert(!m_isShutdown);
-#ifdef IRAINMAN_INCLUDE_SMILE
 	if (reinterpret_cast<HWND>(wParam) == ctrlEmoticons)
 	{
 		g_emoMenu.CreateEmotionMenu(pt, m_hWnd, IDC_EMOMENU);
 		return TRUE;
 	}
-#endif
 	return FALSE;
 }

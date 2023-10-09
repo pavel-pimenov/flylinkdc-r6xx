@@ -513,12 +513,9 @@ LRESULT UsersFrame::onOpenUserLog(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWn
 void UsersFrame::on(UserAdded, const FavoriteUser& aUser) noexcept
 {
 	dcassert(!ClientManager::isBeforeShutdown());
+	if (!ClientManager::isBeforeShutdown())
 	{
-#ifdef IRAINMAN_USE_NON_RECURSIVE_BEHAVIOR
-		PostMessage(WM_CLOSE);
-#else
 		addUser(aUser);
-#endif
 	}
 }
 void UsersFrame::on(UserRemoved, const FavoriteUser& aUser) noexcept

@@ -31,11 +31,9 @@
 #include "SoundsPage.h"
 #include "UCPage.h"
 #include "LimitPage.h"
-#include "FakeDetectPage.h"
 #include "AVIPreviewPage.h"
 #include "OperaColorsPage.h"
 #include "ToolbarPage.h"
-#include "ClientsPage.h"
 #include "FavoriteDirsPage.h"
 #include "PopupsPage.h"
 #include "SDCPage.h"
@@ -49,7 +47,6 @@
 #include "MiscPage.h"
 #include "MessagesPage.h"
 #include "RangesPage.h"
-#include "RSSPage.h"
 #include "UpdatePage.h"
 #include "DCLSTPage.h"
 #include "FileSharePage.h"
@@ -96,9 +93,6 @@ PropertiesDlg::PropertiesDlg(HWND parent) : TreePropertySheet(CTSTRING(SETTINGS)
 	pages[n++] = new LogPage();
 	pages[n++] = new UCPage();
 	pages[n++] = new LimitPage();
-	pages[n++] = new FakeDetect();
-	pages[n++] = new ClientsPage();
-	pages[n++] = new RSSPage();
 	pages[n++] = new CertificatesPage();
 	pages[n++] = new MiscPage();
 	pages[n++] = new RangesPage();

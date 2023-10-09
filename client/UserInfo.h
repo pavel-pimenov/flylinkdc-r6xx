@@ -24,9 +24,7 @@
 #include "ClientManager.h"
 #include "TaskQueue.h"
 #include "LogManager.h"
-#ifdef IRAINMAN_USE_NG_FAST_USER_INFO
 #include "UserInfoColumns.h"
-#endif
 
 enum Tasks
 {
@@ -88,11 +86,7 @@ class UserInfo : public UserInfoBase
 		static int compareItems(const UserInfo* a, const UserInfo* b, int col);
 		bool is_update(int sortCol)
 		{
-#ifdef IRAINMAN_USE_NG_FAST_USER_INFO
 			return (m_ou->getIdentity().getChanges() & (1 << sortCol)) != 0;
-#else
-			return true;
-#endif
 		}
 		tstring getText(int p_col) const;
 		bool isOP() const
@@ -124,12 +118,10 @@ class UserInfo : public UserInfoBase
 		{
 			return m_ou->getIdentity().getNickT();
 		}
-#ifdef IRAINMAN_USE_HIDDEN_USERS
 		bool isHidden() const
 		{
 			return m_ou->getIdentity().isHidden();
 		}
-#endif
 		const OnlineUserPtr& getOnlineUser() const
 		{
 			return m_ou;

@@ -213,30 +213,7 @@ inline int64_t calcSpeed(int64_t bdiff, uint64_t tdiff)
 {
 	return bdiff * 1024I64 / tdiff;
 }
-/*
-void StatsFrame::addTick(int64_t bdiff, uint64_t tdiff, StatList& lst, AvgList& avg, int scroll)
-{
-    int64_t bspeed = calcSpeed(bdiff, tdiff);
 
-    avg.push_front(bspeed);
-
-    bspeed = 0;
-
-    for (auto ai = avg.cbegin(); ai != avg.cend(); ++ai)
-    {
-        bspeed += *ai;
-    }
-
-    bspeed /= avg.size();
-
-    updateStatList(bspeed, lst, scroll);
-
-    while (avg.size() > SPEED_APPROXIMATION_INTERVAL_S)
-    {
-        avg.pop_back();
-    }
-}
-*/
 LRESULT StatsFrame::onTimer(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 {
 	const uint64_t tick = MainFrame::getLastUpdateTick();

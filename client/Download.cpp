@@ -39,10 +39,6 @@ Download::Download(UserConnection* p_conn, const QueueItemPtr& p_item, const str
 		setType(TYPE_FULL_LIST);
 	}
 	
-#ifdef IRAINMAN_INCLUDE_USER_CHECK
-	if (m_qi->isSet(QueueItem::FLAG_USER_CHECK))
-		setFlag(FLAG_USER_CHECK);
-#endif
 	if (m_qi->isSet(QueueItem::FLAG_USER_GET_IP))
 		setFlag(FLAG_USER_GET_IP);
 		

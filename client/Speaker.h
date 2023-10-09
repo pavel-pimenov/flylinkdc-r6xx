@@ -23,10 +23,8 @@
 #ifndef DCPLUSPLUS_DCPP_SPEAKER_H
 #define DCPLUSPLUS_DCPP_SPEAKER_H
 
-#include <utility>
 #include <vector>
 #include "CFlyThread.h"
-#include "webrtc/rtc_base/synchronization/rw_lock_wrapper.h"
 
 template<typename Listener>
 class Speaker
@@ -91,7 +89,6 @@ class Speaker
 #define fly_fire4 fire
 #define fly_fire5 fire
 #endif
-#if _MSC_VER > 1600 // > VC++2010
 		template<typename... ArgT>
 		void fire(ArgT && ... args)
 		{
@@ -115,197 +112,6 @@ class Speaker
 				(*i)->on(std::forward<ArgT>(args)...);
 			}
 		}
-		
-#else // VC++2010
-		
-#define IRAINMAN_USE_SIMPLE_SPEAKER
-		
-		template<typename T0>
-		void fire(T0 && type) noexcept
-		{
-#ifdef IRAINMAN_USE_SIMPLE_SPEAKER
-			CFlyLock(m_listenerCS);
-			ListenerList tmp = m_listeners;
-			for (auto i = tmp.cbegin(); i != tmp.cend(); ++i)
-#else
-			{
-				FastSharedLock l(m_listenerCS);
-				for (auto i = m_listeners.cbegin(); i != m_listeners.cend(); ++i)
-				{
-					if (!is_listener_zombie(*i))
-					{
-#endif // IRAINMAN_USE_SIMPLE_SPEAKER
-				(*i)->on(std::forward<T0>(type));
-#ifndef IRAINMAN_USE_SIMPLE_SPEAKER
-		}
-}
-}
-after_fire_process();
-#endif // IRAINMAN_USE_SIMPLE_SPEAKER
-}
-template<typename T0, typename T1>
-void fire(T0 && type, T1 && p1) noexcept
-{
-#ifdef IRAINMAN_USE_SIMPLE_SPEAKER
-	CFlyLock(m_listenerCS);
-	ListenerList tmp = m_listeners;
-	for (auto i = tmp.cbegin(); i != tmp.cend(); ++i)
-#else
-	{
-		FastSharedLock l(m_listenerCS);
-		for (auto i = m_listeners.cbegin(); i != m_listeners.cend(); ++i)
-		{
-			if (!is_listener_zombie(*i))
-			{
-#endif // IRAINMAN_USE_SIMPLE_SPEAKER
-		(*i)->on(std::forward<T0>(type), std::forward<T1>(p1));
-#ifndef IRAINMAN_USE_SIMPLE_SPEAKER
-}
-}
-}
-after_fire_process();
-#endif // IRAINMAN_USE_SIMPLE_SPEAKER
-}
-template<typename T0, typename T1, typename T2>
-void fire(T0 && type, T1 && p1, T2 && p2) noexcept
-{
-#ifdef IRAINMAN_USE_SIMPLE_SPEAKER
-	CFlyLock(m_listenerCS);
-	ListenerList tmp = m_listeners;
-	for (auto i = tmp.cbegin(); i != tmp.cend(); ++i)
-#else
-	{
-		FastSharedLock l(m_listenerCS);
-		for (auto i = m_listeners.cbegin(); i != m_listeners.cend(); ++i)
-		{
-			if (!is_listener_zombie(*i))
-			{
-#endif // IRAINMAN_USE_SIMPLE_SPEAKER
-		(*i)->on(std::forward<T0>(type), std::forward<T1>(p1), std::forward<T2>(p2));
-#ifndef IRAINMAN_USE_SIMPLE_SPEAKER
-}
-}
-}
-after_fire_process();
-#endif // IRAINMAN_USE_SIMPLE_SPEAKER
-}
-template<typename T0, typename T1, typename T2, typename T3>
-void fire(T0 && type, T1 && p1, T2 && p2, T3 && p3) noexcept
-{
-#ifdef IRAINMAN_USE_SIMPLE_SPEAKER
-	CFlyLock(m_listenerCS);
-	ListenerList tmp = m_listeners;
-	for (auto i = tmp.cbegin(); i != tmp.cend(); ++i)
-#else
-	{
-		FastSharedLock l(m_listenerCS);
-		for (auto i = m_listeners.cbegin(); i != m_listeners.cend(); ++i)
-		{
-			if (!is_listener_zombie(*i))
-			{
-#endif // IRAINMAN_USE_SIMPLE_SPEAKER
-		(*i)->on(std::forward<T0>(type), std::forward<T1>(p1), std::forward<T2>(p2), std::forward<T3>(p3));
-#ifndef IRAINMAN_USE_SIMPLE_SPEAKER
-}
-}
-}
-after_fire_process();
-#endif // IRAINMAN_USE_SIMPLE_SPEAKER
-}
-template<typename T0, typename T1, typename T2, typename T3, typename T4>
-void fire(T0 && type, T1 && p1, T2 && p2, T3 && p3, T4 && p4) noexcept
-{
-#ifdef IRAINMAN_USE_SIMPLE_SPEAKER
-	CFlyLock(m_listenerCS);
-	ListenerList tmp = m_listeners;
-	for (auto i = tmp.cbegin(); i != tmp.cend(); ++i)
-#else
-	{
-		FastSharedLock l(m_listenerCS);
-		for (auto i = m_listeners.cbegin(); i != m_listeners.cend(); ++i)
-		{
-			if (!is_listener_zombie(*i))
-			{
-#endif // IRAINMAN_USE_SIMPLE_SPEAKER
-		(*i)->on(std::forward<T0>(type), std::forward<T1>(p1), std::forward<T2>(p2), std::forward<T3>(p3), std::forward<T4>(p4));
-#ifndef IRAINMAN_USE_SIMPLE_SPEAKER
-}
-}
-}
-after_fire_process();
-#endif // IRAINMAN_USE_SIMPLE_SPEAKER
-}
-template<typename T0, typename T1, typename T2, typename T3, typename T4, typename T5>
-void fire(T0 && type, T1 && p1, T2 && p2, T3 && p3, T4 && p4, T5 && p5) noexcept
-{
-#ifdef IRAINMAN_USE_SIMPLE_SPEAKER
-	CFlyLock(m_listenerCS);
-	ListenerList tmp = m_listeners;
-	for (auto i = tmp.cbegin(); i != tmp.cend(); ++i)
-#else
-	{
-		FastSharedLock l(m_listenerCS);
-		for (auto i = m_listeners.cbegin(); i != m_listeners.cend(); ++i)
-		{
-			if (!is_listener_zombie(*i))
-			{
-#endif // IRAINMAN_USE_SIMPLE_SPEAKER
-		(*i)->on(std::forward<T0>(type), std::forward<T1>(p1), std::forward<T2>(p2), std::forward<T3>(p3), std::forward<T4>(p4), std::forward<T5>(p5));
-#ifndef IRAINMAN_USE_SIMPLE_SPEAKER
-}
-}
-}
-after_fire_process();
-#endif // IRAINMAN_USE_SIMPLE_SPEAKER
-}
-template<typename T0, typename T1, typename T2, typename T3, typename T4, typename T5, typename T6>
-void fire(T0 && type, T1 && p1, T2 && p2, T3 && p3, T4 && p4, T5 && p5, T6 && p6) noexcept
-{
-#ifdef IRAINMAN_USE_SIMPLE_SPEAKER
-	CFlyLock(m_listenerCS);
-	ListenerList tmp = m_listeners;
-	for (auto i = tmp.cbegin(); i != tmp.cend(); ++i)
-#else
-	{
-		FastSharedLock l(m_listenerCS);
-		for (auto i = m_listeners.cbegin(); i != m_listeners.cend(); ++i)
-		{
-			if (!is_listener_zombie(*i))
-			{
-#endif // IRAINMAN_USE_SIMPLE_SPEAKER
-		(*i)->on(std::forward<T0>(type), std::forward<T1>(p1), std::forward<T2>(p2), std::forward<T3>(p3), std::forward<T4>(p4), std::forward<T5>(p5), std::forward<T6>(p6));
-#ifndef IRAINMAN_USE_SIMPLE_SPEAKER
-}
-}
-}
-after_fire_process();
-#endif // IRAINMAN_USE_SIMPLE_SPEAKER
-}
-template<typename T0, typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7>
-void fire(T0 && type, T1 && p1, T2 && p2, T3 && p3, T4 && p4, T5 && p5, T6 && p6, T7 && p7) noexcept
-{
-#ifdef IRAINMAN_USE_SIMPLE_SPEAKER
-	CFlyLock(m_listenerCS);
-	ListenerList tmp = m_listeners;
-	for (auto i = tmp.cbegin(); i != tmp.cend(); ++i)
-#else
-	{
-		FastSharedLock l(m_listenerCS);
-		for (auto i = m_listeners.cbegin(); i != m_listeners.cend(); ++i)
-		{
-			if (!is_listener_zombie(*i))
-			{
-#endif // IRAINMAN_USE_SIMPLE_SPEAKER
-		(*i)->on(std::forward<T0>(type), std::forward<T1>(p1), std::forward<T2>(p2), std::forward<T3>(p3), std::forward<T4>(p4), std::forward<T5>(p5), std::forward<T6>(p6), std::forward<T7>(p7));
-#ifndef IRAINMAN_USE_SIMPLE_SPEAKER
-}
-}
-}
-after_fire_process();
-#endif // IRAINMAN_USE_SIMPLE_SPEAKER
-}
-#endif // <= VC++2010
-		
 		void addListener(Listener* aListener)
 		{
 			extern volatile bool g_isBeforeShutdown;

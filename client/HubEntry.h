@@ -24,7 +24,6 @@
 
 #include <vector>
 
-#ifdef IRAINMAN_ENABLE_CON_STATUS_ON_FAV_HUBS
 #include "TimerManager.h"
 #include "SettingsManager.h"
 
@@ -107,7 +106,6 @@ class ConnectionStatus
 		GETSET(time_t, lastattempts, LastAttempts);
 		Status status;
 };
-#endif // IRAINMAN_ENABLE_CON_STATUS_ON_FAV_HUBS
 
 
 class HubEntry
@@ -224,7 +222,7 @@ class FavoriteHubEntry
 #ifdef SCALOLAZ_HUB_SWITCH_BTN
 		GETSET(bool, chatusersplitstate, ChatUserSplitState);
 #endif
-		GETSET(bool, hideShare, HideShare); // Save paramethers always IRAINMAN_INCLUDE_HIDE_SHARE_MOD
+		GETSET(bool, hideShare, HideShare);
 		GETSET(bool, showJoins, ShowJoins);
 		GETSET(bool, autobanAntivirusIP, AutobanAntivirusIP);
 		GETSET(bool, autobanAntivirusNick, AutobanAntivirusNick);
@@ -247,7 +245,6 @@ class FavoriteHubEntry
 		GETSET(string, encoding, Encoding);
 		GETSET(string, group, Group);
 		
-#ifdef IRAINMAN_ENABLE_CON_STATUS_ON_FAV_HUBS
 		const ConnectionStatus& getConnectionStatus() const
 		{
 			return connectionStatus;
@@ -260,13 +257,10 @@ class FavoriteHubEntry
 		{
 			connectionStatus.setSavedStatus(p_status, p_lastattempts, p_lastsucces);
 		}
-#endif // IRAINMAN_ENABLE_CON_STATUS_ON_FAV_HUBS
 		
 	private:
 		string m_nick;
-#ifdef IRAINMAN_ENABLE_CON_STATUS_ON_FAV_HUBS
 		ConnectionStatus connectionStatus;
-#endif
 };
 
 class RecentHubEntry

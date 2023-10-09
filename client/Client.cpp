@@ -249,9 +249,7 @@ const FavoriteHubEntry* Client::reloadSettings(bool updateNick)
 			setPassword(hub->getPassword());
 		}
 		
-#ifdef IRAINMAN_INCLUDE_HIDE_SHARE_MOD
 		setHideShare(hub->getHideShare());
-#endif
 		setFavIp(hub->getIP());
 		
 		if (!hub->getEncoding().empty())
@@ -293,9 +291,7 @@ const FavoriteHubEntry* Client::reloadSettings(bool updateNick)
 		}
 		setCurrentDescription(SETTING(DESCRIPTION));
 		setCurrentEmail(SETTING(EMAIL));
-#ifdef IRAINMAN_INCLUDE_HIDE_SHARE_MOD
 		setHideShare(false);
-#endif
 		setFavIp(BaseUtil::emptyString);
 		
 		setSearchInterval(SETTING(MINIMUM_SEARCH_INTERVAL) * 1000, false);
@@ -418,9 +414,7 @@ void Client::on(Connected) noexcept
 			}
 		}
 	}
-#ifdef IRAINMAN_ENABLE_CON_STATUS_ON_FAV_HUBS
 	FavoriteManager::changeConnectionStatus(getHubUrl(), ConnectionStatus::SUCCES);
-#endif
 	fly_fire1(ClientListener::Connected(), this);
 	state = STATE_PROTOCOL;
 }
@@ -443,9 +437,7 @@ void Client::on(Failed, const string& aLine) noexcept
 	if (!ClientManager::isBeforeShutdown())
 	{
 		updateActivity();
-#ifdef IRAINMAN_ENABLE_CON_STATUS_ON_FAV_HUBS
 		FavoriteManager::changeConnectionStatus(getHubUrl(), ConnectionStatus::CONNECTION_FAILURE);
-#endif
 	}
 	fly_fire2(ClientListener::ClientFailed(), this, aLine);
 }
@@ -823,9 +815,6 @@ bool Client::allowPrivateMessagefromUser(const ChatMessage& message)
 	if (isMe(message.m_replyTo))
 	{
 		if (UserManager::expectPasswordFromUser(message.m_to->getUser())
-#ifdef IRAINMAN_ENABLE_AUTO_BAN
-		        || UploadManager::isBanReply(message.m_to->getUser())
-#endif
 		   )
 		{
 			return false;
@@ -845,27 +834,20 @@ bool Client::allowPrivateMessagefromUser(const ChatMessage& message)
 	}
 	else if (BOOLSETTING(SUPPRESS_PMS))
 	{
-#ifdef IRAINMAN_ENABLE_AUTO_BAN
-		if (UploadManager::isBanReply(message.m_replyTo->getUser()))
+		if (FavoriteManager::isNoFavUserOrUserIgnorePrivate(message.m_replyTo->getUser()))
 		{
+			if (BOOLSETTING(LOG_IF_SUPPRESS_PMS))
+			{
+				LocalArray<char, 200> l_buf;
+				_snprintf(l_buf.data(), l_buf.size(), CSTRING(LOG_IF_SUPPRESS_PMS), message.m_replyTo->getIdentity().getNick().c_str(), getHubName().c_str(), getHubUrl().c_str());
+				LogManager::message(l_buf.data());
+			}
 			return false;
 		}
 		else
-#endif
-			if (FavoriteManager::isNoFavUserOrUserIgnorePrivate(message.m_replyTo->getUser()))
-			{
-				if (BOOLSETTING(LOG_IF_SUPPRESS_PMS))
-				{
-					LocalArray<char, 200> l_buf;
-					_snprintf(l_buf.data(), l_buf.size(), CSTRING(LOG_IF_SUPPRESS_PMS), message.m_replyTo->getIdentity().getNick().c_str(), getHubName().c_str(), getHubUrl().c_str());
-					LogManager::message(l_buf.data());
-				}
-				return false;
-			}
-			else
-			{
-				return true;
-			}
+		{
+			return true;
+		}
 	}
 	else if (message.m_replyTo->getIdentity().isHub())
 	{
@@ -942,9 +924,6 @@ bool Client::allowPrivateMessagefromUser(const ChatMessage& message)
 	else
 	{
 		if (FavoriteManager::getInstance()->hasIgnorePM(message.m_replyTo->getUser())
-#ifdef IRAINMAN_ENABLE_AUTO_BAN
-		        || UploadManager::isBanReply(message.m_replyTo->getUser())
-#endif
 		   )
 		{
 			return false;

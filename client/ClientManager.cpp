@@ -203,13 +203,12 @@ bool ClientManager::getUserParams(const UserPtr& user, UserParams& p_params)
 	const OnlineUserPtr u = getOnlineUserL(user);
 	if (u)
 	{
-		const auto i = u->getIdentity();
-		p_params.m_bytesShared = i.getBytesShared();
-		p_params.m_slots = i.getSlots();
-		p_params.m_limit = i.getLimit();
-		p_params.m_ip = i.getIpAsString();
-		p_params.m_tag = i.getTag();
-		p_params.m_nick = i.getNick();
+		p_params.m_bytesShared = u->getIdentity().getBytesShared();
+		p_params.m_slots = u->getIdentity().getSlots();
+		p_params.m_limit = u->getIdentity().getLimit();
+		p_params.m_ip = u->getIdentity().getIpAsString();
+		p_params.m_tag = u->getIdentity().getTag();
+		p_params.m_nick = u->getIdentity().getNick();
 		
 		return true;
 	}
@@ -463,9 +462,6 @@ Client* ClientManager::findClient(const string& p_url)
 
 string ClientManager::findHub(const string& ipPort)
 {
-#ifdef IRAINMAN_CORRRECT_CALL_FOR_CLIENT_MANAGER_DEBUG
-	dcassert(!ipPort.empty());
-#endif
 	if (ipPort.empty())
 		return BaseUtil::emptyString;
 		
@@ -498,9 +494,6 @@ string ClientManager::findHub(const string& ipPort)
 			}
 		}
 	}
-#ifdef IRAINMAN_CORRRECT_CALL_FOR_CLIENT_MANAGER_DEBUG
-	dcassert(!url.empty());
-#endif
 	return url;
 }
 
@@ -1168,9 +1161,7 @@ void ClientManager::createMe(const string& p_cid, const string& p_nick)
 	g_uflylinkdc = std::make_shared<User>(g_pid, p_nick, 0);
 	
 	g_iflylinkdc.setSID(AdcCommand::HUB_SID);
-#ifdef IRAINMAN_USE_HIDDEN_USERS
 	g_iflylinkdc.setHidden();
-#endif
 	g_iflylinkdc.setHub();
 	g_iflylinkdc.setUser(g_uflylinkdc);
 	
@@ -1204,9 +1195,6 @@ const CID& ClientManager::getMyPID()
 
 const string ClientManager::findMyNick(const string& hubUrl)
 {
-#ifdef IRAINMAN_CORRRECT_CALL_FOR_CLIENT_MANAGER_DEBUG
-	dcassert(!hubUrl.empty());
-#endif
 	CFlyReadLock(*g_csClients);
 	const auto& i = g_clients.find(hubUrl);
 	if (i != g_clients.end())
@@ -1397,34 +1385,6 @@ void ClientManager::cheatMessage(Client* p_client, const string& p_report)
 	//}
 }
 
-#ifdef IRAINMAN_INCLUDE_USER_CHECK
-void ClientManager::fileListDisconnected(const UserPtr& p)
-{
-	string report;
-	Client* c = nullptr;
-	{
-		CFlyReadLock(*g_csOnlineUsers);
-		const auto i = g_onlineUsers.find(p->getCID());
-		if (i != g_onlineUsers.end())
-		{
-			auto ou = i->second;
-			auto fileListDisconnects = id.incFileListDisconnects(); // 8 бит не мало?
-			
-			if (SETTING(ACCEPTED_DISCONNECTS) == 0)
-				return;
-				
-			if (fileListDisconnects == SETTING(ACCEPTED_DISCONNECTS))
-			{
-				c = &ou->getClient();
-				report = ou->getIdentity().setCheat(ou->getClientBase(), "Disconnected file list " + Util::toString(fileListDisconnects) + " times", false);
-				sendRawCommandL(*ou, SETTING(DISCONNECT_RAW));
-			}
-		}
-	}
-	cheatMessage(c, report);
-}
-#endif // IRAINMAN_INCLUDE_USER_CHECK
-
 void ClientManager::connectionTimeout(const UserPtr& p)
 {
 	if (ClientManager::isBeforeShutdown())
@@ -1518,45 +1478,16 @@ void ClientManager::checkCheating(const UserPtr& p, DirectoryListing* dl)
 	cheatMessage(client, report);
 }
 #endif // FLYLINKDC_USE_DETECT_CHEATING
-#ifdef IRAINMAN_INCLUDE_USER_CHECK
-void ClientManager::setClientStatus(const UserPtr& p, const string& aCheatString, const int aRawCommand, bool aBadClient)
-{
-	Client* client;
-	OnlineUserPtr ou;
-	string report;
-	{
-		CFlyReadLock(*g_csOnlineUsers);
-		const auto i = g_onlineUsers.find(p->getCID());
-		if (i == g_onlineUsers.end())
-			return;
-			
-		ou = i->second;
-		ou->getIdentity().updateClientType(*ou);
-		if (!aCheatString.empty())
-		{
-			report += ou->getIdentity().setCheat(ou->getClientBase(), aCheatString, aBadClient);
-		}
-		if (aRawCommand != -1)
-		{
-			sendRawCommandL(*ou, aRawCommand);
-		}
-		
-		client = &(ou->getClient());
-	}
-	//client->updatedMyINFO(ou); // Не шлем обновку подписчикам!
-	cheatMessage(client, report);
-}
-#endif // IRAINMAN_INCLUDE_USER_CHECK
+
 void ClientManager::setSupports(const UserPtr& p, const StringList & aSupports, const uint8_t knownUcSupports)
 {
 	CFlyWriteLock(*g_csOnlineUsers);
 	const auto i = g_onlineUsers.find(p->getCID());
 	if (i != g_onlineUsers.end())
 	{
-		auto id = i->second->getIdentity();
-		id.setKnownUcSupports(knownUcSupports);
+		i->second->getIdentity().setKnownUcSupports(knownUcSupports);
 		{
-			AdcSupports::setSupports(id, aSupports);
+			AdcSupports::setSupports(i->second->getIdentity(), aSupports);
 		}
 	}
 }
@@ -1591,19 +1522,17 @@ void ClientManager::reportUser(const HintedUser& user)
 		l_client->reportUser(l_report);
 	}
 }
-
-#ifndef IRAINMAN_IDENTITY_IS_NON_COPYABLE
+/*
 Identity ClientManager::getIdentity(const UserPtr& user)
 {
-	CFlyReadLock(*g_csOnlineUsers);
-	const OnlineUser* ou = getOnlineUserL(user);
-	if (ou)
-		return  ou->getIdentity();
-	else
-		return Identity();
+    CFlyReadLock(*g_csOnlineUsers);
+    const auto ou = getOnlineUserL(user);
+    if (ou)
+        return  ou->getIdentity();
+    else
+        return Identity();
 }
-#endif
-
+*/
 StringList ClientManager::getUsersByIp(const string &p_ip) // TODO - boost
 {
 	StringList l_result;

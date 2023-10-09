@@ -36,16 +36,12 @@ PropPage::Item MessagesChatPage::g_items_chat[] =
 
 MessagesChatPage::ListItem MessagesChatPage::g_listItems_chat[] =
 {
-#ifdef IRAINMAN_INCLUDE_SMILE
 	{ SettingsManager::SHOW_EMOTIONS_BTN, ResourceManager::SHOW_EMOTIONS_BTN },
 	{ SettingsManager::CHAT_ANIM_SMILES, ResourceManager::CHAT_ANIM_SMILES },
 	{ SettingsManager::SMILE_SELECT_WND_ANIM_SMILES, ResourceManager::SMILE_SELECT_WND_ANIM_SMILES },
-#endif
 	{ SettingsManager::SHOW_SEND_MESSAGE_BUTTON, ResourceManager::SHOW_SEND_MESSAGE_BUTTON},
-#ifdef IRAINMAN_USE_BB_CODES
 	{ SettingsManager::FORMAT_BB_CODES, ResourceManager::FORMAT_BB_CODES },
 	{ SettingsManager::FORMAT_BB_CODES_COLORS, ResourceManager::FORMAT_BB_CODES_COLORS },
-#endif
 	{ SettingsManager::SHOW_BBCODE_PANEL, ResourceManager::SHOW_BBCODE_PANEL},
 	{ SettingsManager::FORMAT_BOT_MESSAGE, ResourceManager::FORMAT_BOT_MESSAGE },
 	{ SettingsManager::MULTILINE_CHAT_INPUT, ResourceManager::MULTILINE_CHAT_INPUT },

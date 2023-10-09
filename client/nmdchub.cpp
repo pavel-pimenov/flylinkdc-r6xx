@@ -39,9 +39,6 @@ NmdcHub::NmdcHub(const string& aHubURL, bool p_is_secure, bool p_is_auto_connect
 	m_modeChar(0),
 	m_version_fly_info(0),
 	m_lastBytesShared(0),
-#ifdef IRAINMAN_ENABLE_AUTO_BAN
-	m_hubSupportsSlots(false),
-#endif // IRAINMAN_ENABLE_AUTO_BAN
 	m_lastUpdate(0),
 	m_is_get_user_ip_from_hub(false)
 {
@@ -170,9 +167,6 @@ OnlineUserPtr NmdcHub::getUser(const string& aNick, bool p_hub, bool p_first_loa
 	if (l_is_CID_User)
 	{
 		ClientManager::getInstance()->putOnline(l_find.first->second);
-#ifdef IRAINMAN_INCLUDE_USER_CHECK
-		UserManager::checkUser(ou);
-#endif
 	}
 	return l_find.first->second;
 }
@@ -228,9 +222,6 @@ OnlineUserPtr NmdcHub::getUser(const string& aNick, bool p_hub, bool p_first_loa
 		ClientManager::getInstance()->putOnline(ou, true);
 		//  is_all_my_info_loaded() без true не начинает качать при загрузке
 		//  https://github.com/pavel-pimenov/flylinkdc-r5xx/issues/1682
-#ifdef IRAINMAN_INCLUDE_USER_CHECK
-		UserManager::checkUser(ou);
-#endif
 	}
 	return ou;
 }
@@ -347,12 +338,6 @@ void NmdcHub::updateFromTag(Identity& id, const string & tag, bool p_is_version_
 		{
 			const uint16_t slots = Util::toInt(i->c_str() + 2);
 			id.setSlots(slots);
-#ifdef IRAINMAN_ENABLE_AUTO_BAN
-			if (slots > 0)
-			{
-				m_hubSupportsSlots = true;
-			}
-#endif // IRAINMAN_ENABLE_AUTO_BAN
 		}
 		else if (i->compare(0, 2, "M:", 2) == 0)
 		{
@@ -459,11 +444,7 @@ void NmdcHub::NmdcSearch(const SearchParam& p_search_param)
 				const auto& sr = *i;
 				str += sr.toSR(*this);
 				str[str.length() - 1] = 5;
-//#ifdef IRAINMAN_USE_UNICODE_IN_NMDC
-//				str += name;
-//#else
 				str += fromUtf8(l_name);
-//#endif
 				str += '|';
 			}
 			
@@ -563,9 +544,7 @@ string NmdcHub::calcExternalIP() const
 void NmdcHub::searchParse(const string& param, bool p_is_passive)
 {
 	if (state != STATE_NORMAL
-#ifdef IRAINMAN_INCLUDE_HIDE_SHARE_MOD
 	        || getHideShare()
-#endif
 	   )
 	{
 		return;
@@ -2257,10 +2236,7 @@ void NmdcHub::myInfo(bool p_always_send, bool p_is_force_passive)
 	{
 		status |= NmdcSupports::TLS;
 	}
-	//const string l_currentCounts = l_fhe && l_fhe->getExclusiveHub() ? getCountsIndivid() : getCounts();
 	const string l_currentCounts = getCounts();
-	
-	// IRAINMAN_USE_UNICODE_IN_NMDC
 	string l_currentMyInfo;
 	l_currentMyInfo.resize(512);
 	const string l_version = getClientName() + " V:" + getTagVersion();
@@ -2352,9 +2328,7 @@ void NmdcHub::myInfo(bool p_always_send, bool p_is_force_passive)
 	}
 	
 	const int64_t l_currentBytesShared =
-#ifdef IRAINMAN_INCLUDE_HIDE_SHARE_MOD
 	    getHideShare() ? 0 :
-#endif
 	    ShareManager::getShareSize();
 	    
 #ifdef FLYLINKDC_BETA
@@ -3177,12 +3151,10 @@ void NmdcHub::on(BufferedSocketListener::Line, const string& aLine) noexcept
 	if (!ClientManager::isBeforeShutdown())
 	{
 		Client::on(Line(), aLine); // TODO skip Start
-#ifdef IRAINMAN_INCLUDE_PROTO_DEBUG_FUNCTION
 		if (BOOLSETTING(NMDC_DEBUG))
 		{
 			fly_fire2(ClientListener::StatusMessage(), this, "<NMDC>" + toUtf8(aLine) + "</NMDC>");
 		}
-#endif
 		onLine(aLine);
 	}
 }

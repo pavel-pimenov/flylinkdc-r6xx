@@ -57,9 +57,6 @@ PropPage::ListItem TabsPage::boldItems[] =
 	{ SettingsManager::BOLD_PM, ResourceManager::PRIVATE_MESSAGE },
 	{ SettingsManager::BOLD_SEARCH, ResourceManager::SEARCH },
 	{ SettingsManager::BOLD_WAITING_USERS, ResourceManager::WAITING_USERS },
-#ifdef IRAINMAN_INCLUDE_RSS
-	{ SettingsManager::BOLD_NEWRSS, ResourceManager::NEW_RSS_NEWS},
-#endif
 	{ 0, ResourceManager::SETTINGS_AUTO_AWAY }
 };
 

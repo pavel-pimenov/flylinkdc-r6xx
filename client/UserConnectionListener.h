@@ -54,9 +54,6 @@ class UserConnectionListener
 		typedef X<19> ProtocolError;
 		typedef X<20> FileNotAvailable;
 		typedef X<21> ListLength;
-		/*#ifdef IRAINMAN_ENABLE_AUTO_BAN
-		        typedef X<22> BanMessage;
-		#endif*/
 		typedef X<23> CheckUserIP;
 		
 		//virtual void on(UserBytesSent, UserConnection*, size_t p_Bytes, size_t p_Actual) noexcept { }
@@ -80,9 +77,6 @@ class UserConnectionListener
 		virtual void on(FileNotAvailable, UserConnection*) noexcept { }
 		virtual void on(Updated, UserConnection*) noexcept { }
 		virtual void on(ListLength, UserConnection*, const string&) noexcept { }
-		/*#ifdef IRAINMAN_ENABLE_AUTO_BAN
-		        virtual void on(BanMessage, UserConnection*, const string&) noexcept { }
-		#endif*/
 		virtual void on(CheckUserIP, UserConnection*) noexcept { }
 		
 		virtual void on(AdcCommand::SUP, UserConnection*, const AdcCommand&) noexcept { }

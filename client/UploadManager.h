@@ -195,10 +195,6 @@ class UploadManager : private ClientManagerListener, private UserConnectionListe
 		
 		void load();
 		static void save();
-#ifdef IRAINMAN_ENABLE_AUTO_BAN
-		static bool isBanReply(const UserPtr& user);
-#endif // IRAINMAN_ENABLE_AUTO_BAN
-		
 		static time_t getReservedSlotTime(const UserPtr& aUser);
 		static void shutdown();
 		
@@ -267,25 +263,6 @@ class UploadManager : private ClientManagerListener, private UserConnectionListe
 		bool prepareFile(UserConnection* aSource, const string& aType, const string& aFile, int64_t aResume, int64_t& aBytes, bool listRecursive = false);
 		bool hasUpload(const UserConnection* aSource, const string& p_source_file) const;
 		
-#ifdef IRAINMAN_ENABLE_AUTO_BAN
-		struct banmsg_t
-		{
-			uint32_t tick;
-			int slots, share, limit, min_slots, max_slots, min_share, min_limit;
-			bool same(const banmsg_t& a) const
-			{
-				return ((slots ^ a.slots) | (share ^ a.share) | (limit ^ a.limit) |
-				        (min_slots ^ a.min_slots) |
-				        (max_slots ^ a.max_slots) |
-				        (min_share ^ a.min_share) | (min_limit ^ a.min_limit)) == 0;
-			}
-		};
-		typedef std::unordered_map<string, banmsg_t> BanMap;
-		bool handleBan(UserConnection* aSource/*, bool forceBan, bool noChecks*/);
-		static bool hasAutoBan(const UserPtr& aUser);
-		static BanMap g_lastBans;
-		static std::unique_ptr<webrtc::RWLockWrapper> g_csBans;
-#endif // IRAINMAN_ENABLE_AUTO_BAN
 };
 
 #endif // !defined(UPLOAD_MANAGER_H)

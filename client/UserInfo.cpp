@@ -147,9 +147,6 @@ int UserInfo::compareItems(const UserInfo* a, const UserInfo* b, int col)
 tstring UserInfo::getText(int p_col) const
 {
 	//PROFILE_THREAD_SCOPED();
-#ifdef IRAINMAN_USE_HIDDEN_USERS
-	// dcassert(isHidden() == false);
-#endif
 	switch (p_col)
 	{
 		case COLUMN_NICK:
@@ -172,12 +169,6 @@ tstring UserInfo::getText(int p_col) const
 		{
 			return Text::toT(getIdentity().getApplication());
 		}
-#ifdef IRAINMAN_INCLUDE_FULL_USER_INFORMATION_ON_HUB
-		case COLUMN_CONNECTION:
-		{
-			return getDownloadSpeed();
-		}
-#endif
 #ifdef FLYLINKDC_USE_LASTIP_AND_USER_RATIO
 		case COLUMN_UPLOAD:
 		{
@@ -231,12 +222,6 @@ tstring UserInfo::getText(int p_col) const
 		{
 			return Text::toT(getIdentity().getEmail());
 		}
-#ifdef IRAINMAN_INCLUDE_FULL_USER_INFORMATION_ON_HUB
-		case COLUMN_MODE:
-		{
-			return (getIdentity().isTcpActive(getClient())) ? _T("A") : _T("P");
-		}
-#endif
 		case COLUMN_HUBS:
 		{
 			return getHubs();

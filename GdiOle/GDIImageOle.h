@@ -1,6 +1,6 @@
 // GDIImage.h : Declaration of the CGDIImageOle
 #pragma once
-#ifdef IRAINMAN_INCLUDE_GDI_OLE
+
 #include <algorithm>
 #include "Resource.h"       // main symbols
 #include <atlctl.h>
@@ -20,8 +20,8 @@ class IGDIImageDeleteNotify: public IUnknown
 		virtual void SetDelete() = 0;
 };
 
-//#define CTRL_WINDOWED
 
+using namespace ATL;
 // CGDIImageOle
 class ATL_NO_VTABLE CGDIImageOle :
 	public CComObjectRootEx<CComSingleThreadModel>,
@@ -224,6 +224,3 @@ class ATL_NO_VTABLE CGDIImageOle :
 		static HWND g_ActiveMDIWindow;
 };
 
-// OBJECT_ENTRY_AUTO(__uuidof(GDIImage), CGDIImageOle)
-
-#endif //IRAINMAN_INCLUDE_GDI_OLE

@@ -42,32 +42,16 @@ class Identity
 			CHANGES_DESCRIPTION = 1 << COLUMN_DESCRIPTION, // done
 			CHANGES_APPLICATION = 1 << COLUMN_APPLICATION,
 			CHANGES_CONNECTION =
-#ifdef IRAINMAN_INCLUDE_FULL_USER_INFORMATION_ON_HUB
-			    1 << COLUMN_CONNECTION, // done
-#else
 			    0, // done
-#endif
 			CHANGES_EMAIL = 1 << COLUMN_EMAIL, // done
 			CHANGES_VERSION =
-#ifdef IRAINMAN_INCLUDE_FULL_USER_INFORMATION_ON_HUB
-			    1 << COLUMN_VERSION,
-#else
 			    0,
-#endif
 			CHANGES_MODE =
-#ifdef IRAINMAN_INCLUDE_FULL_USER_INFORMATION_ON_HUB
-			    1 << COLUMN_MODE,
-#else
 			    0,
-#endif
 			CHANGES_HUBS = 1 << COLUMN_HUBS, // done
 			CHANGES_SLOTS = 1 << COLUMN_SLOTS, // done
 			CHANGES_UPLOAD_SPEED =
-#ifdef IRAINMAN_INCLUDE_FULL_USER_INFORMATION_ON_HUB
-			    1 << COLUMN_UPLOAD_SPEED,
-#else
 			    0,
-#endif
 			CHANGES_IP = 1 << COLUMN_IP, // done
 			CHANGES_GEO_LOCATION = 1 << COLUMN_GEO_LOCATION, // done
 #ifdef FLYLINKDC_USE_LASTIP_AND_USER_RATIO
@@ -102,9 +86,7 @@ class Identity
 			CT_SU = 0x08,
 			CT_OWNER = 0x10,
 			CT_HUB = 0x20, //-V112
-#ifdef IRAINMAN_USE_HIDDEN_USERS
 			CT_HIDDEN = 0x40,
-#endif
 			CT_USE_IP6 = 0x80
 		};
 		
@@ -143,8 +125,8 @@ class Identity
 		{
 			NOT_CHECKED = 0x01,
 			CHECKED     = 0x02,
-			BAD_CLIENT  = 0x04 //-V112
-			, BAD_LIST    = 0x08
+			BAD_CLIENT  = 0x04,
+			BAD_LIST    = 0x08
 		};
 #endif
 		enum NotEmptyString
@@ -153,30 +135,13 @@ class Identity
 			DE = 0x02
 		};
 		
-#ifndef IRAINMAN_IDENTITY_IS_NON_COPYABLE
+	private:
 		Identity(const Identity& rhs)
 		{
 			*this = rhs; // Use operator= since we have to lock before reading...
 		}
-		Identity& operator=(const Identity& rhs)
-		{
-			FastUniqueLock l(g_cs);
-			user = rhs.user;
-			m_stringInfo = rhs.m_stringInfo;
-#ifdef FLYLINKDC_USE_ANTIVIRUS_DB
-			m_virus_type = rhs.m_virus_type;
-#endif
-#ifdef FLYLINKDC_USE_P2P_GUARD
-			m_is_p2p_guard_calc = rhs.m_is_p2p_guard_calc;
-#endif
-			m_is_real_user_ip_from_hub = rhs.m_is_real_user_ip_from_hub;
-			m_bytes_shared = rsh.m_bytes_shared;
-			m_is_ext_json = rhs.m_is_ext_json;
-			
-			memcpy(&m_bits_info, &rhs.m_bits_info, sizeof(m_bits_info));
-			return *this;
-		}
-#endif // IRAINMAN_IDENTITY_IS_NON_COPYABLE
+		Identity& operator=(const Identity& rhs);
+	public:
 		~Identity();
 		
 #define GSMC(n, x, c)\
@@ -455,7 +420,6 @@ class Identity
 		{
 			return getClientTypeBit(CT_REGGED);
 		}
-#ifdef IRAINMAN_USE_HIDDEN_USERS
 		void setHidden() // "CT"
 		{
 			return setClientTypeBit(CT_HIDDEN, true);
@@ -464,7 +428,6 @@ class Identity
 		{
 			return getClientTypeBit(CT_HIDDEN);
 		}
-#endif
 #ifdef FLYLINKDC_USE_DETECT_CHEATING
 		GSUINT(8, FakeCard);
 		GSUINTBIT(8, FakeCard);
@@ -493,9 +456,7 @@ class Identity
 	
 		enum eTypeUint32Attr
 		{
-#ifdef IRAINMAN_USE_NG_FAST_USER_INFO
 			e_Changes,
-#endif
 			e_SID,
 			e_HubNormalRegOper, // 30 bit.
 			e_InfoBitMap,
@@ -519,11 +480,8 @@ class Identity
 	private:
 		void change(const uint32_t p_change)
 		{
-#ifdef IRAINMAN_USE_NG_FAST_USER_INFO
-			BOOST_STATIC_ASSERT(COLUMN_LAST - 1 <= 32); // [!] If you require more than 16 columns in the hub, please increase the size of m_changed_status and correct types in the code harness around her.
-			//FastUniqueLock l(g_cs);
+			BOOST_STATIC_ASSERT(COLUMN_LAST - 1 <= 32);
 			get_uint32(e_Changes) |= p_change;
-#endif
 		}
 	public:
 		bool is_ip_change_and_clear()
@@ -535,14 +493,12 @@ class Identity
 			}
 			return false;
 		}
-#ifdef IRAINMAN_USE_NG_FAST_USER_INFO
 		uint32_t getChanges()
 		{
 			uint32_t ret = 0;
 			std::swap(ret, get_uint32(e_Changes));
 			return ret;
 		}
-#endif
 		
 	public:
 	
@@ -887,10 +843,6 @@ class OnlineUser :  public UserInfoBase
 			COLUMN_MESSAGES,
 #endif
 			COLUMN_EMAIL,
-#ifdef IRAINMAN_INCLUDE_FULL_USER_INFORMATION_ON_HUB
-			COLUMN_VERSION,
-			COLUMN_MODE,
-#endif
 			COLUMN_HUBS,
 			COLUMN_SLOTS,
 			COLUMN_CID,
@@ -976,12 +928,10 @@ class OnlineUser :  public UserInfoBase
 		{
 			return m_identity.isHub();
 		}
-#ifdef IRAINMAN_USE_HIDDEN_USERS
 		bool isHidden() const
 		{
 			return m_identity.isHidden();
 		}
-#endif
 		tstring getText(uint8_t col) const;
 	private:
 		Identity m_identity;

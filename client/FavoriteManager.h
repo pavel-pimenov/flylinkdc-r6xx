@@ -199,9 +199,7 @@ class FavoriteManager : private Speaker<FavoriteManagerListener>,
 		
 		FavoriteHubEntry* addFavorite(const FavoriteHubEntry& aEntry, const AutoStartType p_autostart = NOT_CHANGE);
 		void removeFavorite(const FavoriteHubEntry* entry);
-#ifdef IRAINMAN_ENABLE_CON_STATUS_ON_FAV_HUBS
 		static void changeConnectionStatus(const string& hubUrl, ConnectionStatus::Status status);
-#endif
 		
 		static FavoriteHubEntry* getFavoriteHubEntry(const string& aServer);
 		

@@ -157,9 +157,6 @@ class SearchFrame : public MDITabChildWindowImpl < SearchFrame, RGB(127, 127, 25
 		COMMAND_ID_HANDLER(IDC_COPY_FULL_MAGNET_LINK, onCopy)
 		COMMAND_ID_HANDLER(IDC_COPY_WMLINK, onCopy)
 		COMMAND_ID_HANDLER(IDC_COPY_TTH, onCopy)
-#ifdef IRAINMAN_SEARCH_OPTIONS
-		COMMAND_ID_HANDLER(IDC_HUB, onHubChange)
-#endif
 		COMMAND_ID_HANDLER(IDC_PURGE, onPurge)
 		COMMAND_ID_HANDLER(IDC_CLOSE_ALL_SEARCH_FRAME, onCloseAll)
 		COMMAND_ID_HANDLER(IDC_CLOSE_WINDOW, onCloseWindow)
@@ -219,9 +216,6 @@ class SearchFrame : public MDITabChildWindowImpl < SearchFrame, RGB(127, 127, 25
 		LRESULT onSearchByTTH(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
 		LRESULT onMarkAsDownloaded(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
 		LRESULT onCopy(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
-#ifdef IRAINMAN_SEARCH_OPTIONS
-		LRESULT onHubChange(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
-#endif
 		LRESULT onCustomDraw(int /*idCtrl*/, LPNMHDR pnmh, BOOL& bHandled);
 		LRESULT onFilterChar(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/);
 		LRESULT onSelChange(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);

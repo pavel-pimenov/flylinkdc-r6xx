@@ -31,9 +31,6 @@
 #include "FsUtils.h"
 #endif
 
-#define IRAINMAN_NTFS_STREAM_TTH
-
-
 STANDARD_EXCEPTION(HashException);
 class File;
 
@@ -141,7 +138,6 @@ class HashManager : public Singleton<HashManager>, public Speaker<HashManagerLis
 		bool isHashingPaused() const;
 		
 		
-#ifdef IRAINMAN_NTFS_STREAM_TTH
 		class StreamStore   // greylink dc++: work with ntfs stream
 		{
 			public:
@@ -194,7 +190,6 @@ class HashManager : public Singleton<HashManager>, public Speaker<HashManagerLis
 #endif
 		};
 		StreamStore m_streamstore;
-#endif // IRAINMAN_NTFS_STREAM_TTH
 		
 #ifdef RIP_USE_STREAM_SUPPORT_DETECTION
 		void SetFsDetectorNotifyWnd(HWND hWnd);
@@ -387,9 +382,7 @@ class HashManager : public Singleton<HashManager>, public Speaker<HashManagerLis
 		
 		void addFile(__int64 p_path_id, const string& p_file_name, int64_t p_time_stamp, const TigerTree& p_tth, int64_t p_size, CFlyMediaInfo& p_out_media);
 	private:
-#ifdef IRAINMAN_NTFS_STREAM_TTH
 		void addFileFromStream(int64_t p_path_id, const string& p_name, const TigerTree& p_TT, int64_t p_size);
-#endif
 		
 		Hasher hasher;
 		

@@ -23,7 +23,6 @@
 #include "ShareManager.h"
 #include "../client/FlyFeatures/flyServer.h"
 
-#ifdef IRAINMAN_NTFS_STREAM_TTH
 
 const string HashManager::StreamStore::g_streamName(".gltth");
 
@@ -172,18 +171,15 @@ void HashManager::addFileFromStream(int64_t p_path_id, const string& p_name, con
 	CFlyMediaInfo l_out_media;
 	addFile(p_path_id, p_name, l_TimeStamp, p_TT, p_size, l_out_media);
 }
-#endif // IRAINMAN_NTFS_STREAM_TTH
+
 
 #if 0
 bool HashManager::checkTTH(const string& fname, const string& fpath, int64_t p_path_id, int64_t aSize, int64_t aTimeStamp, TTHValue& p_out_tth)
 {
 	const bool l_db = CFlylinkDBManager::getInstance()->check_tth(fname, p_path_id, aSize, aTimeStamp, p_out_tth);
-#ifdef IRAINMAN_NTFS_STREAM_TTH
 	const string name = fpath + fname;
-#endif // IRAINMAN_NTFS_STREAM_TTH
 	if (!l_db)
 	{
-#ifdef IRAINMAN_NTFS_STREAM_TTH
 		TigerTree l_TT;
 		if (m_streamstore.loadTree(name, l_TT))
 		{
@@ -191,15 +187,11 @@ bool HashManager::checkTTH(const string& fname, const string& fpath, int64_t p_p
 		}
 		else
 		{
-#endif // IRAINMAN_NTFS_STREAM_TTH      
 			hasher.hashFile(p_path_id, name, aSize);
 			return false;
 			
-#ifdef IRAINMAN_NTFS_STREAM_TTH
 		}
-#endif // IRAINMAN_NTFS_STREAM_TTH
 	}
-#ifdef IRAINMAN_NTFS_STREAM_TTH
 	else
 	{
 		if (File::isExist(name))
@@ -212,7 +204,6 @@ bool HashManager::checkTTH(const string& fname, const string& fpath, int64_t p_p
 			}
 		}
 	}
-#endif // IRAINMAN_NTFS_STREAM_TTH
 	return true;
 }
 #endif
@@ -230,7 +221,6 @@ void HashManager::hashDone(__int64 p_path_id, const string& aFileName, int64_t a
 	try
 	{
 		addFile(p_path_id, aFileName, aTimeStamp, tth, p_size, l_out_media);
-#ifdef IRAINMAN_NTFS_STREAM_TTH
 		if (BOOLSETTING(SAVE_TTH_IN_NTFS_FILESTREAM))
 		{
 			if (!p_is_ntfs)
@@ -242,7 +232,6 @@ void HashManager::hashDone(__int64 p_path_id, const string& aFileName, int64_t a
 		{
 			HashManager::getInstance()->m_streamstore.deleteStream(aFileName);
 		}
-#endif // IRAINMAN_NTFS_STREAM_TTH
 	}
 	catch (const Exception& e)
 	{
@@ -686,24 +675,15 @@ int HashManager::Hasher::run()
 				TigerTree slowTTH(bs);
 				TigerTree* tth = &fastTTH;
 				bool l_is_ntfs = false;
-#ifdef IRAINMAN_NTFS_STREAM_TTH
 				if (l_size > 0 && HashManager::getInstance()->m_streamstore.loadTree(l_fname, fastTTH, l_size))
 				{
 					l_is_ntfs = true;
 					LogManager::message(STRING(LOAD_TTH_FROM_NTFS) + ' ' + l_fname);
 				}
-#endif
-#ifdef _WIN32
-#ifdef IRAINMAN_NTFS_STREAM_TTH
 				if (!l_is_ntfs)
 				{
-#endif
 					if (l_is_virtualBuf == false || !BOOLSETTING(FAST_HASH) || !fastHash(l_fname, l_buf, l_buf_size, fastTTH, l_size, l_is_link))
 					{
-#else
-				if (!BOOLSETTING(FAST_HASH) || !fastHash(fname, 0, fastTTH, l_size))
-				{
-#endif
 						if (m_running)
 						{
 							tth = &slowTTH;
@@ -749,9 +729,7 @@ int HashManager::Hasher::run()
 					{
 						l_sizeLeft = 0; // Variable 'l_sizeLeft' is assigned a value that is never used.
 					}
-#ifdef IRAINMAN_NTFS_STREAM_TTH
 				}
-#endif
 				const uint64_t end = GET_TICK();
 				if (end > start) // TODO: Why is not possible?
 				{
@@ -768,18 +746,15 @@ int HashManager::Hasher::run()
 						m_path_id = CFlylinkDBManager::getInstance()->get_path_id(l_path, true, false, l_is_no_mediainfo, false);
 						dcassert(m_path_id);
 					}
-#ifdef IRAINMAN_NTFS_STREAM_TTH
 					if (l_is_ntfs)
 					{
 						HashManager::getInstance()->hashDone(m_path_id, l_fname, timestamp, *tth, speed, l_is_ntfs, l_size);
 					}
-					else
-#endif
-						if (tth)
-						{
-							tth->finalize();
-							HashManager::getInstance()->hashDone(m_path_id, l_fname, timestamp, *tth, speed, l_is_ntfs, l_size);
-						}
+					else if (tth)
+					{
+						tth->finalize();
+						HashManager::getInstance()->hashDone(m_path_id, l_fname, timestamp, *tth, speed, l_is_ntfs, l_size);
+					}
 				}
 			}
 			catch (const FileException& e)

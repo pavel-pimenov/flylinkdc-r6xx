@@ -21,17 +21,13 @@
 #pragma once
 
 #include "WinUtil.h"
-#ifdef IRAINMAN_INCLUDE_SMILE
 #include "EmoticonsDlg.h"
-#endif
 
 class MessagePanel
 {
 		BEGIN_MSG_MAP(MessagePanel)
-#ifdef IRAINMAN_INCLUDE_SMILE
 		COMMAND_ID_HANDLER(IDC_EMOT, onEmoticons)
 		COMMAND_RANGE_HANDLER(IDC_EMOMENU, IDC_EMOMENU + GetEmotionMenuItemsCount(), onEmoPackChange)
-#endif
 		END_MSG_MAP()
 		
 	public:
@@ -41,24 +37,19 @@ class MessagePanel
 		void DestroyPanel(bool p_is_shutdown);
 		LRESULT  UpdatePanel(CRect& rect);
 		static int GetPanelWidth();
-#ifdef IRAINMAN_INCLUDE_SMILE
 		int GetEmotionMenuItemsCount()
 		{
 			return g_emoMenu.GetItemsCount();
 		}
 		LRESULT onEmoticons(WORD /*wNotifyCode*/, WORD /*wID*/, HWND hWndCtl, BOOL& bHandled);
 		LRESULT onEmoPackChange(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled);
-#endif // IRAINMAN_INCLUDE_SMILE
 		BOOL OnContextMenu(POINT& pt, WPARAM& wParam);
 		
 	private:
 		CFlyToolTipCtrl m_tooltip;
 		CEdit*& m_ctrlMessage;
-		
 		CButton ctrlShowUsers;
-#ifdef IRAINMAN_INCLUDE_SMILE
 		CButton ctrlEmoticons;
-#endif
 		CButton ctrlSendMessageBtn;
 		CButton ctrlMultiChatBtn;
 		CButton ctrlBoldBtn;
@@ -73,17 +64,13 @@ class MessagePanel
 		CButton ctrlColorBtn;
 #endif
 		CButton ctrlOSAGOBtn;
-#ifdef IRAINMAN_INCLUDE_SMILE
 		static CEmotionMenu g_emoMenu;
-#endif
 		HWND m_hWnd;
 		bool m_isShutdown;
 		
 		static HIconWrapper g_hSendMessageIco;
 		static HIconWrapper g_hMultiChatIco;
-#ifdef IRAINMAN_INCLUDE_SMILE
 		static HIconWrapper g_hEmoticonIco;
-#endif
 		static HIconWrapper g_hBoldIco;
 		static HIconWrapper g_hUndelineIco;
 		static HIconWrapper g_hStrikeIco;

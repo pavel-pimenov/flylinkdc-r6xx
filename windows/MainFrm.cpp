@@ -52,12 +52,9 @@
 #include "iTunesCOMInterface.h"
 #include "ToolbarManager.h"
 #include "AboutDlgIndex.h"
-#include "RSSnewsFrame.h"
 #include "AddMagnet.h"
 #include "CheckTargetDlg.h"
-#ifdef IRAINMAN_INCLUDE_SMILE
-# include "../GdiOle/GDIImage.h"
-#endif
+#include "../GdiOle/GDIImage.h"
 #include "../client/ConnectionManager.h"
 #include "../client/ConnectivityManager.h"
 #include "../client/UploadManager.h"
@@ -119,14 +116,11 @@ DWORD g_color_shadow;
 DWORD g_color_light;
 DWORD g_color_face;
 DWORD g_color_filllight;
-#ifdef IRAINMAN_USE_GDI_PLUS_TAB
 Gdiplus::Color g_color_shadow_gdi;
 Gdiplus::Color g_color_light_gdi;
 Gdiplus::Color g_color_face_gdi;
 Gdiplus::Color g_color_filllight_gdi;
-
 Gdiplus::Pen g_pen_conter_side(Gdiplus::Color(), 1);
-#endif // IRAINMAN_USE_GDI_PLUS_TAB
 
 #define FLYLINKDC_USE_TASKBUTTON_PROGRESS
 
@@ -169,9 +163,7 @@ MainFrame::MainFrame() :
 	m_custom_app_icon_exist(false),
 #endif
 	m_is_missedAutoConnect(false),
-#ifdef IRAINMAN_IP_AUTOUPDATE
 	m_elapsedMinutesFromlastIPUpdate(0),
-#endif
 	m_index_new_version_menu_item(0),
 	m_appIcon(nullptr),
 	m_trayIcon(nullptr),
@@ -210,10 +202,7 @@ MainFrame::~MainFrame()
 	winampImages.Destroy();
 	winampImagesHot.Destroy();
 	m_ShutdownIcon.reset();
-	
-#ifdef IRAINMAN_INCLUDE_SMILE
 	CAGEmotionSetup::destroyEmotionSetup();
-#endif
 	WinUtil::uninit();
 }
 
@@ -839,9 +828,7 @@ void MainFrame::openDefaultWindows()
 	if (BOOLSETTING(OPEN_SEARCH_SPY)) PostMessage(WM_COMMAND, IDC_SEARCH_SPY);
 	if (BOOLSETTING(OPEN_NETWORK_STATISTICS)) PostMessage(WM_COMMAND, IDC_NET_STATS);
 	if (BOOLSETTING(OPEN_NOTEPAD)) PostMessage(WM_COMMAND, IDC_NOTEPAD);
-#ifdef IRAINMAN_INCLUDE_PROTO_DEBUG_FUNCTION
 	if (BOOLSETTING(OPEN_CDMDEBUG)) PostMessage(WM_COMMAND, IDC_CDMDEBUG_WINDOW);
-#endif
 	if (!BOOLSETTING(SHOW_STATUSBAR)) PostMessage(WM_COMMAND, ID_VIEW_STATUS_BAR);
 	if (!BOOLSETTING(SHOW_TOOLBAR)) PostMessage(WM_COMMAND, ID_VIEW_TOOLBAR);
 	if (!BOOLSETTING(SHOW_TRANSFERVIEW))
@@ -850,9 +837,6 @@ void MainFrame::openDefaultWindows()
 	}
 	if (!BOOLSETTING(SHOW_WINAMP_CONTROL)) PostMessage(WM_COMMAND, ID_TOGGLE_TOOLBAR);
 	if (!BOOLSETTING(SHOW_QUICK_SEARCH)) PostMessage(WM_COMMAND, ID_TOGGLE_QSEARCH);
-#ifdef IRAINMAN_INCLUDE_RSS
-	if (BOOLSETTING(OPEN_RSS)) PostMessage(WM_COMMAND, IDC_RSS);
-#endif
 }
 
 int MainFrame::tuneTransferSplit()
@@ -1033,7 +1017,6 @@ void MainFrame::onMinute(uint64_t aTick)
 {
 	m_threadedStatisticSender.tryStartThread(false);
 	
-#ifdef IRAINMAN_IP_AUTOUPDATE
 	const auto interval = SETTING(IPUPDATE_INTERVAL);
 	if (BOOLSETTING(IPUPDATE) && interval != 0)
 	{
@@ -1044,7 +1027,6 @@ void MainFrame::onMinute(uint64_t aTick)
 			m_threadedUpdateIP.updateIP(BOOLSETTING(IPUPDATE));
 		}
 	}
-#endif
 }
 
 
@@ -1622,17 +1604,12 @@ void MainFrame::getTaskbarState(int p_code /* = 0*/)    // MainFrm: The event ha
 
 LRESULT MainFrame::onSpeakerAutoConnect(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, BOOL& /*bHandled*/)
 {
-#ifdef IRAINMAN_USE_NON_RECURSIVE_BEHAVIOR
 	FavoriteHubEntryList tmp;
 	{
 		FavoriteManager::LockInstanceHubs lockedInstanceHubs;
 		tmp = lockedInstanceHubs.getFavoriteHubs();
 	}
 	autoConnect(tmp);
-#else
-	FavoriteManager::LockInstanceHubs lockedInstanceHubs;
-	autoConnect(lockedInstanceHubs.getFavoriteHubs());
-#endif
 	return 0;
 }
 
@@ -1651,16 +1628,10 @@ LRESULT MainFrame::onSpeaker(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, BOOL& 
 		}
 		getTaskbarState();
 		
-#ifdef IRAINMAN_FAST_FLAT_TAB
 		bool u = false;
-#endif
 		const TStringList& str = *pstr;
 		if (m_ctrlStatus.IsWindow())
 		{
-#ifndef IRAINMAN_FAST_FLAT_TAB
-			bool u = false;
-#endif
-			
 			if (HashManager::getInstance()->IsHashing())
 			{
 				ctrlHashProgress.SetPos(HashManager::getInstance()->GetProgressValue());
@@ -2052,19 +2023,12 @@ LRESULT MainFrame::onOpenWindows(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*
 				case IDC_UPLOAD_QUEUE:
 					WaitingUsersFrame::openWindow();
 					break;
-#ifdef IRAINMAN_INCLUDE_PROTO_DEBUG_FUNCTION
 				case IDC_CDMDEBUG_WINDOW:
 					CDMDebugFrame::openWindow();
 					break;
-#endif
 				case IDC_RECENTS:
 					RecentHubsFrame::openWindow();
 					break;
-#ifdef IRAINMAN_INCLUDE_RSS
-				case IDC_RSS:
-					RSSNewsFrame::openWindow();
-					break;
-#endif
 				default:
 					dcassert(0);
 					break;
@@ -2167,9 +2131,6 @@ LRESULT MainFrame::OnFileSettings(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWn
 			
 			if (isShutDown()) ctrlToolbar.CheckButton(IDC_SHUTDOWN, true);
 			else ctrlToolbar.CheckButton(IDC_SHUTDOWN, false);
-#ifndef IRAINMAN_FAST_FLAT_TAB
-			ctrlTab.Invalidate();
-#endif
 			if (WinUtil::GetTabsPosition() != SETTING(TABS_POS))
 			{
 				WinUtil::SetTabsPosition(SETTING(TABS_POS));
@@ -2194,7 +2155,6 @@ LRESULT MainFrame::OnFileSettings(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWn
 	}
 	return 0;
 }
-#ifdef IRAINMAN_IP_AUTOUPDATE
 void MainFrame::getIPupdate()
 {
 	string l_external_ip;
@@ -2246,7 +2206,7 @@ void MainFrame::getIPupdate()
 		}
 	}
 }
-#endif
+
 
 LRESULT MainFrame::onUpdateWindowTitle(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 {
@@ -2389,9 +2349,7 @@ void MainFrame::autoConnect(const FavoriteHubEntry::List& fl)
 				}
 			}
 		}
-#ifdef IRAINMAN_INCLUDE_SMILE
 		CAGEmotionSetup::reCreateEmotionSetup();
-#endif
 	}
 	UpdateLayout(true);
 	if (frm_last)
@@ -2903,9 +2861,7 @@ void MainFrame::UpdateLayout(BOOL bResizeBars /* = TRUE */)
 		if (m_ctrlTab.IsWindow())
 		{
 			m_ctrlTab.MoveWindow(rc);
-#ifdef IRAINMAN_FAST_FLAT_TAB
 			m_ctrlTab.SmartInvalidate();
-#endif
 		}
 		SetSplitterRect(rc2);
 	}
@@ -3692,7 +3648,7 @@ void MainFrame::toggleLockToolbars() const
 		l_rebar.SetBandInfo(i, &rbi);
 	}
 }
-#ifdef IRAINMAN_INCLUDE_SMILE
+
 LRESULT MainFrame::OnAnimChangeFrame(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM lParam, BOOL& bHandled)
 {
 	if (!CGDIImage::isShutdown() && !MainFrame::isAppMinimized())
@@ -3719,7 +3675,7 @@ LRESULT MainFrame::OnAnimChangeFrame(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM lP
 	}
 	return 0;
 }
-#endif // IRAINMAN_INCLUDE_SMILE
+
 LRESULT MainFrame::onAddMagnet(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
 	AddMagnet dlg;

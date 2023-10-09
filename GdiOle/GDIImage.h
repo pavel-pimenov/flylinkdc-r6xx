@@ -1,5 +1,5 @@
 #pragma once
-#ifdef IRAINMAN_INCLUDE_GDI_OLE
+
 #include <gdiplus.h>
 #include "../client/util_flylinkdc.h"
 #include <atomic>
@@ -112,4 +112,3 @@ class CGDIImage
 		
         LONG Release();
 };
-#endif // IRAINMAN_INCLUDE_GDI_OLE

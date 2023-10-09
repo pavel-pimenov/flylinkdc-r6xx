@@ -49,12 +49,10 @@ static const string UPDATE_DESCRIPTION_R = "Update6.rtf";
 
 static string UPDATE_NODE_NAME = "Update6";
 
-#ifdef IRAINMAN_AUTOUPDATE_ALL_USERS_DATA
 static const string UPDATE_AU_URL = "http://update.fly-server.ru/update/alluser";
 static const string UPDATE_UPDATE_FILE = "UpdateAU.xml";
 static const string UPDATE_SIGN_FILE = "UpdateAU.sign";
 static const string UPDATE_DESCRIPTION_FILE = "UpdateAU.rtf";
-#endif
 
 bool AutoUpdate::g_exitOnUpdate = false;
 
@@ -229,9 +227,7 @@ void AutoUpdate::startUpdateThisThread()
 		CFlySafeGuard<int> l_satrt(m_isUpdateStarted);
 		InetDownloadReporter::getInstance()->ReportResultWait(0);
 		unique_ptr<AutoUpdateObject> l_autoUpdateObject(new AutoUpdateObject());
-#ifdef IRAINMAN_AUTOUPDATE_ALL_USERS_DATA
 		unique_ptr<AutoUpdateObject> l_autoUpdateObjectAU(new AutoUpdateObject());
-#endif
 		const string l_serverURL = getAUTOUPDATE_SERVER_URL();
 		const string l_serverURL_AU = UPDATE_AU_URL;
 		string l_base_update_url;
@@ -244,37 +240,28 @@ void AutoUpdate::startUpdateThisThread()
 				UPDATE_DESCRIPTION(), 
 				l_autoUpdateObject,
 			    l_base_update_url);
-#ifdef IRAINMAN_AUTOUPDATE_ALL_USERS_DATA
-			// TODO - результат не юзается const string basesUpdateDescription =
 			getUpdateFilesList(STRING(PROGRAM_DATA), l_serverURL_AU, "UpdateAU",
 			                   UPDATE_UPDATE_FILE, UPDATE_DESCRIPTION_FILE, l_autoUpdateObjectAU,
 			                   l_base_updateAU_url);
-#endif
 			if (!l_autoUpdateObject->m_Modules.empty()
-#ifdef IRAINMAN_AUTOUPDATE_ALL_USERS_DATA
 			        || !l_autoUpdateObjectAU->m_Modules.empty()
-#endif
 			   )
 			{
 				// Process with Object
 				// check what files to update....
 				AutoUpdateFiles l_files4Update;
 				AutoUpdateFiles l_files4UpdateInSettings;
-#ifdef IRAINMAN_AUTOUPDATE_ALL_USERS_DATA
 				AutoUpdateFiles l_files4UpdateInAllUsersSettings;
 				AutoUpdateFiles l_files4Description;
-#endif
 				int64_t l_totalSize = 0;
 				if (SETTING(AUTOUPDATE_IGNORE_VERSION) != l_autoUpdateObject->m_sVersion)
 				{
 					l_totalSize += checkFilesToNeedsUpdate(l_files4Update, l_files4Description, l_autoUpdateObject->m_Modules, Util::getExePath());
-#ifdef IRAINMAN_AUTOUPDATE_ALL_USERS_DATA
 					l_totalSize += checkFilesToNeedsUpdate(l_files4UpdateInAllUsersSettings, l_files4Description, l_autoUpdateObjectAU->m_Modules, Util::getConfigPath(
 #ifndef USE_SETTINGS_PATH_TO_UPDATA_DATA
 					                                           true
 #endif
 					                                       ));
-#endif
 				}
 				else
 				{
@@ -282,13 +269,9 @@ void AutoUpdate::startUpdateThisThread()
 					message(STRING(AUTOUPDATE_IGNORED));
 				}
 				bool l_needsToStartUpdate = !l_files4Update.empty();
-#ifdef IRAINMAN_AUTOUPDATE_ALL_USERS_DATA
 				const bool needsUpdateBases = !l_files4UpdateInAllUsersSettings.empty();
-#endif
 				if (l_needsToStartUpdate
-#ifdef IRAINMAN_AUTOUPDATE_ALL_USERS_DATA
 				        || needsUpdateBases
-#endif
 				   )
 				{
 					m_isUpdate = false;
@@ -314,7 +297,6 @@ void AutoUpdate::startUpdateThisThread()
 							l_check_message = STRING(AUTOUPDATE_ERROR_VERIF) + "\r\n url: " + l_check_file_url;
 							l_is_invalid_sign_update = true;
 						}
-#ifdef IRAINMAN_AUTOUPDATE_ALL_USERS_DATA
 						l_check_file_url = l_base_updateAU_url + UPDATE_SIGN_FILE;
 						l_check_result = l_autoUpdateObjectAU->checkSignXML(l_check_file_url);
 						if (l_check_result == false)
@@ -323,7 +305,6 @@ void AutoUpdate::startUpdateThisThread()
 							l_check_message += STRING(AUTOUPDATE_ERROR_VERIF) + "\r\n url: " + l_check_file_url;
 							l_is_invalid_sign_update = false;
 						}
-#endif
 						if (!l_check_message.empty())
 						{
 							CFlyHTTPDownloader::nextMirror();
@@ -347,9 +328,7 @@ void AutoUpdate::startUpdateThisThread()
 					l_message += STRING(AUTOUPDATE_DOWNLOAD_START2);
 					l_message += ' ' + Util::formatBytes(l_totalSize) + " (";
 					l_message += Util::toString(l_files4Update.size() + l_files4UpdateInSettings.size()
-#ifdef IRAINMAN_AUTOUPDATE_ALL_USERS_DATA
 					                            + l_files4UpdateInAllUsersSettings.size()
-#endif
 					                           ) + ' ' + STRING(FILES) + "). ";
 					message(l_message);
 					
@@ -422,13 +401,11 @@ void AutoUpdate::startUpdateThisThread()
 						
 						// Update Settings file at first
 						if (preparingFiles(l_files4UpdateInSettings, Util::getConfigPath(), l_errorFileName))
-#ifdef IRAINMAN_AUTOUPDATE_ALL_USERS_DATA
 							if (preparingFiles(l_files4UpdateInAllUsersSettings, Util::getConfigPath(
 #ifndef USE_SETTINGS_PATH_TO_UPDATA_DATA
 							                       true
 #endif
 							                   ), l_errorFileName))
-#endif
 								if (preparingFiles(l_files4Update, g_tempFolder, l_errorFileName))
 								{
 									if (l_needsToStartUpdate && l_userAsk)
@@ -541,10 +518,8 @@ SettingsManager::IntSetting AutoUpdate::getSettingByTitle(const string& wTitle)
 		return SettingsManager::AUTOUPDATE_LANG;
 	if (wTitle == "portalbrowser")
 		return SettingsManager::AUTOUPDATE_PORTALBROWSER;
-#ifdef IRAINMAN_INCLUDE_SMILE
 	if (wTitle == "emopacks")
 		return SettingsManager::AUTOUPDATE_EMOPACKS;
-#endif
 	if (wTitle == "sounds")
 		return SettingsManager::AUTOUPDATE_SOUNDS;
 	if (wTitle == "iconthemes")
@@ -553,12 +528,10 @@ SettingsManager::IntSetting AutoUpdate::getSettingByTitle(const string& wTitle)
 		return SettingsManager::AUTOUPDATE_COLORTHEMES;
 	if (wTitle == "documentation")
 		return SettingsManager::AUTOUPDATE_DOCUMENTATION;
-#ifdef IRAINMAN_AUTOUPDATE_ALL_USERS_DATA
 	if (wTitle == "geoip")
 		return SettingsManager::AUTOUPDATE_GEOIP;
 	if (wTitle == "customlocation")
 		return SettingsManager::AUTOUPDATE_CUSTOMLOCATION;
-#endif // IRAINMAN_AUTOUPDATE_ALL_USERS_DATA
 	return SettingsManager::INT_LAST;
 }
 
@@ -566,8 +539,6 @@ bool AutoUpdate::needUpdateFile(const AutoUpdateFile& p_file, const string& p_ou
 {
 	switch (p_file.m_sys)
 	{
-#ifdef IRAINMAN_AUTOUPDATE_ARCH_DIFFERENCE
-#else // IRAINMAN_AUTOUPDATE_ARCH_DIFFERENCE
 		case AutoUpdateFile::OsUnknown:
 #if defined(_WIN64)
 		case AutoUpdateFile::x86_legacy:
@@ -575,7 +546,6 @@ bool AutoUpdate::needUpdateFile(const AutoUpdateFile& p_file, const string& p_ou
 		case AutoUpdateFile::x86_64:
 #endif
 			return false;
-#endif // IRAINMAN_AUTOUPDATE_ARCH_DIFFERENCE
 	}
 	
 	// Find file. If not found -> return true;
@@ -846,8 +816,6 @@ AutoUpdateFile AutoUpdate::parseNode(const XMLParser::XMLNode& Node)
 		file.m_sys = AutoUpdateFile::x86_legacy;
 	else if (wSys == "x64")
 		file.m_sys = AutoUpdateFile::x86_64;
-#ifdef IRAINMAN_AUTOUPDATE_ARCH_DIFFERENCE
-#endif
 	else
 		file.m_sys = AutoUpdateFile::OsUnknown;
 		

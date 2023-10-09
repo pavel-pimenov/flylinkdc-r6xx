@@ -45,14 +45,8 @@ class UserConnection : public Speaker<UserConnectionListener>,
 		static const string FEATURE_ADC_BASE;
 		static const string FEATURE_ADC_BZIP;
 		static const string FEATURE_ADC_TIGR;
-#ifdef SMT_ENABLE_FEATURE_BAN_MSG
-		static const string FEATURE_BANMSG;
-#endif
 		
 		static const string g_FILE_NOT_AVAILABLE;
-#if defined (FLYLINKDC_USE_DOS_GUARD) && defined (IRAINMAN_DISALLOWED_BAN_MSG)
-		static const string g_PLEASE_UPDATE_YOUR_CLIENT;
-#endif
 		
 		enum KnownSupports
 		{
@@ -70,9 +64,7 @@ class UserConnection : public Speaker<UserConnectionListener>,
 		{
 			FLAG_INTERNAL_FIRST = FLAG_SUPPORTS_LAST,
 			FLAG_NMDC                   = FLAG_INTERNAL_FIRST << 1,
-#ifdef IRAINMAN_ENABLE_OP_VIP_MODE
 			FLAG_OP                     = FLAG_INTERNAL_FIRST << 2,
-#endif
 			FLAG_UPLOAD                 = FLAG_INTERNAL_FIRST << 3, //-V112
 			FLAG_DOWNLOAD               = FLAG_INTERNAL_FIRST << 4,
 			FLAG_INCOMING               = FLAG_INTERNAL_FIRST << 5,
@@ -122,11 +114,7 @@ class UserConnection : public Speaker<UserConnectionListener>,
 		// NMDC stuff
 		void myNick(const string& aNick)
 		{
-//#ifdef IRAINMAN_USE_UNICODE_IN_NMDC
-//			send("$MyNick " + aNick + '|');
-//#else
 			send("$MyNick " + Text::fromUtf8(aNick, m_last_encoding) + '|');
-//#endif
 		}
 		void lock(const string& aLock, const string& aPk)
 		{
@@ -436,16 +424,13 @@ class UcSupports
 						else CHECK_FEAT(ZLIB_GET)
 							else CHECK_FEAT(TTHL)
 								else CHECK_FEAT(TTHF)
-#ifdef SMT_ENABLE_FEATURE_BAN_MSG
-									else CHECK_FEAT(BANMSG)
-#endif
-										else
-										{
-											unknownSupports.push_back(*i);
-										}
-										
+									else
+									{
+										unknownSupports.push_back(*i);
+									}
+									
 #undef CHECK_FEAT
-										
+									
 			}
 			return unknownSupports;
 		}
@@ -463,9 +448,6 @@ class UcSupports
 			CHECK_FEAT(ZLIB_GET);
 			CHECK_FEAT(TTHL);
 			CHECK_FEAT(TTHF);
-#ifdef SMT_ENABLE_FEATURE_BAN_MSG
-			CHECK_FEAT(BANMSG);
-#endif
 			
 #undef CHECK_FEAT
 			

@@ -57,17 +57,13 @@ UpdatePage::ListItem UpdatePage::listComponents[] =
 	{ SettingsManager::AUTOUPDATE_UTILITIES, ResourceManager::AUTOUPDATE_UTILITIES},
 	{ SettingsManager::AUTOUPDATE_LANG, ResourceManager::AUTOUPDATE_LANG},
 	{ SettingsManager::AUTOUPDATE_PORTALBROWSER, ResourceManager::AUTOUPDATE_PORTALBROWSER},
-#ifdef IRAINMAN_INCLUDE_SMILE
 	{ SettingsManager::AUTOUPDATE_EMOPACKS, ResourceManager::AUTOUPDATE_EMOPACKS},
-#endif
 	{ SettingsManager::AUTOUPDATE_SOUNDS, ResourceManager::AUTOUPDATE_SOUNDS},
 	{ SettingsManager::AUTOUPDATE_ICONTHEMES, ResourceManager::AUTOUPDATE_ICONTHEMES},
 	{ SettingsManager::AUTOUPDATE_COLORTHEMES, ResourceManager::AUTOUPDATE_COLORTHEMES},
 	{ SettingsManager::AUTOUPDATE_DOCUMENTATION, ResourceManager::AUTOUPDATE_DOCUMENTATION},
-#ifdef IRAINMAN_AUTOUPDATE_ALL_USERS_DATA
 	{ SettingsManager::AUTOUPDATE_GEOIP, ResourceManager::AUTOUPDATE_GEOIP},
 	{ SettingsManager::AUTOUPDATE_CUSTOMLOCATION, ResourceManager::AUTOUPDATE_CUSTOMLOCATION},
-#endif
 	{ 0, ResourceManager::SETTINGS_AUTO_AWAY }
 };
 

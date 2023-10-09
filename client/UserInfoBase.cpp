@@ -40,22 +40,6 @@ void UserInfoBase::getUserResponses()
 	}
 }
 
-#ifdef IRAINMAN_INCLUDE_USER_CHECK
-void UserInfoBase::checkList()
-{
-	if (getUser())
-	{
-		try
-		{
-			QueueManager::getInstance()->addList(getUser(), QueueItem::FLAG_USER_CHECK);
-		}
-		catch (const Exception& e)
-		{
-			LogManager::message(e.getError());
-		}
-	}
-}
-#endif
 void UserInfoBase::doReport(const string& hubHint)
 {
 	if (getUser())
@@ -221,16 +205,11 @@ uint8_t UserInfoBase::getImage(const OnlineUser& ou)
 //	static int g_count = 0;
 //	dcdebug("UserInfoBase::getImage count = %d ou = %p\n", ++g_count, &ou);
 #endif
-	const auto id = ou.getIdentity();
+
+	const auto isOp = ou.getIdentity().isOp();
 	const auto u = ou.getUser();
-#ifdef _DEBUG
-	if (!(u->getCID() == id.getUser()->getCID()))
-	{
-		dcassert(0);
-	}
-#endif
 	uint8_t image;
-	if (id.isOp())
+	if (isOp)
 	{
 		image = 0;
 	}
@@ -240,10 +219,10 @@ uint8_t UserInfoBase::getImage(const OnlineUser& ou)
 	}
 	else
 	{
-		auto speed = id.getLimit();
+		auto speed = ou.getIdentity().getLimit();
 		if (speed == 0)
 		{
-			speed = id.getDownloadSpeed();
+			speed = ou.getIdentity().getDownloadSpeed();
 		}
 		if (speed >= 10 * 1024 * 1024) // over 10 MB
 		{
@@ -263,7 +242,7 @@ uint8_t UserInfoBase::getImage(const OnlineUser& ou)
 	{
 		image += 5;
 	}
-	if (!id.isTcpActive())
+	if (!ou.getIdentity().isTcpActive())
 	{
 		// Users we can't connect to...
 		image += 10;
@@ -285,11 +264,7 @@ void FavUserTraits::init(const UserInfoBase& ui)
 	dcassert(ui.getUser());
 	if (ui.getUser())
 	{
-#ifndef IRAINMAN_ALLOW_ALL_CLIENT_FEATURES_ON_NMDC
-		if (ui->getUser()->isSet(User::NMDC))
-			adcOnly = false;
-#endif
-			
+	
 		Flags::MaskType l_flags;
 		isFav = FavoriteManager::getFavUserParam(ui.getUser(), l_flags, uploadLimit);
 		

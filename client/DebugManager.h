@@ -4,8 +4,6 @@
 #if !defined __DEBUGMANAGER_H
 #define __DEBUGMANAGER_H
 
-#ifdef IRAINMAN_INCLUDE_PROTO_DEBUG_FUNCTION
-
 #include "TimerManager.h"
 #include "Util.h"
 
@@ -57,5 +55,4 @@ class DebugManager : public Singleton<DebugManager>, public Speaker<DebugManager
 #else
 #define COMMAND_DEBUG(message, direction, ip)
 #define DETECTION_DEBUG(message)
-#endif // IRAINMAN_INCLUDE_PROTO_DEBUG_FUNCTION
 #endif

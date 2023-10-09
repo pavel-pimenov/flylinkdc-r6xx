@@ -317,12 +317,9 @@ int ObtainMonitors() // Count of a Display Devices
 #endif
 static int Run(LPTSTR /*lpstrCmdLine*/ = NULL, int nCmdShow = SW_SHOWDEFAULT)
 {
-#ifdef IRAINMAN_INCLUDE_GDI_INIT
-	// Initialize GDI+.
 	static Gdiplus::GdiplusStartupInput g_gdiplusStartupInput;
 	static ULONG_PTR g_gdiplusToken = 0;
 	Gdiplus::GdiplusStartup(&g_gdiplusToken, &g_gdiplusStartupInput, NULL);
-#endif // IRAINMAN_INCLUDE_GDI_INIT
 	
 	CMessageLoop theLoop;
 	_Module.AddMessageLoop(&theLoop);
@@ -445,9 +442,7 @@ static int Run(LPTSTR /*lpstrCmdLine*/ = NULL, int nCmdShow = SW_SHOWDEFAULT)
 #if defined(__PROFILER_ENABLED__)
 	Profiler::dumphtml();
 #endif
-#ifdef IRAINMAN_INCLUDE_GDI_INIT
 	Gdiplus::GdiplusShutdown(g_gdiplusToken);
-#endif
 #ifdef FLYLINKDC_USE_GATHER_STATISTICS
 	// TODO - flush file
 #endif

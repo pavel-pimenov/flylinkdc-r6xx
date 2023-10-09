@@ -21,9 +21,6 @@
 
 #pragma once
 
-
-#ifdef IRAINMAN_INCLUDE_SMILE
-
 #include "ImageDataObject.h"
 #include <unordered_set>
 
@@ -122,6 +119,5 @@ class CAGEmotionSetup
 		void cleanup();
 };
 
-#endif // IRAINMAN_INCLUDE_SMILE
 
 #endif // AGEMOTIONSETUP_H__

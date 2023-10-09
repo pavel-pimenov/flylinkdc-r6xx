@@ -390,7 +390,6 @@ void QueueManager::FileQueue::moveTarget(const QueueItemPtr& qi, const string& a
 	add(qi);
 }
 
-#ifndef IRAINMAN_NON_COPYABLE_USER_QUEUE_ON_USER_CONNECTED_OR_DISCONECTED
 bool QueueManager::UserQueue::userIsDownloadedFiles(const UserPtr& aUser, QueueItemList& p_status_update_array)
 {
 	bool hasDown = false;
@@ -411,7 +410,6 @@ bool QueueManager::UserQueue::userIsDownloadedFiles(const UserPtr& aUser, QueueI
 	}
 	return hasDown;
 }
-#endif // IRAINMAN_NON_COPYABLE_USER_QUEUE_ON_USER_CONNECTED_OR_DISCONECTED
 
 void QueueManager::UserQueue::addL(const QueueItemPtr& qi)
 {
@@ -430,11 +428,7 @@ void QueueManager::UserQueue::addL(const QueueItemPtr& qi, const UserPtr& aUser,
 	
 // ѕри первой загрузки очереди из базы не зовем calcAverageSpeedAndCalcAndGetDownloadedBytesL
 	if (p_is_first_load == false
-	        && (
-#ifdef IRAINMAN_INCLUDE_USER_CHECK
-	            qi->isSet(QueueItem::FLAG_USER_CHECK) ||
-#endif
-	            qi->calcAverageSpeedAndCalcAndGetDownloadedBytesL() > 0))
+	        && (qi->calcAverageSpeedAndCalcAndGetDownloadedBytesL() > 0))
 	{
 		uq.push_front(qi);
 	}
@@ -3018,29 +3012,12 @@ void QueueManager::on(SearchManagerListener::SR, const std::unique_ptr<SearchRes
 // ClientManagerListener
 void QueueManager::on(ClientManagerListener::UserConnected, const UserPtr& aUser) noexcept
 {
-#ifdef IRAINMAN_NON_COPYABLE_USER_QUEUE_ON_USER_CONNECTED_OR_DISCONECTED
-	bool hasDown = false;
-	{
-		RLock(*QueueItem::g_cs);
-		for (size_t i = 0; i < QueueItem::LAST; ++i)
-		{
-			const auto j = g_userQueue.getListL(i).find(aUser);
-			if (j != g_userQueue.getListL(i).end())
-			{
-				fly_fire1(QueueManagerListener::StatusUpdatedList(), j->second);
-				if (i != QueueItem::PAUSED)
-					hasDown = true;
-			}
-		}
-	}
-#else
 	QueueItemList l_status_update_array;
 	const bool hasDown = g_userQueue.userIsDownloadedFiles(aUser, l_status_update_array);
 	if (!l_status_update_array.empty())
 	{
 		fly_fire1(QueueManagerListener::StatusUpdatedList(), l_status_update_array);
 	}
-#endif // IRAINMAN_NON_COPYABLE_USER_QUEUE_ON_USER_CONNECTED_OR_DISCONECTED
 	
 	if (hasDown)
 	{
@@ -3051,17 +3028,6 @@ void QueueManager::on(ClientManagerListener::UserConnected, const UserPtr& aUser
 
 void QueueManager::on(ClientManagerListener::UserDisconnected, const UserPtr& aUser) noexcept
 {
-#ifdef IRAINMAN_NON_COPYABLE_USER_QUEUE_ON_USER_CONNECTED_OR_DISCONECTED
-	RLock(*QueueItem::g_cs);
-	for (size_t i = 0; i < QueueItem::LAST; ++i)
-	{
-		const auto j = g_userQueue.getListL(i).find(aUser);
-		if (j != g_userQueue.getListL(i).end())
-		{
-			fly_fire1(QueueManagerListener::StatusUpdatedList(), j->second);
-		}
-	}
-#else
 	QueueItemList l_status_update_array;
 	g_userQueue.userIsDownloadedFiles(aUser, l_status_update_array);
 	if (!l_status_update_array.empty())
@@ -3071,7 +3037,6 @@ void QueueManager::on(ClientManagerListener::UserDisconnected, const UserPtr& aU
 			fly_fire1(QueueManagerListener::StatusUpdatedList(), l_status_update_array);
 		}
 	}
-#endif // IRAINMAN_NON_COPYABLE_USER_QUEUE_ON_USER_CONNECTED_OR_DISCONECTED
 	g_userQueue.removeRunning(aUser); // fix https://github.com/pavel-pimenov/flylinkdc-r5xx/issues/1673
 }
 

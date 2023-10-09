@@ -130,9 +130,6 @@ OnlineUserPtr AdcHub::getUser(const uint32_t aSID, const CID& aCID, const string
 	if (aSID != AdcCommand::HUB_SID)
 	{
 		ClientManager::getInstance()->putOnline(ou, true);
-#ifdef IRAINMAN_INCLUDE_USER_CHECK
-		UserManager::checkUser(ou);
-#endif
 	}
 	return ou;
 }
@@ -268,9 +265,6 @@ void AdcHub::handle(AdcCommand::INF, const AdcCommand& c) noexcept
 		LogManager::message("CID [-1] Params = " + c.getParamString(false));
 #endif
 		ou = getUser(c.getFrom(), CID(), c.getNick());
-#ifdef IRAINMAN_USE_HIDDEN_USERS
-		ou->getIdentity().setHidden();
-#endif
 		ou->getUser()->setFlag(User::IS_MYINFO);
 	}
 	else
@@ -283,8 +277,6 @@ void AdcHub::handle(AdcCommand::INF, const AdcCommand& c) noexcept
 		return;
 	}
 	
-	auto& id = ou->getIdentity();
-	auto& u = ou->getUser();
 	string l_ip4;
 	string l_ip6;
 	for (auto i = c.getParameters().cbegin(); i != c.getParameters().cend(); ++i)
@@ -298,28 +290,28 @@ void AdcHub::handle(AdcCommand::INF, const AdcCommand& c) noexcept
 		{
 			case TAG('S', 'L'):
 			{
-				id.setSlots(Util::toInt(i->c_str() + 2));
+				ou->getIdentity().setSlots(Util::toInt(i->c_str() + 2));
 				break;
 			}
 			case TAG('F', 'S'):
 			{
-				id.setFreeSlots(Util::toInt(i->c_str() + 2));
+				ou->getIdentity().setFreeSlots(Util::toInt(i->c_str() + 2));
 				break;
 			}
 			case TAG('S', 'S'):
 			{
-				changeBytesSharedL(id, Util::toInt64(i->c_str() + 2));
+				changeBytesSharedL(ou->getIdentity(), Util::toInt64(i->c_str() + 2));
 				break;
 			}
 			
 			case TAG('S', 'U'):
 			{
-				AdcSupports::setSupports(id, i->substr(2));
+				AdcSupports::setSupports(ou->getIdentity(), i->substr(2));
 				break;
 			}
 			case TAG('S', 'F'):
 			{
-				id.setSharedFiles(Util::toInt(i->c_str() + 2));
+				ou->getIdentity().setSharedFiles(Util::toInt(i->c_str() + 2));
 				break;
 			}
 			case TAG('I', '4'):
@@ -330,7 +322,7 @@ void AdcHub::handle(AdcCommand::INF, const AdcCommand& c) noexcept
 			case TAG('U', '4'):
 			case TAG('U', '6'):
 			{
-				id.setUdpPort(Util::toInt(i->substr(2)));
+				ou->getIdentity().setUdpPort(Util::toInt(i->substr(2)));
 				break;
 			}
 			case TAG('I', '6'):
@@ -340,12 +332,12 @@ void AdcHub::handle(AdcCommand::INF, const AdcCommand& c) noexcept
 			}
 			case TAG('E', 'M'):
 			{
-				id.setEmail(i->substr(2));
+				ou->getIdentity().setEmail(i->substr(2));
 				break;
 			}
 			case TAG('D', 'E'):
 			{
-				id.setDescription(i->substr(2));
+				ou->getIdentity().setDescription(i->substr(2));
 				break;
 			}
 			case TAG('C', 'O'):
@@ -361,7 +353,7 @@ void AdcHub::handle(AdcCommand::INF, const AdcCommand& c) noexcept
 			}
 			case TAG('D', 'S'):
 			{
-				id.setDownloadSpeed(Util::toUInt32(i->c_str() + 2));
+				ou->getIdentity().setDownloadSpeed(Util::toUInt32(i->c_str() + 2));
 				break;
 			}
 			case TAG('O', 'P'):
@@ -373,67 +365,67 @@ void AdcHub::handle(AdcCommand::INF, const AdcCommand& c) noexcept
 			
 			case TAG('C', 'T'):
 			{
-				id.setClientType(Util::toInt(i->c_str() + 2));
+				ou->getIdentity().setClientType(Util::toInt(i->c_str() + 2));
 				break;
 			}
 			case TAG('U', 'S'):
 			{
-				id.setLimit(Util::toUInt32(i->c_str() + 2));
+				ou->getIdentity().setLimit(Util::toUInt32(i->c_str() + 2));
 				break;
 			}
 			case TAG('H', 'N'):
 			{
-				id.setHubNormal(i->c_str() + 2);
+				ou->getIdentity().setHubNormal(i->c_str() + 2);
 				break;
 			}
 			case TAG('H', 'R'):
 			{
-				id.setHubRegister(i->c_str() + 2);
+				ou->getIdentity().setHubRegister(i->c_str() + 2);
 				break;
 			}
 			case TAG('H', 'O'):
 			{
-				id.setHubOperator(i->c_str() + 2);
+				ou->getIdentity().setHubOperator(i->c_str() + 2);
 				break;
 			}
 			case TAG('N', 'I'):
 			{
-				id.setNick(i->substr(2));
+				ou->getIdentity().setNick(i->substr(2));
 				break;
 			}
 			case TAG('A', 'W'):
 			{
-				u->setFlag(User::AWAY);
+				ou->getUser()->setFlag(User::AWAY);
 				break;
 			}
 #ifdef _DEBUG
 			case TAG('V', 'E'):
 			{
-				id.setStringParam("VE", i->substr(2));
+				ou->getIdentity().setStringParam("VE", i->substr(2));
 				break;
 			}
 			case TAG('A', 'P'):
 			{
-				id.setStringParam("AP", i->substr(2));
+				ou->getIdentity().setStringParam("AP", i->substr(2));
 				break;
 			}
 #endif
 			default:
 			{
-				id.setStringParam(i->c_str(), i->substr(2));
+				ou->getIdentity().setStringParam(i->c_str(), i->substr(2));
 			}
 		}
 	}
 	if (!l_ip4.empty())
 	{
-		id.setIp(l_ip4);
-		id.m_is_real_user_ip_from_hub = true;
-		id.getUser()->m_last_ip_sql.reset_dirty();
+		ou->getIdentity().setIp(l_ip4);
+		ou->getIdentity().m_is_real_user_ip_from_hub = true;
+		ou->getIdentity().getUser()->m_last_ip_sql.reset_dirty();
 	}
 	if (!l_ip6.empty())
 	{
-		id.setIP6(l_ip6);
-		id.setUseIP6();
+		ou->getIdentity().setIP6(l_ip6);
+		ou->getIdentity().setUseIP6();
 	}
 	
 	if (isMe(ou))
@@ -1315,9 +1307,7 @@ StringList AdcHub::parseSearchExts(int flag)
 void AdcHub::search_token(const SearchParamToken& p_search_param)
 {
 	if (state != STATE_NORMAL
-#ifdef IRAINMAN_INCLUDE_HIDE_SHARE_MOD
 	        || getHideShare()
-#endif
 	   )
 		return;
 		
@@ -1539,14 +1529,12 @@ void AdcHub::info(bool p_force)
 	addParam(c, "DE", getCurrentDescription());
 	addParam(c, "SL", Util::toString(UploadManager::getSlots()));
 	addParam(c, "FS", Util::toString(UploadManager::getFreeSlots()));
-#ifdef IRAINMAN_INCLUDE_HIDE_SHARE_MOD
 	if (getHideShare())
 	{
 		addParam(c, "SS", "0"); // [!] Flylink++ HideShare mode
 		addParam(c, "SF", "0"); // [!] Flylink HideShare mode
 	}
 	else
-#endif
 	{
 		addParam(c, "SS", ShareManager::getShareSizeString()); // [!] Flylink++ HideShare mode
 		addParam(c, "SF", Util::toString(ShareManager::getLastSharedFiles())); // [!] Flylink++ HideShare mode
@@ -1791,12 +1779,10 @@ void AdcHub::on(Line l, const string& aLine) noexcept
 			// @todo report to user?
 			return;
 		}
-#ifdef IRAINMAN_INCLUDE_PROTO_DEBUG_FUNCTION
 		if (BOOLSETTING(ADC_DEBUG))
 		{
 			fly_fire2(ClientListener::StatusMessage(), this, "<ADC>" + aLine + "</ADC>");
 		}
-#endif
 		dispatch(aLine);
 	}
 }

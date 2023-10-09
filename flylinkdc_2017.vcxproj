@@ -247,7 +247,6 @@
     <ClCompile Include="windows\CFlyLocationDlg.cpp" />
     <ClCompile Include="windows\ChatCtrl.cpp" />
     <ClCompile Include="windows\CheckTargetDlg.cpp" />
-    <ClCompile Include="windows\ClientsPage.cpp" />
     <ClCompile Include="windows\CommandDlg.cpp" />
     <ClCompile Include="windows\dclstGenDlg.cpp" />
     <ClCompile Include="windows\DCLSTPage.cpp" />
@@ -256,7 +255,6 @@
     <ClCompile Include="windows\DownloadPage.cpp" />
     <ClCompile Include="windows\EmoticonsDlg.cpp" />
     <ClCompile Include="windows\ExListViewCtrl.cpp" />
-    <ClCompile Include="windows\FakeDetectPage.cpp" />
     <ClCompile Include="windows\FavHubGroupsDlg.cpp" />
     <ClCompile Include="windows\FavHubProperties.cpp" />
     <ClCompile Include="windows\FavoriteDirsPage.cpp" />
@@ -313,9 +311,6 @@
     <ClCompile Include="windows\RangesPage.cpp" />
     <ClCompile Include="windows\RecentsFrm.cpp" />
     <ClCompile Include="windows\ResourceLoader.cpp" />
-    <ClCompile Include="windows\RSSnewsFrame.cpp" />
-    <ClCompile Include="windows\RSSPage.cpp" />
-    <ClCompile Include="windows\RSSSetFeedDlg.cpp" />
     <ClCompile Include="windows\SDCPage.cpp" />
     <ClCompile Include="windows\SearchFrm.cpp" />
     <ClCompile Include="windows\SearchPage.cpp" />
@@ -369,7 +364,6 @@
     <ClInclude Include="windows\CFlyLocationDlg.h" />
     <ClInclude Include="windows\ChatCtrl.h" />
     <ClInclude Include="windows\CheckTargetDlg.h" />
-    <ClInclude Include="windows\ClientsPage.h" />
     <ClInclude Include="windows\CommandDlg.h" />
     <ClInclude Include="windows\CZDCPage.h" />
     <ClInclude Include="windows\dclstGenDlg.h" />
@@ -381,7 +375,6 @@
     <ClInclude Include="windows\DownloadPage.h" />
     <ClInclude Include="windows\EmoticonsDlg.h" />
     <ClInclude Include="windows\ExListViewCtrl.h" />
-    <ClInclude Include="windows\FakeDetectPage.h" />
     <ClInclude Include="windows\FavDirDlg.h" />
     <ClInclude Include="windows\FavHubGroupsDlg.h" />
     <ClInclude Include="windows\FavHubProperties.h" />

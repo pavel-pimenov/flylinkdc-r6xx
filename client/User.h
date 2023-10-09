@@ -55,9 +55,6 @@ class User : public Flags
 			UDP6_BIT,
 			
 			NMDC_BIT,
-#ifdef IRAINMAN_ENABLE_TTH_GET_FLAG
-			TTH_GET_BIT,
-#endif
 			TLS_BIT,
 			AWAY_BIT,
 			SERVER_BIT,
@@ -95,9 +92,6 @@ class User : public Flags
 			UDP6 = 1 << UDP6_BIT,
 			
 			NMDC = 1 << NMDC_BIT,
-#ifdef IRAINMAN_ENABLE_TTH_GET_FLAG
-			TTH_GET = 1 << TTH_GET_BIT,     //< User supports getting files by tth -> don't have path in queue...
-#endif
 			TLS = 1 << TLS_BIT,             //< Client supports TLS
 			ADCS = TLS,                     //< Client supports TLS
 			AWAY = 1 << AWAY_BIT,
@@ -124,27 +118,6 @@ class User : public Flags
 			IS_FIRST_INIT_RATIO = 1 << FIRST_INIT_RATIO_BIT,
 			IS_SQL_NOT_FOUND   = 1 << SQL_NOT_FOUND_BIT
 		};
-#ifdef IRAINMAN_ENABLE_AUTO_BAN
-		enum DefinedAutoBanFlags
-		{
-			BAN_NONE          = 0x00,
-			BAN_BY_MIN_SLOT   = 0x01,
-			BAN_BY_MAX_SLOT   = 0x02,
-			BAN_BY_SHARE      = 0x04, //-V112
-			BAN_BY_LIMIT      = 0x08
-		};
-		
-		DefinedAutoBanFlags hasAutoBan(Client *p_Client, const bool p_is_favorite);
-	private:
-		enum SupportSlotsFlag
-		{
-			FLY_SUPPORT_SLOTS_FIRST = 0x00,
-			FLY_SUPPORT_SLOTS = 0x01,
-			FLY_NSUPPORT_SLOTS = 0x02
-		};
-		SupportSlotsFlag m_support_slots;
-	public:
-#endif // IRAINMAN_ENABLE_AUTO_BAN
 		struct Hash
 		{
 			size_t operator()(const UserPtr& x) const

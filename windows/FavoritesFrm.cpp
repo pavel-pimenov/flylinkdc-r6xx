@@ -27,32 +27,20 @@ HIconWrapper g_hOfflineIco(IDR_OFFLINE_ICO);
 HIconWrapper g_hOnlineIco(IDR_ONLINE_ICO);
 
 int FavoriteHubsFrame::columnIndexes[] = { COLUMN_NAME, COLUMN_DESCRIPTION, COLUMN_NICK, COLUMN_PASSWORD, COLUMN_SERVER, COLUMN_USERDESCRIPTION, COLUMN_EMAIL,
-#ifdef IRAINMAN_INCLUDE_HIDE_SHARE_MOD
                                            COLUMN_HIDESHARE,
-#endif
-#ifdef IRAINMAN_ENABLE_CON_STATUS_ON_FAV_HUBS
                                            COLUMN_CONNECTION_STATUS,
                                            COLUMN_LAST_SUCCESFULLY_CONNECTED,
-#endif
                                          };
 int FavoriteHubsFrame::columnSizes[] = { 200, 290, 125, 100, 100, 125, 125,
-#ifdef IRAINMAN_INCLUDE_HIDE_SHARE_MOD
-                                         100,
-#endif
-#ifdef IRAINMAN_ENABLE_CON_STATUS_ON_FAV_HUBS
                                          100,
                                          100,
-#endif
+                                         100
                                        };
 static ResourceManager::Strings columnNames[] = { ResourceManager::AUTO_CONNECT, ResourceManager::DESCRIPTION,
                                                   ResourceManager::NICK, ResourceManager::PASSWORD, ResourceManager::SERVER, ResourceManager::USER_DESCRIPTION, ResourceManager::EMAIL,
-#ifdef IRAINMAN_INCLUDE_HIDE_SHARE_MOD
                                                   ResourceManager::USER_HIDESHARE,
-#endif
-#ifdef IRAINMAN_ENABLE_CON_STATUS_ON_FAV_HUBS
                                                   ResourceManager::STATUS,
                                                   ResourceManager::LAST_SUCCESFULLY_CONNECTED,
-#endif
                                                 };
 
 LRESULT FavoriteHubsFrame::onCreate(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& bHandled)
@@ -128,10 +116,7 @@ LRESULT FavoriteHubsFrame::onCreate(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*l
 	SettingsManager::getInstance()->addListener(this);
 	ClientManager::getInstance()->addListener(this);
 	
-#ifdef IRAINMAN_ENABLE_CON_STATUS_ON_FAV_HUBS
 	create_timer(1000 * 60);
-	
-#endif
 	
 	fillList();
 	
@@ -249,16 +234,12 @@ void FavoriteHubsFrame::addEntry(const FavoriteHubEntry* entry, int pos, int gro
 	l.push_back(Text::toT(entry->getServer()));
 	l.push_back(Text::toT(entry->getUserDescription()));
 	l.push_back(Text::toT(entry->getEmail()));
-#ifdef IRAINMAN_INCLUDE_HIDE_SHARE_MOD
 	l.push_back(entry->getHideShare() ? TSTRING(YES) : BaseUtil::emptyStringT/*TSTRING(NO)*/);
-#endif
-#ifdef IRAINMAN_ENABLE_CON_STATUS_ON_FAV_HUBS
 	const ConnectionStatus& l_connectionStatus = entry->getConnectionStatus();
 	const time_t l_curTime = GET_TIME();
 	
 	l.push_back(getLastAttempts(l_connectionStatus, l_curTime));
 	l.push_back(getLastSucces(l_connectionStatus, l_curTime));
-#endif
 	
 	const bool b = entry->getConnect();
 	const int i = ctrlHubs.insert(pos, l, 0, (LPARAM)entry);
@@ -269,10 +250,8 @@ void FavoriteHubsFrame::addEntry(const FavoriteHubEntry* entry, int pos, int gro
 	lvItem.iItem = i;
 	if (isOnline(entry->getServer()))
 		lvItem.iImage = 0;
-#ifdef IRAINMAN_ENABLE_CON_STATUS_ON_FAV_HUBS
 	else if (getLastSucces(l_connectionStatus, l_curTime) == TSTRING(JUST_NOW))
 		lvItem.iImage = 1;
-#endif
 	else
 		lvItem.iImage = -1;
 	lvItem.iGroupId = groupIndex;
@@ -645,9 +624,7 @@ LRESULT FavoriteHubsFrame::onClose(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lP
 	if (!m_closed)
 	{
 		m_closed = true;
-#ifdef IRAINMAN_ENABLE_CON_STATUS_ON_FAV_HUBS
 		safe_destroy_timer();
-#endif
 		ClientManager::getInstance()->removeListener(this);
 		SettingsManager::getInstance()->removeListener(this);
 		FavoriteManager::getInstance()->removeListener(this);
@@ -773,7 +750,6 @@ LRESULT FavoriteHubsFrame::onColumnClickHublist(int /*idCtrl*/, LPNMHDR pnmh, BO
 	}
 	return 0;
 }
-#ifdef IRAINMAN_ENABLE_CON_STATUS_ON_FAV_HUBS
 tstring FavoriteHubsFrame::getLastAttempts(const ConnectionStatus& connectionStatus, const time_t curTime)
 {
 	if (connectionStatus.getLastAttempts())
@@ -822,7 +798,6 @@ LRESULT FavoriteHubsFrame::onTimer(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lP
 		ctrlHubs.resort();
 	return 0;
 }
-#endif // IRAINMAN_ENABLE_CON_STATUS_ON_FAV_HUBS
 
 /**
  * @file

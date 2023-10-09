@@ -79,9 +79,6 @@ class UserManager : public Singleton<UserManager>, public Speaker<UserManagerLis
 		};
 		static bool expectPasswordFromUser(const UserPtr& user);
 		static PasswordStatus checkPrivateMessagePassword(const ChatMessage& pm);
-#ifdef IRAINMAN_INCLUDE_USER_CHECK
-		static void checkUser(const OnlineUserPtr& user);
-#endif
 		typedef StringSet IgnoreMap;
 		
 		static tstring getIgnoreListAsString();
@@ -90,15 +87,6 @@ class UserManager : public Singleton<UserManager>, public Speaker<UserManagerLis
 		static void removeFromIgnoreList(const string& userName);
 		static bool isInIgnoreList(const string& nick);
 		static void setIgnoreList(const IgnoreMap& newlist);
-		
-#ifdef IRAINMAN_ENABLE_AUTO_BAN
-		static void reloadProtUsers();
-		static bool protectedUserListEmpty()
-		{
-			return g_protectedUsersLower.empty();
-		}
-		static bool isInProtectedUserList(const string& userName);
-#endif
 		
 		static bool g_isEmptyIgnoreList;
 	private:
@@ -120,10 +108,6 @@ class UserManager : public Singleton<UserManager>, public Speaker<UserManagerLis
 		UserManager();
 		~UserManager();
 		
-#ifdef IRAINMAN_ENABLE_AUTO_BAN
-		static StringList g_protectedUsersLower;
-		static std::unique_ptr<webrtc::RWLockWrapper> g_csProtectedUsers;
-#endif
 };
 
 #endif // !defined(DCPLUSPLUS_DCPP_USER_MANAGER_H)

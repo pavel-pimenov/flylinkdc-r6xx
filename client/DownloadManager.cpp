@@ -320,9 +320,6 @@ void DownloadManager::addConnection(UserConnection* p_conn)
 	if (!p_conn->isSet(UserConnection::FLAG_SUPPORTS_TTHF) || !p_conn->isSet(UserConnection::FLAG_SUPPORTS_ADCGET))
 	{
 		// Can't download from these...
-#ifdef IRAINMAN_INCLUDE_USER_CHECK
-		ClientManager::setClientStatus(p_conn->getUser(), STRING(SOURCE_TOO_OLD), -1, true);
-#endif
 		QueueManager::getInstance()->removeSource(p_conn->getUser(), QueueItem::Source::FLAG_NO_TTHF);
 		p_conn->disconnect();
 		return;
@@ -716,19 +713,6 @@ void DownloadManager::failDownload(UserConnection* aSource, const std::string& p
 		removeDownload(d);
 		fly_fire2(DownloadManagerListener::Failed(), d, p_reason);
 		
-#ifdef IRAINMAN_INCLUDE_USER_CHECK
-		if (d->isSet(Download::FLAG_USER_CHECK))
-		{
-			if (p_reason == STRING(DISCONNECTED))
-			{
-				ClientManager::fileListDisconnected(aSource->getUser());
-			}
-			else
-			{
-				ClientManager::setClientStatus(aSource->getUser(), reason, -1, false);
-			}
-		}
-#endif
 		d->m_reason = p_reason;
 		QueueManager::getInstance()->putDownload(l_path, d, false);
 	}
@@ -889,13 +873,6 @@ void DownloadManager::fileNotAvailable(UserConnection* aSource)
 	
 	removeDownload(d);
 	fly_fire2(DownloadManagerListener::Failed(), d, STRING(FILE_NOT_AVAILABLE));
-	
-#ifdef IRAINMAN_INCLUDE_USER_CHECK
-	if (d->isSet(Download::FLAG_USER_CHECK))
-	{
-		ClientManager::setClientStatus(aSource->getUser(), "Filelist Not Available", SETTING(FILELIST_UNAVAILABLE), false);
-	}
-#endif
 	
 	QueueManager::getInstance()->removeSource(d->getPath(), aSource->getUser(), (Flags::MaskType)(d->getType() == Transfer::TYPE_TREE ? QueueItem::Source::FLAG_NO_TREE : QueueItem::Source::FLAG_FILE_NOT_AVAILABLE), false);
 	

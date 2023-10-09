@@ -68,9 +68,7 @@ class ShareManager : public Singleton<ShareManager>, private Thread, private Tim
 		string toVirtual(const TTHValue& tth);
 #endif
 		string toReal(const string& virtualFile
-#ifdef IRAINMAN_INCLUDE_HIDE_SHARE_MOD
 		              , bool ishidingShare
-#endif
 		             );
 		TTHValue getTTH(const string& virtualFile) const;
 		
@@ -107,9 +105,7 @@ class ShareManager : public Singleton<ShareManager>, private Thread, private Tim
 		static void getDirectories(CFlyDirItemArray& p_dirs);
 		
 		MemoryInputStream* generatePartialList(const string& dir, bool recurse
-#ifdef IRAINMAN_INCLUDE_HIDE_SHARE_MOD
 		                                       , bool ishidingShare
-#endif
 		                                      ) const;
 		                                      
 		MemoryInputStream* getTree(const string& virtualFile) const;
@@ -179,12 +175,10 @@ class ShareManager : public Singleton<ShareManager>, private Thread, private Tim
 		static size_t g_hits;
 		static int64_t g_lastSharedDate;
 		
-#ifdef IRAINMAN_INCLUDE_HIDE_SHARE_MOD
 		static string getEmptyBZXmlFile()
 		{
 			return Util::getConfigPath() + "Emptyfiles.xml.bz2";
 		}
-#endif
 		static string getDefaultBZXmlFile()
 		{
 			return Util::getConfigPath() + "files.xml.bz2";

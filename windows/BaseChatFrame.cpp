@@ -538,12 +538,6 @@ void BaseChatFrame::onEnter()
 			{
 				QueueManager::saveQueue();
 				addStatus(TSTRING(QUEUE_SAVED));
-#ifdef IRAINMAN_ENABLE_WHOIS
-			}
-			else if (stricmp(cmd.c_str(), _T("whois")) == 0)
-			{
-				WinUtil::openLink(_T("http://www.ripe.net/perl/whois?form_type=simple&full_query_string=&searchtext=") + Text::toT(Util::encodeURI(Text::fromT(param))));
-#endif
 			}
 			else if (stricmp(cmd.c_str(), _T("ignorelist")) == 0)
 			{
@@ -824,10 +818,6 @@ void BaseChatFrame::appendChatCtrlItems(OMenu& p_menu, const Client* client)
 	if (!ChatCtrl::g_sSelectedIP.empty())
 	{
 		p_menu.InsertSeparatorFirst(ChatCtrl::g_sSelectedIP);
-#ifdef IRAINMAN_ENABLE_WHOIS
-		WinUtil::AppendMenuOnWhoisIP(p_menu, ChatCtrl::g_sSelectedIP, false);
-		p_menu.AppendMenu(MF_SEPARATOR);
-#endif
 		if (client) // add menus, necessary only for windows hub here.
 		{
 			if (client->isOp())
@@ -848,14 +838,6 @@ void BaseChatFrame::appendChatCtrlItems(OMenu& p_menu, const Client* client)
 	{
 		p_menu.AppendMenu(MF_STRING, IDC_COPY_URL, Util::isMagnetLink(ChatCtrl::g_sSelectedURL) ? CTSTRING(COPY_MAGNET_LINK) : CTSTRING(COPY_URL));
 		
-#ifdef IRAINMAN_ENABLE_WHOIS
-		if (!Util::isMagnetLink(ChatCtrl::g_sSelectedURL))
-		{
-			p_menu.AppendMenu(MF_SEPARATOR);
-			p_menu.AppendMenu(MF_STRING, IDC_WHOIS_URL, (TSTRING(WHO_IS) + _T(" URL: Bgp.He")/* + ChatCtrl::g_sSelectedURL*/).c_str());
-			
-		}
-#endif
 	}
 	
 	

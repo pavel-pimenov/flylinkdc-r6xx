@@ -181,7 +181,6 @@ const toolbarButton g_ToolbarButtons[] =
 	{ID_FILE_QUICK_CONNECT, 25, false, ResourceManager::MENU_QUICK_CONNECT},
 	{IDC_OPEN_FILE_LIST, 26, false, ResourceManager::MENU_OPEN_FILE_LIST},
 	{IDC_RECONNECT_DISCONNECTED, 27, false, ResourceManager::MENU_RECONNECT_DISCONNECTED},
-	{IDC_RSS, 28, true, ResourceManager::MENU_RSS_NEWS},
 	{IDC_DISABLE_POPUPS, 29, true, ResourceManager::DISABLE_POPUPS},
 	{0, 0, false, ResourceManager::MENU_NOTEPAD}
 };
@@ -361,26 +360,6 @@ COLORREF HLS_TRANSFORM(COLORREF rgb, int percent_L, int percent_S)
 void Colors::getUserColor(bool p_is_op, const UserPtr& user, COLORREF &fg, COLORREF &bg, unsigned short& p_flag_mask, const OnlineUserPtr& onlineUser)
 {
 	bool l_is_favorites = false;
-#ifdef IRAINMAN_ENABLE_AUTO_BAN
-	if (SETTING(ENABLE_AUTO_BAN))
-	{
-		if ((p_flag_mask & IS_AUTOBAN) == IS_AUTOBAN)
-		{
-			if (onlineUser && user->hasAutoBan(&onlineUser->getClient(), l_is_favorites) != User::BAN_NONE)
-				p_flag_mask = (p_flag_mask & ~IS_AUTOBAN) | IS_AUTOBAN_ON;
-			else
-				p_flag_mask = (p_flag_mask & ~IS_AUTOBAN);
-			if (l_is_favorites)
-				p_flag_mask = (p_flag_mask & ~IS_FAVORITE) | IS_FAVORITE_ON;
-			else
-				p_flag_mask = (p_flag_mask & ~IS_FAVORITE);
-		}
-		if (p_flag_mask & IS_AUTOBAN)
-		{
-			bg = SETTING(BAN_COLOR);
-		}
-	}
-#endif // IRAINMAN_ENABLE_AUTO_BAN
 #ifdef FLYLINKDC_USE_DETECT_CHEATING
 	if (p_is_op && onlineUser) // Возможно фикс https://crash-server.com/Problem.aspx?ClientID=guest&ProblemID=38000
 	{
@@ -729,9 +708,7 @@ void WinUtil::init(HWND hWnd)
 #ifdef SSA_VIDEO_PREVIEW_FEATURE
 	view.AppendMenu(MF_STRING, IDD_PREVIEW_LOG_DLG, CTSTRING(MENU_PREVIEW_LOG_DLG));
 #endif
-#ifdef IRAINMAN_INCLUDE_PROTO_DEBUG_FUNCTION
 	view.AppendMenu(MF_STRING, IDC_CDMDEBUG_WINDOW, CTSTRING(MENU_CDMDEBUG_MESSAGES));
-#endif
 	view.AppendMenu(MF_STRING, IDC_NOTEPAD, CTSTRING(MENU_NOTEPAD));
 	view.AppendMenu(MF_STRING, IDC_HASH_PROGRESS, CTSTRING(MENU_HASH_PROGRESS));
 	view.AppendMenu(MF_SEPARATOR);
@@ -755,10 +732,6 @@ void WinUtil::init(HWND hWnd)
 	transfers.AppendMenu(MF_STRING, IDC_FINISHED_UL, CTSTRING(MENU_FINISHED_UPLOADS));
 	transfers.AppendMenu(MF_SEPARATOR);
 	transfers.AppendMenu(MF_STRING, IDC_NET_STATS, CTSTRING(MENU_NETWORK_STATISTICS));
-#ifdef IRAINMAN_INCLUDE_RSS
-	transfers.AppendMenu(MF_SEPARATOR);
-	transfers.AppendMenu(MF_STRING, IDC_RSS, CTSTRING(MENU_RSS_NEWS));
-#endif
 	
 	g_mainMenu.AppendMenu(MF_POPUP, (UINT_PTR)(HMENU)transfers, CTSTRING(MENU_TRANSFERS));
 	
@@ -1760,177 +1733,6 @@ bool WinUtil::checkCommand(tstring& cmd, tstring& param, tstring& message, tstri
 			}
 		}
 	}
-#ifdef IRAINMAN_ENABLE_MORE_CLIENT_COMMAND
-	// Google.
-	else if (stricmp(cmd.c_str(), _T("google")) == 0 || stricmp(cmd.c_str(), _T("g")) == 0)
-	{
-		if (param.empty())
-		{
-			status = TSTRING(SPECIFY_SEARCH_STRING);
-		}
-		else
-		{
-			WinUtil::openLink(_T("http://www.google.com/search?q=") + Text::toT(Util::encodeURI(Text::fromT(param))));
-		}
-	}
-	// Google defination search support.
-	else if (stricmp(cmd.c_str(), _T("define")) == 0)
-	{
-		if (param.empty())
-		{
-			status = TSTRING(SPECIFY_SEARCH_STRING);
-		}
-		else
-		{
-			WinUtil::openLink(_T("http://www.google.com/search?hl=en&q=define%3A+") + Text::toT(Util::encodeURI(Text::fromT(param))));
-		}
-	}
-	// Yandex.
-	else if (stricmp(cmd.c_str(), _T("yandex")) == 0 || stricmp(cmd.c_str(), _T("y")) == 0)
-	{
-		if (param.empty())
-		{
-			status = TSTRING(SPECIFY_SEARCH_STRING);
-		}
-		else
-		{
-			WinUtil::openLink(_T("http://yandex.ru/yandsearch?text=") + Text::toT(Util::encodeURI(Text::fromT(param))));
-		}
-	}
-	// Yahoo.
-	else if (stricmp(cmd.c_str(), _T("yahoo")) == 0 || stricmp(cmd.c_str(), _T("yh")) == 0)
-	{
-		if (param.empty())
-		{
-			status = TSTRING(SPECIFY_SEARCH_STRING);
-		}
-		else
-		{
-			WinUtil::openLink(_T("http://search.yahoo.com/search?p=") + Text::toT(Util::encodeURI(Text::fromT(param))));
-		}
-		
-	}
-	// Wikipedia.
-	else if (stricmp(cmd.c_str(), _T("wikipedia")) == 0 || stricmp(cmd.c_str(), _T("wiki")) == 0)
-	{
-		if (param.empty())
-		{
-			status = TSTRING(SPECIFY_SEARCH_STRING);
-		}
-		else
-		{
-			WinUtil::openLink(_T("http://ru.wikipedia.org/wiki/Special%3ASearch?search=") + Text::toT(Util::encodeURI(Text::fromT(param))));
-		}
-	}
-	// IMDB.
-	else if (stricmp(cmd.c_str(), _T("imdb")) == 0 || stricmp(cmd.c_str(), _T("i")) == 0)
-	{
-		if (param.empty())
-		{
-			status = TSTRING(SPECIFY_SEARCH_STRING);
-		}
-		else
-		{
-			WinUtil::openLink(_T("http://www.imdb.com/find?q=") + Text::toT(Util::encodeURI(Text::fromT(param))));
-		}
-	}
-	// КиноПоиск.Ru.
-	else if (stricmp(cmd.c_str(), _T("kinopoisk")) == 0 || stricmp(cmd.c_str(), _T("kp")) == 0 || stricmp(cmd.c_str(), _T("k")) == 0)
-	{
-		if (param.empty())
-		{
-			status = TSTRING(SPECIFY_SEARCH_STRING);
-		}
-		else
-		{
-			WinUtil::openLink(_T("http://www.kinopoisk.ru/index.php?first=no&kp_query=") + Text::toT(Util::encodeURI(Text::fromT(param))));
-		}
-	}
-	// TPB
-	else if (stricmp(cmd.c_str(), _T("thepirate")) == 0 || stricmp(cmd.c_str(), _T("tpb")) == 0)
-	{
-		if (param.empty())
-		{
-			status = TSTRING(SPECIFY_SEARCH_STRING);
-		}
-		else
-		{
-			WinUtil::openLink(_T("http://thepiratebay.se/search/") + Text::toT(Util::encodeURI(Text::fromT(param))));
-		}
-	}
-	// Rutracker.org.
-	else if (stricmp(cmd.c_str(), _T("rutracker")) == 0 || stricmp(cmd.c_str(), _T("rt")) == 0 || stricmp(cmd.c_str(), _T("t")) == 0)
-	{
-		if (param.empty())
-		{
-			status = TSTRING(SPECIFY_SEARCH_STRING);
-		}
-		else
-		{
-			WinUtil::openLink(_T("http://rutracker.org/forum/tracker.php?nm=") + Text::toT(Util::encodeURI(Text::fromT(param))));
-		}
-	}
-	// В Контакте.
-	else if (stricmp(cmd.c_str(), _T("vkontakte")) == 0 || stricmp(cmd.c_str(), _T("vk")) == 0 || stricmp(cmd.c_str(), _T("v")) == 0)
-	{
-		if (param.empty())
-		{
-			status = TSTRING(SPECIFY_SEARCH_STRING);
-		}
-		else
-		{
-			WinUtil::openLink(_T("http://vk.com/gsearch.php?q=") + Text::toT(Util::encodeURI(Text::fromT(param))));
-		}
-	}
-	// В Контакте. Открываем страницу по id.
-	else if (stricmp(cmd.c_str(), _T("vkid")) == 0 || stricmp(cmd.c_str(), _T("vid")) == 0)
-	{
-		if (param.empty())
-		{
-			status = TSTRING(SPECIFY_SEARCH_STRING);
-		}
-		else
-		{
-			WinUtil::openLink(_T("http://vk.com/") + Text::toT(Util::encodeURI(Text::fromT(param))));
-		}
-	}
-	// Discogs is a user-built database containing information on artists, labels, and their recordings.
-	else if (stricmp(cmd.c_str(), _T("discogs")) == 0 || stricmp(cmd.c_str(), _T("ds")) == 0)
-	{
-		if (param.empty())
-		{
-			status = TSTRING(SPECIFY_SEARCH_STRING);
-		}
-		else
-		{
-			WinUtil::openLink(_T("http://www.discogs.com/search?type=all&q=") + Text::toT(Util::encodeURI(Text::fromT(param))) + _T("&btn=Search"));
-		}
-	}
-	// FILExt. To find a description of the file extension / Для поиска описания расширения файла.
-	else if (stricmp(cmd.c_str(), _T("filext")) == 0 || stricmp(cmd.c_str(), _T("ext")) == 0)
-	{
-		if (param.empty())
-		{
-			status = TSTRING(SPECIFY_SEARCH_STRING);
-		}
-		else
-		{
-			WinUtil::openLink(_T("http://filext.com/file-extension/") + Text::toT(Util::encodeURI(Text::fromT(param))));
-		}
-	}
-	// Поиск по блогу FlylinkDC++.
-	else if (stricmp(cmd.c_str(), _T("blog")) == 0 || stricmp(cmd.c_str(), _T("b")) == 0)
-	{
-		if (param.empty())
-		{
-			status = TSTRING(SPECIFY_SEARCH_STRING);
-		}
-		else
-		{
-			WinUtil::openLink(_T("http://www.fly-server.ru/search?q=") + Text::toT(Util::encodeURI(Text::fromT(param))));
-		}
-	}
-#endif // IRAINMAN_ENABLE_MORE_CLIENT_COMMAND
 	else
 	{
 		return false;
@@ -3451,7 +3253,6 @@ void WinUtil::TextTranscode(CEdit& ctrlMessage)
 
 void WinUtil::SetBBCodeForCEdit(CEdit& ctrlMessage, WORD wID)
 {
-#ifdef IRAINMAN_USE_BB_CODES
 #ifdef SCALOLAZ_BB_COLOR_BUTTON
 	tstring startTag;
 	tstring  endTag;
@@ -3538,7 +3339,6 @@ void WinUtil::SetBBCodeForCEdit(CEdit& ctrlMessage, WORD wID)
 		}
 	}
 	ctrlMessage.SetFocus();
-#endif
 	
 }
 
@@ -4026,34 +3826,6 @@ void WinUtil::SetWindowThemeExplorer(HWND p_hWnd)
 		SetWindowTheme(p_hWnd, L"explorer", NULL);
 	}
 }
-
-#ifdef IRAINMAN_ENABLE_WHOIS
-void WinUtil::CheckOnWhoisIP(WORD wID, const tstring& whoisIP)
-{
-	if (!whoisIP.empty())
-	{
-		tstring m_link;
-		switch (wID)
-		{
-			case IDC_WHOIS_IP:
-				m_link = _T("http://www.ripe.net/perl/whois?form_type=simple&full_query_string=&searchtext=") + whoisIP;
-				break;
-			case IDC_WHOIS_IP2:
-				m_link = _T("http://bgp.he.net/ip/") + whoisIP + _T("#_whois");
-				break;
-		}
-		if (!m_link.empty())
-			WinUtil::openLink(m_link);
-	}
-}
-void WinUtil::AppendMenuOnWhoisIP(CMenu& p_menuname, const tstring& p_IP, bool p_inSubmenu)
-{
-	p_menuname.AppendMenu(MF_STRING, IDC_WHOIS_IP, (TSTRING(WHO_IS) + _T(" Ripe.net  ") + p_IP).c_str());
-	p_menuname.AppendMenu(MF_STRING, IDC_WHOIS_IP2, (TSTRING(WHO_IS) + _T(" Bgp.He  ") + p_IP).c_str());
-	p_menuname.AppendMenu(MF_STRING, IDC_WHOIS_IP4_INFO, tstring(_T("IP v4 Info ") + p_IP).c_str());
-	//p_menu.AppendMenu(MF_SEPARATOR);
-}
-#endif
 
 void Preview::startMediaPreview(WORD wID, const QueueItemPtr& qi)
 {

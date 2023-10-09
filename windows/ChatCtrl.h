@@ -26,22 +26,16 @@
 #include "TypedListViewCtrl.h"
 #include "ImageDataObject.h"
 
-#ifdef IRAINMAN_INCLUDE_SMILE
 #define WM_UPDATE_SMILE WM_USER + 1
-#endif
+
 #ifndef _RICHEDIT_VER
 # define _RICHEDIT_VER 0x0300
-#endif
-#ifdef IRAINMAN_ENABLE_WHOIS
-#include "../client/Util.h"
 #endif
 #include <AtlCrack.h>
 
 class UserInfo;
 class ChatCtrl: public CWindowImpl<ChatCtrl, CRichEditCtrl>
-#ifdef IRAINMAN_INCLUDE_SMILE
 	, public IRichEditOleCallback
-#endif
 {
 		typedef ChatCtrl thisClass;
 	protected:
@@ -49,46 +43,30 @@ class ChatCtrl: public CWindowImpl<ChatCtrl, CRichEditCtrl>
 		static bool isOnline(const Client* client, const tstring& aNick);
 		
 		bool m_boAutoScroll;
-#ifdef IRAINMAN_INCLUDE_SMILE
 		IStorage *m_pStorage;
 		IRichEditOle* m_pRichEditOle;
 		LPLOCKBYTES m_lpLockBytes;
-#endif // IRAINMAN_INCLUDE_SMILE
 	public:
 		ChatCtrl();
 		~ChatCtrl();
 		
 		BEGIN_MSG_MAP(thisClass)
-#ifdef IRAINMAN_INCLUDE_SMILE
 		MESSAGE_HANDLER(WM_UPDATE_SMILE, onUpdateSmile)
-#endif
 		MESSAGE_HANDLER(WM_MOUSEWHEEL, onMouseWheel)
 		NOTIFY_HANDLER(IDC_CLIENT, EN_LINK, onEnLink)
 		COMMAND_ID_HANDLER(IDC_COPY_ACTUAL_LINE, onCopyActualLine)
 		COMMAND_ID_HANDLER(IDC_COPY_URL, onCopyURL)
-#ifdef IRAINMAN_ENABLE_WHOIS
-		COMMAND_ID_HANDLER(IDC_WHOIS_IP, onWhoisIP)
-		COMMAND_ID_HANDLER(IDC_WHOIS_IP2, onWhoisIP)
-		COMMAND_ID_HANDLER(IDC_WHOIS_URL, onWhoisURL)
-#endif
-		COMMAND_ID_HANDLER(IDC_WHOIS_IP4_INFO, onWhoisIP)
 		COMMAND_ID_HANDLER(ID_EDIT_COPY, onEditCopy)
 		COMMAND_ID_HANDLER(ID_EDIT_SELECT_ALL, onEditSelectAll)
 		COMMAND_ID_HANDLER(ID_EDIT_CLEAR_ALL, onEditClearAll)
 		MESSAGE_HANDLER(WM_SIZE, onSize)
 		END_MSG_MAP()
 		
-#ifdef IRAINMAN_INCLUDE_SMILE
 		LRESULT onUpdateSmile(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM lParam, BOOL& /*bHandled*/);
-#endif
 		LRESULT onMouseWheel(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM lParam, BOOL& /*bHandled*/);
 		LRESULT onSize(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM lParam, BOOL& /*bHandled*/);
 		LRESULT onMouseMove(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM lParam, BOOL& /*bHandled*/);
 		LRESULT onEnLink(int /*idCtrl*/, LPNMHDR pnmh, BOOL& /*bHandled*/);
-#ifdef IRAINMAN_ENABLE_WHOIS
-		LRESULT onWhoisIP(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
-		LRESULT onWhoisURL(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
-#endif
 		LRESULT onEditCopy(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
 		LRESULT onEditSelectAll(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
 		LRESULT onEditClearAll(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
@@ -208,9 +186,7 @@ class ChatCtrl: public CWindowImpl<ChatCtrl, CRichEditCtrl>
 	public:
 		static bool isGoodNickBorderSymbol(TCHAR ch);
 	protected:
-#ifdef IRAINMAN_INCLUDE_SMILE
 		volatile LONG m_Ref;
-		// IRichEditOleCallback implementation
 		
 		COM_DECLSPEC_NOTHROW HRESULT STDMETHODCALLTYPE QueryInterface(THIS_ REFIID riid, LPVOID FAR * lplpObj);
 		COM_DECLSPEC_NOTHROW ULONG STDMETHODCALLTYPE AddRef(THIS);
@@ -236,7 +212,6 @@ class ChatCtrl: public CWindowImpl<ChatCtrl, CRichEditCtrl>
 		COM_DECLSPEC_NOTHROW HRESULT STDMETHODCALLTYPE GetContextMenu(THIS_ WORD seltype, LPOLEOBJECT lpoleobj,
 		                                                              CHARRANGE FAR * lpchrg,
 		                                                              HMENU FAR * lphmenu);
-#endif // IRAINMAN_INCLUDE_SMILE
 };
 
 

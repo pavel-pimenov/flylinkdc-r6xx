@@ -32,11 +32,6 @@ class AutoUpdateFile
 			xAll = 0,
 			x86_legacy,
 			x86_64,
-#ifdef IRAINMAN_AUTOUPDATE_ARCH_DIFFERENCE
-			x86_SSE2,
-			x86_AVX,
-			x86_64_AVX,
-#endif
 			OsUnknown
 		};
 		enum Packers

@@ -1,6 +1,5 @@
 #include "stdafx.h"
 
-#ifdef IRAINMAN_INCLUDE_SMILE
 #include "Resource.h"
 #include "EmoticonsDlg.h"
 #include "MainFrm.h"
@@ -472,4 +471,3 @@ void CAnimatedButton::Update()
 	}
 }
 
-#endif // IRAINMAN_INCLUDE_SMILE

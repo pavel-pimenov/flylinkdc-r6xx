@@ -150,9 +150,6 @@ class SettingsManager : public Singleton<SettingsManager>, public Speaker<Settin
 		                  LOG_FILE_PROTOCOL, LOG_FORMAT_PROTOCOL,
 #endif
 		                  CUSTOM_MENU_PATH,
-		                  RSS_COLUMNS_ORDER,
-		                  RSS_COLUMNS_WIDTHS,
-		                  RSS_COLUMNS_VISIBLE,
 		                  MAPPER,
 		                  PORTAL_BROWSER_UPDATE_URL,
 		                  ISP_RESOURCE_ROOT_URL,
@@ -269,7 +266,7 @@ class SettingsManager : public Singleton<SettingsManager>, public Speaker<Settin
 		                  OPEN_PUBLIC, OPEN_FAVORITE_HUBS, OPEN_FAVORITE_USERS, OPEN_QUEUE, OPEN_FINISHED_DOWNLOADS,
 		                  OPEN_FINISHED_UPLOADS, OPEN_SEARCH_SPY, OPEN_NETWORK_STATISTICS, OPEN_NOTEPAD, OUTGOING_CONNECTIONS,
 		                  NO_IP_OVERRIDE, FORGET_SEARCH_REQUEST, SAVE_SEARCH_SETTINGS, USE_SEARCH_GROUP_TREE_SETTINGS, USE_TORRENT_SEARCH, USE_TORRENT_RSS, SAVED_SEARCH_TYPE, SAVED_SEARCH_SIZEMODE, SAVED_SEARCH_MODE, BOLD_FINISHED_DOWNLOADS, BOLD_FINISHED_UPLOADS, BOLD_QUEUE,
-		                  BOLD_HUB, BOLD_PM, BOLD_SEARCH, BOLD_NEWRSS, TABS_POS,
+		                  BOLD_HUB, BOLD_PM, BOLD_SEARCH, TABS_POS,
 		                  HUB_POSITION,
 		                  COLOR_RUNNING, COLOR_DOWNLOADED, COLOR_VERIFIED, COLOR_AVOIDING, AUTO_REFRESH_TIME, OPEN_WAITING_USERS,
 		                  BOLD_WAITING_USERS, AUTO_SEARCH_LIMIT, AUTO_KICK_NO_FAVS, PROMPT_PASSWORD, SPY_FRAME_IGNORE_TTH_SEARCHES,
@@ -290,9 +287,7 @@ class SettingsManager : public Singleton<SettingsManager>, public Speaker<Settin
 		                  
 		                  NSLOOKUP_MODE, NSLOOKUP_DELAY,
 		                  ENABLE_AUTO_BAN,
-#ifdef IRAINMAN_ENABLE_OP_VIP_MODE
 		                  AUTOBAN_PPROTECT_OP,
-#endif
 		                  BAN_SLOTS, BAN_SLOTS_H, /*old BAN_SHARE_MAX,*/ BAN_SHARE, BAN_LIMIT, BANMSG_PERIOD, BAN_STEALTH, BAN_FORCE_PM, /*old BAN_SKIP_OPS,*/ EXTRASLOT_TO_DL,
 		                  BAN_COLOR, DUPE_COLOR, VIRUS_COLOR, MULTILINE_CHAT_INPUT, SEND_SLOTGRANT_MSG, FAVUSERLIST_DBLCLICK,
 		                  PROTECT_PRIVATE, PROTECT_PRIVATE_RND, PROTECT_PRIVATE_SAY,
@@ -335,11 +330,6 @@ class SettingsManager : public Singleton<SettingsManager>, public Speaker<Settin
 		                  CHAT_ANIM_SMILES,
 		                  SMILE_SELECT_WND_ANIM_SMILES,
 		                  USE_CUSTOM_MENU,
-		                  RSS_AUTO_REFRESH_TIME,
-		                  OPEN_RSS,
-		                  POPUP_NEW_RSSNEWS,
-		                  RSS_COLUMNS_SORT,
-		                  RSS_COLUMNS_SORT_ASC,
 		                  SEARCH_SPY_COLUMNS_SORT,
 		                  SEARCH_SPY_COLUMNS_SORT_ASC,
 		                  SEARCH_COLUMNS_SORT,
@@ -384,9 +374,7 @@ class SettingsManager : public Singleton<SettingsManager>, public Speaker<Settin
 		                  SHOW_SEEKERS_IN_SPY_FRAME,
 		                  LOG_SEEKERS_IN_SPY_FRAME,
 		                  FORMAT_BOT_MESSAGE,
-#ifdef IRAINMAN_USE_BB_CODES
 		                  FORMAT_BB_CODES,
-#endif
 		                  REDUCE_PRIORITY_IF_MINIMIZED_TO_TRAY,
 		                  MULTILINE_CHAT_INPUT_BY_CTRL_ENTER,
 		                  SHOW_SEND_MESSAGE_BUTTON,
@@ -437,9 +425,7 @@ class SettingsManager : public Singleton<SettingsManager>, public Speaker<Settin
 		                  PROVIDER_USE_MENU, PROVIDER_USE_HUBLIST, PROVIDER_USE_PROVIDER_LOCATIONS,
 		                  AUTOUPDATE_GEOIP,
 		                  AUTOUPDATE_CUSTOMLOCATION,
-#ifdef IRAINMAN_USE_BB_CODES
 		                  FORMAT_BB_CODES_COLORS,
-#endif
 #ifdef NIGHTORION_USE_STATISTICS_REQUEST
 		                  SETTINGS_STATISTICS_ASK,
 #endif

@@ -1,6 +1,6 @@
 // GDIImage.cpp : Implementation of CGDIImageOle
 #include "stdafx.h"
-#ifdef IRAINMAN_INCLUDE_GDI_OLE
+
 #include "GDIImageOle.h"
 
 // CGDIImageOle
@@ -221,4 +221,3 @@ LRESULT OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& 
 	return S_OK;
 }
 
-#endif // IRAINMAN_INCLUDE_GDI_OLE

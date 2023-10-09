@@ -39,8 +39,6 @@
 std::atomic<long> TransferView::ItemInfo::g_count_transfer_item;
 #endif
 
-tstring TransferView::g_sSelectedIP;
-
 HIconWrapper TransferView::g_user_icon(IDR_TUSER);
 int TransferView::g_columnIndexes[] =
 {
@@ -514,15 +512,6 @@ LRESULT TransferView::onContextMenu(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam,
 #endif
 					transferMenu.EnableMenuItem(IDC_PRIORITY_PAUSED, MFS_DISABLED);
 				}
-				
-#ifdef IRAINMAN_ENABLE_WHOIS
-				if (!ii->m_transfer_ip.empty())
-				{
-					g_sSelectedIP = ii->m_transfer_ip;  // set tstring for 'openlink function'
-					WinUtil::AppendMenuOnWhoisIP(transferMenu, g_sSelectedIP, false);
-				}
-#endif
-				
 				activatePreviewItems(transferMenu);
 				transferMenu.SetMenuDefaultItem(IDC_PRIVATE_MESSAGE);
 			} // Конец менюшке от DC++
@@ -555,16 +544,6 @@ LRESULT TransferView::onContextMenu(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam,
 	bHandled = FALSE;
 	return FALSE;
 }
-#ifdef IRAINMAN_ENABLE_WHOIS
-LRESULT TransferView::onWhoisIP(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
-{
-	if (!g_sSelectedIP.empty())
-	{
-		WinUtil::CheckOnWhoisIP(wID, g_sSelectedIP);
-	}
-	return 0;
-}
-#endif // IRAINMAN_ENABLE_WHOIS
 LRESULT TransferView::onOpenWindows(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
 	switch (wID)

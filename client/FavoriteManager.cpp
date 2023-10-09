@@ -746,7 +746,7 @@ void FavoriteManager::save_favorites()
 #ifdef SCALOLAZ_HUB_SWITCH_BTN
 				xml.addChildAttrib("ChatUserSplitState", (*i)->getChatUserSplitState());
 #endif
-				xml.addChildAttrib("HideShare", (*i)->getHideShare()); // Save paramethers always IRAINMAN_INCLUDE_HIDE_SHARE_MOD
+				xml.addChildAttrib("HideShare", (*i)->getHideShare());
 				xml.addChildAttrib("ShowJoins", (*i)->getShowJoins()); // Show joins
 				xml.addChildAttrib("ExclChecks", (*i)->getExclChecks()); // Excl. from client checking
 //				xml.addChildAttrib("ExclusiveHub", (*i)->getExclusiveHub()); // Exclusive Hub
@@ -777,11 +777,9 @@ void FavoriteManager::save_favorites()
 				xml.addChildAttribIfNotEmpty("ClientName", (*i)->getClientName());
 				xml.addChildAttribIfNotEmpty("ClientVersion", (*i)->getClientVersion());
 				xml.addChildAttribIfNotEmpty("Group", (*i)->getGroup());
-#ifdef IRAINMAN_ENABLE_CON_STATUS_ON_FAV_HUBS
 				xml.addChildAttrib("Status", (*i)->getConnectionStatus().getStatus());
 				xml.addChildAttrib("LastAttempts", (*i)->getConnectionStatus().getLastAttempts());
 				xml.addChildAttrib("LastSucces", (*i)->getConnectionStatus().getLastSucces());
-#endif
 			}
 		}
 		xml.stepOut();
@@ -1395,11 +1393,9 @@ void FavoriteManager::load(SimpleXML& aXml
 						e->setClientVersion(l_clientVersion);
 					}
 					e->setGroup(l_Group);
-#ifdef IRAINMAN_ENABLE_CON_STATUS_ON_FAV_HUBS
 					e->setSavedConnectionStatus(Util::toInt(aXml.getChildAttrib("Status")),
 					                            Util::toInt64(aXml.getChildAttrib("LastAttempts")),
 					                            Util::toInt64(aXml.getChildAttrib("LastSucces")));
-#endif
 #ifdef FLYLINKDC_USE_PROVIDER_RESOURCES
 				}
 				else
@@ -1929,19 +1925,14 @@ void FavoriteManager::previewsave(SimpleXML& aXml)
 	}
 	aXml.stepOut();
 }
-#ifdef IRAINMAN_ENABLE_CON_STATUS_ON_FAV_HUBS
 void FavoriteManager::changeConnectionStatus(const string& hubUrl, ConnectionStatus::Status status)
 {
 	FavoriteHubEntry* hub = getFavoriteHubEntry(hubUrl);
 	if (hub)
 	{
 		hub->setConnectionStatus(status);
-#ifdef UPDATE_CON_STATUS_ON_FAV_HUBS_IN_REALTIME
-		fly_fire1(FavoriteManagerListener::FavoriteStatusChanged(), hub);
-#endif
 	}
 }
-#endif
 void FavoriteManager::speakUserUpdate(const bool added, const FavoriteUser& p_fav_user)
 {
 	dcassert(!ClientManager::isBeforeShutdown());

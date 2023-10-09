@@ -34,9 +34,6 @@
     <ClCompile Include="windows\ChatCtrl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="windows\ClientsPage.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="windows\CommandDlg.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -220,15 +217,6 @@
     <ClCompile Include="windows\ProxyPage.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="windows\RSSnewsFrame.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="windows\RSSPage.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="windows\RSSSetFeedDlg.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="windows\FavHubGroupsDlg.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -278,9 +266,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="windows\AVIPreviewPage.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="windows\FakeDetectPage.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="windows\PopupsPage.cpp">
@@ -666,9 +651,6 @@
     <ClInclude Include="windows\AVIPreviewPage.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="windows\FakeDetectPage.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="windows\PopupsPage.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -682,9 +664,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="windows\QCDCtrlMsgs.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="windows\ClientsPage.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="windows\CZDCPage.h">

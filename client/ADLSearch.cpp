@@ -473,17 +473,6 @@ void ADLSearchManager::matchesFile(DestDirList& destDirVector, DirectoryListing:
 		{
 			auto copyFile = new DirectoryListing::File(*currentFile, true);
 			copyFile->setFlags(currentFile->getFlags());
-#ifdef IRAINMAN_INCLUDE_USER_CHECK
-			if (is->isForbidden && !getSentRaw())
-			{
-				AutoArray<char> buf(FULL_MAX_PATH);
-				_snprintf(buf, FULL_MAX_PATH, CSTRING(CHECK_FORBIDDEN), currentFile->getName().c_str());
-				
-				ClientManager::setClientStatus(user, buf.data(), is->raw, false);
-				
-				setSentRaw(true);
-			}
-#endif
 			
 			destDirVector[is->ddIndex].dir->m_files.push_back(copyFile);
 			destDirVector[is->ddIndex].fileAdded = true;

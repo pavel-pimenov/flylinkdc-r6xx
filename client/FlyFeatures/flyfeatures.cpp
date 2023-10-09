@@ -21,7 +21,6 @@
 #ifdef FLYLINKDC_USE_CUSTOM_MENU
 #include "CustomMenuManager.h"
 #endif
-#include "RSSManager.h"
 #include "ThemeManager.h"
 #include "AutoUpdate.h"
 #include "DCPlusPlus.h"
@@ -40,9 +39,6 @@ void createFlyFeatures()
 #endif
 #ifdef SSA_VIDEO_PREVIEW_FEATURE
 	VideoPreview::newInstance(); 
-#endif
-#ifdef IRAINMAN_INCLUDE_RSS
-	RSSManager::newInstance();        
 #endif
 }
 
@@ -79,9 +75,6 @@ void shutdownFlyFeatures()
 
 void deleteFlyFeatures()
 {
-#ifdef IRAINMAN_INCLUDE_RSS
-	RSSManager::deleteInstance();
-#endif
 #ifdef SSA_VIDEO_PREVIEW_FEATURE
 	VideoPreview::deleteInstance();
 #endif

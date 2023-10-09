@@ -35,9 +35,6 @@ class UserInfoBase
 		void browseList();
 		
 		void getUserResponses();
-#ifdef IRAINMAN_INCLUDE_USER_CHECK
-		void checkList();
-#endif
 		void matchQueue();
 		void doReport(const string& hubHint);
 		
@@ -74,9 +71,6 @@ struct FavUserTraits
 {
 	FavUserTraits() :
 		isEmpty(true),
-#ifndef IRAINMAN_ALLOW_ALL_CLIENT_FEATURES_ON_NMDC
-		adcOnly(true),
-#endif
 		isFav(false),
 		isAutoGrantSlot(false),
 		uploadLimit(0),
@@ -87,10 +81,6 @@ struct FavUserTraits
 	void init(const UserInfoBase& ui);
 	
 	int uploadLimit;
-	
-#ifndef IRAINMAN_ALLOW_ALL_CLIENT_FEATURES_ON_NMDC
-	bool adcOnly;
-#endif
 	bool isAutoGrantSlot;
 	bool isFav;
 	bool isEmpty;

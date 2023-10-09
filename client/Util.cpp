@@ -251,7 +251,7 @@ void Util::initialize()
 #else
 	g_paths[PATH_GLOBAL_CONFIG] = g_paths[PATH_EXE];
 #endif
-#ifdef USE_APPDATA
+#ifdef FLYLINKDC_USE_APPDATA
 	if (File::isExist(g_paths[PATH_EXE] + "Settings" PATH_SEPARATOR_STR "DCPlusPlus.xml") ||
 	        !(locatedInSysPath(PROGRAM_FILES, g_paths[PATH_EXE]) || locatedInSysPath(PROGRAM_FILESX86, g_paths[PATH_EXE]))
 	   )
@@ -287,9 +287,9 @@ void Util::initialize()
 	{
 		intiProfileConfig();
 	}
-#else // USE_APPDATA
+#else // FLYLINKDC_USE_APPDATA
 	g_paths[PATH_USER_CONFIG] = g_paths[PATH_GLOBAL_CONFIG] + "Settings" PATH_SEPARATOR_STR;
-#endif //USE_APPDATA    
+#endif //FLYLINKDC_USE_APPDATA    
 	g_paths[PATH_LANGUAGES] = g_paths[PATH_GLOBAL_CONFIG] + "Lang" PATH_SEPARATOR_STR;
 	
 #ifdef FLYLINKDC_USE_EXTERNAL_MAIN_ICON
@@ -720,7 +720,7 @@ void Util::loadBootConfig()
 			g_paths[PATH_USER_CONFIG] = formatParams(boot.getChildData(), params, false);
 			AppendPathSeparator(g_paths[PATH_USER_CONFIG]);
 		}
-#ifdef USE_APPDATA
+#ifdef FLYLINKDC_USE_APPDATA
 # ifndef USE_SETTINGS_PATH_TO_UPDATA_DATA
 		boot.resetCurrentChild();
 	
@@ -737,7 +737,7 @@ void Util::loadBootConfig()
 			g_paths[PATH_USER_CONFIG] = formatParams(boot.getChildData(), params, false);
 			AppendPathSeparator(g_paths[PATH_USER_CONFIG]);
 		}
-#endif
+#endif // FLYLINKDC_USE_APPDATA
 	}
 	catch (const Exception&)
 	{

@@ -18,14 +18,10 @@
 #include "ChatCtrl.h"
 #include "MainFrm.h"
 
-#ifdef IRAINMAN_INCLUDE_SMILE
 #include "../GdiOle/GDIImageOle.h"
-
 #include "AGEmotionSetup.h"
-
-
 #define MAX_EMOTICONS 48
-#endif // IRAINMAN_INCLUDE_SMILE
+
 
 static const TCHAR g_BadUrlSymbol[] = { _T(' '), _T('\"'), _T('<'), _T('>'),
                                         _T('['), _T(']')
@@ -46,7 +42,6 @@ static const Tags g_AllLinks[] =
 };
 
 
-#ifdef IRAINMAN_USE_BB_CODES
 static const Tags g_StartBBTag[] =
 {
 	Tags(_T("[code]")), // TODO отключать форматирование
@@ -76,7 +71,7 @@ static const Tags g_EndBBTag[] =
 //};
 //typedef std::vector<Interval> Intervals;
 //typedef Intervals::const_iterator CIterIntervals;
-#endif // IRAINMAN_USE_BB_CODES
+
 
 tstring ChatCtrl::g_sSelectedLine;
 tstring ChatCtrl::g_sSelectedText;
@@ -85,9 +80,7 @@ tstring ChatCtrl::g_sSelectedUserName;
 tstring ChatCtrl::g_sSelectedURL;
 
 ChatCtrl::ChatCtrl() : m_boAutoScroll(true), m_is_disable_chat_cache(false), m_is_out_of_memory_for_smile(false), m_chat_cache_length(0) //, m_Client(nullptr)
-#ifdef IRAINMAN_INCLUDE_SMILE
 	, m_pRichEditOle(NULL), /*m_pOleClientSite(NULL),*/ m_pStorage(NULL), m_lpLockBytes(NULL), m_Ref(0)
-#endif
 {
 	//m_hStandardCursor = LoadCursor(NULL, IDC_IBEAM);
 	//m_hHandCursor = LoadCursor(NULL, IDC_HAND);
@@ -95,16 +88,13 @@ ChatCtrl::ChatCtrl() : m_boAutoScroll(true), m_is_disable_chat_cache(false), m_i
 
 ChatCtrl::~ChatCtrl()
 {
-#ifdef IRAINMAN_INCLUDE_SMILE
 	safe_release(m_pStorage);
 	safe_release(m_lpLockBytes);
 	safe_release(m_pRichEditOle);
-#endif // IRAINMAN_INCLUDE_SMILE
 }
 
 void ChatCtrl::Initialize()
 {
-#ifdef IRAINMAN_INCLUDE_SMILE
 	m_pRichEditOle = GetOleInterface();
 	dcassert(m_pRichEditOle);
 	if (m_pRichEditOle)
@@ -117,7 +107,6 @@ void ChatCtrl::Initialize()
 		}
 	}
 	SetOleCallback(this);
-#endif // IRAINMAN_INCLUDE_SMILE
 }
 
 void ChatCtrl::AdjustTextSize()
@@ -380,7 +369,6 @@ void ChatCtrl::AppendText(const CFlyChatCache& p_message, unsigned p_max_smiles,
 	}
 	
 	// Ensure that EOLs will be always same
-#ifdef IRAINMAN_INCLUDE_SMILE
 	// ≈сли кончилась пам€ть на GDI - даже не пытаемс€ создавать смайлы (TODO - зачистить после полной загрузки кеша);
 	extern DWORD g_GDI_count;
 	bool bUseEmo = p_message.m_bUseEmo && m_is_out_of_memory_for_smile == false && g_GDI_count < 8000;
@@ -490,7 +478,6 @@ void ChatCtrl::AppendText(const CFlyChatCache& p_message, unsigned p_max_smiles,
 		}
 	}
 	else
-#endif // IRAINMAN_INCLUDE_SMILE
 	{
 		AppendTextOnly(sText, p_message);
 	}
@@ -823,7 +810,6 @@ void ChatCtrl::AppendTextParseURL(CAtlString& sMsgLower, const CFlyChatCacheText
 }
 void ChatCtrl::AppendTextParseBB(CAtlString& sMsgLower, const CFlyChatCacheTextOnly& p_message, const LONG& lSelBegin)
 {
-#ifdef IRAINMAN_USE_BB_CODES
 	// BB codes support http://ru.wikipedia.org/wiki/BbCode
 	if (BOOLSETTING(FORMAT_BB_CODES))
 	{
@@ -990,7 +976,6 @@ void ChatCtrl::AppendTextParseBB(CAtlString& sMsgLower, const CFlyChatCacheTextO
 			}
 		}
 	}
-#endif // IRAINMAN_USE_BB_CODES
 	
 }
 bool ChatCtrl::HitNick(const POINT& p, tstring& sNick, int& iBegin, int& iEnd, const UserPtr& user)
@@ -1390,40 +1375,6 @@ LRESULT ChatCtrl::onCopyURL(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/
 	}
 	return 0;
 }
-#ifdef IRAINMAN_ENABLE_WHOIS
-LRESULT ChatCtrl::onWhoisIP(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
-{
-	if (!g_sSelectedIP.empty())
-	{
-		if (wID == IDC_WHOIS_IP4_INFO)
-		{
-			const string l_report = "IPv4 Info: " + Identity::formatIpString(Text::fromT(g_sSelectedIP));
-			const auto l_client = ClientManager::findClient(getHubHint());
-			if (l_client)
-			{
-				l_client->reportUser(l_report);
-			}
-		}
-		else
-		{
-			WinUtil::CheckOnWhoisIP(wID, g_sSelectedIP);
-		}
-	}
-	return 0;
-}
-LRESULT ChatCtrl::onWhoisURL(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
-{
-	if (!g_sSelectedURL.empty())
-	{
-		uint16_t port;
-		string proto, host, file, query, fragment;
-		Util::decodeUrl(Text::fromT(g_sSelectedURL), proto, host, port, file, query, fragment);
-		if (!host.empty())
-			WinUtil::openLink(_T("http://bgp.he.net/dns/") + Text::toT(host) + _T("#_website"));
-	}
-	return 0;
-}
-#endif
 LRESULT ChatCtrl::onEditCopy(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
 	Copy();
@@ -1459,7 +1410,6 @@ bool ChatCtrl::isGoodNickBorderSymbol(const TCHAR ch)
 	return false;
 }
 
-#ifdef IRAINMAN_INCLUDE_SMILE
 // TODO - никогда не зоветс€
 LRESULT ChatCtrl::onUpdateSmile(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM lParam, BOOL& /*bHandled*/)
 {
@@ -1595,4 +1545,3 @@ void ChatCtrl::setHubParam(const string& sUrl, const string& sNick)
 	m_HubHint = sUrl;
 }
 
-#endif // IRAINMAN_INCLUDE_SMILE

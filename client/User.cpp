@@ -47,9 +47,6 @@ Identity::StringDictionaryIndex Identity::g_infoDicIndex;
 #ifdef FLYLINKDC_USE_LASTIP_AND_USER_RATIO
 
 User::User(const CID& p_CID, const string& p_nick, uint32_t p_hub_id) : m_cid(p_CID),
-#ifdef IRAINMAN_ENABLE_AUTO_BAN
-	m_support_slots(FLY_SUPPORT_SLOTS_FIRST),
-#endif
 	m_slots(0),
 	m_bytesShared(0),
 	m_limit(0)
@@ -1299,62 +1296,6 @@ bool Identity::isFantomIP() const
 	}
 	return false;
 }
-
-#ifdef IRAINMAN_ENABLE_AUTO_BAN
-User::DefinedAutoBanFlags User::hasAutoBan(Client *p_Client, const bool p_is_favorite)
-{
-	// Check exclusion first
-	bool bForceAllow = BOOLSETTING(PROT_FAVS) && p_is_favorite;
-	if (!bForceAllow && !UserManager::protectedUserListEmpty())
-	{
-		const string l_Nick = getLastNick();
-		bForceAllow = !l_Nick.empty() && !UserManager::isInProtectedUserList(l_Nick);
-	}
-	int iBan = BAN_NONE;
-	if (!bForceAllow)
-	{
-#ifdef FLYLINKDC_USE_LASTIP_AND_USER_RATIO
-		if (getHubID() != 0)
-#endif
-		{
-			const int l_limit = getLimit();
-			const int l_slots = getSlots();
-			
-			const int iSettingBanSlotMax = SETTING(BAN_SLOTS_H);
-			const int iSettingBanSlotMin = SETTING(BAN_SLOTS);
-			const int iSettingLimit = SETTING(BAN_LIMIT);
-			const int iSettingShare = SETTING(BAN_SHARE);
-			
-			if (m_support_slots == FLY_SUPPORT_SLOTS_FIRST)
-			{
-				bool HubDoenstSupportSlot = isNMDC();
-				if (HubDoenstSupportSlot)
-				{
-					if (p_Client)
-					{
-						HubDoenstSupportSlot = p_Client->hubIsNotSupportSlot();
-					}
-				}
-				m_support_slots = HubDoenstSupportSlot ? FLY_NSUPPORT_SLOTS : FLY_SUPPORT_SLOTS;
-			}
-			
-			if ((m_support_slots == FLY_SUPPORT_SLOTS || l_slots) && iSettingBanSlotMin && l_slots < iSettingBanSlotMin)
-				iBan |= BAN_BY_MIN_SLOT;
-				
-			if (iSettingBanSlotMax && l_slots > iSettingBanSlotMax)
-				iBan |= BAN_BY_MAX_SLOT;
-				
-			if (iSettingShare && static_cast<int>(getBytesShared() / uint64_t(1024 * 1024 * 1024)) < iSettingShare)
-				iBan |= BAN_BY_SHARE;
-				
-			// Skip users with limitation turned off
-			if (iSettingLimit && l_limit && l_limit < iSettingLimit)
-				iBan |= BAN_BY_LIMIT;
-		}
-	}
-	return static_cast<DefinedAutoBanFlags>(iBan);
-}
-#endif // IRAINMAN_ENABLE_AUTO_BAN
 
 
 /**

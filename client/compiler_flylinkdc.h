@@ -25,8 +25,6 @@
 
 //#define FLYLINKDC_TRACE_ENABLE
 
-//#define IRAINMAN_INTEL_CPP_TEST 1
-
 #ifndef BOOST_NO_RTTI
 #define BOOST_NO_RTTI 1
 #endif
@@ -38,18 +36,6 @@
 #ifndef BOOST_USE_WINDOWS_H
 #define BOOST_USE_WINDOWS_H
 #endif
-
-#ifdef IRAINMAN_INTEL_CPP_TEST
-//#define BOOST_NO_RTTI
-# ifndef __INTEL_COMPILER
-#  define __INTEL_COMPILER 1210
-# endif // __INTEL_COMPILER
-
-# ifndef _NATIVE_NULLPTR_SUPPORTED
-#  define nullptr NULL
-# endif
-
-#endif // IRAINMAN_INTEL_CPP_TEST
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -190,102 +176,19 @@ typedef unsigned __int64 uint64_t;
 //# define FLYLINKDC_USE_HIGH_LOAD_FOR_SEARCH_ENGINE_IN_DEBUG // Отдаем на поиск больше данных - в релизе никогда не включать
 #endif
 
-#define IRAINMAN_NTFS_STREAM_TTH
-#define IRAINMAN_IP_AUTOUPDATE
-#define IRAINMAN_ENABLE_WHOIS
-#define IRAINMAN_ENABLE_MORE_CLIENT_COMMAND
-
-#define IRAINMAN_ENABLE_CON_STATUS_ON_FAV_HUBS
-//#define IRAINMAN_SPEED_LIMITER_5S4_10 // Включает ограничение: скорость отдачи = 5 * количество слотов + 4, скорость загрузки = 10 * скорость отдачи
-//#define IRAINMAN_INCLUDE_USER_CHECK // - Не понял нахрена оно нужно. если юзеров 100 тыщ то что будет?
-#define IRAINMAN_INCLUDE_PROTO_DEBUG_FUNCTION
-#define IRAINMAN_USE_BB_CODES // BB codes support http://ru.wikipedia.org/wiki/BbCode
-
 #define SPEED_APPROXIMATION_INTERVAL_S 30
 
-#define IRAINMAN_ENABLE_AUTO_BAN
-#define IRAINMAN_INCLUDE_SMILE // Disable this to cut all smile support from code.
-// #define IRAINMAN_INCLUDE_RSS // Disable this to cut rss-manager from code.
-#define FLYLINKDC_USE_PROVIDER_RESOURCES
+# define FLYLINKDC_USE_PROVIDER_RESOURCES
 //# define FLYLINKDC_USE_THEME_MANAGER
 
-#define IRAINMAN_ENABLE_OP_VIP_MODE
-#ifdef IRAINMAN_ENABLE_OP_VIP_MODE
-# define IRAINMAN_ENABLE_OP_VIP_MODE_ON_NMDC
-#endif
-#define IRAINMAN_INCLUDE_HIDE_SHARE_MOD
-#define IRAINMAN_AUTOUPDATE_ALL_USERS_DATA 1
-//#define IRAINMAN_AUTOUPDATE_CORE_DIFFERENCE 1 // TODO
-//#define IRAINMAN_AUTOUPDATE_ARCH_DIFFERENCE 1 // TODO
-#define IRAINMAN_FAST_FLAT_TAB
-#define IRAINMAN_USE_GDI_PLUS_TAB 1 // if disable - used old-school tab.
-
-//#define IRAINMAN_DISALLOWED_BAN_MSG
-#ifndef IRAINMAN_DISALLOWED_BAN_MSG
-// #define SMT_ENABLE_FEATURE_BAN_MSG // please DON'T enable this!
-#endif
 #define USE_SETTINGS_PATH_TO_UPDATA_DATA
-#define IRAINMAN_USE_HIDDEN_USERS // http://adc.sourceforge.net/ADC-EXT.html#_hidden_status_for_client_type
-//#endif
-//#define IRAINMAN_ENABLE_TTH_GET_FLAG // This code is off. All clients support ADC teams have this flag is always set. Our version 4xx also do not use it. He is unlikely to ever need. Leave only to simplify merge.
-//#define IRAINMAN_CONNECTION_MANAGER_TOKENS_DEBUG // TODO: must correct work with tokens in the ConnectionManager. This error runs either with Strong, or even from a very long time. After confirming correct downloads, I'll probably fix the problem.
-//#define IRAINMAN_CORRRECT_CALL_FOR_CLIENT_MANAGER_DEBUG // TODO: correct the error with the transfer of incorrect addresses in ClientManager :: findHub: error or very old or relatively new and due to the large merzh in the making of the branches r5xx.
-#define IRAINMAN_USE_NG_CORE
 
-#ifdef IRAINMAN_USE_NG_CORE
-# define IRAINMAN_ALLOW_ALL_CLIENT_FEATURES_ON_NMDC // TODO: use new ADC features.
-# define IRAINMAN_USE_NG_FAST_USER_INFO 1 // optimizing the use of memory and CPU resources. 
-
-# ifndef IRAINMAN_USE_NG_FAST_USER_INFO
-//#  define IRAINMAN_USE_OLD_CODE_IN_USER_INFO_ONLY_FOR_TEST 1
-# endif // IRAINMAN_USE_NG_FAST_USER_INFO
-
-# define IRAINMAN_IDENTITY_IS_NON_COPYABLE
-
-#define IRAINMAN_USE_SPIN_LOCK
-
-# define IRAINMAN_USE_READ_WRITE_POLITICS
-# ifdef IRAINMAN_USE_READ_WRITE_POLITICS
-
-#  define IRAINMAN_USE_SHARED_SPIN_LOCK
-#   ifdef IRAINMAN_USE_SHARED_SPIN_LOCK
-#    define IRAINMAN_USE_SEPARATE_CS_IN_FAVORITE_MANAGER
-#    define IRAINMAN_USE_SEPARATE_CS_IN_FINISHED_MANAGER
-#   endif // IRAINMAN_USE_SHARED_SPIN_LOCK
-# endif // IRAINMAN_USE_READ_WRITE_POLITICS
-
-# ifdef FLYLINKDC_HE
-#  ifdef IRAINMAN_USE_READ_WRITE_POLITICS
-#   ifdef IRAINMAN_USE_RECURSIVE_SHARED_CRITICAL_SECTION
-#    define IRAINMAN_NON_COPYABLE_USER_QUEUE_ON_USER_CONNECTED_OR_DISCONECTED
-#   endif // IRAINMAN_USE_RECURSIVE_SHARED_CRITICAL_SECTION
-#  endif // IRAINMAN_USE_READ_WRITE_POLITICS
-# endif // FLYLINKDC_HE
-
-#endif // IRAINMAN_USE_NG_CORE
-#if defined(IRAINMAN_USE_SPIN_LOCK) || defined(IRAINMAN_USE_SHARED_SPIN_LOCK)
-# define IRAINMAN_USE_NON_RECURSIVE_BEHAVIOR // TODO: recursive entry into a non-recursive mutex or spin lock.
-#endif
-#ifndef IRAINMAN_USE_NON_RECURSIVE_BEHAVIOR
-# ifdef IRAINMAN_ENABLE_CON_STATUS_ON_FAV_HUBS
-#  define UPDATE_CON_STATUS_ON_FAV_HUBS_IN_REALTIME // TODO.
-# endif
-#endif
-#define IRAINMAN_NOT_USE_COUNT_UPDATE_INFO_IN_LIST_VIEW_CTRL
-
-#ifdef IRAINMAN_NTFS_STREAM_TTH
-# define RIP_USE_STREAM_SUPPORT_DETECTION
-#endif
+#define RIP_USE_STREAM_SUPPORT_DETECTION
 //
 #define RIP_USE_CONNECTION_AUTODETECT
 
 //#define RIP_USE_PORTAL_BROWSER
-#ifdef _DEBUG
-// #define RIP_USE_LOG_PROTOCOL // выключил т.к. сильно грузит систему
-#endif
-
 //#define FLYLINKDC_USE_CS_CLIENT_SOCKET
-
 //#define FLYLINKDC_USE_VIEW_AS_TEXT_OPTION
 
 // http://msdn.microsoft.com/en-us/library/ee681827(VS.85).aspx#limits
@@ -293,12 +196,11 @@ typedef unsigned __int64 uint64_t;
 #define USE_SUPPORT_HUB
 //#define NIGHTORION_INTERNAL_TRANSLATE_SOCKET_ERRORS // Включить когда будет готов перевод.
 
-#define USE_APPDATA
+#define FLYLINKDC_USE_APPDATA
 
 #define FLYLINKDC_LOG_IN_SQLITE_BASE
 
 //#define NIGHTORION_USE_STATISTICS_REQUEST
-
 //#define USE_OFFLINE_ICON_FOR_FILELIST  Нужна доработка. // not yet implemented, don't turn on
 
 #define SSA_REMOVE_NEEDLESS_WORDS_FROM_VIDEO_AUDIO_INFO
@@ -318,19 +220,6 @@ typedef unsigned __int64 uint64_t;
 #define SCALOLAZ_MEDIAVIDEO_ICO // HD, SD icons on files in filelist
 #define SCALOLAZ_CHAT_REFFERING_TO_NICK
 #define SCALOLAZ_BB_COLOR_BUTTON
-
-#ifdef IRAINMAN_INCLUDE_SMILE
-# define IRAINMAN_INCLUDE_GDI_OLE 1
-#endif
-
-#if defined(IRAINMAN_INCLUDE_GDI_OLE) || defined(IRAINMAN_USE_GDI_PLUS_TAB)
-# define IRAINMAN_INCLUDE_GDI_INIT
-#endif
-/* TODO.
-#ifndef PROPPAGE_COLOR
-# define USE_SET_LIST_COLOR_IN_SETTINGS
-#endif
-*/
 
 // #define FLYLINKDC_USE_SETTINGS_AUTO_UPDATE
 //#define USE_REBUILD_MEDIAINFO
@@ -381,18 +270,5 @@ typedef unsigned __int64 uint64_t;
 # undef max
 #endif
 
-#ifdef _DEBUG
-
-#if 0
-template <class NonDerivableClass>
-class NonDerivable
-{
-		friend NonDerivableClass;
-	private:
-		NonDerivable() { }
-		NonDerivable(const NonDerivable&) { }
-};
-#endif
-#endif // _DEBUG
 
 #endif // DCPLUSPLUS_DCPP_COMPILER_FLYLINKDC_H

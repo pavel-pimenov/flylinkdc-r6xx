@@ -19,10 +19,8 @@
 #include "stdafx.h"
 
 #include "Resource.h"
-
 #include "OperaColorsPage.h"
 #include "PropertiesDlg.h"
-
 #include "BarShader.h"
 
 PropPage::TextItem OperaColorsPage::texts[] =

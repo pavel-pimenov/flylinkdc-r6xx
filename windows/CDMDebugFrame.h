@@ -6,7 +6,6 @@
 
 #include "../client/Semaphore.h"
 
-#ifdef IRAINMAN_INCLUDE_PROTO_DEBUG_FUNCTION
 
 #include "../client/DebugManager.h"
 #include "FlatTabCtrl.h"
@@ -153,6 +152,5 @@ class CDMDebugFrame : private DebugManagerListener, public Thread,
 		void on(DebugManagerListener::DebugEvent, const DebugTask& task) noexcept override;
 };
 
-#endif // IRAINMAN_INCLUDE_PROTO_DEBUG_FUNCTION
 
 #endif // __CDMDEBUGFRAME_H

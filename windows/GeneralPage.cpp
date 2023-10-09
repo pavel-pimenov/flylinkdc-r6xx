@@ -34,11 +34,6 @@ PropPage::TextItem GeneralPage::texts[] =
 	{ IDC_SETTINGS_DESCRIPTION, ResourceManager::DESCRIPTION },
 	{ IDC_SETTINGS_UPLOAD_LINE_SPEED, ResourceManager::SETTINGS_UPLOAD_LINE_SPEED },
 	{ IDC_SETTINGS_MEBIBITS, ResourceManager::MBPS },
-#ifdef IRAINMAN_ENABLE_SLOTS_AND_LIMIT_IN_DESCRIPTION
-	{ IDC_CHECK_ADD_TO_DESCRIPTION, ResourceManager::ADD_TO_DESCRIPTION },
-	{ IDC_CHECK_ADD_LIMIT, ResourceManager::ADD_LIMIT },
-	{ IDC_CHECK_ADD_SLOTS, ResourceManager::ADD_SLOTS },
-#endif
 	{ IDC_SETTINGS_NOMINALBW, ResourceManager::SETTINGS_NOMINAL_BANDWIDTH },
 	{ IDC_CD_GP, ResourceManager::CUST_DESC },
 	{ IDC_TECHSUPPORT_BORDER, ResourceManager::TECHSUPPORT },
@@ -63,11 +58,6 @@ PropPage::Item GeneralPage::items[] =
 	{ IDC_EMAIL,        SettingsManager::EMAIL,         PropPage::T_STR },
 	{ IDC_DESCRIPTION,  SettingsManager::DESCRIPTION,   PropPage::T_STR },
 	{ IDC_CONNECTION,   SettingsManager::UPLOAD_SPEED,  PropPage::T_STR },
-#ifdef IRAINMAN_ENABLE_SLOTS_AND_LIMIT_IN_DESCRIPTION
-	{ IDC_CHECK_ADD_TO_DESCRIPTION,   SettingsManager::ADD_TO_DESCRIPTION,    PropPage::T_BOOL },
-	{ IDC_CHECK_ADD_LIMIT,   SettingsManager::ADD_DESCRIPTION_LIMIT,    PropPage::T_BOOL },
-	{ IDC_CHECK_ADD_SLOTS, SettingsManager::ADD_DESCRIPTION_SLOTS,    PropPage::T_BOOL },
-#endif
 	{ IDC_CONNECT_TO_SUPPORT_HUB, SettingsManager::CONNECT_TO_SUPPORT_HUB, PropPage::T_BOOL },
 	{ IDC_DISABLE_AUTOREMOVE_VIRUS_HUB, SettingsManager::DISABLE_AUTOREMOVE_VIRUS_HUB, PropPage::T_BOOL },
 	{ IDC_USE_FLY_SERVER_STATICTICS_SEND, SettingsManager::USE_FLY_SERVER_STATICTICS_SEND, PropPage::T_BOOL },
@@ -115,14 +105,12 @@ void GeneralPage::AddGenderItem(LPCWSTR p_Text, int p_image_index, int p_index)
 LRESULT GeneralPage::onInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 {
 	::EnableWindow(GetDlgItem(IDC_DISABLE_AUTOREMOVE_VIRUS_HUB), FALSE);
-#ifndef IRAINMAN_ENABLE_SLOTS_AND_LIMIT_IN_DESCRIPTION
 	::EnableWindow(GetDlgItem(IDC_CHECK_ADD_TO_DESCRIPTION), FALSE);
 	::EnableWindow(GetDlgItem(IDC_CHECK_ADD_SLOTS), FALSE);
 	::EnableWindow(GetDlgItem(IDC_CHECK_ADD_LIMIT), FALSE);
 	GetDlgItem(IDC_CHECK_ADD_TO_DESCRIPTION).ShowWindow(FALSE);
 	GetDlgItem(IDC_CHECK_ADD_SLOTS).ShowWindow(FALSE);
 	GetDlgItem(IDC_CHECK_ADD_LIMIT).ShowWindow(FALSE);
-#endif
 	PropPage::translate((HWND)(*this), texts);
 	ctrlConnection.Attach(GetDlgItem(IDC_CONNECTION));
 	
@@ -298,10 +286,4 @@ bool GeneralPage::GetLangByFile(const string& p_FileName, LanguageMap& p_Languag
 
 void GeneralPage::fixControls()
 {
-#ifdef IRAINMAN_ENABLE_SLOTS_AND_LIMIT_IN_DESCRIPTION
-	BOOL use_description = IsDlgButtonChecked(IDC_CHECK_ADD_TO_DESCRIPTION) == BST_CHECKED;
-	
-	::EnableWindow(GetDlgItem(IDC_CHECK_ADD_SLOTS), use_description);
-	::EnableWindow(GetDlgItem(IDC_CHECK_ADD_LIMIT), use_description);
-#endif
 }

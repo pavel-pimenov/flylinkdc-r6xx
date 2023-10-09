@@ -401,14 +401,7 @@ class QueueManager : public Singleton<QueueManager>,
 				
 				typedef std::unordered_map<UserPtr, QueueItemList, User::Hash> UserQueueMap; // TODO - set ?
 				typedef std::unordered_map<UserPtr, QueueItemPtr, User::Hash> RunningMap;
-#ifdef IRAINMAN_NON_COPYABLE_USER_QUEUE_ON_USER_CONNECTED_OR_DISCONECTED
-				const UserQueueMap& getListL(size_t i) const
-				{
-					return userQueue[i];
-				}
-#else
 				bool userIsDownloadedFiles(const UserPtr& aUser, QueueItemList& p_status_update_array);
-#endif // IRAINMAN_NON_COPYABLE_USER_QUEUE_ON_USER_CONNECTED_OR_DISCONECTED
 			public:
 				string getLastErrorQuey() const
 				{

@@ -48,12 +48,7 @@ WindowsPage::ListItem WindowsPage::listItems[] =
 	{ SettingsManager::OPEN_FINISHED_UPLOADS, ResourceManager::FINISHED_UPLOADS },
 	{ SettingsManager::OPEN_NETWORK_STATISTICS, ResourceManager::NETWORK_STATISTICS },
 	{ SettingsManager::OPEN_NOTEPAD, ResourceManager::NOTEPAD },
-#ifdef IRAINMAN_INCLUDE_PROTO_DEBUG_FUNCTION
 	{ SettingsManager::OPEN_CDMDEBUG, ResourceManager::MENU_CDMDEBUG_MESSAGES },
-#endif
-#ifdef IRAINMAN_INCLUDE_RSS
-	{ SettingsManager::OPEN_RSS, ResourceManager::RSS_NEWS },
-#endif
 	{ SettingsManager::OPEN_SEARCH_SPY, ResourceManager::SEARCH_SPY },
 #ifdef RIP_USE_PORTAL_BROWSER
 	{ SettingsManager::OPEN_PORTAL_BROWSER, ResourceManager::PORTAL_BROWSER },

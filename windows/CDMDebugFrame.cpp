@@ -1,7 +1,5 @@
 #include "stdafx.h"
 
-#ifdef IRAINMAN_INCLUDE_PROTO_DEBUG_FUNCTION
-
 #include "Resource.h"
 #include "CDMDebugFrame.h"
 #include "../client/File.h"
@@ -372,4 +370,3 @@ void CDMDebugFrame::addCmd(const DebugTask& task)
 	m_semaphore.signal();
 }
 
-#endif // IRAINMAN_INCLUDE_PROTO_DEBUG_FUNCTION

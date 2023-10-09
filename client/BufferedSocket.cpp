@@ -17,6 +17,8 @@
  */
 
 #include "stdinc.h"
+#include <fstream>
+
 #include "ZUtils.h"
 #include "ThrottleManager.h"
 #include "IpGuard.h"

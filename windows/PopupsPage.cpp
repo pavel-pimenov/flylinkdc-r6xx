@@ -68,9 +68,6 @@ Popups::ListItem Popups::listItems[] =
 	{ SettingsManager::POPUP_PM, ResourceManager::POPUP_PM },
 	{ SettingsManager::POPUP_NEW_PM, ResourceManager::POPUP_NEW_PM },
 	{ SettingsManager::PM_PREVIEW, ResourceManager::PM_PREVIEW },
-#ifdef IRAINMAN_INCLUDE_RSS
-	{ SettingsManager::POPUP_NEW_RSSNEWS, ResourceManager::POPUP_NEW_RSSNEWS },
-#endif
 	{ SettingsManager::POPUP_SEARCH_SPY, ResourceManager::POPUP_SEARCH_SPY },
 //	{ SettingsManager::POPUP_NEW_FOLDERSHARE, ResourceManager::POPUP_NEW_FOLDERSHARE },
 	{ 0, ResourceManager::SETTINGS_AUTO_AWAY }

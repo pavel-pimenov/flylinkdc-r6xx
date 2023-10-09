@@ -110,7 +110,7 @@ class OMenu : public CMenu
 			DeleteDC(dc);
 		}
 };
-#ifdef IRAINMAN_INCLUDE_SMILE
+
 class CEmotionMenu : public OMenu
 {
 	public:
@@ -125,7 +125,7 @@ class CEmotionMenu : public OMenu
 	private:
 		int m_menuItems;
 };
-#endif
+
 
 #define MESSAGE_HANDLER_HWND(msg, func) \
 	if(uMsg == msg) \

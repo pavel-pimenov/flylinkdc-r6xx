@@ -32,9 +32,7 @@
 class FavoriteHubsFrame : public MDITabChildWindowImpl < FavoriteHubsFrame, RGB(0, 0, 0), IDR_FAVORITES >, public StaticFrame<FavoriteHubsFrame, ResourceManager::FAVORITE_HUBS, IDC_FAVORITES>,
 	private FavoriteManagerListener,
 	private ClientManagerListener,
-#ifdef IRAINMAN_ENABLE_CON_STATUS_ON_FAV_HUBS
 	private CFlyTimerAdapter,
-#endif
 	private SettingsManagerListener
 {
 	public:
@@ -48,9 +46,7 @@ class FavoriteHubsFrame : public MDITabChildWindowImpl < FavoriteHubsFrame, RGB(
 		BEGIN_MSG_MAP(FavoriteHubsFrame)
 		MESSAGE_HANDLER(WM_CREATE, onCreate)
 		MESSAGE_HANDLER(WM_CLOSE, onClose)
-#ifdef IRAINMAN_ENABLE_CON_STATUS_ON_FAV_HUBS
 		MESSAGE_HANDLER(WM_TIMER, onTimer);
-#endif
 		MESSAGE_HANDLER(WM_CONTEXTMENU, onContextMenu)
 		MESSAGE_HANDLER(WM_SETFOCUS, onSetFocus)
 		MESSAGE_HANDLER(WM_SPEAKER, onSpeaker)
@@ -86,10 +82,7 @@ class FavoriteHubsFrame : public MDITabChildWindowImpl < FavoriteHubsFrame, RGB(
 		LRESULT onContextMenu(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM lParam, BOOL& /*bHandled*/);
 		LRESULT onColumnClickHublist(int /*idCtrl*/, LPNMHDR pnmh, BOOL& /*bHandled*/);
 		LRESULT onSpeaker(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, BOOL& /*bHandled*/);
-		
-#ifdef IRAINMAN_ENABLE_CON_STATUS_ON_FAV_HUBS
 		LRESULT onTimer(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& bHandled);
-#endif
 		
 		bool checkNick();
 		void UpdateLayout(BOOL bResizeBars = TRUE);
@@ -131,13 +124,9 @@ class FavoriteHubsFrame : public MDITabChildWindowImpl < FavoriteHubsFrame, RGB(
 			COLUMN_SERVER,
 			COLUMN_USERDESCRIPTION,
 			COLUMN_EMAIL,
-#ifdef IRAINMAN_INCLUDE_HIDE_SHARE_MOD
 			COLUMN_HIDESHARE,
-#endif
-#ifdef IRAINMAN_ENABLE_CON_STATUS_ON_FAV_HUBS
 			COLUMN_CONNECTION_STATUS,
 			COLUMN_LAST_SUCCESFULLY_CONNECTED,
-#endif
 			COLUMN_LAST
 		};
 		
@@ -181,10 +170,8 @@ class FavoriteHubsFrame : public MDITabChildWindowImpl < FavoriteHubsFrame, RGB(
 		
 		static int columnSizes[COLUMN_LAST];
 		static int columnIndexes[COLUMN_LAST];
-#ifdef IRAINMAN_ENABLE_CON_STATUS_ON_FAV_HUBS
 		tstring getLastAttempts(const ConnectionStatus& connectionStatus, const time_t curTime);
 		tstring getLastSucces(const ConnectionStatus& connectionStatus, const time_t curTime);
-#endif // IRAINMAN_ENABLE_CON_STATUS_ON_FAV_HUBS
 		void addEntry(const FavoriteHubEntry* entry, int pos, int groupIndex);
 		void handleMove(bool up);
 		TStringList getSortedGroups() const;
@@ -200,20 +187,7 @@ class FavoriteHubsFrame : public MDITabChildWindowImpl < FavoriteHubsFrame, RGB(
 		{
 			ctrlHubs.DeleteItem(ctrlHubs.find((LPARAM)e));
 		}
-#ifdef IRAINMAN_ENABLE_CON_STATUS_ON_FAV_HUBS
-#ifdef UPDATE_CON_STATUS_ON_FAV_HUBS_IN_REALTIME
-		void on(FavoriteStatusChanged, const FavoriteHubEntry* e) noexcept override
-		{
-			const int pos = ctrlHubs.find((LPARAM)e);
-			const ConnectionStatus& connectionStatus = e->getConnectionStatus();
-			const time_t curTime = GET_TIME();
-			
-			ctrlHubs.SetItemText(pos, COLUMN_CONNECTION_STATUS, getLastAttempts(connectionStatus, curTime).c_str());
-			ctrlHubs.SetItemText(pos, COLUMN_LAST_SUCCESFULLY_CONNECTED, getLastSucces(connectionStatus, curTime).c_str());
-		}
-#endif // UPDATE_CON_STATUS_ON_FAV_HUBS_IN_REALTIME
 		
-#endif // IRAINMAN_ENABLE_CON_STATUS_ON_FAV_HUBS
 		void on(SettingsManagerListener::Repaint) override;
 		
 		void on(ClientConnected, const Client* c) noexcept override

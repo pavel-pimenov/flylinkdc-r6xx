@@ -156,9 +156,7 @@ class ClientManager : public Speaker<ClientManagerListener>,
 		static void setIPUser(const UserPtr& p_user, const string& p_ip, const uint16_t p_udpPort = 0);
 		
 		static StringList getUsersByIp(const string &p_ip);
-#ifndef IRAINMAN_IDENTITY_IS_NON_COPYABLE
-		static Identity getIdentity(const UserPtr& user);
-#endif // IRAINMAN_IDENTITY_IS_NON_COPYABLE
+		//static Identity getIdentity(const UserPtr& user);
 		static OnlineUserPtr getOnlineUserL(const UserPtr& p);
 		static bool isOp(const UserPtr& aUser, const string& aHubUrl);
 		/** Constructs a synthetic, hopefully unique CID */
@@ -214,9 +212,6 @@ class ClientManager : public Speaker<ClientManagerListener>,
 		static const CID& getMyPID();
 		
 		static void setListLength(const UserPtr& p, const string& listLen);
-#ifdef IRAINMAN_INCLUDE_USER_CHECK
-		static void fileListDisconnected(const UserPtr& p);
-#endif
 		static void connectionTimeout(const UserPtr& p);
 #ifdef FLYLINKDC_USE_DETECT_CHEATING
 		static void checkCheating(const UserPtr& p, DirectoryListing* dl);

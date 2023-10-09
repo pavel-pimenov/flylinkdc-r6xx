@@ -106,9 +106,7 @@ class MainFrame : public CMDIFrameWindowImpl<MainFrame>, public CUpdateUI<MainFr
 		MESSAGE_HANDLER(IDC_UPDATE_WINDOW_TITLE, onUpdateWindowTitle)
 		MESSAGE_HANDLER(WM_CONTEXTMENU, onContextMenu)
 		MESSAGE_HANDLER(WM_MENUSELECT, OnMenuSelect)
-#ifdef IRAINMAN_INCLUDE_SMILE
 		MESSAGE_HANDLER(WM_ANIM_CHANGE_FRAME, OnAnimChangeFrame)
-#endif
 		MESSAGE_HANDLER(WM_IDR_TOTALRESULT_WAIT, OnUpdateTotalResult)
 		MESSAGE_HANDLER(WM_IDR_RESULT_RECEIVED, OnUpdateResultReceive)
 #ifdef SSA_VIDEO_PREVIEW_FEATURE
@@ -141,9 +139,7 @@ class MainFrame : public CMDIFrameWindowImpl<MainFrame>, public CUpdateUI<MainFr
 		COMMAND_ID_HANDLER(IDC_FINISHED, onOpenWindows)
 		COMMAND_ID_HANDLER(IDC_FINISHED_UL, onOpenWindows)
 		COMMAND_ID_HANDLER(IDC_UPLOAD_QUEUE, onOpenWindows)
-#ifdef IRAINMAN_INCLUDE_PROTO_DEBUG_FUNCTION
 		COMMAND_ID_HANDLER(IDC_CDMDEBUG_WINDOW, onOpenWindows)
-#endif
 #ifdef SSA_VIDEO_PREVIEW_FEATURE
 		COMMAND_ID_HANDLER(IDD_PREVIEW_LOG_DLG, onPreviewLogDlg)
 #endif
@@ -204,9 +200,6 @@ class MainFrame : public CMDIFrameWindowImpl<MainFrame>, public CUpdateUI<MainFr
 		COMMAND_RANGE_HANDLER(IDC_CUSTOM_MENU, IDC_CUSTOM_MENU100, onOpenWindows)
 #endif
 		COMMAND_RANGE_HANDLER(ID_MEDIA_MENU_WINAMP_START, ID_MEDIA_MENU_WINAMP_END, onMediaMenu)
-#ifdef IRAINMAN_INCLUDE_RSS
-		COMMAND_ID_HANDLER(IDC_RSS, onOpenWindows)
-#endif
 		COMMAND_ID_HANDLER(IDC_STATUS_AWAY_ON_OFF, onAway)
 #ifdef USE_SUPPORT_HUB
 		COMMAND_ID_HANDLER(IDC_CONNECT_TO_FLYSUPPORT_HUB, OnConnectToSupportHUB)
@@ -312,9 +305,7 @@ class MainFrame : public CMDIFrameWindowImpl<MainFrame>, public CUpdateUI<MainFr
 		LRESULT onParentNotify(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOOL& /*bHandled*/);
 		LRESULT onQuickSearchEditChange(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& bHandled);
 		LRESULT OnViewQuickSearchBar(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
-#ifdef IRAINMAN_INCLUDE_SMILE
 		LRESULT OnAnimChangeFrame(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& bHandled);
-#endif
 		LRESULT onAddMagnet(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
 		LRESULT OnUpdateTotalResult(UINT uMsg, WPARAM wParam, LPARAM /*lParam*/, BOOL& bHandled);
 		LRESULT OnUpdateResultReceive(UINT uMsg, WPARAM wParam, LPARAM /*lParam*/, BOOL& bHandled);
@@ -498,10 +489,8 @@ class MainFrame : public CMDIFrameWindowImpl<MainFrame>, public CUpdateUI<MainFr
 		CImageList largeImages, largeImagesHot, winampImages, winampImagesHot;
 		int run()  override;
 		
-#ifdef IRAINMAN_IP_AUTOUPDATE
 		static void getIPupdate();
 		int m_elapsedMinutesFromlastIPUpdate;
-#endif
 		static void updateQuickSearches(bool p_clean = false);
 		
 		JAControl* getJAControl()
@@ -787,7 +776,6 @@ class MainFrame : public CMDIFrameWindowImpl<MainFrame>, public CUpdateUI<MainFr
 		} m_threadedStatisticSender;
 		
 		
-#ifdef IRAINMAN_IP_AUTOUPDATE
 		class CFlyIPUpdater : public Thread
 		{
 				bool m_is_running;
@@ -821,7 +809,6 @@ class MainFrame : public CMDIFrameWindowImpl<MainFrame>, public CUpdateUI<MainFr
 					}
 				}
 		} m_threadedUpdateIP;
-#endif
 		
 };
 

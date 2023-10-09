@@ -50,10 +50,8 @@ AdvancedPage::ListItem AdvancedPage::listItems[] =
 	{ SettingsManager::HUB_USER_COMMANDS, ResourceManager::SETTINGS_HUB_USER_COMMANDS },
 	{ SettingsManager::SEND_UNKNOWN_COMMANDS, ResourceManager::SETTINGS_SEND_UNKNOWN_COMMANDS },
 	{ SettingsManager::SEND_BLOOM, ResourceManager::SETTINGS_SEND_BLOOM },
-#ifdef IRAINMAN_INCLUDE_PROTO_DEBUG_FUNCTION
 	{ SettingsManager::ADC_DEBUG, ResourceManager::SETTINGS_ADC_DEBUG },
 	{ SettingsManager::NMDC_DEBUG, ResourceManager::SETTINGS_NMDC_DEBUG },
-#endif
 	{ SettingsManager::SHOW_SHELL_MENU, ResourceManager::SETTINGS_SHOW_SHELL_MENU },
 #ifdef FLYLINKDC_USE_LASTIP_AND_USER_RATIO
 	{ SettingsManager::ENABLE_LAST_IP_AND_MESSAGE_COUNTER, ResourceManager::ENABLE_LAST_IP_AND_MESSAGE_COUNTER },

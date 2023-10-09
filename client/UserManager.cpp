@@ -34,10 +34,6 @@ UserManager::WaitingUserMap UserManager::waitingPasswordUsers;
 
 FastCriticalSection UserManager::g_csPsw;
 std::unique_ptr<webrtc::RWLockWrapper> UserManager::g_csIgnoreList = std::unique_ptr<webrtc::RWLockWrapper> (webrtc::RWLockWrapper::CreateRWLock());
-#ifdef IRAINMAN_ENABLE_AUTO_BAN
-std::unique_ptr<webrtc::RWLockWrapper> UserManager::g_csProtectedUsers = std::unique_ptr<webrtc::RWLockWrapper> (webrtc::RWLockWrapper::CreateRWLock());
-StringList UserManager::g_protectedUsersLower;
-#endif
 
 void UserManager::saveIgnoreList()
 {
@@ -85,37 +81,6 @@ UserManager::PasswordStatus UserManager::checkPrivateMessagePassword(const ChatM
 		return FIRST;
 	}
 }
-
-#ifdef IRAINMAN_INCLUDE_USER_CHECK
-void UserManager::checkUser(const OnlineUserPtr& user)
-{
-	if (BOOLSETTING(CHECK_NEW_USERS))
-	{
-		if (!ClientManager::getInstance()->isMe(user))
-		{
-			const Client& client = user->getClient();
-			if (!client.getExcludeCheck() && client.isOp() &&
-			        (client.isActive() || user->getIdentity().isTcpActive()))
-			{
-				if (!BOOLSETTING(PROT_FAVS) || !FavoriteManager::isNoFavUserOrUserBanUpload(user->getUser()))
-				{
-					if (!isInProtectedUserList(user->getIdentity().getNick()))
-					{
-						try
-						{
-							QueueManager::getInstance()->addList(HintedUser(user->getUser(), client.getHubUrl()), QueueItem::FLAG_USER_CHECK);
-						}
-						catch (const Exception& e)
-						{
-							LogManager::message(e.getError());
-						}
-					}
-				}
-			}
-		}
-	}
-}
-#endif // IRAINMAN_INCLUDE_USER_CHECK
 
 void UserManager::getIgnoreList(StringSet& p_ignoreList)
 {
@@ -165,14 +130,6 @@ void UserManager::setIgnoreList(const IgnoreMap& newlist)
 	saveIgnoreList();
 }
 
-#ifdef IRAINMAN_ENABLE_AUTO_BAN
-void UserManager::reloadProtUsers()
-{
-	auto protUsers = SPLIT_SETTING_AND_LOWER(PROT_USERS);
-	CFlyWriteLock(*g_csProtectedUsers);
-	swap(g_protectedUsersLower, protUsers);
-}
-#endif
 
 bool UserManager::expectPasswordFromUser(const UserPtr& user)
 {
@@ -213,10 +170,3 @@ void UserManager::openUserUrl(const UserPtr& aUser)
 		fly_fire1(UserManagerListener::OpenHub(), url);
 	}
 }
-#ifdef IRAINMAN_ENABLE_AUTO_BAN
-bool UserManager::isInProtectedUserList(const string& userName)
-{
-	CFlyReadLock(*g_csProtectedUsers);
-	return Wildcard::patternMatchLowerCase(Text::toLower(userName), g_protectedUsersLower, false);
-}
-#endif

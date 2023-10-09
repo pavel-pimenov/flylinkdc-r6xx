@@ -56,30 +56,15 @@ int HubFrame::g_columnSizes[] = { 100,    // COLUMN_NICK
 #endif
                                   150,    // COLUMN_DESCRIPTION
                                   150,    // COLUMN_APPLICATION
-#ifdef IRAINMAN_INCLUDE_FULL_USER_INFORMATION_ON_HUB
-                                  75,     // COLUMN_CONNECTION
-#endif
                                   50,     // COLUMN_EMAIL
-#ifdef IRAINMAN_INCLUDE_FULL_USER_INFORMATION_ON_HUB
-                                  50,     // COLUMN_VERSION
-                                  40,     // COLUMN_MODE
-#endif
                                   40,     // COLUMN_HUBS
                                   40,     // COLUMN_SLOTS
-#ifdef IRAINMAN_INCLUDE_FULL_USER_INFORMATION_ON_HUB
-                                  40,     // COLUMN_UPLOAD_SPEED
-#endif
                                   100,    // COLUMN_IP
                                   100,    // COLUMN_GEO_LOCATION
 #ifdef FLYLINKDC_USE_LASTIP_AND_USER_RATIO
                                   50,     // COLUMN_UPLOAD
                                   50,     // COLUMN_DOWNLOAD
                                   10,     // COLUMN_MESSAGES
-#endif
-#ifdef IRAINMAN_INCLUDE_FULL_USER_INFORMATION_ON_HUB
-#ifdef FLYLINKDC_USE_DNS
-                                  100,    // COLUMN_DNS
-#endif
 #endif
                                   300,     // COLUMN_CID
                                   200,      // COLUMN_TAG
@@ -109,19 +94,9 @@ int HubFrame::g_columnIndexes[] = { COLUMN_NICK,
 #endif
                                     COLUMN_DESCRIPTION,
                                     COLUMN_APPLICATION,
-#ifdef IRAINMAN_INCLUDE_FULL_USER_INFORMATION_ON_HUB
-                                    COLUMN_CONNECTION,
-#endif
                                     COLUMN_EMAIL,
-#ifdef IRAINMAN_INCLUDE_FULL_USER_INFORMATION_ON_HUB
-                                    COLUMN_VERSION,
-                                    COLUMN_MODE,
-#endif
                                     COLUMN_HUBS,
                                     COLUMN_SLOTS,
-#ifdef IRAINMAN_INCLUDE_FULL_USER_INFORMATION_ON_HUB
-                                    COLUMN_UPLOAD_SPEED,
-#endif
                                     COLUMN_IP,
                                     COLUMN_GEO_LOCATION,
 #ifdef FLYLINKDC_USE_LASTIP_AND_USER_RATIO
@@ -160,19 +135,9 @@ static ResourceManager::Strings g_columnNames[] = { ResourceManager::NICK,      
 #endif
                                                     ResourceManager::DESCRIPTION,     // COLUMN_DESCRIPTION
                                                     ResourceManager::APPLICATION,     // COLUMN_APPLICATION
-#ifdef IRAINMAN_INCLUDE_FULL_USER_INFORMATION_ON_HUB
-                                                    ResourceManager::CONNECTION,      // COLUMN_CONNECTION
-#endif
                                                     ResourceManager::EMAIL,           // COLUMN_EMAIL
-#ifdef IRAINMAN_INCLUDE_FULL_USER_INFORMATION_ON_HUB
-                                                    ResourceManager::VERSION,         // COLUMN_VERSION
-                                                    ResourceManager::MODE,            // COLUMN_MODE
-#endif
                                                     ResourceManager::HUBS,            // COLUMN_HUBS
                                                     ResourceManager::SLOTS,           // COLUMN_SLOTS
-#ifdef IRAINMAN_INCLUDE_FULL_USER_INFORMATION_ON_HUB
-                                                    ResourceManager::AVERAGE_UPLOAD,  // COLUMN_UPLOAD_SPEED
-#endif
                                                     ResourceManager::IP_BARE,         // COLUMN_IP
                                                     ResourceManager::LOCATION_BARE,   // COLUMN_GEO_LOCATION
 #ifdef FLYLINKDC_USE_LASTIP_AND_USER_RATIO
@@ -1166,13 +1131,12 @@ LRESULT HubFrame::onCopyUserInfo(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*
 	const auto su = getSelectedUser();
 	if (su)
 	{
-		const auto id = su->getIdentity();
 		const auto u  = su->getUser();
 		string sCopy;
 		switch (wID)
 		{
 			case IDC_COPY_NICK:
-				sCopy += id.getNick();
+				sCopy += su->getIdentity().getNick();
 				break;
 #ifdef FLYLINKDC_USE_ANTIVIRUS_DB
 			case IDC_COPY_ANTIVIRUS_DB_INFO:
@@ -1180,52 +1144,52 @@ LRESULT HubFrame::onCopyUserInfo(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*
 				break;
 #endif
 			case IDC_COPY_EXACT_SHARE:
-				sCopy += Identity::formatShareBytes(id.getBytesShared());
+				sCopy += Identity::formatShareBytes(su->getIdentity().getBytesShared());
 				break;
 			case IDC_COPY_DESCRIPTION:
-				sCopy += id.getDescription();
+				sCopy += su->getIdentity().getDescription();
 				break;
 			case IDC_COPY_APPLICATION:
-				sCopy += id.getApplication();
+				sCopy += su->getIdentity().getApplication();
 				break;
 			case IDC_COPY_TAG:
-				sCopy += id.getTag();
+				sCopy += su->getIdentity().getTag();
 				break;
 			case IDC_COPY_CID:
-				sCopy += id.getCID();
+				sCopy += su->getIdentity().getCID();
 				break;
 			case IDC_COPY_EMAIL_ADDRESS:
-				sCopy += id.getEmail();
+				sCopy += su->getIdentity().getEmail();
 				break;
 			case IDC_COPY_GEO_LOCATION:
 			{
-				sCopy += dcpp::GeoManager::getInstance()->getCountry(id.getIp().to_string());
+				sCopy += dcpp::GeoManager::getInstance()->getCountry(su->getIdentity().getIp().to_string());
 				break;
 			}
 			case IDC_COPY_IP:
-				sCopy += id.getIpAsString();
+				sCopy += su->getIdentity().getIpAsString();
 				break;
 			case IDC_COPY_NICK_IP:
 			{
 				// TODO translate
 				sCopy += "User Info:\r\n"
-				         "\t" + STRING(NICK) + ": " + id.getNick() + "\r\n" +
-				         "\tIP: " + Identity::formatIpString(id.getIpAsString());
+				         "\t" + STRING(NICK) + ": " + su->getIdentity().getNick() + "\r\n" +
+				         "\tIP: " + Identity::formatIpString(su->getIdentity().getIpAsString());
 				break;
 			}
 			case IDC_COPY_ALL:
 			{
 				sCopy += "User info:\r\n"
-				         "\t" + STRING(NICK) + ": " + id.getNick() + "\r\n" +
-				         "\tLocation: " + dcpp::GeoManager::getInstance()->getCountry(id.getIp().to_string()) + "\r\n" +
+				         "\t" + STRING(NICK) + ": " + su->getIdentity().getNick() + "\r\n" +
+				         "\tLocation: " + dcpp::GeoManager::getInstance()->getCountry(su->getIdentity().getIp().to_string()) + "\r\n" +
 				         "\tNicks: " + Util::toString(ClientManager::getNicks(u->getCID(), BaseUtil::emptyString)) + "\r\n" +
-				         "\tTag: " + id.getTag() + "\r\n" +
+				         "\tTag: " + su->getIdentity().getTag() + "\r\n" +
 				         "\t" + STRING(HUBS) + ": " + Util::toString(ClientManager::getHubs(u->getCID(), BaseUtil::emptyString)) + "\r\n" +
 				         "\t" + STRING(SHARED) + ": " + Identity::formatShareBytes(u->getBytesShared()) + (u->isNMDC() ? BaseUtil::emptyString : "(" + STRING(SHARED_FILES) +
-				                 ": " + Util::toString(id.getSharedFiles()) + ")") + "\r\n" +
-				         "\t" + STRING(DESCRIPTION) + ": " + id.getDescription() + "\r\n" +
-				         "\t" + STRING(APPLICATION) + ": " + id.getApplication() + "\r\n";
-				const auto con = Identity::formatSpeedLimit(id.getDownloadSpeed());
+				                 ": " + Util::toString(su->getIdentity().getSharedFiles()) + ")") + "\r\n" +
+				         "\t" + STRING(DESCRIPTION) + ": " + su->getIdentity().getDescription() + "\r\n" +
+				         "\t" + STRING(APPLICATION) + ": " + su->getIdentity().getApplication() + "\r\n";
+				const auto con = Identity::formatSpeedLimit(su->getIdentity().getDownloadSpeed());
 				if (!con.empty())
 				{
 					sCopy += "\t";
@@ -1237,15 +1201,15 @@ LRESULT HubFrame::onCopyUserInfo(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*
 				{
 					sCopy += "\tUpload limit: " + lim + "\r\n";
 				}
-				sCopy += "\tE-Mail: " + id.getEmail() + "\r\n" +
-				         "\tClient Type: " + Util::toString(id.getClientType()) + "\r\n" +
-				         "\tMode: " + (id.isTcpActive() ? 'A' : 'P') + "\r\n" +
+				sCopy += "\tE-Mail: " + su->getIdentity().getEmail() + "\r\n" +
+				         "\tClient Type: " + Util::toString(su->getIdentity().getClientType()) + "\r\n" +
+				         "\tMode: " + (su->getIdentity().isTcpActive() ? 'A' : 'P') + "\r\n" +
 				         "\t" + STRING(SLOTS) + ": " + Util::toString(u->getSlots()) + "\r\n" +
-				         "\tIP: " + Identity::formatIpString(id.getIpAsString()) + "\r\n";
-				const auto su = id.getSupports();
-				if (!su.empty())
+				         "\tIP: " + Identity::formatIpString(su->getIdentity().getIpAsString()) + "\r\n";
+				const auto s = su->getIdentity().getSupports();
+				if (!s.empty())
 				{
-					sCopy += "\tKnown supports: " + su;
+					sCopy += "\tKnown supports: " + s;
 				}
 				break;
 			}
@@ -1671,22 +1635,20 @@ void HubFrame::updateUserJoin(const OnlineUserPtr& p_ou)
 	{
 		if (updateUser(p_ou, -1))
 		{
-			const auto id = p_ou->getIdentity();
 			if (m_client->is_all_my_info_loaded())
 			{
-				dcassert(!id.getNickT().empty());
 				const bool isFavorite = !FavoriteManager::isNoFavUserOrUserBanUpload(p_ou->getUser()); // [!] TODO: в €дро!
 				const bool isFavNotBan = !FavoriteManager::isNoFavUserOrUserIgnorePrivate(p_ou->getUser());
 				if (isFavorite && isFavNotBan)
 				{
 					PLAY_SOUND(SOUND_FAVUSER);
-					SHOW_POPUP(POPUP_FAVORITE_CONNECTED, id.getNickT() + _T(" - ") + Text::toT(m_client->getHubName()), TSTRING(FAVUSER_ONLINE));
+					SHOW_POPUP(POPUP_FAVORITE_CONNECTED, p_ou->getIdentity().getNickT() + _T(" - ") + Text::toT(m_client->getHubName()), TSTRING(FAVUSER_ONLINE));
 				}
-				if (!id.isBotOrHub())
+				if (!p_ou->getIdentity().isBotOrHub())
 				{
 					if (m_showJoins || (m_favShowJoins && isFavorite && isFavNotBan))
 					{
-						BaseChatFrame::addLine(_T("*** ") + TSTRING(JOINS) + _T(' ') + id.getNickT(), 1, Colors::g_ChatTextSystem);
+						BaseChatFrame::addLine(_T("*** ") + TSTRING(JOINS) + _T(' ') + p_ou->getIdentity().getNickT(), 1, Colors::g_ChatTextSystem);
 					}
 				}
 				m_needsUpdateStats = true;
@@ -1697,7 +1659,7 @@ void HubFrame::updateUserJoin(const OnlineUserPtr& p_ou)
 			}
 			// Automatically open "op chat"
 			//if (!m_is_op_chat_opened)
-			if (m_client->isInOperatorList(id.getNick()) && !PrivateFrame::isOpen(p_ou->getUser()))
+			if (m_client->isInOperatorList(p_ou->getIdentity().getNick()) && !PrivateFrame::isOpen(p_ou->getUser()))
 			{
 				PrivateFrame::openWindow(p_ou, HintedUser(p_ou->getUser(), m_client->getHubUrl()), m_client->getMyNick());
 				//m_is_op_chat_opened = true;
@@ -1825,14 +1787,12 @@ LRESULT HubFrame::onSpeaker(UINT /*uMsg*/, WPARAM /* wParam */, LPARAM /* lParam
 					{
 						if (!ClientManager::isBeforeShutdown())
 						{
-							const auto id = u.m_ou->getIdentity();
-							
-							if (!id.isBotOrHub())
+							if (!u.m_ou->getIdentity().isBotOrHub())
 							{
 								const bool isFavorite = !FavoriteManager::isNoFavUserOrUserBanUpload(u.m_ou->getUser());
 								const bool isFavNotBan = !FavoriteManager::isNoFavUserOrUserIgnorePrivate(u.m_ou->getUser());
 								
-								const tstring& l_userNick = id.getNickT();
+								const tstring& l_userNick = u.m_ou->getIdentity().getNickT();
 								if (isFavorite && isFavNotBan)
 								{
 									PLAY_SOUND(SOUND_FAVUSER_OFFLINE);
@@ -2569,10 +2529,10 @@ LRESULT HubFrame::onLButton(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, BOOL& b
 		POINT pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
 		tstring x;
 		
-		int i = ctrlClient.CharFromPos(pt);
-		int line = ctrlClient.LineFromChar(i);
-		int c = LOWORD(i) - ctrlClient.LineIndex(line);
-		int len = ctrlClient.LineLength(i) + 1;
+		int count_char = ctrlClient.CharFromPos(pt);
+		int line = ctrlClient.LineFromChar(count_char);
+		int c = LOWORD(count_char) - ctrlClient.LineIndex(line);
+		int len = ctrlClient.LineLength(count_char) + 1;
 		if (len < 3)
 		{
 			return 0;
@@ -3066,9 +3026,7 @@ unsigned HubFrame::usermap2ListrView()
 		{
 			const UserInfo* ui = i->second;
 			l_user_array.push_back(ui);
-#ifdef IRAINMAN_USE_HIDDEN_USERS
 			dcassert(ui->isHidden() == false);
-#endif
 		}
 	}
 	for (auto i = l_user_array.begin(); i != l_user_array.end(); ++i)
@@ -3100,9 +3058,7 @@ unsigned HubFrame::usermap2ListrView()
 	for (auto i = m_userMap.cbegin(); i != m_userMap.cend(); ++i, ++m_count_init_insert_list_view)
 	{
 		const UserInfo* ui = i->second;
-#ifdef IRAINMAN_USE_HIDDEN_USERS
 		dcassert(ui->isHidden() == false);
-#endif
 		InsertItemInternal(ui);
 	}
 	return m_userMap.size();
@@ -3342,10 +3298,8 @@ void HubFrame::timer_process_internal()
 		        && !isClosedOrShutdown())
 		{
 			onTimerHubUpdated();
-			if (m_needsUpdateStats
-#ifndef IRAINMAN_NOT_USE_COUNT_UPDATE_INFO_IN_LIST_VIEW_CTRL
+			if (m_needsUpdateStats && m_ctrlUsers
 			        && m_ctrlUsers->getCountUpdateInfo() == 0
-#endif
 			   )
 			{
 				dcassert(m_client);
@@ -3999,7 +3953,7 @@ void HubFrame::InsertItemInternal(const UserInfo* ui)
 {
 	//dcassert(m_is_delete_all_items == false);
 	int l_res_insert = -1;
-	if (m_is_ext_json_hub)
+	if (m_is_ext_json_hub && m_ctrlUsers)
 	{
 		const auto l_gender = ui->getIdentity().getGenderType();
 		if (l_gender > 1)
@@ -4025,13 +3979,11 @@ void HubFrame::InsertItemInternal(const UserInfo* ui)
 }
 void HubFrame::InsertUserList(UserInfo* ui)
 {
-#ifdef IRAINMAN_USE_HIDDEN_USERS
 	dcassert(ui->isHidden() == false);
-#endif
 	//single update
 	//avoid refreshing the whole list and just update the current item
 	//instead
-	if (m_filter.empty())
+	if (m_filter.empty() && m_ctrlUsers)
 	{
 		dcassert(m_ctrlUsers->findItem(ui) == -1);
 		if (isConnected())
@@ -4058,7 +4010,7 @@ void HubFrame::InsertUserList(UserInfo* ui)
 		{
 			//deleteItem checks to see that the item exists in the list
 			//unnecessary to do it twice.
-			if (isConnected())
+			if (isConnected() && m_ctrlUsers)
 			{
 				m_ctrlUsers->deleteItem(ui);
 			}
@@ -4068,36 +4020,37 @@ void HubFrame::InsertUserList(UserInfo* ui)
 
 void HubFrame::updateUserList()
 {
-	CLockRedraw<> l_lock_draw(*m_ctrlUsers);
-	m_ctrlUsers->DeleteAllItems();
-	m_last_count_resort = 0;
-	if (m_filter.empty())
+	if (m_ctrlUsers)
 	{
-		usermap2ListrView();
-		//m_userMapInitThread.process_init_user_list(this);
-	}
-	else
-	{
-		int64_t size = -1;
-		FilterModes mode = NONE;
-		dcassert(m_ctrlFilterSel);
-		const int sel = getFilterSelPos();
-		const bool doSizeCompare = sel == COLUMN_SHARED && parseFilter(mode, size);
-		CFlyReadLock(*m_userMapCS);
-		//CFlyLock(m_userMapCS);
-		for (auto i = m_userMap.cbegin(); i != m_userMap.cend(); ++i)
+		CLockRedraw<> l_lock_draw(*m_ctrlUsers);
+		m_ctrlUsers->DeleteAllItems();
+		m_last_count_resort = 0;
+		if (m_filter.empty())
 		{
-			UserInfo* ui = i->second;
-#ifdef IRAINMAN_USE_HIDDEN_USERS
-			dcassert(ui->isHidden() == false);
-#endif
-			if (matchFilter(*ui, sel, doSizeCompare, mode, size))
+			usermap2ListrView();
+			//m_userMapInitThread.process_init_user_list(this);
+		}
+		else
+		{
+			int64_t size = -1;
+			FilterModes mode = NONE;
+			dcassert(m_ctrlFilterSel);
+			const int sel = getFilterSelPos();
+			const bool doSizeCompare = sel == COLUMN_SHARED && parseFilter(mode, size);
+			CFlyReadLock(*m_userMapCS);
+			//CFlyLock(m_userMapCS);
+			for (auto i = m_userMap.cbegin(); i != m_userMap.cend(); ++i)
 			{
-				InsertItemInternal(ui);
+				UserInfo* ui = i->second;
+				dcassert(ui->isHidden() == false);
+				if (matchFilter(*ui, sel, doSizeCompare, mode, size))
+				{
+					InsertItemInternal(ui);
+				}
 			}
 		}
+		m_needsUpdateStats = true;
 	}
-	m_needsUpdateStats = true;
 }
 
 void HubFrame::handleTab(bool reverse)
@@ -4114,7 +4067,7 @@ void HubFrame::handleTab(bool reverse)
 		{
 			m_ctrlMessage->SetFocus();
 		}
-		else if (m_ctrlMessage && focus == m_ctrlMessage->m_hWnd)
+		else if (m_ctrlMessage && focus == m_ctrlMessage->m_hWnd && m_ctrlUsers)
 		{
 			m_ctrlUsers->SetFocus();
 		}
@@ -4129,7 +4082,7 @@ void HubFrame::handleTab(bool reverse)
 	}
 	else
 	{
-		if (focus == ctrlClient.m_hWnd)
+		if (focus == ctrlClient.m_hWnd && m_ctrlUsers)
 		{
 			m_ctrlUsers->SetFocus();
 		}
@@ -4250,7 +4203,7 @@ void HubFrame::appendHubAndUsersItems(OMenu& p_menu, const bool isChat)
 	}
 	else
 	{
-		if (!isChat)
+		if (!isChat && m_ctrlUsers)
 		{
 			const int iCount = m_ctrlUsers->GetSelectedCount();
 			p_menu.InsertSeparatorFirst(Util::toStringW(iCount) + _T(' ') + TSTRING(HUB_USERS));
@@ -4491,7 +4444,7 @@ LRESULT HubFrame::onCustomDraw(int /*idCtrl*/, LPNMHDR pnmh, BOOL& bHandled)
 	}
 	// http://forums.codeguru.com/showthread.php?512490-NM_CUSTOMDRAW-on-Listview
 	// ѕоследовательность событий при отрисовке
-	CRect rc;
+	//CRect rc;
 	LPNMLVCUSTOMDRAW cd = reinterpret_cast<LPNMLVCUSTOMDRAW>(pnmh);
 	switch (cd->nmcd.dwDrawStage)
 	{
@@ -4500,8 +4453,8 @@ LRESULT HubFrame::onCustomDraw(int /*idCtrl*/, LPNMHDR pnmh, BOOL& bHandled)
 			
 		case CDDS_SUBITEM | CDDS_ITEMPREPAINT:
 		{
-			UserInfo* ui = (UserInfo*)cd->nmcd.lItemlParam;
-			if (!ui)
+			UserInfo* l_ui = (UserInfo*)cd->nmcd.lItemlParam;
+			if (!l_ui || !m_ctrlUsers)
 				return CDRF_DODEFAULT;
 			const int l_column_id = m_ctrlUsers->findColumn(cd->iSubItem);
 #if 0 // FLYLINKDC_USE_XXX_ICON
@@ -4533,9 +4486,10 @@ LRESULT HubFrame::onCustomDraw(int /*idCtrl*/, LPNMHDR pnmh, BOOL& bHandled)
 				        || l_column_id == COLUMN_P2P_GUARD
 				   )
 				{
+					CRect rc;
 					m_ctrlUsers->GetSubItemRect((int)cd->nmcd.dwItemSpec, cd->iSubItem, LVIR_BOUNDS, rc);
 					m_ctrlUsers->SetItemFilled(cd, rc, cd->clrText, cd->clrText);
-					const tstring& l_value = ui->getText(l_column_id);
+					const tstring& l_value = l_ui->getText(l_column_id);
 					if (!l_value.empty())
 					{
 						int l_step = 0;
@@ -4579,10 +4533,10 @@ LRESULT HubFrame::onCustomDraw(int /*idCtrl*/, LPNMHDR pnmh, BOOL& bHandled)
 				}
 				else if (l_column_id == COLUMN_IP)
 				{
-					const tstring l_ip = ui->getText(COLUMN_IP);
-					if (!l_ip.empty())
+					const tstring l_ip = l_ui->getText(COLUMN_IP);
+					if (!l_ip.empty() && m_ctrlUsers)
 					{
-						const bool l_is_fantom_ip = ui->getOnlineUser()->getIdentity().isFantomIP();
+						const bool l_is_fantom_ip = l_ui->getOnlineUser()->getIdentity().isFantomIP();
 						CRect rc;
 						m_ctrlUsers->GetSubItemRect((int)cd->nmcd.dwItemSpec, cd->iSubItem, LVIR_BOUNDS, rc);
 						//const COLORREF col_brit = OperaColors::brightenColor(cd->clrText, l_is_fantom_ip ? 0.6f : 0.4f);
@@ -4607,8 +4561,9 @@ LRESULT HubFrame::onCustomDraw(int /*idCtrl*/, LPNMHDR pnmh, BOOL& bHandled)
 					}
 					return CDRF_SKIPDEFAULT;
 				}
-				else if (l_column_id == COLUMN_GEO_LOCATION)
+				else if (l_column_id == COLUMN_GEO_LOCATION && m_ctrlUsers)
 				{
+					CRect rc;
 					m_ctrlUsers->GetSubItemRect((int)cd->nmcd.dwItemSpec, cd->iSubItem, LVIR_BOUNDS, rc);
 					if (WinUtil::isUseExplorerTheme())
 					{

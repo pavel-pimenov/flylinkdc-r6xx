@@ -18,7 +18,6 @@
 
 #include "stdafx.h"
 
-#ifdef IRAINMAN_INCLUDE_SMILE
 #include "../client/SimpleXML.h"
 #include "../client/CompatibilityManager.h"
 #include "../client/SettingsManager.h"
@@ -437,4 +436,3 @@ bool CAGEmotionSetup::Create()
 	return true;
 }
 
-#endif  // IRAINMAN_INCLUDE_SMILE

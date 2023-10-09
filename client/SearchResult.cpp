@@ -49,17 +49,9 @@ string SearchResultBaseTTH::toSR(const Client& c) const
 	string tmp;
 	tmp.reserve(128 + getFile().size());
 	tmp.append("$SR ", 4);
-//#ifdef IRAINMAN_USE_UNICODE_IN_NMDC
-//	tmp.append(c.getMyNick());
-//#else
 	tmp.append(Text::fromUtf8(c.getMyNick(), c.getEncoding()));
-//#endif
 	tmp.append(1, ' ');
-//#ifdef IRAINMAN_USE_UNICODE_IN_NMDC
-//	const string& acpFile = file;
-//#else
 	const string acpFile = Text::fromUtf8(getFile(), c.getEncoding());
-//#endif
 	if (m_type == TYPE_FILE)
 	{
 		tmp.append(acpFile);

@@ -845,7 +845,6 @@
 	<string name="MenuRefreshMediainfo">Refresh mediainfo (only for beta-testers! long process without progress bar)</string>
 	<string name="MenuConvertTthHistoryIntoLeveldb">Convert TTH history SQLite into LevelDB</string>
 	<string name="MenuRestoreAll">Restore all</string>
-	<string name="MenuRssNews">RSS News\tCtrl+Shift+N</string>
 	<string name="MenuSearch">&amp;Search\tCtrl+S</string>
 	<string name="MenuSearchSpy">Search-Spy</string>
 	<string name="MenuSettings">Settings...\tF12</string>
@@ -897,7 +896,6 @@
 	<string name="NewBeta">New beta released</string>
 	<string name="NewDisconnect">Remove user from queue, if speed is below</string>
 	<string name="NewPw">New password:</string>
-	<string name="NewRssNews">New RSS news</string>
 	<string name="Next">Next</string>
 	<string name="Nick">Nick</string>
 	<string name="NickTaken">Your nick is already taken, please change to something else!</string>
@@ -993,7 +991,6 @@
 	<string name="PopupImage">Popup image</string>
 	<string name="PopupNewFoldershare">Show popup on new folder share from the shell</string>
 	<string name="PopupNewPm">Show popup on new private message</string>
-	<string name="PopupNewRssnews">Show popup on new RSS</string>
 	<string name="PopupPm">Show popup on private message</string>
 	<string name="PopupSearchSpy">Show popup on new Search-Spy message</string>
 	<string name="PopupSplash">Splash popup</string>
@@ -1143,22 +1140,6 @@
 	<string name="RetrievingData">Retrieving data</string>
 	<string name="RightColor">Right color</string>
 	<string name="RollbackInconsistency">Rollback inconsistency, existing file does not match the one being downloaded</string>
-	<string name="RssautorefreshTimeStr">RSS auto refresh time</string>
-	<string name="RssdlgCodeing">Feed Encoding:</string>
-	<string name="RssdlgName">Feed Name:</string>
-	<string name="RssdlgTitle">Create / modify RSS feed</string>
-	<string name="RssdlgUrl">Feed URL:</string>
-	<string name="RssdlgEnable">Enable Feed and autoupdate</string>
-	<string name="RssAuthor">Author</string>
-	<string name="RssCategory">Category</string>
-	<string name="RssCodeing">Encoding</string>
-	<string name="RssCodeingAuto">Auto</string>
-	<string name="RssCodeingCp1251">WIN-CP1251</string>
-	<string name="RssCodeingUtf8">UTF-8</string>
-	<string name="RssNews">RSS News</string>
-	<string name="RssSource">Source</string>
-	<string name="RssTitle">Title</string>
-	<string name="RssUrl">Address</string>
 	<string name="Running">Running...</string>
 	<string name="S">s</string>
 	<string name="Save">Save</string>
@@ -1429,7 +1410,6 @@
 	<string name="SettingsRc">Remote control</string>
 	<string name="SettingsRequiresRestart">Note: most of these options require that you restart FlylinkDC++</string>
 	<string name="SettingsReset">Reset</string>
-	<string name="SettingsRssProp">RSS Properties</string>
 	<string name="SettingsSaveTthInNtfsFilestream">Save TTH in NTFS filestream. Attention! When removing a tick stream will be deleted!</string>
 	<string name="SettingsSbMaxSources">Max sources for match queue</string>
 	<string name="SettingsSearchHistory">Search history</string>

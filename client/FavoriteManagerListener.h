@@ -37,11 +37,6 @@ class FavoriteManagerListener
 		
 		typedef X<3> FavoriteAdded;
 		typedef X<4> FavoriteRemoved;
-#ifdef IRAINMAN_ENABLE_CON_STATUS_ON_FAV_HUBS
-#ifdef UPDATE_CON_STATUS_ON_FAV_HUBS_IN_REALTIME
-		typedef X<5> FavoriteStatusChanged;
-#endif
-#endif
 		typedef X<6> UserAdded;
 		typedef X<7> UserRemoved;
 		typedef X<8> StatusChanged;
@@ -52,12 +47,6 @@ class FavoriteManagerListener
 		
 		virtual void on(FavoriteAdded, const FavoriteHubEntry*) noexcept { }
 		virtual void on(FavoriteRemoved, const FavoriteHubEntry*) noexcept { }
-		
-#ifdef IRAINMAN_ENABLE_CON_STATUS_ON_FAV_HUBS
-#ifdef UPDATE_CON_STATUS_ON_FAV_HUBS_IN_REALTIME
-		virtual void on(FavoriteStatusChanged, const FavoriteHubEntry*) noexcept { }
-#endif
-#endif
 		virtual void on(UserAdded, const FavoriteUser&) noexcept { }
 		virtual void on(UserRemoved, const FavoriteUser&) noexcept { }
 		virtual void on(StatusChanged, const UserPtr&) noexcept { }

@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#ifdef IRAINMAN_INCLUDE_GDI_OLE
+
 #include "GdiImage.h"
 
 #ifdef FLYLINKDC_USE_CHECK_GDIIMAGE_LIVE
@@ -424,4 +424,3 @@ LONG CGDIImage::Release()
     return lRef;
 }
 
-#endif // IRAINMAN_INCLUDE_GDI_OLE

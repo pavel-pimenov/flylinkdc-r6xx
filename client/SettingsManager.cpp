@@ -128,9 +128,6 @@ static const char* g_settingTags[] =
 	"LogFormatProtocol",
 #endif
 	"CustomMenuURL",
-	"RssNewsOrder",
-	"RssNewsWidth",
-	"RssNewsVisible",
 	"Mapper",
 	"PortalBrowserUpdateURL",
 	"ISPResourceRootURL",
@@ -243,7 +240,7 @@ static const char* g_settingTags[] =
 	"UseTorrentSearch", "UseTorrentRSS",
 	"SavedSearchType", "SavedSearchSizeMode", "SavedSearchMode", "BoldFinishedDownloads",
 	"BoldFinishedUploads", "BoldQueue",
-	"BoldHub", "BoldPm", "BoldSearch", "BoldNewrss", "TabsPos",
+	"BoldHub", "BoldPm", "BoldSearch", "TabsPos",
 	"HubPosition",
 	"ColorRunning", "ColorDownloaded", "ColorVerified", "ColorAvoiding", "AutoRefreshTime", "OpenWaitingUsers",
 	"BoldWaitingUsers", "AutoSearchLimit", "AutoKickNoFavs", "PromptPassword", "SpyFrameIgnoreTthSearches",
@@ -265,9 +262,7 @@ static const char* g_settingTags[] =
 	
 	"NsLookupMode", "NsLookupDelay",
 	"EnableAutoBan",
-#ifdef IRAINMAN_ENABLE_OP_VIP_MODE
 	"AutoBanProtectOP",
-#endif
 	"BanSlots", "BanSlotsH", /*old "BanShareMax",*/ "BanShare", "BanLimit", "BanmsgPeriod", "BanStealth", "BanForcePM", /* old "BanSkipOps",*/ "ExtraSlotToDl",
 	"BanColor", "DupeColor", "VirusColor", "MultilineChatInput", "SendSlotgrantMsg", "FavUserDblClick",
 	"ProtectPrivate", "ProtectPrivateRnd", "ProtectPrivateSay",
@@ -311,11 +306,6 @@ static const char* g_settingTags[] =
 	"ChatAnimSmiles",
 	"SmileSelectWndAnimSmiles",
 	"UseCustomMenu",
-	"RssAutoRefreshTime",
-	"OpenRSSNews",
-	"PopupNewRSS",
-	"RssColumnsSort",
-	"RssColumnsSortAsc",
 	"SearchSpyColumnsSort",
 	"SearchSpyColumnsSortAsc",
 	"SearchColumnsSort",
@@ -360,9 +350,7 @@ static const char* g_settingTags[] =
 	"ShowSeekersInSpyFrame",
 	"LogSeekersInSpyFrame",
 	"FormatBotMessage",
-#ifdef IRAINMAN_USE_BB_CODES
 	"FormatBBCode",
-#endif
 	"ReduceProcessPriorityIfMinimized",
 	"MultilineChatInput_By_CtrlEnter",
 	"ShowSendMessageButton",
@@ -412,9 +400,7 @@ static const char* g_settingTags[] =
 	"ProviderUseResources",
 	"ProviderUseMenu", "ProviderUseHublist", "ProviderUseLocations",
 	"AutoUpdateGeoIP", "AutoUpdateCustomLocation",
-#ifdef IRAINMAN_USE_BB_CODES
 	"FormatBBCodeColors",
-#endif
 #ifdef NIGHTORION_USE_STATISTICS_REQUEST
 	"SettingsStatisticsAsk",
 #endif
@@ -431,8 +417,8 @@ static const string g_default_lang_file_name = "ru-RU.xml";
 SettingsManager::SettingsManager()
 {
 
-	static_assert(_countof(g_settingTags) == SETTINGS_LAST + 1, "error g_settingTags"); // SettingsManager::SETTINGS_LAST and SettingsManager::settingTags[] size do not match ;) Check them out!
-	// Thanks Boost developers for this wonderful functional
+	static_assert(_countof(g_settingTags) == SETTINGS_LAST + 1, "error g_settingTags");
+	// SettingsManager::SETTINGS_LAST and SettingsManager::settingTags[] size do not match ;) Check them out!
 	
 	for (size_t i = 0; i < SETTINGS_LAST; i++) //-V104
 		isSet[i] = false;
@@ -584,10 +570,8 @@ void SettingsManager::setDefaults()
 	//setDefault(LOG_SYSTEM, false);
 	//setDefault(SEND_UNKNOWN_COMMANDS, false);
 	//setDefault(MAX_HASH_SPEED, 0);
-#ifdef IRAINMAN_NTFS_STREAM_TTH
 	setDefault(SAVE_TTH_IN_NTFS_FILESTREAM, TRUE);
 	setDefault(SET_MIN_LENGHT_TTH_IN_NTFS_FILESTREAM, 16);
-#endif
 	setDefault(FAV_SHOW_JOINS, TRUE);
 	//setDefault(LOG_STATUS_MESSAGES, false);
 	
@@ -652,7 +636,6 @@ void SettingsManager::setDefaults()
 	setDefault(BOLD_HUB, TRUE);
 	setDefault(BOLD_PM, TRUE);
 	setDefault(BOLD_SEARCH, TRUE);
-	setDefault(BOLD_NEWRSS, TRUE);
 	setDefault(BOLD_WAITING_USERS, TRUE);
 	setDefault(AUTO_REFRESH_TIME, 60);
 	setDefault(AUTO_SEARCH_LIMIT, 15);
@@ -964,10 +947,8 @@ void SettingsManager::setDefaults()
 	//setDefault(FLY_SQLITE_LOG, false);
 	setDefault(FLY_TEXT_LOG, !BOOLSETTING(FLY_SQLITE_LOG));
 #endif //FLYLINKDC_LOG_IN_SQLITE_BASE
-#ifdef IRAINMAN_USE_BB_CODES
 	setDefault(FORMAT_BB_CODES, TRUE);
 	setDefault(FORMAT_BB_CODES_COLORS, TRUE);
-#endif
 	setDefault(FORMAT_BOT_MESSAGE, TRUE);
 	//setDefault(PROT_USERS, BaseUtil::emptyString);
 	//setDefault(MEDIA_PLAYER, 0);
@@ -996,23 +977,6 @@ void SettingsManager::setDefaults()
 	setDefault(NSLOOKUP_DELAY, 100);
 #endif
 	
-#ifdef IRAINMAN_ENABLE_AUTO_BAN
-	//setDefault(ENABLE_AUTO_BAN, false);
-#ifdef IRAINMAN_ENABLE_OP_VIP_MODE
-	//setDefault(AUTOBAN_PPROTECT_OP, false);
-#endif
-	//setDefault(BAN_SLOTS, 0);
-	//setDefault(BAN_SLOTS_H, 0);
-	//setDefault(BAN_SHARE, 0);
-	// old set(BAN_SHARE_MAX, 20);
-	// old setDefault(BAN_SHARE_MAX, 20);
-	//setDefault(BAN_LIMIT, 0);
-	setDefault(BAN_MESSAGE, STRING(SETTINGS_BAN_MESSAGE));
-	setDefault(BANMSG_PERIOD, 60);
-	//setDefault(BAN_STEALTH, 0);
-	//setDefault(BAN_FORCE_PM, 0);
-	// old setDefault(BAN_SKIP_OPS, 1);
-#endif // IRAINMAN_ENABLE_AUTO_BAN
 	
 	setDefault(SLOT_ASK, STRING(ASK_SLOT_TEMPLATE));
 	//setDefault(EXTRASLOT_TO_DL, 0);
@@ -1115,7 +1079,6 @@ void SettingsManager::setDefaults()
 #ifdef FLYLINKDC_USE_CUSTOM_MENU
 	setDefault(CUSTOM_MENU_PATH, "file://./Settings/custom_menu.xml");
 #endif
-	setDefault(RSS_AUTO_REFRESH_TIME, 1);
 	//setDefault(URL_IPTRUST, "");
 	
 	setDefault(OVERLAP_CHUNKS, TRUE);
@@ -1480,12 +1443,6 @@ void SettingsManager::loadOtherSettings()
 		SimpleXML xml;
 		xml.fromXML(File(getConfigFile(), File::READ, File::OPEN).read());
 		xml.stepIn();
-#ifdef IRAINMAN_ENABLE_AUTO_BAN
-		UserManager::reloadProtUsers();
-#endif
-#ifdef IRAINMAN_INCLUDE_RSS
-		RSSManager::load(xml);
-#endif
 		ToolbarManager::load(xml);
 		ShareManager::load(xml);
 		FavoriteManager::recentload(xml);
@@ -1699,29 +1656,6 @@ bool SettingsManager::set(IntSetting key, int value)
 			l_auto = true;\
 		}\
 	}
-#ifdef IRAINMAN_ENABLE_AUTO_BAN
-		case BAN_SHARE:
-		{
-			const int maxBanShare = 20;
-			VERIFI(0, maxBanShare);
-			break;
-		}
-		case BAN_LIMIT:
-		{
-			VERIFI(0, 50);
-			break;
-		}
-		case BAN_SLOTS:
-		{
-			VERIFI(0, 5);
-			break;
-		}
-		case BAN_SLOTS_H:
-		{
-			VER_MIN_EXCL_ZERO(10);
-			break;
-		}
-#endif // IRAINMAN_ENABLE_AUTO_BAN
 		case AUTO_SEARCH_LIMIT:
 		{
 			VER_MIN(1);
@@ -1832,27 +1766,6 @@ bool SettingsManager::set(IntSetting key, int value)
 		case MAX_DOWNLOAD_SPEED_LIMIT_TIME:
 		case THROTTLE_ENABLE:
 		{
-#ifdef IRAINMAN_SPEED_LIMITER_5S4_10
-#define MIN_UPLOAD_SPEED_LIMIT  5 * UploadManager::getSlots() + 4
-#define MAX_LIMIT_RATIO         10
-			if ((key == MAX_UPLOAD_SPEED_LIMIT_NORMAL || key == MAX_UPLOAD_SPEED_LIMIT_TIME) && value > 0 && value < MIN_UPLOAD_SPEED_LIMIT)
-			{
-				value = MIN_UPLOAD_SPEED_LIMIT;
-				l_auto = true;
-			}
-			else if (key == MAX_DOWNLOAD_SPEED_LIMIT_NORMAL && (value == 0 || value > MAX_LIMIT_RATIO * get(MAX_UPLOAD_SPEED_LIMIT_NORMAL, false)))
-			{
-				value = MAX_LIMIT_RATIO * get(MAX_UPLOAD_SPEED_LIMIT_NORMAL, false);
-				l_auto = true;
-			}
-			else if (key == MAX_DOWNLOAD_SPEED_LIMIT_TIME && (value == 0 || value > MAX_LIMIT_RATIO * get(MAX_UPLOAD_SPEED_LIMIT_TIME, false)))
-			{
-				value = MAX_LIMIT_RATIO * get(MAX_UPLOAD_SPEED_LIMIT_TIME, false);
-				l_auto = true;
-			}
-#undef MIN_UPLOAD_SPEED_LIMIT
-#undef MAX_LIMIT_RATIO
-#endif // IRAINMAN_SPEED_LIMITER_5S4_10
 			ThrottleManager::getInstance()->updateLimits();
 			break;
 		}
@@ -1963,11 +1876,6 @@ void SettingsManager::save(const string& aFileName)
 	ShareManager::save(xml);
 	
 	ToolbarManager::save(xml);
-	
-#ifdef IRAINMAN_INCLUDE_RSS
-	RSSManager::save(xml);
-#endif
-
 	
 	if (!ClientManager::isBeforeShutdown())
 	{

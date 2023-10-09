@@ -340,9 +340,6 @@ class UserInfoBaseHandler : UserInfoBaseHandlerTraitsUser<T2>, public UserInfoGu
 		BEGIN_MSG_MAP(UserInfoBaseHandler)
 		COMMAND_ID_HANDLER(IDC_GETLIST, onGetList)
 		COMMAND_ID_HANDLER(IDC_BROWSELIST, onBrowseList)
-#ifdef IRAINMAN_INCLUDE_USER_CHECK
-		COMMAND_ID_HANDLER(IDC_CHECKLIST, onCheckList)
-#endif
 		COMMAND_ID_HANDLER(IDC_GET_USER_RESPONSES, onGetUserResponses)
 		COMMAND_ID_HANDLER(IDC_MATCH_QUEUE, onMatchQueue)
 		COMMAND_ID_HANDLER(IDC_PRIVATE_MESSAGE, onPrivateMessage)
@@ -414,13 +411,6 @@ class UserInfoBaseHandler : UserInfoBaseHandlerTraitsUser<T2>, public UserInfoGu
 			doAction(&UserInfoBase::doReport, m_selectedHint);
 			return 0;
 		}
-#ifdef IRAINMAN_INCLUDE_USER_CHECK
-		LRESULT onCheckList(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
-		{
-			doAction(&UserInfoBase::checkList);
-			return 0;
-		}
-#endif
 		LRESULT onGetUserResponses(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 		{
 			doAction(&UserInfoBase::getUserResponses);
@@ -712,11 +702,6 @@ class UserInfoBaseHandler : UserInfoBaseHandlerTraitsUser<T2>, public UserInfoGu
 		template <typename T>
 		void internal_appendContactListItems(T& p_menu, const FavUserTraits& traits)
 		{
-#ifndef IRAINMAN_ALLOW_ALL_CLIENT_FEATURES_ON_NMDC
-			if (traits.adcOnly) // TODO
-			{
-			}
-#endif
 			if (traits.isEmpty || !traits.isFav)
 			{
 				p_menu.AppendMenu(MF_STRING, IDC_ADD_TO_FAVORITES, CTSTRING(ADD_TO_FAVORITES));
@@ -1176,10 +1161,6 @@ struct Colors
 	}
 	enum Mask
 	{
-#ifdef IRAINMAN_ENABLE_AUTO_BAN
-		IS_AUTOBAN  = 0x0003,
-		IS_AUTOBAN_ON = 0x0001,
-#endif
 		IS_FAVORITE = 0x0003 << 2,
 		IS_FAVORITE_ON = 0x0001 << 2,
 		IS_BAN      = 0x0003 << 4,
@@ -1607,10 +1588,6 @@ class WinUtil
 		
 		static bool isUseExplorerTheme();
 		static void SetWindowThemeExplorer(HWND p_hWnd);
-#ifdef IRAINMAN_ENABLE_WHOIS
-		static void CheckOnWhoisIP(WORD wID, const tstring& whoisIP);
-		static void AppendMenuOnWhoisIP(CMenu &p_menuname, const tstring& p_IP, const bool p_inSubmenu);
-#endif
 		static tstring getAddresses(CComboBox& BindCombo);
 		static bool isTeredo();
 		
