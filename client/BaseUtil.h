@@ -39,7 +39,7 @@ template<typename T> struct TypeTraits
 #define GETSET(type, name, name2) \
 	private: type name; \
 	public: TypeTraits<type>::ParameterType get##name2() const { return name; } \
-	void set##name2(TypeTraits<type>::ParameterType a##name2) { name = a##name2; }
+	void set##name2(TypeTraits<type>::ParameterType a##name2) { name = std::move(a##name2); }
 #define GETSET_BOOL(type, name, name2) \
 	private: type name; \
 	public: TypeTraits<type>::ParameterType get##name2() const { return name; } \

@@ -3002,6 +3002,7 @@ void ShareManager::on(HashManagerListener::TTHDone, const string& fname, const T
                       int64_t aTimeStamp, const CFlyMediaInfo& p_out_media, int64_t p_size) noexcept
 {
 	dcassert(!ClientManager::isBeforeShutdown());
+	if (!ClientManager::isBeforeShutdown())
 	{
 		CFlyBusy l_busy(g_RebuildIndexes);
 #ifdef FLYLINKDC_USE_RW_LOCK_SHARE
