@@ -59,9 +59,9 @@ GdiOle\GdiOle_p.c
 src_backup_7z.bat
 src_gen_filename.bat
 UpdateGeoIP.bat
-build_all_2017.bat
-build_flylinkdc_x64_2017.bat
+build_all_2022.bat
+build_flylinkdc_x64_2022.bat
 build_get_visual_c_version.bat
-clean_all_2017.bat
+clean_all_2022.bat
 update_geo_ip.bat
 update_headers.bat

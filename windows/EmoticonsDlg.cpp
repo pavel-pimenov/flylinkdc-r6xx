@@ -124,13 +124,13 @@ LRESULT EmoticonsDlg::onInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lP
 		
 		DWORD iSW = 0, iSH = 0, dwCount = 0;
 		l_count_emotion = 0;
-		for (auto i = Emoticons.cbegin(); i != Emoticons.cend() && l_count_emotion < CAGEmotionSetup::g_pEmotionsSetup->m_CountSelEmotions; ++i, ++l_count_emotion)
+		for (auto e = Emoticons.cbegin(); e != Emoticons.cend() && l_count_emotion < CAGEmotionSetup::g_pEmotionsSetup->m_CountSelEmotions; ++e, ++l_count_emotion)
 		{
 			int w = 0, h = 0;
 			CGDIImage *pImage = nullptr;
 			
 			if (bUseAnimation)
-				pImage = (*i)->getAnimatedImage(MainFrame::getMainFrame()->m_hWnd, WM_ANIM_CHANGE_FRAME);
+				pImage = (*e)->getAnimatedImage(MainFrame::getMainFrame()->m_hWnd, WM_ANIM_CHANGE_FRAME);
 				
 			if (pImage)
 			{
@@ -140,7 +140,7 @@ LRESULT EmoticonsDlg::onInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lP
 			}
 			else
 			{
-				if ((*i)->getDimensions(&w, &h))
+				if ((*e)->getDimensions(&w, &h))
 				{
 					if (bUseAnimation)
 						dwCount++;
@@ -214,13 +214,13 @@ LRESULT EmoticonsDlg::onInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lP
 				if (l_Emotion != Emoticons.end()) // TODO - merge
 				{
 				
-					const auto i = *l_Emotion;
+					const auto e = *l_Emotion;
 					if ((iY * nXfor) + iX + 1 > l_Emoticons_size) break;
 					
 					bool bNotDuplicated = (bUseAnimation ?
-					                       (i->getEmotionBmpPath() != lastEmotionPath ||
-					                        i->getEmotionGifPath() != lastAnimEmotionPath) :
-					                       i->getEmotionBmpPath() != lastEmotionPath);
+					                       (e->getEmotionBmpPath() != lastEmotionPath ||
+					                        e->getEmotionGifPath() != lastAnimEmotionPath) :
+					                       e->getEmotionBmpPath() != lastEmotionPath);
 					                       
 					                       
 					// dve stejne emotikony za sebou nechceme
@@ -230,11 +230,11 @@ LRESULT EmoticonsDlg::onInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lP
 						CGDIImage *pImage = nullptr;
 						
 						if (bUseAnimation)
-							pImage = i->getAnimatedImage(MainFrame::getMainFrame()->m_hWnd, WM_ANIM_CHANGE_FRAME);
+							pImage = e->getAnimatedImage(MainFrame::getMainFrame()->m_hWnd, WM_ANIM_CHANGE_FRAME);
 							
 						if (pImage)
 						{
-							const tstring smajl = i->getEmotionText();
+							const tstring smajl = e->getEmotionText();
 							CAnimatedButton *pemoButton = new CAnimatedButton(pImage);
 							m_BtnList.push_back(pemoButton);
 							pemoButton->Create(EmoticonsDlg::m_hWnd, pos, smajl.c_str(), WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | BS_FLAT | BS_BITMAP, WS_EX_TRANSPARENT);
@@ -243,10 +243,10 @@ LRESULT EmoticonsDlg::onInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lP
 						}
 						else
 						{
-							if (const HBITMAP l_h_bm = i->getEmotionBmp(GetSysColor(COLOR_BTNFACE)))
+							if (const HBITMAP l_h_bm = e->getEmotionBmp(GetSysColor(COLOR_BTNFACE)))
 							{
 								CButton emoButton;
-								const tstring smajl = i->getEmotionText();
+								const tstring smajl = e->getEmotionText();
 								emoButton.Create(EmoticonsDlg::m_hWnd, pos, smajl.c_str(), WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | BS_FLAT | BS_BITMAP | BS_CENTER);
 								m_HandleList.push_back(l_h_bm);
 								emoButton.SetBitmap(l_h_bm);
@@ -271,10 +271,10 @@ LRESULT EmoticonsDlg::onInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lP
 						}
 					}
 					
-					lastEmotionPath = i->getEmotionBmpPath();
+					lastEmotionPath = e->getEmotionBmpPath();
 					
 					if (bUseAnimation)
-						lastAnimEmotionPath = i->getEmotionGifPath();
+						lastAnimEmotionPath = e->getEmotionGifPath();
 					++l_Emotion;
 				}
 			}
@@ -289,9 +289,9 @@ LRESULT EmoticonsDlg::onInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lP
 		DeleteObject((HGDIOBJ)emoButton);
 		ShowWindow(SW_SHOW);
 		
-		for (auto i = m_BtnList.cbegin(); i != m_BtnList.cend(); ++i)
+		for (auto y = m_BtnList.cbegin(); y != m_BtnList.cend(); ++y)
 		{
-			(*i)->Update();
+			(*y)->Update();
 		}
 	}
 	else PostMessage(WM_CLOSE);
