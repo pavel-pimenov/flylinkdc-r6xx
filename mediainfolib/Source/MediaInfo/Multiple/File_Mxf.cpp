@@ -6286,7 +6286,7 @@ void File_Mxf::Data_Parse()
                 Element_WaitForMoreData(); \
                 return; \
             } \
-            Skip_XX(Element_Size, "Data"); \
+            Skip_XX(Element_Size-Element_Offset, "Data"); \
         } \
         Element_Name(_NAME); \
         switch (Code_Compare2>>24) \
@@ -6315,7 +6315,7 @@ void File_Mxf::Data_Parse()
                                         } \
                                         break; \
                             case 0x63 : _ELEMENT(); break; \
-                            default   : Skip_XX(Element_Size,                                   "Unknown"); \
+                            default   : Skip_XX(Element_Size-Element_Offset,                    "Unknown"); \
                         } \
         } \
     } \

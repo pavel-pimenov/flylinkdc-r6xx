@@ -408,6 +408,7 @@ void File__Analyze::Get_MasteringDisplayColorVolume(Ztring &MasteringDisplay_Col
             Meta.Primaries[i]=(int16u)(((int32u)Meta.Primaries[i]*50000+32768)>>16); // 0.16 fixed-point, MPEG values are x50000
     if (!IsNotValid)
         MasteringDisplay_ColorPrimaries=MasteringDisplayColorVolume_Values_Compute(Meta.Primaries);
+
     if (Meta.Luminance[0]!=(int32u)-1 && Meta.Luminance[1]!=(int32u)-1)
     {
         float32 Luminance_Min_Ratio=FromAV1?16384:10000; // 18.14 fixed-point, MPEG values are x10000
@@ -426,12 +427,13 @@ enum class dolbyvision_profile : uint8_t
     dav1,
     davc,
     dvav,
+    dvh1,
     dvh8,
     dvhe,
     max,
 };
 static const char DolbyVision_Profiles_Names[] = // dv[BL_codec_type].[number_of_layers][bit_depth][cross-compatibility]
-"dav1davcdvavdvh8dvhe";
+"dav1davcdvavdvh1dvh8dvhe";
 static_assert(sizeof(DolbyVision_Profiles_Names)==4*((size_t)dolbyvision_profile::max)+1, "");
 static dolbyvision_profile DolbyVision_Profiles[]=
 {
@@ -455,7 +457,7 @@ static dolbyvision_profile DolbyVision_Profiles[]=
     dolbyvision_profile::max,
     dolbyvision_profile::max,
     dolbyvision_profile::max,
-    dolbyvision_profile::max,
+    dolbyvision_profile::dvh1,
     dolbyvision_profile::max,
     dolbyvision_profile::max,
     dolbyvision_profile::max,
@@ -494,15 +496,22 @@ extern const char* DolbyVision_Compatibility[] =
     "Blu-ray",
 };
 static const size_t DolbyVision_Compatibility_Size=sizeof(DolbyVision_Compatibility)/sizeof(const char*);
+extern const char* DolbyVision_Compression[] =
+{
+    "None",
+    "Limited",
+    NULL,
+    "Extended",
+};
 void File__Analyze::dvcC(bool has_dependency_pid, std::map<std::string, Ztring>* Infos)
 {
     Element_Name("Dolby Vision Configuration");
 
     //Parsing
-    int8u  dv_version_major = 0, dv_version_minor = 0, dv_profile = 0, dv_level = 0, dv_bl_signal_compatibility_id=0;
-    bool rpu_present_flag=false, el_present_flag = false, bl_present_flag = false;
+    int8u  dv_version_major, dv_version_minor, dv_profile, dv_level, dv_bl_signal_compatibility_id, dv_md_compression;
+    bool rpu_present_flag, el_present_flag, bl_present_flag;
     Get_B1 (dv_version_major,                                   "dv_version_major");
-    if (dv_version_major && dv_version_major<=2) //Spec says nothing, we hope that a minor version change means that the stream is backward compatible
+    if (dv_version_major && dv_version_major<=3) //Spec says nothing, we hope that a minor version change means that the stream is backward compatible
     {
         Get_B1 (dv_version_minor,                               "dv_version_minor");
         BS_Begin();
@@ -524,6 +533,10 @@ void File__Analyze::dvcC(bool has_dependency_pid, std::map<std::string, Ztring>*
         if (Data_BS_Remain())
         {
             Get_S1 (4, dv_bl_signal_compatibility_id,           "dv_bl_signal_compatibility_id"); // in dv_version_major 2 only if based on specs but it was confirmed to be seen in dv_version_major 1 too and it does not hurt (value 0 means no new display)
+            if (dv_version_major>=3)
+            {
+                Get_S1(2, dv_md_compression,                    "dv_md_compression");
+            }
             if (End<Data_BS_Remain())
                 Skip_BS(Data_BS_Remain()-End,                   "reserved");
         }
@@ -538,13 +551,13 @@ void File__Analyze::dvcC(bool has_dependency_pid, std::map<std::string, Ztring>*
             (*Infos)["HDR_Format"].From_UTF8("Dolby Vision");
         else
             Fill(Stream_Video, StreamPos_Last, Video_HDR_Format, "Dolby Vision");
-        if (dv_version_major && dv_version_major<=2)
+        if (dv_version_major && dv_version_major<=3)
         {
-            Ztring Summary=Ztring::ToZtring(dv_version_major)+__T('.')+Ztring::ToZtring(dv_version_minor);
+            Ztring Version=Ztring::ToZtring(dv_version_major)+__T('.')+Ztring::ToZtring(dv_version_minor);
             if (Infos)
-                (*Infos)["HDR_Format_Version"]=Summary;
+                (*Infos)["HDR_Format_Version"]=Version;
             else
-                Fill(Stream_Video, StreamPos_Last, Video_HDR_Format_Version, Summary);
+                Fill(Stream_Video, StreamPos_Last, Video_HDR_Format_Version, Version);
             string Profile, Level;
             DolbyVision_Profiles_Append(Profile, dv_profile);
             Profile+='.';
@@ -560,17 +573,10 @@ void File__Analyze::dvcC(bool has_dependency_pid, std::map<std::string, Ztring>*
                 Fill(Stream_Video, StreamPos_Last, Video_HDR_Format_Profile, Profile);
                 Fill(Stream_Video, StreamPos_Last, Video_HDR_Format_Level, Level);
             }
-            Summary += __T(',');
-            Summary+=__T(' ');
-            Summary+=Ztring().From_UTF8(Profile);
-            Summary+=__T('.');
-            Summary+=Ztring().From_UTF8(Level);
 
             string Layers;
             if (rpu_present_flag|el_present_flag|bl_present_flag)
             {
-                Summary+=',';
-                Summary+=' ';
                 if (bl_present_flag)
                     Layers +="BL+";
                 if (el_present_flag)
@@ -578,7 +584,13 @@ void File__Analyze::dvcC(bool has_dependency_pid, std::map<std::string, Ztring>*
                 if (rpu_present_flag)
                     Layers +="RPU+";
                 Layers.resize(Layers.size()-1);
-                Summary+=Ztring().From_UTF8(Layers);
+            }
+            if (dv_version_major>=3 && DolbyVision_Compression[dv_md_compression])
+            {
+                if (Infos)
+                    (*Infos)["HDR_Format_Compression"].From_UTF8(DolbyVision_Compression[dv_md_compression]);
+                else
+                    Fill(Stream_Video, StreamPos_Last, Video_HDR_Format_Compression, DolbyVision_Compression[dv_md_compression]);
             }
             if (Infos)
                 (*Infos)["HDR_Format_Settings"].From_UTF8(Layers);
@@ -1089,6 +1101,7 @@ void File__Analyze::Fill (stream_t StreamKind, size_t StreamPos, size_t Paramete
                                 case Video_Width:   if (StreamSource==IsStream) Fill(Stream_Video, StreamPos, Video_Sampled_Width, Value); break;
                                 case Video_Height:  if (StreamSource==IsStream) Fill(Stream_Video, StreamPos, Video_Sampled_Height, Value); break;
                                 case Video_DisplayAspectRatio:  DisplayAspectRatio_Fill(Value, Stream_Video, StreamPos, Video_Width, Video_Height, Video_PixelAspectRatio, Video_DisplayAspectRatio); break;
+                                case Video_Active_DisplayAspectRatio:  DisplayAspectRatio_Fill(Value, Stream_Video, StreamPos, Video_Active_Width, Video_Active_Height, Video_PixelAspectRatio, Video_Active_DisplayAspectRatio); break;
                                 case Video_PixelAspectRatio:    PixelAspectRatio_Fill(Value, Stream_Video, StreamPos, Video_Width, Video_Height, Video_PixelAspectRatio, Video_DisplayAspectRatio);   break;
                                 case Video_DisplayAspectRatio_CleanAperture:  DisplayAspectRatio_Fill(Value, Stream_Video, StreamPos, Video_Width_CleanAperture, Video_Height_CleanAperture, Video_PixelAspectRatio_CleanAperture, Video_DisplayAspectRatio_CleanAperture); break;
                                 case Video_PixelAspectRatio_CleanAperture:    PixelAspectRatio_Fill(Value, Stream_Video, StreamPos, Video_Width_CleanAperture, Video_Height_CleanAperture, Video_PixelAspectRatio_CleanAperture, Video_DisplayAspectRatio_CleanAperture);   break;
@@ -1154,6 +1167,7 @@ void File__Analyze::Fill (stream_t StreamKind, size_t StreamPos, size_t Paramete
                             switch (Parameter)
                             {
                                 case Image_DisplayAspectRatio:  DisplayAspectRatio_Fill(Value, Stream_Image, StreamPos, Image_Width, Image_Height, Image_PixelAspectRatio, Image_DisplayAspectRatio); break;
+                                case Image_Active_DisplayAspectRatio:  DisplayAspectRatio_Fill(Value, Stream_Image, StreamPos, Image_Active_Width, Image_Active_Height, Image_PixelAspectRatio, Image_Active_DisplayAspectRatio); break;
                                 case Image_PixelAspectRatio:    PixelAspectRatio_Fill(Value, Stream_Image, StreamPos, Image_Width, Image_Height, Image_PixelAspectRatio, Image_DisplayAspectRatio);   break;
                                 case Image_DisplayAspectRatio_Original:  DisplayAspectRatio_Fill(Value, Stream_Image, StreamPos, Image_Width_Original, Image_Height_Original, Image_PixelAspectRatio_Original, Image_DisplayAspectRatio_Original); break;
                                 case Image_PixelAspectRatio_Original:    PixelAspectRatio_Fill(Value, Stream_Image, StreamPos, Image_Width_Original, Image_Height_Original, Image_PixelAspectRatio_Original, Image_DisplayAspectRatio_Original);   break;
@@ -3464,7 +3478,8 @@ void File__Analyze::DisplayAspectRatio_Fill(const Ztring &Value, stream_t Stream
     else if (DAR>=(float)2.15 && DAR<(float)2.22)   DARS=__T("2.2:1");
     else if (DAR>=(float)2.23 && DAR<(float)2.30)   DARS=__T("2.25:1");
     else if (DAR>=(float)2.30 && DAR<(float)2.37)   DARS=__T("2.35:1");
-    else if (DAR>=(float)2.37 && DAR<(float)2.45)   DARS=__T("2.40:1");
+    else if (DAR>=(float)2.37 && DAR<(float)2.395)  DARS=__T("2.39:1");
+    else if (DAR>=(float)2.395 && DAR<(float)2.45)  DARS=__T("2.40:1");
     else                                            DARS.From_Number(DAR);
       DARS.FindAndReplace(__T("."), MediaInfoLib::Config.Language_Get(__T("  Config_Text_FloatSeparator")));
     if (MediaInfoLib::Config.Language_Get(__T("  Language_ISO639"))==__T("fr") &&   DARS.find(__T(":1"))==string::npos)

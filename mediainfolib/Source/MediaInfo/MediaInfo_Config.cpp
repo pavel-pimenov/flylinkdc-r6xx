@@ -137,7 +137,7 @@ namespace MediaInfoLib
 {
 
 //---------------------------------------------------------------------------
-const Char*  MediaInfo_Version=__T("MediaInfoLib - v23.10");
+const Char*  MediaInfo_Version=__T("MediaInfoLib - v23.11");
 const Char*  MediaInfo_Url=__T("http://MediaArea.net/MediaInfo");
       Ztring EmptyZtring;       //Use it when we can't return a reference to a true Ztring
 const Ztring EmptyZtring_Const; //Use it when we can't return a reference to a true Ztring, const version
@@ -1053,7 +1053,17 @@ Ztring MediaInfo_Config::Option (const String &Option, const String &Value_Raw)
         {
             return Cover_Data_Get();
         }
-    #endif //MEDIAINFO_COMPRESS
+    #endif //MEDIAINFO_ADVANCED
+    #if MEDIAINFO_ADVANCED && defined(MEDIAINFO_FILE_YES)
+        if (Option_Lower==__T("enable_ffmpeg"))
+        {
+            return Enable_FFmpeg_Set(Value.To_int8u()?true:false);
+        }
+        if (Option_Lower==__T("enable_ffmpeg_get"))
+        {
+            return Enable_FFmpeg_Get()?__T("1"):__T("0");
+        }
+    #endif //MEDIAINFO_ADVANCED && defined(MEDIAINFO_FILE_YES)
     #if MEDIAINFO_COMPRESS
         if (Option_Lower==__T("inform_compress"))
         {
@@ -2703,6 +2713,31 @@ Ztring MediaInfo_Config::Cover_Data_Get ()
     return ToReturn;
 }
 #endif //MEDIAINFO_ADVANCED
+
+
+//---------------------------------------------------------------------------
+#if MEDIAINFO_ADVANCED && defined(MEDIAINFO_FILE_YES)
+Ztring MediaInfo_Config::Enable_FFmpeg_Set (bool NewValue)
+{
+    const int64u Mask=~((1<<Flags_Enable_FFmpeg));
+    int64u Value;
+    if (NewValue)
+        Value=(1<<Flags_Enable_FFmpeg);
+    else
+        Value=0;
+
+    CriticalSectionLocker CSL(CS);
+    Flags1&=Mask;
+    Flags1|=Value;
+    return Ztring();
+}
+
+bool MediaInfo_Config::Enable_FFmpeg_Get ()
+{
+    CriticalSectionLocker CSL(CS);
+    return Flags1&(1<<Flags_Enable_FFmpeg);
+}
+#endif //MEDIAINFO_ADVANCED && defined(MEDIAINFO_FILE_YES)
 
 //---------------------------------------------------------------------------
 #if MEDIAINFO_COMPRESS

@@ -1113,6 +1113,7 @@ LRESULT TransferView::onDoubleClickTransfers(int /*idCtrl*/, LPNMHDR pnmh, BOOL&
 							break;
 						case 2:
 							i->matchQueue();
+							break;
 						case 3:
 							i->grantSlotPeriod(i->m_hintedUser.hint, 600);
 							break;

@@ -143,6 +143,7 @@
     <ClCompile Include="Source\MediaInfo\Export\Export_Niso.cpp" />
     <ClCompile Include="Source\MediaInfo\Export\Export_PBCore2.cpp" />
     <ClCompile Include="Source\MediaInfo\Export\Export_reVTMD.cpp" />
+    <ClCompile Include="Source\MediaInfo\ExternalCommandHelpers.cpp" />
     <ClCompile Include="Source\MediaInfo\File__Analyze.cpp" />
     <ClCompile Include="Source\MediaInfo\File__Analyze_Buffer.cpp" />
     <ClCompile Include="Source\MediaInfo\File__Analyze_Buffer_MinimizeSize.cpp" />
@@ -385,6 +386,7 @@
     <ClInclude Include="Source\MediaInfo\Export\Export_Niso.h" />
     <ClInclude Include="Source\MediaInfo\Export\Export_PBCore2.h" />
     <ClInclude Include="Source\MediaInfo\Export\Export_reVTMD.h" />
+    <ClInclude Include="Source\MediaInfo\ExternalCommandHelpers.h" />
     <ClInclude Include="Source\MediaInfo\File__Analyse_Automatic.h" />
     <ClInclude Include="Source\MediaInfo\File__Analyze.h" />
     <ClInclude Include="Source\MediaInfo\File__Analyze_Element.h" />

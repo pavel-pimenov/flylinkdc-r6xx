@@ -803,6 +803,9 @@
     <ClCompile Include="Source\MediaInfo\Audio\File_DtsUhd.cpp">
       <Filter>Source Files\Audio</Filter>
     </ClCompile>
+    <ClCompile Include="Source\MediaInfo\ExternalCommandHelpers.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\MediaInfo\File__Analyse_Automatic.h">
@@ -1500,6 +1503,9 @@
     </ClInclude>
     <ClInclude Include="Source\MediaInfo\Audio\File_DtsUhd.h">
       <Filter>Header Files\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\MediaInfo\ExternalCommandHelpers.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
