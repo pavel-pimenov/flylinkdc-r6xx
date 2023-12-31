@@ -1293,10 +1293,13 @@ void File_Mk::Streams_Finish()
                 auto StreamKind_Last_Sav=StreamKind_Last;
                 auto StreamPos_Last_Sav=StreamPos_Last;
                 Merge(*Add->second);
-                Fill(StreamKind_Last, StreamPos_Last, Other_ID, std::to_string(Temp->first)+"-Add-"+ std::to_string(Add->first));
-                Fill(StreamKind_Last, StreamPos_Last, Other_MuxingMode, "BlockAddition");
-                StreamKind_Last=StreamKind_Last_Sav;
-                StreamPos_Last=StreamPos_Last_Sav;
+                if (StreamKind_Last!=StreamKind_Last_Sav || StreamPos_Last!=StreamPos_Last_Sav)
+                {
+                    Fill(StreamKind_Last, StreamPos_Last, Other_ID, std::to_string(Temp->first)+"-Add-"+ std::to_string(Add->first));
+                    Fill(StreamKind_Last, StreamPos_Last, Other_MuxingMode, "BlockAddition");
+                    StreamKind_Last=StreamKind_Last_Sav;
+                    StreamPos_Last=StreamPos_Last_Sav;
+                }
             }
 
             //Format specific
@@ -2317,8 +2320,8 @@ bool File_Mk::Rawcooked_Compressed_Start(rawcookedtrack::mask* Mask, bool UseMas
         Element_Offset=Element_Offset_Save;
 
         //Sizes
-        size_t Source_Size=(unsigned long)(Element_Size-Element_Offset);
-        size_t Dest_Size=(unsigned long)Rawcooked_Compressed_Save_Element_Size;
+        size_t Source_Size=(size_t)(Element_Size-Element_Offset);
+        size_t Dest_Size=(size_t)Rawcooked_Compressed_Save_Element_Size;
 
         //Uncompressing
         int8u* Dest=new int8u[(Mask && UseMask && Mask->Size>Dest_Size)?Mask->Size:Dest_Size];

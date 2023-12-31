@@ -806,6 +806,9 @@
     <ClCompile Include="Source\MediaInfo\ExternalCommandHelpers.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Source\MediaInfo\Tag\File_Icc.cpp">
+      <Filter>Source Files\Tag</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\MediaInfo\File__Analyse_Automatic.h">
@@ -1506,6 +1509,9 @@
     </ClInclude>
     <ClInclude Include="Source\MediaInfo\ExternalCommandHelpers.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\MediaInfo\Tag\File_Icc.h">
+      <Filter>Header Files\Tag</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -78,8 +78,9 @@ private :
     void idsc();
     void jp2c();
     void jp2h();
-    void jp2h_ihdr();
     void jp2h_colr();
+    void jp2h_ihdr();
+    void jp2h_ricc() {jp2h_colr(); }
     void mdat();
     void mdat_xxxx();
     void mdat_StreamJump();
@@ -360,6 +361,7 @@ private :
     void moov_udta_meta_uuid();
     void moov_udta_ndrm();
     void moov_udta_nsav();
+    void moov_udta_PANA();
     void moov_udta_rtng();
     void moov_udta_ptv ();
     void moov_udta_Sel0();

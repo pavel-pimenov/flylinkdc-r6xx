@@ -118,6 +118,9 @@ using namespace std;
 #if defined(MEDIAINFO_CDP_YES)
     #include "MediaInfo/Text/File_Cdp.h"
 #endif
+#if defined(MEDIAINFO_ICC_YES)
+    #include "MediaInfo/Tag/File_Icc.h"
+#endif
 #if defined(MEDIAINFO_PROPERTYLIST_YES)
     #include "MediaInfo/Tag/File_PropertyList.h"
 #endif
@@ -641,8 +644,9 @@ namespace Elements
     const int64u idsc=0x69647363;
     const int64u jp2c=0x6A703263;
     const int64u jp2h=0x6A703268;
-    const int64u jp2h_ihdr=0x69686472;
     const int64u jp2h_colr=0x636F6C72;
+    const int64u jp2h_ihdr=0x69686472;
+    const int64u jp2h_ricc=0x72696363;
     const int64u mdat=0x6D646174;
     const int64u meta=0x6D657461;
     const int64u meta_grpl=0x6772706C;
@@ -958,6 +962,7 @@ namespace Elements
     const int64u moov_udta_meta_uuid=0x75756964;
     const int64u moov_udta_ndrm=0x6E64726D;
     const int64u moov_udta_nsav=0x6E736176;
+    const int64u moov_udta_PANA=0x50414E41;
     const int64u moov_udta_ptv =0x70747620;
     const int64u moov_udta_rtng=0x72746E67;
     const int64u moov_udta_Sel0=0x53656C30;
@@ -1035,6 +1040,7 @@ void File_Mpeg4::Data_Parse()
         ATOM_BEGIN
         ATOM(jp2h_colr)
         ATOM(jp2h_ihdr)
+        ATOM(jp2h_ricc)
         ATOM_END
     LIST(mdat)
         ATOM_DEFAULT_ALONE(mdat_xxxx)
@@ -1420,6 +1426,7 @@ void File_Mpeg4::Data_Parse()
                 ATOM_END
             ATOM(moov_udta_ndrm)
             ATOM(moov_udta_nsav)
+            ATOM(moov_udta_PANA)
             ATOM(moov_udta_ptv )
             ATOM(moov_udta_rtng)
             ATOM(moov_udta_Sel0)
@@ -1433,7 +1440,7 @@ void File_Mpeg4::Data_Parse()
                 ATOM_END
             ATOM(moov_udta_WLOC)
             ATOM(moov_udta_thmb)
-            LIST_SKIP(moov_udta_XMP_)
+            LIST_SKIP(moov_udta_XMP_) //TODO: parse XMP
             ATOM(moov_udta_Xtra)
             ATOM(moov_udta_yrrc)
             ATOM_DEFAULT (moov_udta_xxxx); //User data
@@ -1821,7 +1828,23 @@ void File_Mpeg4::jp2h_colr()
                     Fill(StreamKind_Last, 0, "ColorSpace", Mpeg4_jp2h_EnumCS(EnumCS));
                     }
                     break;
-        case 0x02 : Skip_XX(Element_Size-Element_Offset,        "PROFILE");
+        case 0x02 :
+                    #if defined(MEDIAINFO_ICC_YES)
+                    if (Element_Offset<Element_Size && Element_Size-Element_Offset>=132)
+                    {
+                        File_Icc ICC_Parser;
+                        ICC_Parser.StreamKind=StreamKind_Last;
+                        ICC_Parser.IsAdditional=true;
+                        Open_Buffer_Init(&ICC_Parser);
+                        Open_Buffer_Continue(&ICC_Parser);
+                        Open_Buffer_Finalize(&ICC_Parser);
+                        Merge(ICC_Parser, StreamKind_Last, 0, 0);
+                    }
+                    else
+                        Skip_XX(Element_Size-Element_Offset,    "ICC profile");
+                    #else
+                        Skip_XX(Element_Size-Element_Offset,    "ICC profile");
+                    #endif
                     break;
         default   : Skip_XX(Element_Size-Element_Offset,        "Unknown");
                     return;
@@ -7105,7 +7128,17 @@ void File_Mpeg4::moov_trak_mdia_minf_stbl_stsd_xxxx_colr_nclc(bool LittleEndian,
 void File_Mpeg4::moov_trak_mdia_minf_stbl_stsd_xxxx_colr_prof()
 {
     //Parsing
-    Skip_XX(Element_Size-Element_Offset,                        "ICC profile"); //TODO: parse ICC profile
+    #if defined(MEDIAINFO_ICC_YES)
+        File_Icc ICC_Parser;
+        ICC_Parser.StreamKind=StreamKind_Last;
+        ICC_Parser.IsAdditional=true;
+        Open_Buffer_Init(&ICC_Parser);
+        Open_Buffer_Continue(&ICC_Parser);
+        Open_Buffer_Finalize(&ICC_Parser);
+        Merge(ICC_Parser, StreamKind_Last, 0, 0);
+    #else
+        Skip_XX(Element_Size-Element_Offset,                    "ICC profile");
+    #endif
 }
 
 //---------------------------------------------------------------------------
@@ -9482,6 +9515,15 @@ void File_Mpeg4::moov_udta_nsav()
 }
 
 //---------------------------------------------------------------------------
+void File_Mpeg4::moov_udta_PANA()
+{
+    Element_Name("Panasonic");
+
+    //Parsing
+    Skip_XX(Element_Size,                                       "Data"); //TODO: parse Panasonic metadata
+}
+
+//---------------------------------------------------------------------------
 void File_Mpeg4::moov_udta_ptv()
 {
     Element_Name("Print To Video");
@@ -9777,6 +9819,7 @@ void File_Mpeg4::moov_udta_xxxx()
                     return;
                 }
 
+                size_t Count=0;
                 while (Element_Size-Element_Offset>4)
                 {
                     std::string ValueS;
@@ -9788,6 +9831,11 @@ void File_Mpeg4::moov_udta_xxxx()
                     else
                     {
                         Get_B2 (Size16,                         "Size");
+                        if (!Size16)
+                        {
+                            Skip_XX(Element_Size-Element_Offset,"Unknown");
+                            return;
+                        }
                         Info_B2(Language,                       "Language"); Param_Info1(Language_Get(Language));
                         Get_String(Size16, ValueS,              "Value");
                     }
@@ -9817,10 +9865,26 @@ void File_Mpeg4::moov_udta_xxxx()
                     // Check zero padding
                     auto Buffer_Current=Buffer+Buffer_Offset+Element_Offset;
                     auto Buffer_End=Buffer+Buffer_Offset+Element_Size;
+                    if (Buffer_End-Buffer_Current>=0x100)
+                        Buffer_End=Buffer_Current+0x100; // Limiting padding check
                     while (Buffer_Current<Buffer_End && !*Buffer_Current)
                         Buffer_Current++;
                     if (Buffer_Current>=Buffer_End)
-                        Skip_XX(Element_Size-Element_Offset,    "Padding");
+                    {
+                        auto SizePadding=Element_Size-Element_Offset;
+                        if (SizePadding>=0x100)
+                        {
+                            Skip_XX(Element_Size-Element_Offset,    "Unknown");
+                            return;
+                        }
+                        Skip_XX(SizePadding,                        "Padding");
+                    }
+                    Count++;
+                    if (Count>0x100) // Many values, likely not really strings
+                    {
+                        Skip_XX(Element_Size-Element_Offset,        "Unknown");
+                        return;
+                    }
                 }
 
                 FILLING_BEGIN_PRECISE();
