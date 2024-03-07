@@ -36,3 +36,8 @@ MakeDefs/MakeDefs.exe
 /compiled/Settings/tth-history.leveldb/LOG
 /compiled/Settings/tth-history.leveldb/MANIFEST-*
 /compiled/Settings/tth-history.leveldb/LOG.old
+*.tar
+*.mmdb
+*.tar.gz
+GeoLite2-Country_*
+
