@@ -421,6 +421,25 @@ void File__Analyze::Get_MasteringDisplayColorVolume(Ztring &MasteringDisplay_Col
 #endif
 
 //---------------------------------------------------------------------------
+extern const char* DolbyVision_Compatibility[] =
+{
+    "",
+    "HDR10",
+    "SDR",
+    NULL,
+    "HLG",
+    NULL,
+    "Blu-ray",
+};
+static const size_t DolbyVision_Compatibility_Size = sizeof(DolbyVision_Compatibility) / sizeof(const char*);
+size_t DolbyVision_Compatibility_Pos(const Ztring& Value)
+{
+
+    for (size_t Pos = 0; Pos < DolbyVision_Compatibility_Size; Pos++)
+        if (Ztring(DolbyVision_Compatibility[Pos]) == Value)
+            return Pos;
+    return (size_t)-1;
+}
 #if defined(MEDIAINFO_AV1_YES) || defined(MEDIAINFO_AVC_YES) || defined(MEDIAINFO_HEVC_YES) || defined(MEDIAINFO_MPEG4_YES) || defined(MEDIAINFO_MATROSKA_YES) || defined(MEDIAINFO_MXF_YES)
 enum class dolbyvision_profile : uint8_t
 {
@@ -485,17 +504,6 @@ static void DolbyVision_Profiles_Append(string& Profile, int8u i)
         return add_dec_2chars(Profile, i);
     Profile.append(DolbyVision_Profiles_Names+((size_t)j)*4, 4);
 }
-extern const char* DolbyVision_Compatibility[] =
-{
-    "",
-    "HDR10",
-    "SDR",
-    NULL,
-    "HLG",
-    NULL,
-    "Blu-ray",
-};
-static const size_t DolbyVision_Compatibility_Size=sizeof(DolbyVision_Compatibility)/sizeof(const char*);
 extern const char* DolbyVision_Compression[] =
 {
     "None",
@@ -533,10 +541,7 @@ void File__Analyze::dvcC(bool has_dependency_pid, std::map<std::string, Ztring>*
         if (Data_BS_Remain())
         {
             Get_S1 (4, dv_bl_signal_compatibility_id,           "dv_bl_signal_compatibility_id"); // in dv_version_major 2 only if based on specs but it was confirmed to be seen in dv_version_major 1 too and it does not hurt (value 0 means no new display)
-            if (dv_version_major>=3)
-            {
-                Get_S1(2, dv_md_compression,                    "dv_md_compression");
-            }
+            Get_S1 (2, dv_md_compression,                       "dv_md_compression");
             if (End<Data_BS_Remain())
                 Skip_BS(Data_BS_Remain()-End,                   "reserved");
         }
@@ -585,7 +590,7 @@ void File__Analyze::dvcC(bool has_dependency_pid, std::map<std::string, Ztring>*
                     Layers +="RPU+";
                 Layers.resize(Layers.size()-1);
             }
-            if (dv_version_major>=3 && DolbyVision_Compression[dv_md_compression])
+            if (DolbyVision_Compression[dv_md_compression])
             {
                 if (Infos)
                     (*Infos)["HDR_Format_Compression"].From_UTF8(DolbyVision_Compression[dv_md_compression]);

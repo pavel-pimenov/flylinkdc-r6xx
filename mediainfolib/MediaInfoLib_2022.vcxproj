@@ -344,6 +344,7 @@
     <ClCompile Include="Source\MediaInfo\Video\File_Vc3.cpp" />
     <ClCompile Include="Source\MediaInfo\Video\File_Vp8.cpp" />
     <ClCompile Include="Source\MediaInfo\Video\File_Vp9.cpp" />
+    <ClCompile Include="Source\MediaInfo\Video\File_Vvc.cpp" />
     <ClCompile Include="Source\MediaInfo\Video\File_Y4m.cpp" />
     <ClCompile Include="Source\MediaInfo\XmlUtils.cpp" />
     <ClCompile Include="Source\ThirdParty\tfsxml\tfsxml.c">
@@ -580,6 +581,7 @@
     <ClInclude Include="Source\MediaInfo\Video\File_Vc3.h" />
     <ClInclude Include="Source\MediaInfo\Video\File_Vp8.h" />
     <ClInclude Include="Source\MediaInfo\Video\File_Vp9.h" />
+    <ClInclude Include="Source\MediaInfo\Video\File_Vvc.h" />
     <ClInclude Include="Source\MediaInfo\Video\File_Y4m.h" />
     <ClInclude Include="Source\MediaInfo\XmlUtils.h" />
     <ClInclude Include="Source\ThirdParty\base64\base64.h" />

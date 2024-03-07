@@ -253,7 +253,7 @@ namespace {
 		int prio = 1;
 		for (int i = 0; i < num_classes(); ++i)
 		{
-			int class_prio = m_ses.peer_classes().at(class_at(i))->priority[channel];
+			int class_prio = m_ses.peer_classes().at(class_at(i))->priority[std::size_t(channel)];
 			if (prio < class_prio) prio = class_prio;
 		}
 
@@ -263,7 +263,7 @@ namespace {
 		{
 			for (int i = 0; i < t->num_classes(); ++i)
 			{
-				int class_prio = m_ses.peer_classes().at(t->class_at(i))->priority[channel];
+				int class_prio = m_ses.peer_classes().at(t->class_at(i))->priority[std::size_t(channel)];
 				if (prio < class_prio) prio = class_prio;
 			}
 		}
@@ -4819,6 +4819,7 @@ namespace {
 		INVARIANT_CHECK;
 
 		auto t = m_torrent.lock();
+
 		if (t)
 		{
 			std::uint8_t warning = 0;
@@ -4845,6 +4846,7 @@ namespace {
 				}
 			}
 		}
+
 		if (!t || m_disconnecting)
 		{
 			TORRENT_ASSERT(t || !m_connecting);
@@ -5718,10 +5720,10 @@ namespace {
 #if TORRENT_USE_ASSERTS
 		// make sure we don't have duplicates
 		std::set<aux::bandwidth_channel*> unique_classes;
-		for (int i = 0; i < c; ++i)
+		for (auto chan : channels.first(c))
 		{
-			TORRENT_ASSERT(unique_classes.count(channels[i]) == 0);
-			unique_classes.insert(channels[i]);
+			TORRENT_ASSERT(unique_classes.count(chan) == 0);
+			unique_classes.insert(chan);
 		}
 #endif
 
@@ -5730,7 +5732,7 @@ namespace {
 		aux::bandwidth_manager* manager = m_ses.get_bandwidth_manager(channel);
 
 		int const ret = manager->request_bandwidth(self()
-			, bytes, priority, channels.data(), c);
+			, bytes, priority, channels.first(c));
 
 		if (ret == 0)
 		{

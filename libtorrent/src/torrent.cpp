@@ -1746,7 +1746,9 @@ bool is_downloading_state(int const st)
 			m_save_path,
 			static_cast<storage_mode_t>(m_storage_mode),
 			m_file_priority,
-			m_info_hash.get_best()
+			m_info_hash.get_best(),
+			m_torrent_file->v1(),
+			m_torrent_file->v2()
 		};
 
 		// the shared_from_this() will create an intentional
@@ -2452,9 +2454,9 @@ bool is_downloading_state(int const st)
 
 			span<sha256_hash> v2_span(hashes);
 			m_ses.disk_thread().async_hash(m_storage, m_checking_piece, v2_span, flags
-				, [self = shared_from_this(), hashes = std::move(hashes)]
+				, [self = shared_from_this(), hashes1 = std::move(hashes)]
 				(piece_index_t p, sha1_hash const& h, storage_error const& error) mutable
-				{ self->on_piece_hashed(std::move(hashes), p, h, error); });
+				{ self->on_piece_hashed(std::move(hashes1), p, h, error); });
 			++m_checking_piece;
 			if (m_checking_piece >= m_torrent_file->end_piece()) break;
 		}
@@ -10439,7 +10441,7 @@ namespace {
 		int num_peers = 0;
 		int num_downloaders = 0;
 		int missing_pieces = 0;
-		for (auto* p : m_connections)
+		for (auto const* const p : m_connections)
 		{
 			TORRENT_INCREMENT(m_iterating_connections);
 			if (p->is_connecting()) continue;
@@ -11400,9 +11402,9 @@ namespace {
 
 		span<sha256_hash> v2_span(hashes);
 		m_ses.disk_thread().async_hash(m_storage, piece, v2_span, flags
-			, [self = shared_from_this(), hashes = std::move(hashes)]
+			, [self = shared_from_this(), hashes1 = std::move(hashes)]
 			(piece_index_t p, sha1_hash const& h, storage_error const& error) mutable
-			{ self->on_piece_verified(std::move(hashes), p, h, error); });
+			{ self->on_piece_verified(std::move(hashes1), p, h, error); });
 		m_picker->started_hash_job(piece);
 		m_ses.deferred_submit_jobs();
 	}
@@ -12067,7 +12069,24 @@ namespace {
 				st->pieces.resize(num_pieces, false);
 			}
 		}
-		st->num_pieces = num_have();
+		st->num_pieces = num_passed();
+#if TORRENT_USE_INVARIANT_CHECKS
+		{
+			// The documentation states that `num_pieces` is the count of number
+			// of bits set in `pieces`. Ensure that invariant holds.
+			int num_have_pieces = 0;
+			if (has_picker())
+			{
+				for (auto const i : m_torrent_file->piece_range())
+					if (m_picker->has_piece_passed(i)) ++num_have_pieces;
+			}
+			else if (m_have_all)
+			{
+				num_have_pieces = m_torrent_file->num_pieces();
+			}
+			TORRENT_ASSERT(num_have_pieces == st->num_pieces);
+		}
+#endif
 		st->num_seeds = num_seeds();
 		if ((flags & torrent_handle::query_distributed_copies) && m_picker.get())
 		{
@@ -12095,7 +12114,7 @@ namespace {
 		int priority = 0;
 		for (int i = 0; i < num_classes(); ++i)
 		{
-			int const* prio = m_ses.peer_classes().at(class_at(i))->priority;
+			span<int const> prio = m_ses.peer_classes().at(class_at(i))->priority;
 			priority = std::max(priority, prio[peer_connection::upload_channel]);
 			priority = std::max(priority, prio[peer_connection::download_channel]);
 		}

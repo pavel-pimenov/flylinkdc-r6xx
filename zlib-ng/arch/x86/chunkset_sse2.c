@@ -2,7 +2,7 @@
  * For conditions of distribution and use, see copyright notice in zlib.h
  */
 
-#include "../../zbuild.h"
+#include "zbuild.h"
 
 #ifdef X86_SSE2
 #include <immintrin.h>

@@ -914,7 +914,7 @@ void File_Lxf::Header()
 
     Info_General_StreamSize=0x48+Element_Size;
 
-    #if MEDIAINFO_DEMUX
+    #if MEDIAINFO_DEMUX && MEDIAINFO_NEXTPACKET
         if (Config->NextPacket_Get() && Config->Event_CallBackFunction_IsSet())
             Config->Demux_EventWasSent=true; //First set is to indicate the user that header is parsed
     #endif //MEDIAINFO_DEMUX
@@ -1413,7 +1413,7 @@ void File_Lxf::Audio_Stream(size_t Pos)
         #ifdef MEDIAINFO_SMPTEST0337_YES
         {
             File_SmpteSt0337* Parser=new File_SmpteSt0337;
-            Parser->Container_Bits=SampleSize;
+            Parser->BitDepth=SampleSize;
             Parser->Endianness='L';
             Parser->Aligned=true;
 

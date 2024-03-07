@@ -809,6 +809,9 @@
     <ClCompile Include="Source\MediaInfo\Tag\File_Icc.cpp">
       <Filter>Source Files\Tag</Filter>
     </ClCompile>
+    <ClCompile Include="Source\MediaInfo\Video\File_Vvc.cpp">
+      <Filter>Source Files\Video</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\MediaInfo\File__Analyse_Automatic.h">
@@ -1512,6 +1515,9 @@
     </ClInclude>
     <ClInclude Include="Source\MediaInfo\Tag\File_Icc.h">
       <Filter>Header Files\Tag</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\MediaInfo\Video\File_Vvc.h">
+      <Filter>Header Files\Video</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

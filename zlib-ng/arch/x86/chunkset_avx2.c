@@ -1,7 +1,7 @@
 /* chunkset_avx2.c -- AVX2 inline functions to copy small data chunks.
  * For conditions of distribution and use, see copyright notice in zlib.h
  */
-#include "../../zbuild.h"
+#include "zbuild.h"
 
 #ifdef X86_AVX2
 #include <immintrin.h>

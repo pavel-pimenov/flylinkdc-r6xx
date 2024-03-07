@@ -12,8 +12,7 @@
 
 #include "zutil.h"
 #include "zendian.h"
-#include "adler32_fold.h"
-#include "crc32_fold.h"
+#include "crc32.h"
 
 /* define NO_GZIP when compiling if you want to disable gzip header and
    trailer creation by deflate().  NO_GZIP would be used to avoid linking in
@@ -21,6 +20,12 @@
    should be left enabled. */
 #ifndef NO_GZIP
 #  define GZIP
+#endif
+
+/* define LIT_MEM to slightly increase the speed of deflate (order 1% to 2%) at
+   the cost of a larger memory footprint */
+#ifndef NO_LIT_MEM
+#  define LIT_MEM
 #endif
 
 /* ===========================================================================
@@ -108,11 +113,19 @@ typedef uint16_t Pos;
 /* Type definitions for hash callbacks */
 typedef struct internal_state deflate_state;
 
-typedef uint32_t (* update_hash_cb)        (deflate_state *const s, uint32_t h, uint32_t val);
+typedef uint32_t (* update_hash_cb)        (uint32_t h, uint32_t val);
 typedef void     (* insert_string_cb)      (deflate_state *const s, uint32_t str, uint32_t count);
 typedef Pos      (* quick_insert_string_cb)(deflate_state *const s, uint32_t str);
 
-struct internal_state {
+uint32_t update_hash             (uint32_t h, uint32_t val);
+void     insert_string           (deflate_state *const s, uint32_t str, uint32_t count);
+Pos      quick_insert_string     (deflate_state *const s, uint32_t str);
+
+uint32_t update_hash_roll        (uint32_t h, uint32_t val);
+void     insert_string_roll      (deflate_state *const s, uint32_t str, uint32_t count);
+Pos      quick_insert_string_roll(deflate_state *const s, uint32_t str);
+
+struct ALIGNED_(16) internal_state {
     PREFIX3(stream)      *strm;            /* pointer back to this zlib stream */
     unsigned char        *pending_buf;     /* output still pending */
     unsigned char        *pending_out;     /* next pending byte to output to the stream */
@@ -260,8 +273,16 @@ struct internal_state {
      *   - I can't count above 4
      */
 
+#ifdef LIT_MEM
+#   define LIT_BUFS 5
+    uint16_t *d_buf;              /* buffer for distances */
+    unsigned char *l_buf;         /* buffer for literals/lengths */
+#else
+#   define LIT_BUFS 4
     unsigned char *sym_buf;       /* buffer for distances and literals/lengths */
-    unsigned int sym_next;        /* running index in sym_buf */
+#endif
+
+    unsigned int sym_next;        /* running index in symbol buffer */
     unsigned int sym_end;         /* symbol table full when sym_next reaches this */
 
     unsigned long opt_len;        /* bit length of current block with optimal trees */
@@ -284,7 +305,7 @@ struct internal_state {
 
     /* Reserved for future use and alignment purposes */
     int32_t reserved[11];
-} ALIGNED_(8);
+};
 
 typedef enum {
     need_more,      /* block not completed, need more input or more output */
