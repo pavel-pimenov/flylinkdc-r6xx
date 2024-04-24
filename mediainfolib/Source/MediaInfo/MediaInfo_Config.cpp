@@ -137,7 +137,7 @@ namespace MediaInfoLib
 {
 
 //---------------------------------------------------------------------------
-const Char*  MediaInfo_Version=__T("MediaInfoLib - v24.01");
+const Char*  MediaInfo_Version=__T("MediaInfoLib - v24.04");
 const Char*  MediaInfo_Url=__T("http://MediaArea.net/MediaInfo");
       Ztring EmptyZtring;       //Use it when we can't return a reference to a true Ztring
 const Ztring EmptyZtring_Const; //Use it when we can't return a reference to a true Ztring, const version
@@ -495,6 +495,7 @@ void MediaInfo_Config::Init(bool Force)
     #if MEDIAINFO_CONFORMANCE
         Usac_Profile=(int8u)-1;
         Warning_Error=false;
+        Conformance_Timestamp=false;
     #endif //MEDIAINFO_CONFORMANCE
     #if defined(MEDIAINFO_LIBCURL_YES)
         URLEncode=URLEncode_Guess;
@@ -1672,6 +1673,15 @@ Ztring MediaInfo_Config::Option (const String &Option, const String &Value_Raw)
             String Value_Lower(Value);
             transform(Value_Lower.begin(), Value_Lower.end(), Value_Lower.begin(), (int(*)(int))tolower); //(int(*)(int)) is a patch for unix
             WarningError(Value_Lower==__T("error"));
+            return Ztring();
+        #else // MEDIAINFO_CONFORMANCE
+            return __T("conformance features are disabled due to compilation options");
+        #endif // MEDIAINFO_CONFORMANCE
+    }
+    if (Option_Lower==__T("conformance_timestamp"))
+    {
+        #if MEDIAINFO_CONFORMANCE
+            Conformance_Timestamp_Set(Value.empty() || Value.To_int8u());
             return Ztring();
         #else // MEDIAINFO_CONFORMANCE
             return __T("conformance features are disabled due to compilation options");
@@ -3033,7 +3043,7 @@ const Ztring MediaInfo_Config::Iso639_Translate (const Ztring& Value)
 void MediaInfo_Config::Language_Set_Internal(stream_t KindOfStream)
 {
     //Loading codec table if not yet done
-    if (Info[KindOfStream].empty())
+    if (KindOfStream<Stream_Max && Info[KindOfStream].empty())
         switch (KindOfStream)
         {
             case Stream_General :   MediaInfo_Config_General(Info[Stream_General]);   Language_Set(Stream_General); break;
@@ -4034,6 +4044,22 @@ bool MediaInfo_Config::WarningError()
 {
     CriticalSectionLocker CSL(CS);
     return Warning_Error;
+}
+#endif //MEDIAINFO_CONFORMANCE
+
+#if MEDIAINFO_CONFORMANCE
+void MediaInfo_Config::Conformance_Timestamp_Set(bool Value)
+{
+    CriticalSectionLocker CSL(CS);
+    Conformance_Timestamp=Value;
+}
+#endif //MEDIAINFO_CONFORMANCE
+
+#if MEDIAINFO_CONFORMANCE
+bool MediaInfo_Config::Conformance_Timestamp_Get()
+{
+    CriticalSectionLocker CSL(CS);
+    return Conformance_Timestamp;
 }
 #endif //MEDIAINFO_CONFORMANCE
 

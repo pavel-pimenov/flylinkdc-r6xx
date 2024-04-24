@@ -393,6 +393,8 @@ public :
           string        Profile_List();
           void          WarningError(bool Value);
           bool          WarningError();
+          void          Conformance_Timestamp_Set(bool Value);
+          bool          Conformance_Timestamp_Get();
     #endif
 
     #if defined(MEDIAINFO_LIBCURL_YES)
@@ -556,6 +558,7 @@ private :
     string          Mp4_Profile;
     int8u           Usac_Profile;
     bool            Warning_Error;
+    bool            Conformance_Timestamp;
     #endif
 
     #if defined(MEDIAINFO_LIBCURL_YES)

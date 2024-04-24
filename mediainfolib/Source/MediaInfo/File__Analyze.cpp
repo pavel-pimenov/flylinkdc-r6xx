@@ -27,7 +27,9 @@
 #if MEDIAINFO_IBIUSAGE
     #include "MediaInfo/Multiple/File_Ibi_Creation.h"
 #endif //MEDIAINFO_IBIUSAGE
+#include "TimeCode.h"
 #include <cstring>
+#include <algorithm>
 using namespace std;
 using namespace tinyxml2;
 #if MEDIAINFO_EVENTS
@@ -164,6 +166,213 @@ string uint128toString(uint128 ii, int radix)
 }
 
 //***************************************************************************
+// Conformance
+//***************************************************************************
+
+#if MEDIAINFO_CONFORMANCE
+struct field_value
+{
+    string Field;
+    string Value;
+    bitset8 Flags;
+    struct frame_pos
+    {
+        int64u Main;
+        int64u Sub;
+    };
+    vector<frame_pos> FramePoss;
+    vector<int64u> FrameTimes;
+
+    field_value(string&& Field, string&& Value, bitset8 Flags, int64u FramePos, int64u SubFramePos)
+        : Field(Field)
+        , Value(Value)
+        , Flags(Flags)
+    {
+        FramePoss.push_back({ FramePos, SubFramePos });
+    }
+
+    friend bool operator==(const field_value& l, const field_value& r)
+    {
+        return l.Field == r.Field && l.Value == r.Value && l.Flags.to_int8u() == r.Flags.to_int8u();
+    }
+};
+struct conformance
+{
+    conformance(File__Analyze* A) : A(A) {}
+
+    File__Analyze*                  A;
+    int64u                          Frame_Count_NotParsedIncluded = (int64u)-1;
+    stream_t                        StreamKind_Last = Stream_General;
+    size_t                          StreamPos_Last = 0;
+
+    bitset8                         ConformanceFlags;
+    vector<field_value>             ConformanceErrors_Total[Conformance_Max];
+    vector<field_value>             ConformanceErrors[Conformance_Max];
+    bool                            Warning_Error = false;
+    bool                            ShowTimeStamp = false;
+    int8u                           IsParsingRaw = 0;
+    bool                            CheckIf(const bitset8 Flags) { return !Flags || (ConformanceFlags & Flags); }
+
+    void                            Fill_Conformance(const char* Field, const char* Value, bitset8 Flags = {}, conformance_type Level = Conformance_Error, stream_t StreamKind = Stream_General, size_t StreamPos = 0);
+    void                            Fill_Conformance(const char* Field, const string& Value, bitset8 Flags = {}, conformance_type Level = Conformance_Error) { Fill_Conformance(Field, Value.c_str(), Flags, Level); }
+    void                            Clear_Conformance();
+    void                            Merge_Conformance(bool FromConfig = false);
+    void                            Streams_Finish_Conformance();
+};
+typedef conformance conformance_data;
+static const char* Conformance_Type_String[] = {
+    "Errors",
+    "Warnings",
+    "Infos",
+};
+static_assert(sizeof(Conformance_Type_String) / sizeof(Conformance_Type_String[0]) == Conformance_Max, "");
+#endif //MEDIAINFO_CONFORMANCE
+
+//---------------------------------------------------------------------------
+#if MEDIAINFO_CONFORMANCE
+void conformance::Fill_Conformance(const char* Field, const char* Value, bitset8 Flags, conformance_type Level, stream_t StreamKind, size_t StreamPos)
+{
+    if (Level == Conformance_Warning && Warning_Error)
+        Level = Conformance_Error;
+    field_value FieldValue(Field, Value, Flags, (int64u)-1, IsParsingRaw >= 2 ? (IsParsingRaw - 2) : (int64u)-1);
+    auto& Conformance = ConformanceErrors[Level];
+    auto Current = find(Conformance.begin(), Conformance.end(), FieldValue);
+    if (Current != Conformance.end())
+        return;
+    Conformance.emplace_back(FieldValue);
+}
+#endif
+
+//---------------------------------------------------------------------------
+#if MEDIAINFO_CONFORMANCE
+void conformance::Clear_Conformance()
+{
+    for (size_t Level = 0; Level < Conformance_Max; Level++) {
+        auto& Conformance = ConformanceErrors[Level];
+        Conformance.clear();
+    }
+}
+#endif
+
+//---------------------------------------------------------------------------
+#if MEDIAINFO_CONFORMANCE
+void conformance::Merge_Conformance(bool FromConfig)
+{
+    for (size_t Level = 0; Level < Conformance_Max; Level++)
+    {
+        auto& Conformance = ConformanceErrors[Level];
+        auto& Conformance_Total = ConformanceErrors_Total[Level];
+        for (const auto& FieldValue : Conformance)
+        {
+            auto Current = find(Conformance_Total.begin(), Conformance_Total.end(), FieldValue);
+            if (Current != Conformance_Total.end())
+            {
+                if (Current->FramePoss.size() < 8)
+                {
+                    if (FromConfig)
+                    {
+                        if (Current->FramePoss.empty() || Current->FramePoss[0].Main != (int64u)-1)
+                            Current->FramePoss.insert(Current->FramePoss.begin(), { (int64u)-1, (int64u)-1 });
+                    }
+                    else
+                        Current->FramePoss.push_back({ Frame_Count_NotParsedIncluded, FieldValue.FramePoss[0].Sub });
+                }
+                else if (Current->FramePoss.size() == 8)
+                    Current->FramePoss.push_back({ (int64u)-1, (int64u)-1 }); //Indicating "..."
+                continue;
+            }
+            if (!CheckIf(FieldValue.Flags))
+                continue;
+            Conformance_Total.push_back(FieldValue);
+            if (!FromConfig)
+                Conformance_Total.back().FramePoss.front() = { Frame_Count_NotParsedIncluded, FieldValue.FramePoss[0].Sub };
+        }
+        Conformance.clear();
+    }
+}
+#endif
+
+//---------------------------------------------------------------------------
+#if MEDIAINFO_CONFORMANCE
+void conformance::Streams_Finish_Conformance()
+{
+    Merge_Conformance(true);
+
+    for (size_t Level = 0; Level < Conformance_Max; Level++)
+    {
+        auto& Conformance_Total = ConformanceErrors_Total[Level];
+        if (Conformance_Total.empty())
+            continue;
+        for (size_t i = Conformance_Total.size() - 1; i < Conformance_Total.size(); i--) {
+            if (!CheckIf(Conformance_Total[i].Flags)) {
+                Conformance_Total.erase(Conformance_Total.begin() + i);
+            }
+        }
+        if (Conformance_Total.empty())
+            continue;
+        string Conformance_String = "Conformance";
+        Conformance_String += Conformance_Type_String[Level];
+        A->Fill(StreamKind_Last, StreamPos_Last, Conformance_String.c_str(), Conformance_Total.size());
+        Conformance_String += ' ';
+        for (const auto& ConformanceError : Conformance_Total) {
+            size_t Space = 0;
+            for (;;) {
+                Space = ConformanceError.Field.find(' ', Space + 1);
+                if (Space == string::npos) {
+                    break;
+                }
+                const auto Field = Conformance_String + ConformanceError.Field.substr(0, Space);
+                const auto& Value = A->Retrieve_Const(StreamKind_Last, StreamPos_Last, Field.c_str());
+                if (Value.empty()) {
+                    A->Fill(StreamKind_Last, StreamPos_Last, Field.c_str(), "Yes");
+                }
+            }
+            auto Value = ConformanceError.Value;
+            if (!ConformanceError.FramePoss.empty() && (StreamKind_Last != Stream_General || ConformanceError.FramePoss.size() > 1 || ConformanceError.FramePoss[0].Main != (int64u)-1))
+            {
+                auto HasConfError = ConformanceError.FramePoss[0].Main == (int64u)-1;
+                Value += " (";
+                if (HasConfError)
+                    Value += "conf";
+                if (HasConfError && ConformanceError.FramePoss.size() > 1)
+                    Value += " & ";
+                if (ConformanceError.FramePoss.size() - HasConfError >= 1)
+                    Value += "frame";
+                if (ConformanceError.FramePoss.size() - HasConfError > 1)
+                    Value += 's';
+                Value += ' ';
+                for (size_t i = HasConfError; i < ConformanceError.FramePoss.size(); i++)
+                {
+                    auto FramePos = ConformanceError.FramePoss[i];
+                    if (FramePos.Main == (int64u)-1)
+                        Value += "...";
+                    else
+                    {
+                        if (ShowTimeStamp)
+                        {
+                            TimeCode TC((int64_t)FramePos.Main, 999, TimeCode::Timed());
+                            Value += TC.ToString();
+                        }
+                        else
+                            Value += to_string(FramePos.Main);
+                        if (FramePos.Sub != (int64u)-1)
+                        {
+                            Value += '.';
+                            Value += to_string(FramePos.Sub);
+                        }
+                    }
+                    Value += '+';
+                }
+                Value.back() = ')';
+            }
+            A->Fill(StreamKind_Last, StreamPos_Last, (Conformance_String + ConformanceError.Field).c_str(), Value);
+        }
+        Conformance_Total.clear();
+    }
+}
+#endif
+
+//***************************************************************************
 // Constructor/Destructor
 //***************************************************************************
 
@@ -274,6 +483,7 @@ File__Analyze::File__Analyze ()
 
     //Synchro
     MustParseTheHeaderFile=true;
+    FrameIsAlwaysComplete=false;
     Synched=false;
     UnSynched_IsNotJunk=false;
     MustExtendParsingDuration=false;
@@ -321,6 +531,7 @@ File__Analyze::File__Analyze ()
 
     //Events data
     PES_FirstByte_IsAvailable=false;
+    PES_FirstByte_Value=false;
 
     //AES
     #if MEDIAINFO_AES
@@ -336,6 +547,10 @@ File__Analyze::File__Analyze ()
         Hash_Offset=0;
         Hash_ParseUpTo=0;
     #endif //MEDIAINFO_HASH
+
+    #if MEDIAINFO_CONFORMANCE
+        Conformance_Data=nullptr;
+    #endif //MEDIAINFO_CONFORMANCE
 
     Unsynch_Frame_Count=(int64u)-1;
     #if MEDIAINFO_IBIUSAGE
@@ -370,6 +585,10 @@ File__Analyze::~File__Analyze ()
     #if MEDIAINFO_HASH
         delete Hash; //Hash=NULL;
     #endif //MEDIAINFO_HASH
+
+    #if MEDIAINFO_CONFORMANCE
+        delete (conformance_data*)Conformance_Data;
+    #endif //MEDIAINFO_CONFORMANCE
 
     #if MEDIAINFO_IBIUSAGE
         if (!IsSub)
@@ -1035,8 +1254,11 @@ void File__Analyze::Open_Buffer_Continue (File__Analyze* Sub, const int8u* ToAdd
             int8u* Temp=Sub->OriginalBuffer;
             Sub->OriginalBuffer_Capacity=(size_t)(Sub->OriginalBuffer_Size+Element_Size-Element_Offset);
             Sub->OriginalBuffer=new int8u[Sub->OriginalBuffer_Capacity];
-            memcpy_Unaligned_Unaligned(Sub->OriginalBuffer, Temp, Sub->OriginalBuffer_Size);
-            delete[] Temp;
+            if (Temp)
+            {
+                memcpy_Unaligned_Unaligned(Sub->OriginalBuffer, Temp, Sub->OriginalBuffer_Size);
+                delete[] Temp;
+            }
         }
         memcpy_Unaligned_Unaligned(Sub->OriginalBuffer+Sub->OriginalBuffer_Size, Buffer+Buffer_Offset+(size_t)Element_Offset, (size_t)(Element_Size-Element_Offset));
         Sub->OriginalBuffer_Size+=(size_t)(Element_Size-Element_Offset);
@@ -1187,6 +1409,7 @@ bool File__Analyze::Open_Buffer_Continue_Loop ()
 
     //Parsing specific
     Read_Buffer_AfterParsing();
+    Merge_Conformance();
 
     //Jumping to the end of the file if needed
     if (!IsSub && !EOF_AlreadyDetected && Config->ParseSpeed<1 && Count_Get(Stream_General))
@@ -2284,13 +2507,16 @@ bool File__Analyze::Header_Manage()
             if(Element_Level<2)
                return false;
             //Can not synchronize anymore in this block
-            Element_Offset=Element[Element_Level-2].Next-(File_Offset+Buffer_Offset);
+            if (FrameIsAlwaysComplete)
+                Element_Offset=Buffer_Size-Buffer_Offset;
+            else
+                Element_Offset=Element[Element_Level-2].Next-(File_Offset+Buffer_Offset);
             Header_Fill_Size(Element_Offset);
         }
     }
     if(Element_Level<1)
        return false;
-    if (Element_IsWaitingForMoreData() || ((DataMustAlwaysBeComplete && Element[Element_Level-1].Next>File_Offset+Buffer_Size) || File_GoTo!=(int64u)-1) //Wait or want to have a comple data chunk
+    if (Element_IsWaitingForMoreData() || ((!FrameIsAlwaysComplete && DataMustAlwaysBeComplete && Element[Element_Level-1].Next>File_Offset+Buffer_Size) || File_GoTo!=(int64u)-1) //Wait or want to have a comple data chunk
         #if MEDIAINFO_DEMUX
             || (Config->Demux_EventWasSent)
         #endif //MEDIAINFO_DEMUX
@@ -2949,7 +3175,7 @@ void File__Analyze::Trusted_IsNot ()
         #endif //MEDIAINFO_TRACE
 
         //Enough data?
-        if (!Element[Element_Level].IsComplete)
+        if (!FrameIsAlwaysComplete && !Element[Element_Level].IsComplete)
         {
             Element_WaitForMoreData();
             return;
@@ -3197,6 +3423,7 @@ void File__Analyze::ForceFinish ()
                     return;
             #endif //MEDIAINFO_DEMUX
         }
+        Streams_Finish_Conformance();
         Streams_Finish_Global();
         #if MEDIAINFO_DEMUX
             if (Config->Demux_EventWasSent)
@@ -3898,6 +4125,131 @@ void File__Analyze::Decoded (const int8u* Buffer, size_t Buffer_Size)
 }
 
 #endif //MEDIAINFO_DECODE
+
+//***************************************************************************
+// Conformance
+//***************************************************************************
+
+//---------------------------------------------------------------------------
+#if MEDIAINFO_CONFORMANCE
+void File__Analyze::Fill_Conformance(const char* Field, const char* Value, uint8_t Flags, conformance_type Level, stream_t StreamKind, size_t StreamPos)
+{
+    if (!Conformance_Data) {
+        Conformance_Data = new conformance_data(this);
+        ((conformance_data*)Conformance_Data)->Warning_Error = MediaInfoLib::Config.WarningError();
+        ((conformance_data*)Conformance_Data)->ShowTimeStamp = MediaInfoLib::Config.Conformance_Timestamp_Get();
+    }
+    auto& Data = *(conformance_data*)Conformance_Data;
+    if (IsSub || Frame_Count_NotParsedIncluded != (int64u)-1) {
+        if (Data.ShowTimeStamp) {
+            Data.Frame_Count_NotParsedIncluded = FrameInfo.PTS == (int64u)-1 ? FrameInfo.DTS : FrameInfo.PTS;
+            if (Data.Frame_Count_NotParsedIncluded != (int64u)-1) {
+                if (Frame_Count_InThisBlock) {
+                    Data.Frame_Count_NotParsedIncluded -= FrameInfo.DUR;
+                }
+                Data.Frame_Count_NotParsedIncluded = ((int64s)Data.Frame_Count_NotParsedIncluded) / 1000000;
+            }
+        }
+        else {
+            Data.Frame_Count_NotParsedIncluded = Frame_Count_NotParsedIncluded;
+            if (Frame_Count_NotParsedIncluded != (int64u)-1 && IsSub)
+                Data.Frame_Count_NotParsedIncluded -= Frame_Count_InThisBlock;
+        }
+    }
+    Data.Fill_Conformance( Field, Value, Flags, Level, StreamKind, StreamPos);
+}
+#endif
+
+//---------------------------------------------------------------------------
+#if MEDIAINFO_CONFORMANCE
+void File__Analyze::Clear_Conformance()
+{
+    if (!Conformance_Data) {
+        return;
+    }
+    auto& Data = *(conformance_data*)Conformance_Data;
+    Data.Clear_Conformance();
+}
+#endif
+
+//---------------------------------------------------------------------------
+#if MEDIAINFO_CONFORMANCE
+void File__Analyze::Merge_Conformance(bool FromConfig)
+{
+    if (!Conformance_Data) {
+        return;
+    }
+    auto& Data = *(conformance_data*)Conformance_Data;
+    Data.Merge_Conformance(FromConfig);
+}
+#endif
+
+//---------------------------------------------------------------------------
+#if MEDIAINFO_CONFORMANCE
+void File__Analyze::Streams_Finish_Conformance()
+{
+    if (!Conformance_Data) {
+        return;
+    }
+    auto& Data = *(conformance_data*)Conformance_Data;
+    if (IsSub)
+    {
+        for (size_t StreamKind = Stream_General + 1; StreamKind < Stream_Max; StreamKind++) {
+            if (Count_Get((stream_t)StreamKind)) {
+                Data.StreamKind_Last = (stream_t)StreamKind;
+            }
+        }
+    }
+    Data.Streams_Finish_Conformance();
+}
+#endif
+
+//---------------------------------------------------------------------------
+#if MEDIAINFO_CONFORMANCE
+void File__Analyze::IsTruncated(int64u ExpectedSize, bool MoreThan)
+{
+    if (IsSub) {
+        return;
+    }
+    auto Frame_Count_NotParsedIncluded_Save = Frame_Count_NotParsedIncluded;
+    Frame_Count_NotParsedIncluded = (int64u)-1;
+    Fill(Stream_General, 0, "IsTruncated", "Yes", Unlimited, true, true);
+    Fill_SetOptions(Stream_General, 0, "IsTruncated", "N NT");
+    Fill_Conformance("GeneralCompliance", "File size " + std::to_string(File_Size) + " is less than expected size " + (ExpectedSize == (int64u)-1 ? std::string() : ((MoreThan ? "at least " : "") + std::to_string(ExpectedSize))));
+    Frame_Count_NotParsedIncluded = Frame_Count_NotParsedIncluded_Save;
+}
+
+#endif //MEDIAINFO_CONFORMANCE
+
+//---------------------------------------------------------------------------
+#if MEDIAINFO_CONFORMANCE
+void File__Analyze::RanOutOfData()
+{
+    if (File_Offset + Buffer_Offset + Element_Size >= File_Size) {
+        return;
+    }
+    if (FrameIsAlwaysComplete && !Frame_Count_InThisBlock) {
+        Frame_Count++;
+        if (Frame_Count_NotParsedIncluded != (int64u)-1)
+            Frame_Count_NotParsedIncluded++;
+        Frame_Count_InThisBlock++;
+    }
+    Trusted_IsNot("out of data");
+    Clear_Conformance();
+    Fill_Conformance("GeneralCompliance", "Bitstream parsing ran out of data to read before the end of the syntax was reached, most probably the bitstream is malformed");
+}
+
+#endif //MEDIAINFO_CONFORMANCE
+
+//---------------------------------------------------------------------------
+#if MEDIAINFO_CONFORMANCE
+void File__Analyze::SynchLost()
+{
+    Trusted_IsNot("Synchronisation lost");
+    Fill_Conformance("GeneralCompliance", "Bitstream synchronisation is lost");
+}
+
+#endif //MEDIAINFO_CONFORMANCE
 
 //***************************************************************************
 // IBI
