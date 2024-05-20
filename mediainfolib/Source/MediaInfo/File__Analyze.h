@@ -1570,8 +1570,8 @@ public :
         void                Merge_Conformance(bool FromConfig = false) {}
         void                Streams_Finish_Conformance() {}
         void                IsTruncated(int64u ExpectedSize = (int64u)-1, bool MoreThan = false) {}
-        void                RanOutOfData() { Trusted_IsNot(); }
-        void                SynchLost() { Trusted_IsNot(); }
+        void                RanOutOfData() { Trusted_IsNot("xxx"); }
+        void                SynchLost() { Trusted_IsNot("xxx"); }
     #endif //MEDIAINFO_CONFORMANCE
 
     #if MEDIAINFO_SEEK
