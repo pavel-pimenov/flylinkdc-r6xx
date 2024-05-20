@@ -274,7 +274,7 @@ void conformance::Merge_Conformance(bool FromConfig)
                         if (Current->FramePoss.empty() || Current->FramePoss[0].Main != (int64u)-1)
                             Current->FramePoss.insert(Current->FramePoss.begin(), { (int64u)-1, (int64u)-1 });
                     }
-                    else
+                    else if (Current->FramePoss.empty() || Frame_Count_NotParsedIncluded != (int64u)-1)
                         Current->FramePoss.push_back({ Frame_Count_NotParsedIncluded, FieldValue.FramePoss[0].Sub });
                 }
                 else if (Current->FramePoss.size() == 8)
@@ -472,7 +472,7 @@ File__Analyze::File__Analyze ()
     if (MediaInfoLib::Config.FormatDetection_MaximumOffset_Get())
         Buffer_TotalBytes_FirstSynched_Max=MediaInfoLib::Config.FormatDetection_MaximumOffset_Get();
     else
-        Buffer_TotalBytes_FirstSynched_Max=1024*1024;
+        Buffer_TotalBytes_FirstSynched_Max=16*1024*1024;
     if (Buffer_TotalBytes_FirstSynched_Max<(int64u)-1-64*1024*1024)
         Buffer_TotalBytes_Fill_Max=Buffer_TotalBytes_FirstSynched_Max+64*1024*1024;
     else
@@ -993,6 +993,11 @@ void File__Analyze::Open_Buffer_Continue (const int8u* ToAdd, size_t ToAdd_Size)
          )
     {
         BookMark_Get();
+        if (File_GoTo==File_Size)
+        {
+            File_GoTo=(int64u)-1;
+            ForceFinish();
+        }
     }
 
     //Demand to go elsewhere
@@ -2250,11 +2255,8 @@ bool File__Analyze::Synchro_Manage()
         {
             if (Status[IsFinished])
                 Finish(); //Finish
-            if (!IsSub && File_Offset_FirstSynched==(int64u)-1 && Buffer_TotalBytes+Buffer_Offset>=Buffer_TotalBytes_FirstSynched_Max)
-            {
-                Open_Buffer_Unsynch();
-                GoToFromEnd(0);
-            }
+            if (!IsSub && !Status[IsAccepted] && Buffer_TotalBytes+Buffer_Offset>=Buffer_TotalBytes_FirstSynched_Max)
+                Reject();
             return false; //Wait for more data
         }
         Synched=true;
@@ -2708,12 +2710,13 @@ bool File__Analyze::Data_Manage()
 
     //Next element
     if (!Element_WantNextLevel
+        && Buffer_Size // If the buffer is cleared after Open_Buffer_Unsynch(), Element[Element_Level].Next is no more relevant
         #if MEDIAINFO_HASH
             && Hash==NULL
         #endif //MEDIAINFO_HASH
             )
     {
-        if (Element[Element_Level].Next<=File_Offset+Buffer_Size)
+        if (Element[Element_Level].Next>=File_Offset && Element[Element_Level].Next<=File_Offset+Buffer_Size)
         {
             if (Element_Offset<(size_t)(Element[Element_Level].Next-File_Offset-Buffer_Offset))
                 Element_Offset=(size_t)(Element[Element_Level].Next-File_Offset-Buffer_Offset);
@@ -2995,11 +2998,34 @@ void File__Analyze::Element_Parser(const char* Parser)
 #if MEDIAINFO_TRACE
 void File__Analyze::Element_Error(const char* Message)
 {
-    //Needed?
-    if (Config_Trace_Level<=0.7)
-        return;
+    if (Trace_Activated)
+        Element[Element_Level].TraceNode.Infos.push_back(new element_details::Element_Node_Info(Message, "Error"));
 
-    Element[Element_Level].TraceNode.Infos.push_back(new element_details::Element_Node_Info(Message, "Error"));
+    // Quick transform of old fashion error to new system. TODO: better wording of errors
+    string M(Message);
+    size_t Dash_Pos=string::npos;
+    if (M.find(' ')!=string::npos)
+    {
+        Fill_Conformance("GeneralCompliance", M.c_str());
+    }
+    else
+    {
+        auto Version_Pos=M.find(':');
+        if (Version_Pos!=string::npos)
+            M.erase(Version_Pos);
+        auto FFV1_Pos=M.rfind("FFV1-", 0);
+        if (FFV1_Pos !=string::npos)
+            M.erase(0, 5);
+        for (;;)
+        {
+            auto Temp=M.find('-', Dash_Pos+1);
+            if (Temp==string::npos)
+                break;
+            Dash_Pos=Temp;
+            M[Dash_Pos]=' ';
+        }
+        Fill_Conformance(M.c_str(), M.substr(Dash_Pos+1));
+    }
 }
 #endif //MEDIAINFO_TRACE
 
@@ -3007,7 +3033,36 @@ void File__Analyze::Element_Error(const char* Message)
 #if MEDIAINFO_TRACE
 void File__Analyze::Param_Error(const char* Message)
 {
-    Param_Info(Message, "Error");
+    if (Trace_Activated)
+        Param_Info(Message, "Error");
+
+    // Quick transform of old fashion error to new system. TODO: better wording of errors
+    string M(Message);
+    if (M=="TRUNCATED-ELEMENT:1")
+        return; // Redundant, TODO: sub-elements
+    size_t Dash_Pos=string::npos;
+    if (M.find(' ')!=string::npos)
+    {
+        Fill_Conformance("GeneralCompliance", M.c_str());
+    }
+    else
+    {
+        auto Version_Pos=M.find(':');
+        if (Version_Pos!=string::npos)
+            M.erase(Version_Pos);
+        auto FFV1_Pos=M.rfind("FFV1-", 0);
+        if (FFV1_Pos !=string::npos)
+            M.erase(0, 5);
+        for (;;)
+        {
+            auto Temp=M.find('-', Dash_Pos+1);
+            if (Temp==string::npos)
+                break;
+            Dash_Pos=Temp;
+            M[Dash_Pos]=' ';
+        }
+        Fill_Conformance(M.c_str(), M.substr(Dash_Pos+1));
+    }
 }
 #endif //MEDIAINFO_TRACE
 
