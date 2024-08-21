@@ -224,6 +224,9 @@
 #if defined(MEDIAINFO_DTSUHD_YES)
     #include "MediaInfo/Audio/File_DtsUhd.h"
 #endif
+#if defined(MEDIAINFO_DAT_YES)
+    #include "MediaInfo/Audio/File_Dat.h"
+#endif
 #if defined(MEDIAINFO_DOLBYE_YES)
     #include "MediaInfo/Audio/File_DolbyE.h"
 #endif
@@ -637,6 +640,10 @@ File__MultipleParsing::File__MultipleParsing()
         Parser.push_back(new File_DtsUhd());
     #endif
 //    Too many false-positives
+//    #if defined(MEDIAINFO_DAT_YES)
+//        Parser.push_back(new File_Dat());
+//    #endif
+//    Too many false-positives
 //    #if defined(MEDIAINFO_DOLBYE_YES)
 //        Parser.push_back(new File_DolbyE());
 //    #endif
@@ -888,15 +895,12 @@ void File__MultipleParsing::Read_Buffer_Continue()
                     Finish();
 
                 //Seek if requested
-                if (Parser[0]->File_GoTo<=File_Size)
+                if (Parser[0]->File_GoTo<File_Size)
+                    File_GoTo=Parser[0]->File_GoTo;
+                else if (Parser[0]->File_GoTo==File_Size && File_Size!=(int64u)-1)
                 {
-                    if (Parser[0]->File_GoTo<File_Size)
-                        File_GoTo=Parser[0]->File_GoTo;
-                    else
-                    {
-                        delete Parser[0];
-                        Parser.clear();
-                    }
+                    delete Parser[0];
+                    Parser.clear();
                 }
 
                 //Clean
@@ -912,7 +916,6 @@ void File__MultipleParsing::Read_Buffer_Continue()
         File__Analyze* Temp=new File_Unknown(); Parser.push_back(Temp);
         Read_Buffer_Init();
         Accept();
-        Fill(Stream_General, 0, "aaa", Buffer_TotalBytes / 1024 / 1024);
         Finish();
     }
 }

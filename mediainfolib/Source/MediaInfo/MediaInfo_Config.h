@@ -335,6 +335,10 @@ public :
 
     ZtringListList  SubFile_Config_Get ();
 
+    #if MEDIAINFO_CONFORMANCE
+          Ztring      Conformance_Limit_Set (const Ztring &Value);
+          int64u      Conformance_Limit_Get ();
+    #endif //MEDIAINFO_CONFORMANCE
     #if MEDIAINFO_ADVANCED
           void        Collection_Trigger_Set (const Ztring& Value);
           int64s      Collection_Trigger_Get();
@@ -393,8 +397,6 @@ public :
           string        Profile_List();
           void          WarningError(bool Value);
           bool          WarningError();
-          void          Conformance_Timestamp_Set(bool Value);
-          bool          Conformance_Timestamp_Get();
     #endif
 
     #if defined(MEDIAINFO_LIBCURL_YES)
@@ -531,6 +533,9 @@ private :
 
     ZtringListList  SubFile_Config;
 
+    #if MEDIAINFO_CONFORMANCE
+        int64u      Conformance_Limit;
+    #endif //MEDIAINFO_CONFORMANCE
     #if MEDIAINFO_ADVANCED
         int64s      Collection_Trigger;
         display_if  Collection_Display;
@@ -558,7 +563,6 @@ private :
     string          Mp4_Profile;
     int8u           Usac_Profile;
     bool            Warning_Error;
-    bool            Conformance_Timestamp;
     #endif
 
     #if defined(MEDIAINFO_LIBCURL_YES)

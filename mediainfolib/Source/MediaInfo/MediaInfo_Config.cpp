@@ -129,6 +129,7 @@
 #if defined(MEDIAINFO_EBUCORE_YES)
     #include "MediaInfo/Export/Export_EbuCore.h"
 #endif //defined(MEDIAINFO_EBUCORE_YES)
+#include <limits>
 using namespace ZenLib;
 using namespace std;
 //---------------------------------------------------------------------------
@@ -137,7 +138,7 @@ namespace MediaInfoLib
 {
 
 //---------------------------------------------------------------------------
-const Char*  MediaInfo_Version=__T("MediaInfoLib - v24.04");
+const Char*  MediaInfo_Version=__T("MediaInfoLib - v24.06");
 const Char*  MediaInfo_Url=__T("http://MediaArea.net/MediaInfo");
       Ztring EmptyZtring;       //Use it when we can't return a reference to a true Ztring
 const Ztring EmptyZtring_Const; //Use it when we can't return a reference to a true Ztring, const version
@@ -485,6 +486,9 @@ void MediaInfo_Config::Init(bool Force)
     ThousandsPoint=Ztring();
     CarriageReturnReplace=__T(" / ");
     #if MEDIAINFO_ADVANCED
+    #if MEDIAINFO_CONFORMANCE
+        Conformance_Limit=32;
+    #endif
         Collection_Trigger=-2;
         Collection_Display=display_if::Needed;
     #endif
@@ -495,7 +499,6 @@ void MediaInfo_Config::Init(bool Force)
     #if MEDIAINFO_CONFORMANCE
         Usac_Profile=(int8u)-1;
         Warning_Error=false;
-        Conformance_Timestamp=false;
     #endif //MEDIAINFO_CONFORMANCE
     #if defined(MEDIAINFO_LIBCURL_YES)
         URLEncode=URLEncode_Guess;
@@ -1460,6 +1463,15 @@ Ztring MediaInfo_Config::Option (const String &Option, const String &Value_Raw)
         CustomMapping_Set(Value);
         return Ztring();
     }
+    if (Option_Lower==__T("conformance_limit"))
+    {
+        #if MEDIAINFO_CONFORMANCE
+            Conformance_Limit_Set(Value);
+            return Ztring();
+        #else // MEDIAINFO_CONFORMANCE
+            return __T("advanced features are disabled due to compilation options");
+        #endif // MEDIAINFO_CONFORMANCE
+    }
     if (Option_Lower==__T("collection_trigger"))
     {
         #if MEDIAINFO_ADVANCED
@@ -1678,16 +1690,6 @@ Ztring MediaInfo_Config::Option (const String &Option, const String &Value_Raw)
             return __T("conformance features are disabled due to compilation options");
         #endif // MEDIAINFO_CONFORMANCE
     }
-    if (Option_Lower==__T("conformance_timestamp"))
-    {
-        #if MEDIAINFO_CONFORMANCE
-            Conformance_Timestamp_Set(Value.empty() || Value.To_int8u());
-            return Ztring();
-        #else // MEDIAINFO_CONFORMANCE
-            return __T("conformance features are disabled due to compilation options");
-        #endif // MEDIAINFO_CONFORMANCE
-    }
-
     if (Option_Lower==__T("info_canhandleurls"))
     {
         #if defined(MEDIAINFO_LIBCURL_YES)
@@ -3555,6 +3557,35 @@ ZtringListList MediaInfo_Config::SubFile_Config_Get ()
 //***************************************************************************
 
 //---------------------------------------------------------------------------
+#if MEDIAINFO_CONFORMANCE
+Ztring MediaInfo_Config::Conformance_Limit_Set(const Ztring& Value)
+{
+    int64s ValueI;
+    auto Value_Lower(Value);
+    transform(Value_Lower.begin(), Value_Lower.end(), Value_Lower.begin(), (int(*)(int))tolower); //(int(*)(int)) is a patch for unix
+    if (Value_Lower==__T("inf"))
+        ValueI=-1;
+    else
+    {
+        ValueI=-Value.To_int64s();
+        if ((!ValueI && Value != __T("0")) || ValueI>numeric_limits<int64s>::max())
+            return __T("Invalid Conformance_Limit value");
+    }
+
+    CriticalSectionLocker CSL(CS);
+    Conformance_Limit=(int64u)ValueI;
+    return {};
+}
+
+int64u MediaInfo_Config::Conformance_Limit_Get()
+{
+    CriticalSectionLocker CSL(CS);
+
+    return Conformance_Limit;
+}
+#endif // MEDIAINFO_CONFORMANCE
+
+//---------------------------------------------------------------------------
 #if MEDIAINFO_ADVANCED
 void MediaInfo_Config::Collection_Trigger_Set(const Ztring& Value)
 {
@@ -4044,22 +4075,6 @@ bool MediaInfo_Config::WarningError()
 {
     CriticalSectionLocker CSL(CS);
     return Warning_Error;
-}
-#endif //MEDIAINFO_CONFORMANCE
-
-#if MEDIAINFO_CONFORMANCE
-void MediaInfo_Config::Conformance_Timestamp_Set(bool Value)
-{
-    CriticalSectionLocker CSL(CS);
-    Conformance_Timestamp=Value;
-}
-#endif //MEDIAINFO_CONFORMANCE
-
-#if MEDIAINFO_CONFORMANCE
-bool MediaInfo_Config::Conformance_Timestamp_Get()
-{
-    CriticalSectionLocker CSL(CS);
-    return Conformance_Timestamp;
 }
 #endif //MEDIAINFO_CONFORMANCE
 
