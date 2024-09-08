@@ -5,13 +5,14 @@
 #ifndef DISABLE_RUNTIME_CPU_DETECTION
 
 #include "zbuild.h"
-#include "functable.h"
-#include "cpu_features.h"
-#include "arch_functions.h"
 
 #if defined(_MSC_VER)
 #  include <intrin.h>
 #endif
+
+#include "functable.h"
+#include "cpu_features.h"
+#include "arch_functions.h"
 
 /* Platform has pointer size atomic store */
 #if defined(__GNUC__) || defined(__clang__)
