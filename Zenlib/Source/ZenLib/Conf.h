@@ -66,6 +66,11 @@
             #define WINDOWS_UWP
         #endif
     #endif
+    #if defined(WINAPI_FAMILY) && (WINAPI_FAMILY==WINAPI_FAMILY_GAMES)
+        #ifndef WINDOWS_GAMES
+            #define WINDOWS_GAMES
+        #endif
+    #endif
 #endif
 
 //---------------------------------------------------------------------------
@@ -83,6 +88,20 @@
     #endif
     #ifndef __UNIX__
         #define __UNIX__ 1
+    #endif
+#endif
+
+//---------------------------------------------------------------------------
+//Linux
+#if defined(__LINUX__) || defined(__linux__)
+    #ifndef LINUX
+        #define LINUX
+    #endif
+    #ifndef _LINUX
+        #define _LINUX
+    #endif
+    #ifndef __LINUX__
+        #define __LINUX__ 1
     #endif
 #endif
 
