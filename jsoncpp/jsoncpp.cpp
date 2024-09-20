@@ -3888,12 +3888,15 @@ ptrdiff_t Value::getOffsetStart() const { return start_; }
 
 ptrdiff_t Value::getOffsetLimit() const { return limit_; }
 
-String Value::toStyledString() const {
+String Value::toStyledString(bool p_use_end_line /* = true */) const {  // [+]FlylinkDC++
   StreamWriterBuilder builder;
 
   String out = this->hasComment(commentBefore) ? "\n" : "";
   out += Json::writeString(builder, *this);
-  out += '\n';
+  if(p_use_end_line) // [+]FlylinkDC++
+    out += '\n';
+  else
+    out += ' ';
 
   return out;
 }
@@ -4697,7 +4700,7 @@ void StyledWriter::writeIndent() {
     char last = document_[document_.length() - 1];
     if (last == ' ') // already indented
       return;
-    if (last != '\n') // Comments may add new-line
+    if (last != '\n' && use_end_line_) // [+]FlylinkDC++ // Comments may add new-line
       document_ += '\n';
   }
   document_ += indentString_;

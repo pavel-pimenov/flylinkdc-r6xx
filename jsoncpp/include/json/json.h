@@ -1116,7 +1116,7 @@ public:
   /// Include delimiters and embedded newlines.
   String getComment(CommentPlacement placement) const;
 
-  String toStyledString() const;
+  String toStyledString(bool p_use_end_line = true) const; // [+]FlylinkDC++
 
   const_iterator begin() const;
   const_iterator end() const;
@@ -2229,6 +2229,8 @@ private:
   unsigned int rightMargin_{74};
   unsigned int indentSize_{3};
   bool addChildValues_{false};
+public:
+  bool use_end_line_{true}; // [+]FlylinkDC++
 };
 #if defined(_MSC_VER)
 #pragma warning(pop)
