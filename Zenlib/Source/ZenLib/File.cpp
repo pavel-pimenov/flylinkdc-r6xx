@@ -31,9 +31,17 @@
         #if !defined(WINDOWS)
             #include <unistd.h>
             #if defined(LINUX)
-                #include <fcntl.h>
-                #include <sys/syscall.h>
-                #include <linux/stat.h>
+                #include <features.h>
+                #if defined(__GLIBC__) && defined(__GLIBC_PREREQ)
+                    #if __GLIBC_PREREQ(2, 28)
+                        #ifndef LINUX_STATX
+                            #define LINUX_STATX 1
+                         #endif
+                        #include <fcntl.h>
+                        #include <sys/syscall.h>
+                        #include <linux/stat.h>
+                    #endif
+                #endif
             #endif
         #endif //!defined(WINDOWS)
         #include <fstream>
@@ -1085,7 +1093,7 @@ Ztring File::Created_Get()
         return __T(""); //Not implemented
     #else //ZENLIB_USEWX
         #ifdef ZENLIB_STANDARD
-            #if defined LINUX && defined STATX_BTIME
+            #if defined(LINUX) && defined(LINUX_STATX)
                 struct statx Stat;
                 int Result=statx(AT_FDCWD, File_Name.To_Local().c_str(), AT_STATX_SYNC_AS_STAT, STATX_BTIME, &Stat);
                 if (Result<0)
@@ -1101,7 +1109,7 @@ Ztring File::Created_Get()
                 return Time;
             #else
                 return __T(""); //Not implemented
-            #endif //defined LINUX && defined STATX_BTIME
+            #endif //defined(LINUX) && defined(LINUX_STATX)
         #elif defined WINDOWS
             #ifdef WINDOWS_UWP
                 ComPtr<IStorageItem> Item;
@@ -1170,7 +1178,7 @@ Ztring File::Created_Local_Get()
         return __T(""); //Not implemented
     #else //ZENLIB_USEWX
         #ifdef ZENLIB_STANDARD
-            #if defined LINUX && defined STATX_BTIME
+            #if defined(LINUX) && defined(LINUX_STATX)
                 struct statx Stat;
                 int Result=statx(AT_FDCWD, File_Name.To_Local().c_str(), AT_STATX_SYNC_AS_STAT, STATX_BTIME, &Stat);
                 if (Result<0)
@@ -1186,7 +1194,7 @@ Ztring File::Created_Local_Get()
                 return Time;
             #else
                 return __T(""); //Not implemented
-            #endif //defined LINUX && defined STATX_BTIME
+            #endif //defined(LINUX) && defined(LINUX_STATX)
         #elif defined WINDOWS
             #ifdef WINDOWS_UWP
                 ComPtr<IStorageItem> Item;

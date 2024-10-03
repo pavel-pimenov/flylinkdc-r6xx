@@ -2117,7 +2117,7 @@ void File_Dts::XXCH()
     Element_Begin1("Header");
     vector<int16u> ChSetFsizeXXCHs;
     int16u CoreSpkrActivityMask;
-    int8u HeaderSizeXXCH, Bits4SpkrMaskXXCH, NumChSetsInXXCH;
+    int8u Bits4SpkrMaskXXCH, NumChSetsInXXCH;
     bool bCRCPresent4ChSetHeaderXXCH;
     auto Element_Offset_Start=Element_Offset;
     BS_Begin();
@@ -2279,7 +2279,7 @@ void File_Dts::XBR()
     BS_End();
     Skip_B2 (                                                   "CRC16Header"); Param_Info1("OK");
     Element_End0();
-    int32u ChSetFsizeXXCHs_Total=0;
+    //int32u ChSetFsizeXXCHs_Total=0;
     for (auto ChSetFsize : ChSetFsizes)
         ChSetFsizes_Total+=ChSetFsize;
     if (Element_Size-Element_Offset<ChSetFsizes_Total+ChSetFsizes.size())
