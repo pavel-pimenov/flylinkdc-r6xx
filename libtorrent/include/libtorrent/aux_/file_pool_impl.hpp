@@ -73,7 +73,7 @@ namespace libtorrent::aux {
 		FileHandle open_file(storage_index_t st, std::string const& p
 			, file_index_t file_index, file_storage const& fs, open_mode_t m
 #if TORRENT_HAVE_MAP_VIEW_OF_FILE
-			, std::shared_ptr<std::mutex> open_unmap_lock
+			, typename FileEntry::mutex_type open_unmap_lock
 #endif
 			);
 
@@ -106,7 +106,8 @@ namespace libtorrent::aux {
 			mi::indexed_by<
 			// look up files by (torrent, file) key
 			mi::ordered_unique<mi::member<FileEntry, file_id, &FileEntry::key>>,
-			// look up files by least recently used
+			// look up files by least recently used. New items are added to the
+			// back, and old items are removed from the front.
 			mi::sequenced<>
 			>
 		>;
@@ -151,7 +152,7 @@ namespace libtorrent::aux {
 			, file_index_t file_index, file_storage const& fs
 			, open_mode_t m, file_id file_key
 #if TORRENT_HAVE_MAP_VIEW_OF_FILE
-			, std::shared_ptr<std::mutex> open_unmap_lock
+			, typename FileEntry::mutex_type open_unmap_lock
 #endif
 			);
 

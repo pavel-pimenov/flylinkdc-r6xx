@@ -40,7 +40,7 @@ namespace libtorrent::aux {
 		, file_index_t const file_index, file_storage const& fs
 		, open_mode_t const m
 #if TORRENT_HAVE_MAP_VIEW_OF_FILE
-		, std::shared_ptr<std::mutex> open_unmap_lock
+		, typename FileEntry::mutex_type open_unmap_lock
 #endif
 		)
 	{
@@ -109,8 +109,12 @@ namespace libtorrent::aux {
 			});
 
 			auto& lru_view = m_files. template get<1>();
-			lru_view.relocate(m_files. template project<1>(i), lru_view.begin());
+			lru_view.relocate(lru_view.end(), m_files. template project<1>(i));
 
+#if TORRENT_USE_ASSERTS
+			// ensure the LRU index is maintained as we would expect it to be
+			TORRENT_ASSERT(lru_view.back().key == i->key);
+#endif
 			return i->mapping;
 		}
 
@@ -137,7 +141,7 @@ namespace libtorrent::aux {
 		{
 			FileEntry e = open_file_impl(p, file_index, fs, m, file_key
 #if TORRENT_HAVE_MAP_VIEW_OF_FILE
-				, open_unmap_lock
+				, std::move(open_unmap_lock)
 #endif
 				);
 
@@ -145,7 +149,7 @@ namespace libtorrent::aux {
 
 			// there's an edge case where two threads are racing to insert a newly
 			// opened file, one thread is opening a file for writing and the other
-			// fore reading. If the reading thread wins, it's important that the
+			// for reading. If the reading thread wins, it's important that the
 			// thread opening for writing still overwrites the file in the pool,
 			// since a file opened for reading and writing can be used for both.
 			// So, we can't move e in here, because we may need it again of the
@@ -171,8 +175,13 @@ namespace libtorrent::aux {
 				}
 
 				auto& lru_view = m_files.template get<1>();
-				lru_view.relocate(m_files. template project<1>(i), lru_view.begin());
+				lru_view.relocate(lru_view.end(), m_files. template project<1>(i));
 			}
+#if TORRENT_USE_ASSERTS
+			// ensure the LRU index is maintained as we would expect it to be
+			auto& lru_view = m_files. template get<1>();
+			TORRENT_ASSERT(lru_view.back().key == e.key);
+#endif
 			notify_file_open(ofe, i->mapping, storage_error());
 			return i->mapping;
 		}
@@ -232,13 +241,14 @@ namespace libtorrent::aux {
 		, file_index_t const file_index, file_storage const& fs
 		, open_mode_t const m, file_id const file_key
 #if TORRENT_HAVE_MAP_VIEW_OF_FILE
-		, std::shared_ptr<std::mutex> open_unmap_lock
+		, typename FileEntry::mutex_type open_unmap_lock
 #endif
 		)
 	{
 		std::string const file_path = fs.file_path(file_index, p);
 #if TORRENT_HAVE_MAP_VIEW_OF_FILE
-		std::unique_lock<std::mutex> lou(*open_unmap_lock);
+		typename FileEntry::lock_type lou(*open_unmap_lock);
+		TORRENT_UNUSED(lou);
 #endif
 		try
 		{
@@ -327,11 +337,11 @@ namespace libtorrent::aux {
 
 #if TRACE_FILE_POOL
 		std::cout << std::this_thread::get_id() << " removing: ("
-			<< lru_view.back().key.first << ", " << lru_view.back().key.second << ")\n";
+			<< lru_view.front().key.first << ", " << lru_view.front().key.second << ")\n";
 #endif
 
-		FileHandle mapping = std::move(lru_view.back().mapping);
-		lru_view.pop_back();
+		FileHandle mapping = std::move(lru_view.front().mapping);
+		lru_view.pop_front();
 
 		// closing a file may be long running operation (mac os x)
 		// let the caller destruct it once it has released the mutex

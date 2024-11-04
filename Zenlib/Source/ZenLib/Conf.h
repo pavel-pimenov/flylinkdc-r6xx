@@ -170,12 +170,6 @@
 // Compiler bugs/unuseful warning
 //***************************************************************************
 
-//MSVC6 : for(int t=0; t<10; ++t) { do something }; for(int t=0; t<10; ++t) { do something }
-#if defined(_MSC_VER) && _MSC_VER <= 1200
-    #define for if(true)for
-    #pragma warning(disable:4786) // MSVC6 doesn't like typenames longer than 255 chars (which generates an enormous amount of warnings).
-#endif
-
 //MSVC2005 : "deprecated" warning (replacement functions are not in MinGW32 or Borland!)
 #if defined(_MSC_VER) && _MSC_VER >= 1400
     #pragma warning(disable : 4996)
