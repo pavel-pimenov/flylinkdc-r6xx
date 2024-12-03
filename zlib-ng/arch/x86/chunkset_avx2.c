@@ -4,8 +4,8 @@
 #include "zbuild.h"
 
 #ifdef X86_AVX2
+#include "avx2_tables.h"
 #include <immintrin.h>
-#include "../generic/chunk_permute_table.h"
 #include "x86_intrins.h"
 
 typedef __m256i chunk_t;
@@ -15,47 +15,8 @@ typedef __m128i halfchunk_t;
 #define HAVE_CHUNKMEMSET_4
 #define HAVE_CHUNKMEMSET_8
 #define HAVE_CHUNKMEMSET_16
-#define HAVE_CHUNKMEMSET_1
 #define HAVE_CHUNK_MAG
 #define HAVE_HALF_CHUNK
-
-/* Populate don't cares so that this is a direct lookup (with some indirection into the permute table), because dist can
- * never be 0 - 2, we'll start with an offset, subtracting 3 from the input */
-static const lut_rem_pair perm_idx_lut[29] = {
-    { 0, 2},                /* 3 */
-    { 0, 0},                /* don't care */
-    { 1 * 32, 2},           /* 5 */
-    { 2 * 32, 2},           /* 6 */
-    { 3 * 32, 4},           /* 7 */
-    { 0 * 32, 0},           /* don't care */
-    { 4 * 32, 5},           /* 9 */
-    { 5 * 32, 22},          /* 10 */
-    { 6 * 32, 21},          /* 11 */
-    { 7 * 32, 20},          /* 12 */
-    { 8 * 32, 6},           /* 13 */
-    { 9 * 32, 4},           /* 14 */
-    {10 * 32, 2},           /* 15 */
-    { 0 * 32, 0},           /* don't care */
-    {11 * 32, 15},          /* 17 */
-    {11 * 32 + 16, 14},     /* 18 */
-    {11 * 32 + 16 * 2, 13}, /* 19 */
-    {11 * 32 + 16 * 3, 12}, /* 20 */
-    {11 * 32 + 16 * 4, 11}, /* 21 */
-    {11 * 32 + 16 * 5, 10}, /* 22 */
-    {11 * 32 + 16 * 6,  9}, /* 23 */
-    {11 * 32 + 16 * 7,  8}, /* 24 */
-    {11 * 32 + 16 * 8,  7}, /* 25 */
-    {11 * 32 + 16 * 9,  6}, /* 26 */
-    {11 * 32 + 16 * 10, 5}, /* 27 */
-    {11 * 32 + 16 * 11, 4}, /* 28 */
-    {11 * 32 + 16 * 12, 3}, /* 29 */
-    {11 * 32 + 16 * 13, 2}, /* 30 */
-    {11 * 32 + 16 * 14, 1}  /* 31 */
-};
-
-static const uint16_t half_rem_vals[13] = {
-    1, 0, 1, 4, 2, 0, 7, 6, 5, 4, 3, 2, 1
-};
 
 static inline void chunkmemset_2(uint8_t *from, chunk_t *chunk) {
     int16_t tmp;

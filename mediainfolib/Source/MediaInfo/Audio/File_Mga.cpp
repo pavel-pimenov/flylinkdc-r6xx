@@ -247,7 +247,7 @@ void File_Mga::SerialAudioDefinitionModelMetadataPayload(int64u Length)
         }
         UncompressedData=strm.next_out-strm.total_out;
         UncompressedData_Size=strm.total_out;
-        inflateEnd(&strm);
+        zng_inflateEnd(&strm);
     }
 
     #if defined(MEDIAINFO_ADM_YES)

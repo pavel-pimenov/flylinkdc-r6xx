@@ -1374,7 +1374,7 @@ void File_SmpteSt0337::Data_Parse()
                     }
                     UncompressedData=strm.next_out-strm.total_out;
                     UncompressedData_Size=strm.total_out;
-                    inflateEnd(&strm);
+                    zng_inflateEnd(&strm);
                     // Adapting
                     Buffer=Save_Buffer;
                     Buffer_Offset=Save_Buffer_Offset;

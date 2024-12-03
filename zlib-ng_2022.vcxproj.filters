@@ -150,6 +150,9 @@
     <ClCompile Include="zlib-ng\arch\generic\slide_hash_c.c">
       <Filter>Source Files\arc\generic</Filter>
     </ClCompile>
+    <ClCompile Include="zlib-ng\arch\x86\chunkset_avx512.c">
+      <Filter>Source Files\arc</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="zlib-ng\adler32_p.h">
@@ -259,6 +262,9 @@
     </ClInclude>
     <ClInclude Include="zlib-ng\crc32.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib-ng\arch\x86\avx2_tables.h">
+      <Filter>Header Files\arch</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

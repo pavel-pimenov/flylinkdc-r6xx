@@ -5124,7 +5124,7 @@ void File_Mpeg4::moov_trak_mdia_minf_stbl_sgpd()
     }
 
     //Parsing
-    int32u grouping_type, Count, default_length;
+    int32u grouping_type, Count, default_length=0;
     Get_C4 (grouping_type,                                      "grouping_type");
     if (Version==1)
         Get_B4 (default_length,                                 "default_length");
@@ -9905,7 +9905,7 @@ void File_Mpeg4::moov_udta_xxxx()
                         if (name_space=="urn:mpeg:dash:role:2011")
                         {
                             int8u Index=0;
-                                 if (value=="alternate")
+                            if (value=="alternate")
                             {
                                 FinalValue_String=FinalValue="Alternate";
                             }
