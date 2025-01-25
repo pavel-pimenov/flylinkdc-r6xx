@@ -575,8 +575,8 @@ void BufferedSocket::all_myinfo_parser(const string::size_type p_pos_next_separa
                                     {
                                         char bbb[200];
                                         boost::system::error_code ec;
-                                        const auto l_start = boost::asio::ip::address_v4::from_string("200.23.17.18", ec);
-                                        const auto l_stop = boost::asio::ip::address_v4::from_string("240.200.17.18", ec);
+                                        const auto l_start = boost::asio::ip::make_address_v4("200.23.17.18", ec);
+                                        const auto l_stop = boost::asio::ip::make_address_v4("240.200.17.18", ec);
                                         boost::asio::ip::address_v4 l_rnd_ip(Util::rand(l_start.to_ulong(), l_stop.to_ulong()));
                                         snprintf(bbb, sizeof(bbb), "$UserIP Guest%d %s$$", i, l_rnd_ip.to_string().c_str());
                                         fly_fire1(BufferedSocketListener::Line(), bbb);
@@ -890,7 +890,7 @@ boost::asio::ip::address_v4 BufferedSocket::getIp4() const
 	if (hasSocket())
 	{
 		boost::system::error_code ec;
-		const auto l_ip = boost::asio::ip::address_v4::from_string(sock->getIp(), ec); // TODO - конвертнуть IP и в сокетах
+		const auto l_ip = boost::asio::ip::make_address_v4(sock->getIp(), ec); // TODO - конвертнуть IP и в сокетах
 		dcassert(!ec);
 		return l_ip;
 	}

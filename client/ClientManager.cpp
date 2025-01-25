@@ -470,7 +470,7 @@ string ClientManager::findHub(const string& ipPort)
 	Util::parseIpPort(ipPort, ip_or_host, port);
 	string url;
 	boost::system::error_code ec;
-	const auto l_ip = boost::asio::ip::address_v4::from_string(ip_or_host, ec);
+	const auto l_ip = boost::asio::ip::make_address_v4(ip_or_host, ec);
 	//dcassert(!ec);
 	CFlyReadLock(*g_csClients);
 	for (auto j = g_clients.cbegin(); j != g_clients.cend(); ++j)

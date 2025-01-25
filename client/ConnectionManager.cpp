@@ -1038,7 +1038,7 @@ bool ConnectionManager::checkIpFlood(const string& aIPServer, uint16_t aPort, co
 		//dcassert(l_server_lower == aIPServer);
 #endif
 		// boost::system::error_code ec;
-		// const auto l_ip = boost::asio::ip::address_v4::from_string(aIPServer, ec);
+		// const auto l_ip = make_address_v4(aIPServer, ec);
 		const CFlyDDOSkey l_key(aIPServer, p_ip_hub);
 		// dcassert(!ec); // TODO - тут бывает и Host
 		bool l_is_ctm2hub = false;

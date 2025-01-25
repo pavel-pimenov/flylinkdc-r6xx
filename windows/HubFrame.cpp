@@ -1442,15 +1442,20 @@ void HubFrame::addStatus(const tstring& aLine, const bool bInChat /*= true*/, co
 				if (std::regex_search(l_new_ip_string, l_match, l_reg_exp_ip))
 				{
 					const string l_ip = l_match[0].str();
-					boost::system::error_code ec;
-					const auto l_ip_boost = boost::asio::ip::address_v4::from_string(l_ip, ec);
-					if (!ec && Text::fromT(l_ipT) != l_ip)
+					try
 					{
-						m_client->getMyIdentity().setIp(l_ip);
-						const string l_message = "*** FlylinkDC++ automatic change IP " + Text::fromT(l_ipT) + " to " + l_ip + " [Hub " + m_client->getHubUrlAndIP() + "] Last Message: " + Text::fromT(m_last_hub_message);
-						BaseChatFrame::addStatus(Text::toT(l_message), bInChat, bHistory, cf);
-						CFlyServerJSON::pushError(26, Text::fromT(m_last_hub_message));
-						LogManager::message(l_message);
+						const auto l_ip_boost = boost::asio::ip::make_address_v4(l_ip);
+						if (Text::fromT(l_ipT) != l_ip)
+						{
+							m_client->getMyIdentity().setIp(l_ip);
+							const string l_message = "*** FlylinkDC++ automatic change IP " + Text::fromT(l_ipT) + " to " + l_ip + " [Hub " + m_client->getHubUrlAndIP() + "] Last Message: " + Text::fromT(m_last_hub_message);
+							BaseChatFrame::addStatus(Text::toT(l_message), bInChat, bHistory, cf);
+							CFlyServerJSON::pushError(26, Text::fromT(m_last_hub_message));
+							LogManager::message(l_message);
+						}
+					}
+					catch (const std::exception& e) {
+						LogManager::message("Error convert IP = " + l_ip);
 					}
 				}
 			}

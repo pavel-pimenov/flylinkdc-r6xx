@@ -1404,7 +1404,7 @@ void CFlylinkDBManager::remove_manual_p2p_guard(const string& p_ip)
 		m_delete_manual_p2p_guard.init(m_flySQLiteDB,
 		                               "delete from location_db.fly_p2pguard_ip where note = 'Manual block IP' and start_ip=?");
 		boost::system::error_code ec;
-		const auto l_ip_boost = boost::asio::ip::address_v4::from_string(p_ip, ec);
+		const auto l_ip_boost = boost::asio::ip::make_address_v4(p_ip, ec);
 		if (!ec)
 		{
 		
@@ -1643,7 +1643,7 @@ int CFlylinkDBManager::sync_antivirus_db(const string& p_antivirus_db, const uin
 				l_ip4 = p_antivirus_db.substr(l_pos, l_sep_pos - l_pos);
 				boost::system::error_code ec;
 				dcassert(!l_ip4.empty());
-				const auto l_boost_ip4 = boost::asio::ip::address_v4::from_string(l_ip4, ec);
+				const auto l_boost_ip4 = boost::asio::ip::make_address_v4(l_ip4, ec);
 				dcassert(!ec);
 				l_pos = l_sep_pos + 1;
 				const int64_t l_share = _atoi64(p_antivirus_db.c_str() + l_pos);
@@ -3117,7 +3117,7 @@ bool CFlylinkDBManager::load_ratio(uint32_t p_hub_id, const string& p_nick, CFly
 				if (!l_ip_from_ratio.empty())
 				{
 					boost::system::error_code ec;
-					const auto l_ip = boost::asio::ip::address_v4::from_string(l_ip_from_ratio, ec);
+					const auto l_ip = boost::asio::ip::make_address_v4(l_ip_from_ratio, ec);
 					dcassert(!ec);
 					if (!l_ip_from_ratio.empty())
 					{
@@ -3449,7 +3449,7 @@ void CFlylinkDBManager::update_last_ip_deferredL(uint32_t p_hub_id, const string
 		{
 			m_update_last_ip_and_message_count.init(m_flySQLiteDB,
 			                                        "update user_db.user_info set last_ip=?,message_count=? where dic_hub=? and nick=?");
-			m_update_last_ip_and_message_count->bind(1, p_last_ip.to_ulong());
+			m_update_last_ip_and_message_count->bind(1, p_last_ip.to_uint());
 			m_update_last_ip_and_message_count->bind(2, p_message_count);
 			m_update_last_ip_and_message_count->bind(3, p_hub_id);
 			m_update_last_ip_and_message_count->bind(4, p_nick, SQLITE_STATIC);
@@ -3461,7 +3461,7 @@ void CFlylinkDBManager::update_last_ip_deferredL(uint32_t p_hub_id, const string
 			                                        "insert or replace into user_db.user_info(nick,dic_hub,last_ip,message_count) values(?,?,?,?)");
 			m_insert_last_ip_and_message_count->bind(1, p_nick, SQLITE_STATIC);
 			m_insert_last_ip_and_message_count->bind(2, p_hub_id);
-			m_insert_last_ip_and_message_count->bind(3, p_last_ip.to_ulong());
+			m_insert_last_ip_and_message_count->bind(3, p_last_ip.to_uint());
 			m_insert_last_ip_and_message_count->bind(4, p_message_count);
 			m_insert_last_ip_and_message_count->executenonquery();
 		}
@@ -3476,7 +3476,7 @@ void CFlylinkDBManager::update_last_ip_deferredL(uint32_t p_hub_id, const string
 			{
 				m_update_last_ip.init(m_flySQLiteDB,
 				                      "update user_db.user_info set last_ip=? where dic_hub=? and nick=?");
-				m_update_last_ip->bind(1, p_last_ip.to_ulong());
+				m_update_last_ip->bind(1, p_last_ip.to_uint());
 				m_update_last_ip->bind(2, p_hub_id);
 				m_update_last_ip->bind(3, p_nick, SQLITE_STATIC);
 				m_update_last_ip->executenonquery();
@@ -3506,7 +3506,7 @@ void CFlylinkDBManager::update_last_ip_deferredL(uint32_t p_hub_id, const string
 					                      "insert or replace into user_db.user_info(nick,dic_hub,last_ip) values(?,?,?)");
 					m_insert_last_ip->bind(1, p_nick, SQLITE_STATIC);
 					m_insert_last_ip->bind(2, p_hub_id);
-					m_insert_last_ip->bind(3, p_last_ip.to_ulong());
+					m_insert_last_ip->bind(3, p_last_ip.to_uint());
 					m_insert_last_ip->executenonquery();
 				}
 				p_is_sql_not_found = false;

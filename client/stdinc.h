@@ -46,7 +46,7 @@
 #define TORRENT_DISABLE_ENCRYPTION
 #endif
 #ifndef BOOST_ASIO_HAS_STD_CHRONO
-#define BOOST_ASIO_HAS_STD_CHRONO
+#define BOOST_ASIO_HAS_STD_CHRONO 1
 #endif
 
 // - Используем VLD http://vld.codeplex.com/

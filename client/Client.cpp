@@ -395,7 +395,7 @@ void Client::on(Connected) noexcept
 		CFlyFastLock(lock(csSock);
 #endif
 		             boost::system::error_code ec;
-		             m_ip      = boost::asio::ip::address_v4::from_string(m_client_sock->getIp(), ec);
+		             m_ip      = boost::asio::ip::make_address_v4(m_client_sock->getIp(), ec);
 		             dcassert(!ec);
 	}
 	if (m_client_sock->isSecure() && m_keyprint.compare(0, 7, "SHA256/", 7) == 0)

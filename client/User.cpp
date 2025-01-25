@@ -141,7 +141,7 @@ void User::setLastNick(const string& p_nick)
 void User::setIP(const string& p_ip, bool p_is_set_only_ip)
 {
 	boost::system::error_code ec;
-	const auto l_ip = boost::asio::ip::address_v4::from_string(p_ip, ec);
+	const auto l_ip = boost::asio::ip::make_address_v4(p_ip, ec);
 	dcassert(!ec);
 	if (!ec)
 	{
@@ -1262,11 +1262,11 @@ void Identity::setIp(const string& p_ip) // "I4"
 			///dcassert(0);
 			string l_ip = p_ip;
 			Text::trim(l_ip);
-			m_ip = boost::asio::ip::address_v4::from_string(l_ip, ec);
+			m_ip = boost::asio::ip::make_address_v4(l_ip, ec);
 		}
 		else
 		{
-			m_ip = boost::asio::ip::address_v4::from_string(p_ip, ec);
+			m_ip = boost::asio::ip::make_address_v4(p_ip, ec);
 		}
 		dcassert(!ec);
 		if (!ec)

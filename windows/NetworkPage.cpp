@@ -109,7 +109,7 @@ LRESULT NetworkPage::OnEnKillfocusExternalIp(WORD /*wNotifyCode*/, WORD /*wID*/,
 	if (!l_externalIP.empty())
 	{
 		boost::system::error_code ec;
-		const auto l_ip = boost::asio::ip::address_v4::from_string(l_externalIP, ec);
+		const auto l_ip = boost::asio::ip::make_address_v4(l_externalIP, ec);
 		if (ec)
 		{
 			const auto l_last_ip = SETTING(EXTERNAL_IP);
