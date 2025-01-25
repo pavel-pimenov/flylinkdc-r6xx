@@ -12,6 +12,8 @@ del country.tar*
 wget http://ledo.feardc.net/mmdb/country.tar.gz
 7z.exe x country.tar.gz -y
 7z.exe x country.tar -y
+rem curl http://geoip.airdcpp.net
+curl https://static.airdcpp.net/dbip-country-lite.mmdb.gz --output dbip-country-lite.mmdb.gz
 
 rem wget http://ledo.feardc.net/mmdb/city.tar.gz
 rem wget http://ledo.feardc.net/mmdb/asn.tar.gz
