@@ -399,6 +399,7 @@ bool File_Jpeg::Demux_UnpacketizeContainer_Test()
             {
                 case Elements::SOD  :   //JPEG-2000 start
                                         StartIsFound=true;
+                                        break;
                 case Elements::TEM  :
                 case Elements::RST0 :
                 case Elements::RST1 :

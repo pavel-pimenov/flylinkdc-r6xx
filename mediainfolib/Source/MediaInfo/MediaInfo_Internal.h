@@ -85,7 +85,7 @@ public :
 #ifdef FLYLINKDC_USE_MEDIAINFO_INFORM
     Ztring  Inform ();
 #endif
-#if defined(MEDIAINFO_TEXT_YES) || defined(MEDIAINFO_HTML_YES) || defined(MEDIAINFO_XML_YES) || defined(MEDIAINFO_CSV_YES) || defined(MEDIAINFO_CUSTOM_YES)
+#if defined(MEDIAINFO_TEXT_YES) || defined(MEDIAINFO_HTML_YES) || defined(MEDIAINFO_XML_YES) || defined(MEDIAINFO_JSON_YES) || defined(MEDIAINFO_CSV_YES) || defined(MEDIAINFO_CUSTOM_YES)
     Ztring  Inform (stream_t StreamKind, size_t StreamNumber, bool IsDirect); //All about only a specific stream
 #endif
 

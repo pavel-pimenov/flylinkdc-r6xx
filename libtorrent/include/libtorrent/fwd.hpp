@@ -26,7 +26,7 @@ struct alert;
 
 // include/libtorrent/alert_types.hpp
 struct dht_routing_bucket;
-TORRENT_VERSION_NAMESPACE_3
+TORRENT_VERSION_NAMESPACE_4
 struct torrent_alert;
 struct peer_alert;
 struct tracker_alert;
@@ -119,7 +119,7 @@ struct block_uploaded_alert;
 struct alerts_dropped_alert;
 struct socks5_alert;
 struct file_prio_alert;
-TORRENT_VERSION_NAMESPACE_3_END
+TORRENT_VERSION_NAMESPACE_4_END
 struct oversized_file_alert;
 struct torrent_conflict_alert;
 struct peer_info_alert;
@@ -219,9 +219,9 @@ struct peer_connection_handle;
 struct bt_peer_connection_handle;
 
 // include/libtorrent/peer_info.hpp
-TORRENT_VERSION_NAMESPACE_2
+TORRENT_VERSION_NAMESPACE_4
 struct peer_info;
-TORRENT_VERSION_NAMESPACE_2_END
+TORRENT_VERSION_NAMESPACE_4_END
 
 // include/libtorrent/peer_request.hpp
 struct peer_request;
@@ -261,9 +261,9 @@ struct torrent_handle;
 
 // include/libtorrent/torrent_info.hpp
 struct load_torrent_limits;
-TORRENT_VERSION_NAMESPACE_3
+TORRENT_VERSION_NAMESPACE_4
 class torrent_info;
-TORRENT_VERSION_NAMESPACE_3_END
+TORRENT_VERSION_NAMESPACE_4_END
 
 // include/libtorrent/torrent_status.hpp
 TORRENT_VERSION_NAMESPACE_4
@@ -276,12 +276,12 @@ struct web_seed_entry;
 #if TORRENT_ABI_VERSION <= 2
 
 // include/libtorrent/alert_types.hpp
-TORRENT_VERSION_NAMESPACE_3
+TORRENT_VERSION_NAMESPACE_4
 struct torrent_added_alert;
 struct stats_alert;
 struct anonymous_mode_alert;
 struct mmap_cache_alert;
-TORRENT_VERSION_NAMESPACE_3_END
+TORRENT_VERSION_NAMESPACE_4_END
 
 // include/libtorrent/file_storage.hpp
 struct file_entry;

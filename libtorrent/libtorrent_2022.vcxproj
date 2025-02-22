@@ -192,6 +192,7 @@
     <ClInclude Include="include\libtorrent\error.hpp" />
     <ClInclude Include="include\libtorrent\error_code.hpp" />
     <ClInclude Include="include\libtorrent\extensions.hpp" />
+    <ClInclude Include="include\libtorrent\extensions\i2p_pex.hpp" />
     <ClInclude Include="include\libtorrent\extensions\smart_ban.hpp" />
     <ClInclude Include="include\libtorrent\extensions\ut_metadata.hpp" />
     <ClInclude Include="include\libtorrent\extensions\ut_pex.hpp" />
@@ -343,6 +344,7 @@
     <ClCompile Include="src\http_connection.cpp" />
     <ClCompile Include="src\http_parser.cpp" />
     <ClCompile Include="src\http_tracker_connection.cpp" />
+    <ClCompile Include="src\i2p_pex.cpp" />
     <ClCompile Include="src\i2p_stream.cpp" />
     <ClCompile Include="src\identify_client.cpp" />
     <ClCompile Include="src\instantiate_connection.cpp" />

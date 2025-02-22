@@ -2725,7 +2725,7 @@ void File_Mxf::Streams_Finish_Essence(int32u EssenceUID, int128u TrackUID)
         //Fill(StreamKind_Last, StreamPos_Last, Fill_Parameter(StreamKind_Last, Generic_TimeCode_FirstFrame), TC.ToString().c_str());
         //Fill(StreamKind_Last, StreamPos_Last, Fill_Parameter(StreamKind_Last, Generic_TimeCode_Source), "Time code track (stripped)");
     }
-    size_t SDTI_TimeCode_StartTimecode_StreamPos_Last=0;
+    size_t SDTI_TimeCode_StartTimecode_StreamPos_Last{};
     if (SDTI_TimeCode_StartTimecode.IsSet())
     {
         SDTI_TimeCode_StartTimecode_StreamPos_Last=StreamPos_Last;
@@ -2736,7 +2736,7 @@ void File_Mxf::Streams_Finish_Essence(int32u EssenceUID, int128u TrackUID)
         //Fill(StreamKind_Last, StreamPos_Last, Fill_Parameter(StreamKind_Last, Generic_TimeCode_FirstFrame), SDTI_TimeCode_StartTimecode.c_str());
         //Fill(StreamKind_Last, StreamPos_Last, Fill_Parameter(StreamKind_Last, Generic_TimeCode_Source), "SDTI");
     }
-    size_t SystemScheme1_TimeCodeArray_StartTimecode_StreamPos_Last=0;
+    size_t SystemScheme1_TimeCodeArray_StartTimecode_StreamPos_Last{};
     if (!SystemScheme1s.empty() && !SystemScheme1s.begin()->second.TimeCodeArray_StartTimecodes.empty())
     {
         SystemScheme1_TimeCodeArray_StartTimecode_StreamPos_Last=StreamPos_Last;
@@ -4041,7 +4041,7 @@ void File_Mxf::Streams_Finish_Component_ForTimeCode(const int128u ComponentUID, 
                     TimeCode TC2=Component_TC2->second.MxfTimeCode.RoundedTimecodeBase<0x8000?TimeCode((int64_t)(Component_TC2->second.MxfTimeCode.StartTimecode+Config->File_IgnoreEditsBefore), Component_TC2->second.MxfTimeCode.RoundedTimecodeBase-1, TimeCode::DropFrame(Component2->second.MxfTimeCode.DropFrame).FPS1001(Component2->second.MxfTimeCode.DropFrame)):TimeCode();
                     if (TC2.ToFrames()-TC.ToFrames()==2)
                     {
-                        TC++;
+                        ++TC;
                         IsHybridTimeCode=true;
                     }
                 }
@@ -5139,7 +5139,7 @@ size_t File_Mxf::Read_Buffer_Seek (size_t Method, int64u Value, int64u ID)
                         }
                         Value=float64_int64s(((float64)Value)/1000000000*Descriptor->second.SampleRate);
                         }
-                    //No break;
+                    [[fallthrough]];
         case 3  :   //FrameNumber
                     Value+=Config->File_IgnoreEditsBefore;
 
@@ -6510,7 +6510,7 @@ void File_Mxf::Data_Parse()
                     {
                         if (!Essence->second.Parsers[Pos]->Status[IsAccepted] && Essence->second.Parsers[Pos]->Status[IsFinished])
                         {
-                            delete *(Essence->second.Parsers.begin()+Pos);
+                            delete static_cast<MediaInfoLib::File__Analyze*>(*(Essence->second.Parsers.begin()+Pos));
                             Essence->second.Parsers.erase(Essence->second.Parsers.begin()+Pos);
                             Pos--;
                         }
@@ -6520,7 +6520,7 @@ void File_Mxf::Data_Parse()
                             for (size_t Pos2=0; Pos2<Essence->second.Parsers.size(); Pos2++)
                             {
                                 if (Pos2!=Pos)
-                                    delete *(Essence->second.Parsers.begin()+Pos2);
+                                    delete static_cast<MediaInfoLib::File__Analyze*>(*(Essence->second.Parsers.begin()+Pos2));
                             }
                             Essence->second.Parsers.clear();
                             Essence->second.Parsers.push_back(Parser);
@@ -6833,9 +6833,8 @@ void File_Mxf::Data_Parse()
 #define ELEMENT(_CODE, _CALL) \
     case 0x##_CODE :    { \
                         std::map<int16u, int128u>::iterator Primer_Value=Primer_Values.find(0x##_CODE); \
-                        const char* Temp; \
                         if (Primer_Value!=Primer_Values.end()) { \
-                            auto Temp = Mxf_Param_Info((int32u)Primer_Value->second.hi, Primer_Value->second.lo); \
+                            const auto Temp = Mxf_Param_Info((int32u)Primer_Value->second.hi, Primer_Value->second.lo); \
                             Element_Name(Temp ? Temp : Ztring().From_UUID(Code).To_UTF8().c_str()); \
                         } \
                         else { \
@@ -8824,7 +8823,7 @@ void File_Mxf::SDTISystemMetadataPack() //SMPTE 385M + 326M
             if (SDTI_TimeCode_Previous.IsSet() && TimeCode_Current==SDTI_TimeCode_Previous)
             {
                 SDTI_TimeCode_RepetitionCount++;
-                TimeCode_Current++;
+                ++TimeCode_Current;
                 if (!SDTI_TimeCode_StartTimecode.IsSet() && SDTI_TimeCode_RepetitionCount>=RepetitionMaxCount)
                     SDTI_TimeCode_StartTimecode=SDTI_TimeCode_Previous; //The first time code was the first one of the repetition sequence
             }
@@ -8835,7 +8834,7 @@ void File_Mxf::SDTISystemMetadataPack() //SMPTE 385M + 326M
                     SDTI_TimeCode_StartTimecode=SDTI_TimeCode_Previous;
                     while(SDTI_TimeCode_RepetitionCount<RepetitionMaxCount)
                     {
-                        SDTI_TimeCode_StartTimecode++;
+                        ++SDTI_TimeCode_StartTimecode;
                         SDTI_TimeCode_RepetitionCount++;
                     }
                 }
@@ -14328,6 +14327,7 @@ void File_Mxf::ChooseParser__FromCodingScheme(const essences::iterator &Essence,
                                                                         ChooseParser_SmpteSt0337(Essence, Descriptor);
                                                                     if (Descriptor->second.ChannelCount>=2 && Descriptor->second.ChannelCount!=(int32u)-1) //PCM, but one file is found with Dolby E in it
                                                                         ChooseParser_ChannelSplitting(Essence, Descriptor);
+                                                                    [[fallthrough]];
                                                         default   : return ChooseParser_Pcm(Essence, Descriptor);
                                                     }
                                         case 0x02 : //Compressed coding
@@ -15667,6 +15667,9 @@ bool File_Mxf::BookMark_Needed()
         }
         switch (Probe.Start_Type)
         {
+            case config_probe_none:
+                ProbeCaptionBytePos=0;
+                break;
             case config_probe_size:
                 ProbeCaptionBytePos=Probe.Start;
                 break;
@@ -15684,6 +15687,9 @@ bool File_Mxf::BookMark_Needed()
             default:;
         }
         switch (Probe.Duration_Type) {
+            case config_probe_none:
+                ProbeCaptionByteDur=ContentSize;
+                break;
             case config_probe_size:
                 ProbeCaptionByteDur=Probe.Duration;
                 break;

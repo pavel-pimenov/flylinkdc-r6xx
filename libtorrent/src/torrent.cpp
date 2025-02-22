@@ -185,6 +185,9 @@ bool is_downloading_state(int const st)
 		, m_last_seen_complete(p.last_seen_complete)
 		, m_swarm_last_seen_complete(p.last_seen_complete)
 		, m_info_hash(p.info_hashes)
+		, m_comment(p.comment)
+		, m_created_by(p.created_by)
+		, m_creation_date(p.creation_date)
 		, m_error_file(torrent_status::error_file_none)
 		, m_sequence_number(-1)
 		, m_peer_id(aux::generate_peer_id(settings()))
@@ -210,7 +213,9 @@ bool is_downloading_state(int const st)
 		, m_enable_pex(!bool(p.flags & torrent_flags::disable_pex))
 		, m_apply_ip_filter(p.flags & torrent_flags::apply_ip_filter)
 		, m_pending_active_change(false)
+#if TORRENT_ABI_VERSION < 4
 		, m_v2_piece_layers_validated(false)
+#endif
 		, m_connect_boost_counter(static_cast<std::uint8_t>(settings().get_int(settings_pack::torrent_connect_boost)))
 		, m_incomplete(0xffffff)
 		, m_announce_to_dht(!(p.flags & torrent_flags::paused))
@@ -256,6 +261,7 @@ bool is_downloading_state(int const st)
 
 		if (m_torrent_file->is_valid())
 		{
+			// merkle trees are loaded from add_torrent_params below, in load_merkle_trees()
 			error_code ec = initialize_merkle_trees();
 			if (ec) throw system_error(ec);
 			m_size_on_disk = m_torrent_file->files().size_on_disk();
@@ -263,14 +269,16 @@ bool is_downloading_state(int const st)
 
 		// --- WEB SEEDS ---
 
+		std::vector<web_seed_t> ws;
+#if TORRENT_ABI_VERSION < 4
 		// if override web seed flag is set, don't load any web seeds from the
 		// torrent file.
-		std::vector<web_seed_t> ws;
 		if (!(p.flags & torrent_flags::deprecated_override_web_seeds))
 		{
 			for (auto const& e : m_torrent_file->internal_web_seeds())
 				ws.emplace_back(e);
 		}
+#endif
 
 		// add web seeds from add_torrent_params
 		bool const multi_file = m_torrent_file->is_valid()
@@ -294,11 +302,13 @@ bool is_downloading_state(int const st)
 
 		// --- TRACKERS ---
 
+#if TORRENT_ABI_VERSION < 4
 		// if override trackers flag is set, don't load trackers from torrent file
 		if (!(p.flags & torrent_flags::deprecated_override_trackers))
 		{
 			m_trackers.replace(m_torrent_file->internal_trackers());
 		}
+#endif
 
 		int tier = 0;
 		auto tier_iter = p.tracker_tiers.begin();
@@ -518,22 +528,25 @@ bool is_downloading_state(int const st)
 		m_was_started = true;
 #endif
 
+		update_want_tick();
+
 		// Some of these calls may log to the torrent debug log, which requires a
 		// call to get_handle(), which requires the torrent object to be fully
 		// constructed, as it relies on get_shared_from_this()
 		if (m_add_torrent_params)
 		{
+			add_torrent_params const& p = *m_add_torrent_params;
+
 #if TORRENT_ABI_VERSION == 1
-			if (m_add_torrent_params->internal_resume_data_error
+			if (p.internal_resume_data_error
 				&& m_ses.alerts().should_post<fastresume_rejected_alert>())
 			{
 				m_ses.alerts().emplace_alert<fastresume_rejected_alert>(get_handle()
-					, m_add_torrent_params->internal_resume_data_error, ""
+					, p.internal_resume_data_error, ""
 					, operation_t::unknown);
 			}
 #endif
 
-			add_torrent_params const& p = *m_add_torrent_params;
 
 			set_max_uploads(p.max_uploads, false);
 			set_max_connections(p.max_connections, false);
@@ -607,7 +620,6 @@ bool is_downloading_state(int const st)
 
 		update_want_peers();
 		update_want_scrape();
-		update_want_tick();
 		update_state_list();
 
 		if (m_torrent_file->is_valid())
@@ -3629,10 +3641,13 @@ namespace {
 					ADD_OUTSTANDING_ASYNC("torrent::on_i2p_resolve");
 					r.i2pconn->async_name_lookup(i.hostname.c_str()
 						, [self = shared_from_this()] (error_code const& ec, char const* dest)
-						{ self->torrent::on_i2p_resolve(ec, dest); });
+						{ self->torrent::on_i2p_resolve(ec, dest, peer_info::tracker); });
 				}
 				else
 				{
+					// TODO: the destination string should be base64 decoded and
+					// sha256 hashed to form the destination address and store
+					// that in the i2p_peer object directly
 					torrent_state st = get_peer_list_state();
 					need_peer_list();
 					if (m_peer_list->add_i2p_peer(i.hostname, peer_info::tracker, {}, &st))
@@ -3654,15 +3669,7 @@ namespace {
 		{
 			for (auto const& i : resp.i2p_peers)
 			{
-				torrent_state st = get_peer_list_state();
-				peer_entry p;
-				std::string destination = base32encode_i2p(i.destination);
-				destination += ".b32.i2p";
-
-				ADD_OUTSTANDING_ASYNC("torrent::on_i2p_resolve");
-				r.i2pconn->async_name_lookup(destination.c_str()
-					, [self = shared_from_this()] (error_code const& ec, char const* dest)
-					{ self->torrent::on_i2p_resolve(ec, dest); });
+				add_i2p_peer(i.destination, peer_info::tracker);
 			}
 		}
 #endif
@@ -3881,6 +3888,8 @@ namespace {
 		{
 			debug_log("*** found no tracker endpoints to announce");
 		}
+#else
+		TORRENT_UNUSED(found_one);
 #endif
 		update_tracker_timer(aux::time_now32());
 	}
@@ -3925,7 +3934,25 @@ namespace {
 #endif
 
 #if TORRENT_USE_I2P
-	void torrent::on_i2p_resolve(error_code const& ec, char const* dest) try
+	void torrent::add_i2p_peer(sha256_hash const& dest, peer_source_flags_t const source)
+	{
+		// TODO: store i2p addresses as a 32 byte sha256 hash in the
+		// i2p_peer object, rather than resolving it into the full vase64
+		// destination. We should keep the full destination as a cache in the
+		// i2p_peer object still.
+		i2p_connection& i2pconn = session().i2p_conn();
+		if (!i2pconn.is_open()) return;
+
+		std::string destination = base32encode_i2p(dest);
+		destination += ".b32.i2p";
+
+		ADD_OUTSTANDING_ASYNC("torrent::on_i2p_resolve");
+		i2pconn.async_name_lookup(destination.c_str()
+			, [self = shared_from_this(), source] (error_code const& ec, char const* d)
+			{ self->torrent::on_i2p_resolve(ec, d, source); });
+	}
+
+	void torrent::on_i2p_resolve(error_code const& ec, char const* dest, peer_source_flags_t const source) try
 	{
 		TORRENT_ASSERT(is_single_thread());
 
@@ -3940,7 +3967,7 @@ namespace {
 
 		need_peer_list();
 		torrent_state st = get_peer_list_state();
-		if (m_peer_list->add_i2p_peer(dest, peer_info::tracker, {}, &st))
+		if (m_peer_list->add_i2p_peer(dest, source, {}, &st))
 			state_updated();
 		peers_erased(st.erased);
 
@@ -4584,7 +4611,7 @@ namespace {
 		{
 			TORRENT_INCREMENT(m_iterating_connections);
 #ifndef TORRENT_DISABLE_LOGGING
-			p->peer_log(peer_log_alert::outgoing, "PREDICTIVE_HAVE", "piece: %d expected in %d ms"
+			p->peer_log(peer_log_alert::outgoing, peer_log_alert::predictive_have, "piece: %d expected in %d ms"
 				, static_cast<int>(index), static_cast<int>(total_milliseconds(duration)));
 #else
 			TORRENT_UNUSED(duration);
@@ -4790,7 +4817,7 @@ namespace {
 						debug_log("*** BANNING PEER: \"%s\" Too many corrupt pieces"
 							, print_endpoint(p->ip()).c_str());
 					}
-					peer->peer_log(peer_log_alert::info, "BANNING_PEER", "Too many corrupt pieces");
+					peer->peer_log(peer_log_alert::info, peer_log_alert::banning_peer, "Too many corrupt pieces");
 #endif
 					peer->disconnect(errors::too_many_corrupt_pieces, operation_t::bittorrent);
 				}
@@ -7019,6 +7046,7 @@ namespace {
 		return m_torrent_file;
 	}
 
+#if TORRENT_ABI_VERSION < 4
 	std::shared_ptr<torrent_info> torrent::get_torrent_copy_with_hashes() const
 	{
 		if (!m_torrent_file->is_valid()) return {};
@@ -7046,6 +7074,7 @@ namespace {
 
 		return ret;
 	}
+#endif
 
 	std::vector<std::vector<sha256_hash>> torrent::get_piece_layers() const
 	{
@@ -7086,10 +7115,10 @@ namespace {
 
 		ret.save_path = m_save_path;
 
-		ret.comment = torrent_file().comment();
-		ret.created_by = torrent_file().creator();
-		ret.creation_date = torrent_file().creation_date();
-		ret.info_hashes = torrent_file().info_hashes();
+		ret.comment = m_comment;
+		ret.created_by = m_created_by;
+		ret.creation_date = m_creation_date;
+		ret.info_hashes = m_info_hash;
 		if (valid_metadata()) ret.name = m_torrent_file->name();
 		else if (m_name) ret.name = *m_name;
 
@@ -7145,7 +7174,8 @@ namespace {
 			ret.url_seeds.push_back(ws.url);
 		}
 
-		ret.dht_nodes = m_torrent_file->nodes();
+		if (m_add_torrent_params)
+			ret.dht_nodes = m_add_torrent_params->dht_nodes;
 
 		// write have bitmask
 		// the pieces string has one byte per piece. Each
@@ -7743,7 +7773,9 @@ namespace {
 	{
 		if (!info_hash().has_v2()) return {};
 
+#if TORRENT_ABI_VERSION < 4
 		bool valid = m_torrent_file->v2_piece_hashes_verified();
+#endif
 
 		file_storage const& fs = m_torrent_file->orig_files();
 		m_merkle_trees.reserve(fs.num_files());
@@ -7756,6 +7788,7 @@ namespace {
 			}
 			m_merkle_trees.emplace_back(fs.file_num_blocks(i)
 				, fs.blocks_per_piece(), fs.root_ptr(i));
+#if TORRENT_ABI_VERSION < 4
 			auto const piece_layer = m_torrent_file->piece_layer(i);
 			if (piece_layer.empty())
 			{
@@ -7769,11 +7802,14 @@ namespace {
 				m_v2_piece_layers_validated = false;
 				return errors::torrent_invalid_piece_layer;
 			}
+#endif
 		}
 
+#if TORRENT_ABI_VERSION < 4
 		m_v2_piece_layers_validated = valid;
 
 		m_torrent_file->free_piece_layers();
+#endif
 		return {};
 	}
 
@@ -8491,7 +8527,7 @@ namespace {
 				if (p->upload_only() && p->can_disconnect(errors::torrent_finished))
 				{
 #ifndef TORRENT_DISABLE_LOGGING
-					p->peer_log(peer_log_alert::info, "SEED", "CLOSING CONNECTION");
+					p->peer_log(peer_log_alert::info, peer_log_alert::seed, "CLOSING CONNECTION");
 #endif
 					seeds.push_back(p);
 				}
@@ -8684,7 +8720,7 @@ namespace {
 			}
 
 #ifndef TORRENT_DISABLE_LOGGING
-			pc->peer_log(peer_log_alert::info, "ON_FILES_CHECKED");
+			pc->peer_log(peer_log_alert::info, peer_log_alert::on_files_checked);
 #endif
 			if (pc->is_interesting() && !pc->has_peer_choked())
 			{
@@ -9742,7 +9778,7 @@ namespace {
 				if (p->outstanding_bytes() > 0)
 				{
 #ifndef TORRENT_DISABLE_LOGGING
-					p->peer_log(peer_log_alert::info, "CHOKING_PEER", "torrent graceful paused");
+					p->peer_log(peer_log_alert::info, peer_log_alert::choking_peer, "torrent graceful paused");
 #endif
 					// remove any un-sent requests from the queue
 					p->clear_request_queue();
@@ -9755,7 +9791,7 @@ namespace {
 				// disconnect (assuming all peers end up begin disconnected here)
 				// will post the torrent_paused_alert
 #ifndef TORRENT_DISABLE_LOGGING
-				p->peer_log(peer_log_alert::info, "CLOSING_CONNECTION", "torrent_paused");
+				p->peer_log(peer_log_alert::info, peer_log_alert::closing_connection, "torrent_paused");
 #endif
 				p->disconnect(errors::torrent_paused, operation_t::bittorrent);
 			}
@@ -9777,7 +9813,7 @@ namespace {
 			for (auto const* p : m_connections)
 			{
 				TORRENT_INCREMENT(m_iterating_connections);
-				p->peer_log(peer_log_alert::info, "TORRENT", "%s", message);
+				p->peer_log(peer_log_alert::info, peer_log_alert::torrent, "%s", message);
 			}
 		}
 
@@ -11252,17 +11288,6 @@ namespace {
 
 		TORRENT_ASSERT(info_hash().has_v2() || !(flags & pex_lt_v2));
 
-#ifndef TORRENT_DISABLE_DHT
-		if (source != peer_info::resume_data)
-		{
-			// try to send a DHT ping to this peer
-			// as well, to figure out if it supports
-			// DHT (uTorrent and BitComet don't
-			// advertise support)
-			session().add_dht_node({adr.address(), adr.port()});
-		}
-#endif
-
 		if (m_apply_ip_filter
 			&& m_ip_filter
 			&& m_ip_filter->access(adr.address()) & ip_filter::blocked)
@@ -11310,6 +11335,17 @@ namespace {
 #endif
 			return nullptr;
 		}
+
+#ifndef TORRENT_DISABLE_DHT
+		if (source != peer_info::resume_data)
+		{
+			// try to send a DHT ping to this peer
+			// as well, to figure out if it supports
+			// DHT (uTorrent and BitComet don't
+			// advertise support)
+			session().add_dht_node({adr.address(), adr.port()});
+		}
+#endif
 
 		if (!torrent_file().info_hashes().has_v1())
 			flags |= pex_lt_v2;

@@ -153,6 +153,12 @@
     <ClCompile Include="zlib-ng\arch\x86\chunkset_avx512.c">
       <Filter>Source Files\arc</Filter>
     </ClCompile>
+    <ClCompile Include="zlib-ng\arch\generic\crc32_c.c">
+      <Filter>Source Files\arc\generic</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib-ng\arch\generic\crc32_chorba_c.c">
+      <Filter>Source Files\arc\generic</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="zlib-ng\adler32_p.h">

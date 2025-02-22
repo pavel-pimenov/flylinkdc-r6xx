@@ -54,16 +54,16 @@ static void init_functable(void) {
     ft.adler32_fold_copy = &adler32_fold_copy_c;
     ft.chunkmemset_safe = &chunkmemset_safe_c;
     ft.chunksize = &chunksize_c;
-    ft.crc32 = &PREFIX(crc32_braid);
+    ft.crc32 = &crc32_c;
     ft.crc32_fold = &crc32_fold_c;
     ft.crc32_fold_copy = &crc32_fold_copy_c;
     ft.crc32_fold_final = &crc32_fold_final_c;
     ft.crc32_fold_reset = &crc32_fold_reset_c;
     ft.inflate_fast = &inflate_fast_c;
     ft.slide_hash = &slide_hash_c;
-    ft.longest_match = &longest_match_generic;
-    ft.longest_match_slow = &longest_match_slow_generic;
-    ft.compare256 = &compare256_generic;
+    ft.longest_match = &longest_match_c;
+    ft.longest_match_slow = &longest_match_slow_c;
+    ft.compare256 = &compare256_c;
 
     // Select arch-optimized functions
 
@@ -183,10 +183,10 @@ static void init_functable(void) {
 #  endif
     }
 #endif
-    // ARM - ACLE
-#ifdef ARM_ACLE
+    // ARM - CRC32
+#ifdef ARM_CRC32
     if (cf.arm.has_crc32) {
-        ft.crc32 = &crc32_acle;
+        ft.crc32 = &crc32_armv8;
     }
 #endif
 

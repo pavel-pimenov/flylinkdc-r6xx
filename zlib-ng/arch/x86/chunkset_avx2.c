@@ -2,6 +2,7 @@
  * For conditions of distribution and use, see copyright notice in zlib.h
  */
 #include "zbuild.h"
+#include "zmemory.h"
 
 #ifdef X86_AVX2
 #include "avx2_tables.h"
@@ -19,25 +20,25 @@ typedef __m128i halfchunk_t;
 #define HAVE_HALF_CHUNK
 
 static inline void chunkmemset_2(uint8_t *from, chunk_t *chunk) {
-    int16_t tmp;
-    memcpy(&tmp, from, sizeof(tmp));
-    *chunk = _mm256_set1_epi16(tmp);
+    *chunk = _mm256_set1_epi16(zng_memread_2(from));
 }
 
 static inline void chunkmemset_4(uint8_t *from, chunk_t *chunk) {
-    int32_t tmp;
-    memcpy(&tmp, from, sizeof(tmp));
-    *chunk = _mm256_set1_epi32(tmp);
+    *chunk = _mm256_set1_epi32(zng_memread_4(from));
 }
 
 static inline void chunkmemset_8(uint8_t *from, chunk_t *chunk) {
-    int64_t tmp;
-    memcpy(&tmp, from, sizeof(tmp));
-    *chunk = _mm256_set1_epi64x(tmp);
+    *chunk = _mm256_set1_epi64x(zng_memread_8(from));
 }
 
 static inline void chunkmemset_16(uint8_t *from, chunk_t *chunk) {
+    /* See explanation in chunkset_avx512.c */
+#if defined(_MSC_VER) && _MSC_VER <= 1900
+    halfchunk_t half = _mm_loadu_si128((__m128i*)from);
+    *chunk = _mm256_inserti128_si256(_mm256_castsi128_si256(half), half, 1);
+#else
     *chunk = _mm256_broadcastsi128_si256(_mm_loadu_si128((__m128i*)from));
+#endif
 }
 
 static inline void loadchunk(uint8_t const *s, chunk_t *chunk) {

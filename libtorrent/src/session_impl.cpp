@@ -4206,7 +4206,7 @@ retry:
 			if (pi->optimistically_unchoked)
 			{
 #ifndef TORRENT_DISABLE_LOGGING
-					p->peer_log(peer_log_alert::info, "OPTIMISTIC UNCHOKE"
+					p->peer_log(peer_log_alert::info, peer_log_alert::optimistic_unchoke
 						, "already unchoked | session-time: %d"
 						, pi->last_optimistically_unchoked);
 #endif
@@ -4231,7 +4231,7 @@ retry:
 					m_stats_counters.inc_stats_counter(counters::num_peers_up_unchoked_optimistic);
 					pi->last_optimistically_unchoked = std::uint16_t(session_time());
 #ifndef TORRENT_DISABLE_LOGGING
-					p->peer_log(peer_log_alert::info, "OPTIMISTIC UNCHOKE"
+					p->peer_log(peer_log_alert::info, peer_log_alert::optimistic_unchoke
 						, "session-time: %d", pi->last_optimistically_unchoked);
 #endif
 				}
@@ -5035,11 +5035,13 @@ retry:
 		for (auto const& n : params.dht_nodes)
 			add_dht_node_name(n);
 
+#if TORRENT_ABI_VERSION < 4
 		if (params.ti)
 		{
 			for (auto const& n : params.ti->nodes())
 				add_dht_node_name(n);
 		}
+#endif
 #endif
 
 		INVARIANT_CHECK;
@@ -5062,8 +5064,17 @@ retry:
 
 		if (!params.info_hashes.has_v1() && !params.info_hashes.has_v2())
 		{
-			ec = errors::missing_info_hash_in_uri;
-			return ret_t{ptr_t(), params.info_hashes, false};
+#if TORRENT_ABI_VERSION < 3
+			if (!params.info_hash.is_all_zeros())
+			{
+				params.info_hashes.v1 = params.info_hash;
+			}
+			else
+#endif
+			{
+				ec = errors::missing_info_hash_in_uri;
+				return ret_t{ptr_t(), params.info_hashes, false};
+			}
 		}
 
 		// is the torrent already active?
@@ -5622,7 +5633,7 @@ retry:
 		std::shared_ptr<torrent> t = find_torrent(info_hash_t(ih)).lock();
 		if (!t) return;
 		// don't add peers from lsd to private torrents
-		if (t->torrent_file().priv() || (t->torrent_file().is_i2p()
+		if (t->torrent_file().priv() || (t->is_i2p()
 			&& !m_settings.get_bool(settings_pack::allow_i2p_mixed))) return;
 
 		protocol_version const v = ih == t->torrent_file().info_hashes().v1

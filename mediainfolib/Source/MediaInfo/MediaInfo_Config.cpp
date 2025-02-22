@@ -2902,7 +2902,7 @@ const Ztring &MediaInfo_Config::Codec_Get (const Ztring &Value, infocodec_t Kind
 //---------------------------------------------------------------------------
 const Ztring &MediaInfo_Config::CodecID_Get (stream_t KindOfStream, infocodecid_format_t Format, const Ztring &Value, infocodecid_t KindOfCodecIDInfo)
 {
-    if (Format>=InfoCodecID_Format_Max || KindOfStream>=Stream_Max)
+    if (Format>=InfoCodecID_Format_Max || Format<0 || KindOfStream>=Stream_Max || KindOfStream<0)
         return EmptyString_Get();
     {
     CriticalSectionLocker CSL(CS);
@@ -2963,7 +2963,7 @@ const Ztring &MediaInfo_Config::CodecID_Get (stream_t KindOfStream, infocodecid_
 //---------------------------------------------------------------------------
 const Ztring &MediaInfo_Config::Library_Get (infolibrary_format_t Format, const Ztring &Value, infolibrary_t KindOfLibraryInfo)
 {
-    if (Format>=InfoLibrary_Format_Max)
+    if (Format>=InfoLibrary_Format_Max || Format<0)
         return EmptyString_Get();
     {
     CriticalSectionLocker CSL(CS);
@@ -3045,7 +3045,7 @@ const Ztring MediaInfo_Config::Iso639_Translate (const Ztring& Value)
 void MediaInfo_Config::Language_Set_Internal(stream_t KindOfStream)
 {
     //Loading codec table if not yet done
-    if (KindOfStream<Stream_Max && Info[KindOfStream].empty())
+    if (KindOfStream>=0 && KindOfStream<Stream_Max && Info[KindOfStream].empty())
         switch (KindOfStream)
         {
             case Stream_General :   MediaInfo_Config_General(Info[Stream_General]);   Language_Set(Stream_General); break;
@@ -3063,7 +3063,7 @@ void MediaInfo_Config::Language_Set_Internal(stream_t KindOfStream)
 const Ztring &MediaInfo_Config::Info_Get (stream_t KindOfStream, const Ztring &Value, info_t KindOfInfo)
 {
     Language_Set_All(KindOfStream);
-    if (KindOfStream>=Stream_Max)
+    if (KindOfStream<0 || KindOfStream>=Stream_Max)
         return EmptyString_Get();
     size_t Pos=Info[KindOfStream].Find(Value);
     if (Pos==Error || (size_t)KindOfInfo>=Info[KindOfStream][Pos].size())
@@ -3075,7 +3075,7 @@ const Ztring &MediaInfo_Config::Info_Get (stream_t KindOfStream, size_t Pos, inf
 {
     Language_Set_All(KindOfStream);
 
-    if (KindOfStream>=Stream_Max)
+    if (KindOfStream<0 || KindOfStream>=Stream_Max)
         return EmptyString_Get();
     if (Pos>=Info[KindOfStream].size() || (size_t)KindOfInfo>=Info[KindOfStream][Pos].size())
         return EmptyString_Get();
@@ -3084,7 +3084,7 @@ const Ztring &MediaInfo_Config::Info_Get (stream_t KindOfStream, size_t Pos, inf
 
 const ZtringListList &MediaInfo_Config::Info_Get(stream_t KindOfStream)
 {
-    if (KindOfStream>=Stream_Max)
+    if (KindOfStream<0 || KindOfStream>=Stream_Max)
         return EmptyStringListList_Get();
 
     Language_Set_All(KindOfStream);

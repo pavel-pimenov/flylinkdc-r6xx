@@ -214,7 +214,7 @@ namespace sqlite3x {
 	};
 	class database_error : public Exception {
 	public:
-		database_error(const char *msg, const string& p_add_info = ""): Exception(string(msg) + p_add_info) {}
+		database_error(const char *msg, const std::string& p_add_info = ""): Exception(std::string(msg) + p_add_info) {}
 		explicit database_error(const sqlite3_connection* p_con)
 			:Exception(sqlite3_errmsg(p_con->db)){}
 	};

@@ -2387,7 +2387,7 @@ void File_DolbyE::program_assignment()
                 {
                     bool b_standard_chan_assign;
                     Get_SB (b_standard_chan_assign,             "b_standard_chan_assign");
-                    int32u nonstd_bed_channel_assignment_mask=0;
+                    int32u nonstd_bed_channel_assignment_mask{};
                     if (b_standard_chan_assign)
                     {
                         int16u bed_channel_assignment_mask;

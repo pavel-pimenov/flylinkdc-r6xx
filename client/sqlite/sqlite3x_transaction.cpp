@@ -24,7 +24,6 @@
 */
 
 #include "stdinc.h"
-
 #include "sqlite3.h"
 #include "sqlite3x.hpp"
 
@@ -61,7 +60,6 @@ void sqlite3_transaction::begin() {
   {
 	intrans = false;
   }
-
   dcassert(con.sqlite3_get_autocommit() == 0);
 }
 
