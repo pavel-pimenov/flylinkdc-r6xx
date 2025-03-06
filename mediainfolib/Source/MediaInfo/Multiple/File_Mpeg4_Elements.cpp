@@ -789,6 +789,7 @@ namespace Elements
     const int64u moov_trak_mdia_minf_stbl_stsd_mebx_keys=0x6B657973;
     const int64u moov_trak_mdia_minf_stbl_stsd_mebx_keys_PHDR=0x50484452;
     const int64u moov_trak_mdia_minf_stbl_stsd_mebx_keys_PHDR_keyd=0x6B657964;
+    const int64u moov_trak_mdia_minf_stbl_stsd_mett=0x6D657474;
     const int64u moov_trak_mdia_minf_stbl_stsd_mp4a=0x6D703461;
     const int64u moov_trak_mdia_minf_stbl_stsd_mp4s=0x6D703473;
     const int64u moov_trak_mdia_minf_stbl_stsd_mp4v=0x6D703476;
@@ -3985,14 +3986,30 @@ void File_Mpeg4::moov_meta_ilst_xxxx_data()
                         Fill(Stream_General, 0, General_Comment, Value, true);
                     else if (Parameter=="com.apple.quicktime.description")
                         Fill(Stream_General, 0, General_Description, Value, true);
+                    else if (Parameter == "com.apple.quicktime.creationdate")
+                        Fill(Stream_General, 0, General_Recorded_Date, Value);
+                    else if (Parameter == "com.apple.quicktime.make")
+                        Fill(Stream_General, 0, General_Encoded_Hardware_CompanyName, Value);
+                    else if (Parameter == "com.apple.quicktime.model")
+                        Fill(Stream_General, 0, General_Encoded_Hardware_Name, Value);
+                    else if (Parameter == "com.apple.quicktime.software")
+                        Fill(Stream_General, 0, General_Encoded_Application_Name, Value);
                     else if (Parameter=="com.apple.finalcutstudio.media.uuid")
                         Fill(Stream_General, 0, "Media/UUID", Value);
                     else if (Parameter=="com.apple.finalcutstudio.media.history.uuid")
                         Fill(Stream_General, 0, "Media/History/UUID", Value);
                     else if (Parameter=="com.android.capture.fps")
                         FrameRate_Real=Value;
+                    else if (Parameter=="com.android.manufacturer")
+                        Fill(Stream_General, 0, General_Encoded_Hardware_CompanyName, Value);
+                    else if (Parameter=="com.android.model")
+                        Fill(Stream_General, 0, General_Encoded_Hardware_Name, Value);
                     else if (Parameter=="com.android.version")
-                        Fill(Stream_General, 0, "Android_Version", Value);
+                    {
+                        Fill(Stream_General, 0, General_Encoded_OperatingSystem_CompanyName, "Google");
+                        Fill(Stream_General, 0, General_Encoded_OperatingSystem_Name, "Android");
+                        Fill(Stream_General, 0, General_Encoded_OperatingSystem_Version, Value);
+                    }
                     else if (Parameter=="com.universaladid.idregistry")
                     {
                         Fill(Stream_General, 0, "UniversalAdID_Registry", Value);
@@ -4019,6 +4036,11 @@ void File_Mpeg4::moov_meta_ilst_xxxx_data()
                         size_t i=DisplayAspectRatio.find(':');
                         if (i!=string::npos)
                             DisplayAspectRatio.From_Number(Ztring(DisplayAspectRatio.substr(0, i)).To_float64()/Ztring(DisplayAspectRatio.substr(i+1)).To_float64(), 3);
+                    }
+                    else if (Parameter=="Encoded_With")
+                    {
+                        if (Value!=Retrieve_Const(Stream_General, 0, General_Encoded_Application_Name))
+                            Fill(Stream_General, 0, General_Encoded_Application_Name, Value);
                     }
                     else if (!Parameter.empty())
                         Fill(Stream_General, 0, Parameter.c_str(), Value, true);
@@ -5391,30 +5413,12 @@ void File_Mpeg4::moov_trak_mdia_minf_stbl_stsd_stpp()
     Skip_B4(                                                    "Reserved");
     Skip_B2(                                                    "Reserved");
     Skip_B2(                                                    "Data reference index");
-    size_t Pos=(size_t)Element_Offset;
-    while (Pos<Element_Size)
-    {
-        if (Buffer[Buffer_Offset+Pos]=='\0')
-            break;
-        Pos++;
-    }
-    Get_String(Pos+1-Element_Offset, NameSpace,                  "namespace");
-    Pos=(size_t)Element_Offset;
-    while (Pos<Element_Size)
-    {
-        if (Buffer[Buffer_Offset+Pos]=='\0')
-            break;
-        Pos++;
-    }
-    Skip_UTF8(Pos+1-Element_Offset,                             "schema_location");
-    Pos=(size_t)Element_Offset;
-    while (Pos<Element_Size)
-    {
-        if (Buffer[Buffer_Offset+Pos]=='\0')
-            break;
-        Pos++;
-    }
-    Skip_UTF8(Pos+1-Element_Offset,                             "image_mime_type");
+    Get_String(SizeUpTo0(), NameSpace,                          "namespace");
+    Skip_B1(                                                    "zero");
+    Skip_UTF8(SizeUpTo0(),                                      "schema_location");
+    Skip_B1(                                                    "zero");
+    Skip_UTF8(SizeUpTo0(),                                      "image_mime_type");
+    Skip_B1(                                                    "zero");
 
     FILLING_BEGIN();
         CodecID_Fill(__T("stpp"), StreamKind_Last, StreamPos_Last, InfoCodecID_Format_Mpeg4);
@@ -5721,8 +5725,44 @@ void File_Mpeg4::moov_trak_mdia_minf_stbl_stsd_tx3g_ftab()
 void File_Mpeg4::moov_trak_mdia_minf_stbl_stsd_xxxx()
 {
     //Parsing
-    Skip_B6(                                                    "Reserved");
-    Skip_B2(                                                    "Data reference index");
+    string CodecIDAddition;
+    if (StreamKind_Last==Stream_Max)
+    {
+        switch (Element_Code)
+        {
+        case Elements::moov_trak_mdia_minf_stbl_stsd_mett:
+        {
+            string mime_format;
+            Element_Name("Metadata");
+            Skip_String(SizeUpTo0(),                            "content_encoding");
+            Skip_B1(                                            "zero");
+            Get_String(SizeUpTo0(), CodecIDAddition,            "mime_format");
+            Skip_B1(                                            "zero");
+            break;
+        }
+        default:
+        {
+            auto NotAscii=false;
+            if (Element_Size>=6)
+            {
+                for (auto Current=Buffer+Buffer_Offset, End=Current+6; Current<End; Current++)
+                {
+                    if (!IsAsciiLower(*Current) && !IsAsciiUpper(*Current))
+                        NotAscii=true;
+                }
+            }
+            if (Element_Size<6 || !NotAscii)
+            {
+                Skip_XX(Element_Size,                           "(Unknown)");
+            }
+        }
+        }
+    }
+    if (!Element_Offset)
+    {
+        Skip_B6(                                                "Reserved");
+        Skip_B2(                                                "Data reference index");
+    }
 
     //Test of buggy files
     if (StreamKind_Last==Stream_Other && Element_Code==0x61766331) //"avc1"
@@ -5764,7 +5804,7 @@ void File_Mpeg4::moov_trak_mdia_minf_stbl_stsd_xxxx()
             case Stream_Video : moov_trak_mdia_minf_stbl_stsd_xxxxVideo(); break;
             case Stream_Audio : moov_trak_mdia_minf_stbl_stsd_xxxxSound(); break;
             case Stream_Text  : moov_trak_mdia_minf_stbl_stsd_xxxxText (); break;
-            default           : moov_trak_mdia_minf_stbl_stsd_xxxxOthers();
+            default           : moov_trak_mdia_minf_stbl_stsd_xxxxOthers(CodecIDAddition);
         }
 
         if (Element_IsWaitingForMoreData())
@@ -6630,7 +6670,7 @@ void File_Mpeg4::moov_trak_mdia_minf_stbl_stsd_xxxxVideo()
 }
 
 //---------------------------------------------------------------------------
-void File_Mpeg4::moov_trak_mdia_minf_stbl_stsd_xxxxOthers()
+void File_Mpeg4::moov_trak_mdia_minf_stbl_stsd_xxxxOthers(const string& CodecIDAddition)
 {
     switch (Element_Code)
     {
@@ -6643,6 +6683,11 @@ void File_Mpeg4::moov_trak_mdia_minf_stbl_stsd_xxxxOthers()
     if (Element_Code)
     {
         CodecID_Fill(Ztring().From_CC4((int32u)Element_Code), StreamKind_Last, StreamPos_Last, InfoCodecID_Format_Mpeg4);
+        if (!CodecIDAddition.empty())
+        {
+            auto CodecID=Retrieve(Stream_Other, StreamPos_Last, Other_CodecID).To_UTF8();
+            Fill(Stream_Other, StreamPos_Last, Other_CodecID, CodecID+'-'+CodecIDAddition, true, true);
+        }
     }
 
     FILLING_BEGIN();
@@ -9850,7 +9895,8 @@ void File_Mpeg4::moov_udta_smta_mdln()
 
     //Filling
     FILLING_BEGIN();
-        Fill(Stream_General, 0, "Samsung_Model_Number", SamsungModelNumber);
+        Fill(Stream_General, 0, General_Encoded_Hardware_CompanyName, "Samsung");
+        Fill(Stream_General, 0, General_Encoded_Hardware_Model, SamsungModelNumber);
     FILLING_END();
 }
 
@@ -9991,21 +10037,10 @@ void File_Mpeg4::moov_udta_xxxx()
                 {
                     string name_space, value;
                     NAME_VERSION_FLAG("Text");
-                    auto Buffer_Begin=Buffer+Buffer_Offset+4;
-                    auto Buffer_Current=Buffer_Begin;
-                    auto Buffer_End=Buffer+Buffer_Offset+(size_t)Element_Size;
-                    while (Buffer_Current<Buffer_End && *Buffer_Current)
-                        Buffer_Current++;
-                    Get_String(Buffer_Current-Buffer_Begin, name_space, "namespace");
+                    Get_String(SizeUpTo0(), name_space,             "namespace");
                     if (Element_Offset<Element_Size)
-                    {
                         Skip_B1(                                    "zero");
-                        Buffer_Current++;
-                    }
-                    Buffer_Begin=Buffer_Current;
-                    while (Buffer_Current<Buffer_End && *Buffer_Current)
-                        Buffer_Current++;
-                    Get_String(Buffer_Current-Buffer_Begin, value, "value");
+                    Get_String(SizeUpTo0(), value,                  "value");
                     if (Element_Offset<Element_Size)
                         Skip_B1(                                    "zero");
 
