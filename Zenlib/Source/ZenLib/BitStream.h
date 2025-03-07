@@ -30,22 +30,33 @@ namespace ZenLib
 class BitStream
 {
 public:
-    BitStream ()                                                                {Buffer=NULL;
-                                                                                 Buffer_Size=Buffer_Size_Init=Buffer_Size_BeforeLastCall=0;
-                                                                                 LastByte_Size=0;
-                                                                                 BufferUnderRun=true;
-                                                                                 BookMark=false;
-                                                                                 LastByte = 0; Buffer_BookMark = 0; Buffer_Size_BookMark = 0; LastByte_BookMark = 0; LastByte_Size_BookMark = 0; BufferUnderRun_BookMark = 0;
-
-    }
-    BitStream (const int8u* Buffer_, size_t Size_)                              {Buffer=Buffer_;
-                                                                                 Buffer_Size=Buffer_Size_Init=Buffer_Size_BeforeLastCall=Size_*8; //Size is in bits
-                                                                                 LastByte_Size=0;
-                                                                                 BufferUnderRun=Buffer_Size?false:true;
-                                                                                 BookMark=false;
-                                                                                 LastByte = 0; Buffer_BookMark = 0; Buffer_Size_BookMark = 0; LastByte_BookMark = 0; LastByte_Size_BookMark = 0; BufferUnderRun_BookMark = 0;
-    }
-    virtual ~BitStream ()                                                       {}
+    BitStream ()                                                                { Buffer = NULL;
+                                                                                  Buffer_Size = 0;
+                                                                                  Buffer_Size_Init = 0;
+                                                                                  Buffer_Size_BeforeLastCall = 0;
+                                                                                  LastByte = 0;
+                                                                                  LastByte_Size = 0;
+                                                                                  BufferUnderRun = true;
+                                                                                  BookMark = false;
+                                                                                  Buffer_BookMark = 0;
+                                                                                  Buffer_Size_BookMark = 0;
+                                                                                  LastByte_BookMark = 0;
+                                                                                  LastByte_Size_BookMark = 0;
+                                                                                  BufferUnderRun_BookMark = false; }
+    BitStream (const int8u* Buffer_, size_t Size_)                              { Buffer = Buffer_;
+                                                                                  Buffer_Size = Size_ * 8; //Size is in bits
+                                                                                  Buffer_Size_Init = Size_ * 8; //Size is in bits
+                                                                                  Buffer_Size_BeforeLastCall = Size_ * 8; //Size is in bits
+                                                                                  LastByte = 0;
+                                                                                  LastByte_Size = 0;
+                                                                                  BufferUnderRun = (Buffer_Size ? false : true);
+                                                                                  BookMark = false;
+                                                                                  Buffer_BookMark = 0;
+                                                                                  Buffer_Size_BookMark = 0;
+                                                                                  LastByte_BookMark = 0;
+                                                                                  LastByte_Size_BookMark = 0;
+                                                                                  BufferUnderRun_BookMark = false; }
+    virtual ~BitStream ()                                                       {};
 
     virtual void Attach(const int8u* Buffer_, size_t Size_)
     {
@@ -103,14 +114,17 @@ public:
                             ToReturn |= ((size_t)*Buffer) << NewBits;
                             Buffer++;
                             Buffer_Size-=8;
+                            [[fallthrough]];
                 case 2 :    NewBits-=8;
                             ToReturn |= ((size_t)*Buffer) << NewBits;
                             Buffer++;
                             Buffer_Size-=8;
+                            [[fallthrough]];
                 case 1 :    NewBits-=8;
                             ToReturn |= ((size_t)*Buffer) << NewBits;
                             Buffer++;
                             Buffer_Size-=8;
+                            [[fallthrough]];
                 case 0 :
                             LastByte=*Buffer;
                             Buffer++;
@@ -196,12 +210,15 @@ public:
                 case 3 :    NewBits-=8;
                             Buffer++;
                             Buffer_Size-=8;
+                            [[fallthrough]];
                 case 2 :    NewBits-=8;
                             Buffer++;
                             Buffer_Size-=8;
+                            [[fallthrough]];
                 case 1 :    NewBits-=8;
                             Buffer++;
                             Buffer_Size-=8;
+                            [[fallthrough]];
                 case 0 :
                             LastByte=*Buffer;
                             Buffer++;
@@ -209,7 +226,7 @@ public:
             LastByte_Size=MIN(8, Buffer_Size)-NewBits;
             Buffer_Size -=MIN(8, Buffer_Size);
         }
-    }
+    };
 
     void SkipB ()
     {
@@ -303,38 +320,38 @@ public:
             LastByte_Size=LastByte_Size_BookMark;
             BufferUnderRun=BufferUnderRun_BookMark;
         }
-    }
+    };
 
     virtual int32u Remain () //How many bits remain?
     {
         return (int32u)(Buffer_Size+LastByte_Size);
-    }
+    };
 
     virtual void Byte_Align()
     {
         Get(LastByte_Size);
-    }
+    };
 
     virtual size_t Offset_Get()
     {
         if (BufferUnderRun)
             return 0;
         return (Buffer_Size_Init-Buffer_Size)/8;
-    }
+    };
 
     virtual size_t BitOffset_Get()
     {
         if (BufferUnderRun)
             return 0;
         return LastByte_Size;
-    }
+    };
 
     virtual size_t OffsetBeforeLastCall_Get()
     {
         if (BufferUnderRun)
             return 0;
         return (Buffer_Size_Init-Buffer_Size_BeforeLastCall)/8;
-    }
+    };
 
 private :
     const int8u*    Buffer;
