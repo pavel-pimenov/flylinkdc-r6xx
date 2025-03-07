@@ -224,7 +224,7 @@ class QueueItem : public Flags
 			return m_badSources.find(aUser) != m_badSources.end();
 		}
 		bool isBadSourceExceptL(const UserPtr& aUser, Flags::MaskType exceptions) const;
-		void getChunksVisualisation(vector<pair<Segment, Segment>>& p_runnigChunksAndDownloadBytes, vector<Segment>& p_doneChunks) const;
+		void getChunksVisualisation(std::vector<pair<Segment, Segment>>& p_runnigChunksAndDownloadBytes, std::vector<Segment>& p_doneChunks) const;
 		bool isChunkDownloaded(int64_t startPos, int64_t& len) const;
 		void setOverlapped(const Segment& p_segment, const bool p_isOverlapped);
 		/**

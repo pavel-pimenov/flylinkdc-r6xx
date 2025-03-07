@@ -34,7 +34,7 @@ namespace ZenLib
 //---------------------------------------------------------------------------
 // Constructors
 Translation::Translation()
-: std::map<ZenLib::Ztring, ZenLib::Ztring> (), Max()
+: std::map<ZenLib::Ztring, ZenLib::Ztring> ()
 {
     Separator[0]=EOL;
     Separator[1]=__T(";");

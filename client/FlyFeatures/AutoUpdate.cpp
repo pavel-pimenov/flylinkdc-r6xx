@@ -139,7 +139,7 @@ string AutoUpdate::getUpdateFilesList(const string& p_componentName,
 									  const string& p_rootNode,
                                       const string& p_file,
                                       const string& p_descr,
-                                      unique_ptr<AutoUpdateObject>& p_autoUpdateObject,
+                                      std::unique_ptr<AutoUpdateObject>& p_autoUpdateObject,
                                       string& p_base_update_url)
 {
 	AppendUriSeparator(p_serverUrl);
@@ -557,8 +557,6 @@ bool AutoUpdate::needUpdateFile(const AutoUpdateFile& p_file, const string& p_ou
 	filePath += p_file.m_sPath;
 	AppendPathSeparator(filePath);
 	filePath += p_file.m_sName;
-	
-	int64_t outFileSize = 0;
 	
 	const FileFindIter fiter(filePath);
 	if (fiter != FileFindIter::end)
