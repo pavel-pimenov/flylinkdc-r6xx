@@ -263,6 +263,7 @@
     <ClCompile Include="Source\MediaInfo\Video\File_Av1.cpp" />
     <ClCompile Include="Source\MediaInfo\Video\File_Avc.cpp" />
     <ClCompile Include="Source\MediaInfo\Video\File_Avc_Duplicate.cpp" />
+    <ClCompile Include="Source\MediaInfo\Video\File_Avs3V.cpp" />
     <ClCompile Include="Source\MediaInfo\Video\File_AvsV.cpp" />
     <ClCompile Include="Source\MediaInfo\Video\File_AfdBarData.cpp" />
     <ClCompile Include="Source\MediaInfo\Video\File_Canopus.cpp" />
@@ -273,6 +274,7 @@
     <ClCompile Include="Source\MediaInfo\Video\File_Flic.cpp" />
     <ClCompile Include="Source\MediaInfo\Video\File_Fraps.cpp" />
     <ClCompile Include="Source\MediaInfo\Video\File_H263.cpp" />
+    <ClCompile Include="Source\MediaInfo\Video\File_HdrVividMetadata.cpp" />
     <ClCompile Include="Source\MediaInfo\Video\File_Hevc.cpp" />
     <ClCompile Include="Source\MediaInfo\Video\File_HuffYuv.cpp" />
     <ClCompile Include="Source\MediaInfo\Video\File_Lagarith.cpp" />
@@ -541,6 +543,7 @@
     <ClInclude Include="Source\MediaInfo\Video\File_Aic.h" />
     <ClInclude Include="Source\MediaInfo\Video\File_Av1.h" />
     <ClInclude Include="Source\MediaInfo\Video\File_Avc.h" />
+    <ClInclude Include="Source\MediaInfo\Video\File_Avs3V.h" />
     <ClInclude Include="Source\MediaInfo\Video\File_AvsV.h" />
     <ClInclude Include="Source\MediaInfo\Video\File_AfdBarData.h" />
     <ClInclude Include="Source\MediaInfo\Video\File_Canopus.h" />
@@ -551,6 +554,7 @@
     <ClInclude Include="Source\MediaInfo\Video\File_Flic.h" />
     <ClInclude Include="Source\MediaInfo\Video\File_Fraps.h" />
     <ClInclude Include="Source\MediaInfo\Video\File_H263.h" />
+    <ClInclude Include="Source\MediaInfo\Video\File_HdrVividMetadata.h" />
     <ClInclude Include="Source\MediaInfo\Video\File_Hevc.h" />
     <ClInclude Include="Source\MediaInfo\Video\File_HuffYuv.h" />
     <ClInclude Include="Source\MediaInfo\Video\File_Lagarith.h" />

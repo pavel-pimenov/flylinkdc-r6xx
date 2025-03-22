@@ -1,11 +1,11 @@
 /*
+
 Copyright (c) 2025, Arvid Norberg
 All rights reserved.
 
 You may use, distribute and modify this code under the terms of the BSD license,
 see LICENSE file.
 */
-
 
 #include "libtorrent/config.hpp"
 
