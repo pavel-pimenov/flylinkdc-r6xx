@@ -4,9 +4,6 @@
     <ClCompile Include="boost\libs\thread\src\win32\thread.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="boost\libs\thread\src\tss_null.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="boost\libs\system\src\error_code.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
