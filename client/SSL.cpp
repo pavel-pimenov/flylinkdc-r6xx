@@ -18,8 +18,12 @@
 
 #include "stdinc.h"
 #include "SSL.h"
-
 #include "File.h"
+
+namespace boost
+{
+	void tss_cleanup_implemented() {}
+}
 
 namespace dcpp {
 

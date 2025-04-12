@@ -83,7 +83,7 @@ namespace boost
 
         void create_current_thread_tls_key()
         {
-            // [-] FlylinkDC++ tss_cleanup_implemented(); // if anyone uses TSS, we need the cleanup linked in
+            tss_cleanup_implemented(); // if anyone uses TSS, we need the cleanup linked in
 #if !BOOST_PLAT_WINDOWS_RUNTIME
             current_thread_tls_key=TlsAlloc();
             BOOST_ASSERT(current_thread_tls_key!=TLS_OUT_OF_INDEXES);

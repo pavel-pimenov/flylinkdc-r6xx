@@ -18,7 +18,6 @@
 
 #include "stdinc.h"
 
-
 #include <future>
 #include "flyServer.h"
 #include "../client/Socket.h"
