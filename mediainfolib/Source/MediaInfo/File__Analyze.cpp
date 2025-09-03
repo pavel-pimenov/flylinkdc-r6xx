@@ -833,7 +833,7 @@ void File__Analyze::Open_Buffer_Init (int64u File_Size_)
 
 void File__Analyze::Open_Buffer_Init (File__Analyze* Sub)
 {
-    Open_Buffer_Init(Sub, File_Size);
+    Open_Buffer_Init(Sub, File_Size == (int64u)-1 ? (int64u)-1 : (File_Size - Element_Offset));
 }
 
 void File__Analyze::Open_Buffer_Init (File__Analyze* Sub, int64u File_Size_)
@@ -1348,6 +1348,13 @@ void File__Analyze::Open_Buffer_Continue (File__Analyze* Sub, const int8u* ToAdd
     //Sub
     if (Sub->File_GoTo!=(int64u)-1)
         Sub->File_GoTo=(int64u)-1;
+    if (Sub->MustAdaptSubOffsets) {
+        auto NewOffset = File_Offset + Buffer_Offset + Element_Offset;
+        auto OldOffset = Sub->File_Offset + Sub->Buffer_Size;
+        auto DiffOffset = NewOffset - OldOffset;
+        for (size_t i = 0; i <= Sub->Element_Level; i++)
+            Sub->Element[i].Next += DiffOffset;
+    }
     Sub->File_Offset=File_Offset+Buffer_Offset+Element_Offset;
     if (Sub->File_Size!=File_Size)
     {
@@ -2130,34 +2137,54 @@ bool File__Analyze::FileHeader_Begin_XML(XMLDocument &Document)
     }
 
     //XML header
-    Ztring Data;
-         if ((Buffer[0]=='<'
-           && Buffer[1]==0x00)
-          || (Buffer[0]==0xFF
-           && Buffer[1]==0xFE
-           && Buffer[2]=='<'
-           && Buffer[3]==0x00))
-        Data.From_UTF16LE((const char*)Buffer, Buffer_Size);
-    else if ((Buffer[0]==0x00
-           && Buffer[1]=='<')
-          || (Buffer[0]==0xFE
-           && Buffer[1]==0xFF
-           && Buffer[2]==0x00
-           && Buffer[3]=='<'))
-        Data.From_UTF16BE((const char*)Buffer, Buffer_Size);
-    else if ((Buffer[0]=='<')
-          || (Buffer[0]==0xEF
-           && Buffer[1]==0xBB
-           && Buffer[2]==0xBF
-           && Buffer[3]=='<'))
-        Data.From_UTF8((const char*)Buffer, Buffer_Size);
-    else
+    auto BOM2 = CC2(Buffer);
+    auto BOM = CC3(Buffer);
+    switch (BOM)
+    {
+    case 0xEFBBBF:
+        Buffer_Offset = 3;
+        break;
+    }
+    switch (BOM2)
+    {
+    case 0xFFFE:
+    case 0xFEFF:
+        Buffer_Offset = 2;
+        BOM = BOM2;
+        break;
+    }
+    while (Buffer_Offset < Buffer_Size) {
+        switch (Buffer[Buffer_Offset]) {
+        case '\r':
+        case '\n':
+        case '\t':
+        case ' ':
+            Buffer_Offset++;
+            continue;
+        }
+        break;
+    }
+    if (Buffer_Offset >= Buffer_Size || Buffer[Buffer_Offset] != '<')
     {
         Reject();
-        return false;
+        return false; 
     }
 
-    string DataUTF8=Data.To_UTF8();
+    string DataUTF8;
+    auto Buffer_XML = (const char*)Buffer + Buffer_Offset;
+    auto Size_XML = Buffer_Size - Buffer_Offset;
+    switch (BOM) {
+    case 0xFFFE:
+        DataUTF8 = Ztring().From_UTF16LE(Buffer_XML, Size_XML).To_UTF8();
+        break;
+    case 0xFEFF:
+        DataUTF8 = Ztring().From_UTF16BE(Buffer_XML, Size_XML).To_UTF8();
+        break;
+    default:
+        DataUTF8.assign(Buffer_XML, Size_XML);
+        break;
+    }
+
     if (Document.Parse(DataUTF8.c_str()))
     {
         Reject();
@@ -2548,7 +2575,6 @@ bool File__Analyze::FileHeader_Manage()
     if ((Buffer_Size && Buffer_Offset+Element_Offset>Buffer_Size) || (sizeof(size_t)<sizeof(int64u) && Buffer_Offset+Element_Offset>=(int64u)(size_t)-1))
     {
         GoTo(File_Offset+Buffer_Offset+Element_Offset);
-        return false;
     }
     else
     {
@@ -2591,7 +2617,6 @@ bool File__Analyze::FileHeader_Manage()
     if ((Buffer_Size && Buffer_Offset+Element_Offset>Buffer_Size) || (sizeof(size_t)<sizeof(int64u) && Buffer_Offset+Element_Offset>=(int64u)(size_t)-1))
     {
         GoTo(File_Offset+Buffer_Offset+Element_Offset);
-        return false;
     }
     else
     {
@@ -2784,7 +2809,7 @@ void File__Analyze::Header_Fill_Size(int64u Size)
         Element[0].Next=File_Offset+Buffer_Offset+Size;
     else if (File_Offset+Buffer_Offset+Size>Element[Element_Level-2].Next)
     {
-        if (!IsSub || (File_Offset + Buffer_Size < File_Size && File_Size - (File_Offset + Buffer_Size) >= 0x10000)) { //TODO: good support of end of TS dumps
+        if (Element_IsComplete_Get() && (!IsSub || (File_Offset + Buffer_Size < File_Size && File_Size - (File_Offset + Buffer_Size) >= 0x10000))) { //TODO: good support of end of TS dumps
             auto Name = CreateElementName();
             if (!Name.empty()) {
                 Name += ' ';
@@ -3444,7 +3469,6 @@ void File__Analyze::Accept ()
             bool MustElementBegin=Element_Level?true:false;
             if (Element_Level>0)
                 Element_End0(); //Element
-            Info(ParserName+", accepted");
             if (MustElementBegin)
                 Element_Level++;
         }
@@ -3524,7 +3548,6 @@ void File__Analyze::Fill ()
             bool MustElementBegin=Element_Level?true:false;
             if (Element_Level>0)
                 Element_End0(); //Element
-            Info(ParserName+", filling");
             if (MustElementBegin)
                 Element_Level++;
         }
@@ -3611,7 +3634,6 @@ void File__Analyze::ForceFinish ()
             bool MustElementBegin=Element_Level?true:false;
             if (Element_Level>0)
                 Element_End0(); //Element
-            Info(ParserName+", finished");
             if (MustElementBegin)
                 Element_Level++;
         }

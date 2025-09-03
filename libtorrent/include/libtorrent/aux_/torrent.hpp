@@ -13,6 +13,7 @@ Copyright (c) 2019, ghbplayer
 Copyright (c) 2020, Paul-Louis Ageneau
 Copyright (c) 2020, Viktor Elofsson
 Copyright (c) 2021, AdvenT
+Copyright (c) 2025, Vladimir Golovnev (glassez)
 Copyright (c) 2021, Mark Scott
 All rights reserved.
 
@@ -249,7 +250,12 @@ namespace libtorrent::aux {
 
 		// TODO: make this a raw pointer. perhaps keep the shared_ptr
 		// around further down the object to maintain an owner
+#if TORRENT_ABI_VERSION < 4
 		std::shared_ptr<torrent_info> m_torrent_file;
+#else
+		std::shared_ptr<torrent_info const> m_torrent_file;
+#endif
+		renamed_files m_renamed_files;
 
 		// This is the sum of all non-pad file sizes. In the next major version
 		// this is stored in file_storage and no longer need to be kept here.
@@ -504,6 +510,7 @@ namespace libtorrent::aux {
 		void maybe_connect_web_seeds();
 
 		std::string name() const;
+		aux::allocation_slot name_idx(aux::stack_allocator& a);
 
 		stat statistics() const { return m_stat; }
 		std::optional<std::int64_t> bytes_left() const;
@@ -573,6 +580,8 @@ namespace libtorrent::aux {
 			m_need_save_resume_data |= flag;
 			state_updated();
 		}
+
+		add_torrent_params get_resume_data(resume_data_flags_t flags) const;
 
 		bool is_auto_managed() const { return m_auto_managed; }
 		void auto_managed(bool a);
@@ -1392,6 +1401,7 @@ namespace libtorrent::aux {
 #endif
 
 		std::string m_save_path;
+		aux::cached_slot m_name_idx;
 
 #ifndef TORRENT_DISABLE_PREDICTIVE_PIECES
 		// this is a list of all pieces that we have announced
@@ -1450,7 +1460,7 @@ namespace libtorrent::aux {
 		// in this swarm
 		std::time_t m_swarm_last_seen_complete = 0;
 
-		// keep a copy if the info-hash here, so it can be accessed from multiple
+		// keep a copy of the info-hash here, so it can be accessed from multiple
 		// threads, and be cheap to access from the client
 		info_hash_t m_info_hash;
 

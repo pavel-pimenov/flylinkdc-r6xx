@@ -75,7 +75,7 @@ static void init_functable(void) {
     {
         ft.chunkmemset_safe = &chunkmemset_safe_sse2;
         ft.chunksize = &chunksize_sse2;
-#if !defined(WITHOUT_CHORBA) && !defined(NO_CHORBA_SSE2)
+#if !defined(WITHOUT_CHORBA) && !defined(NO_CHORBA_SSE)
         ft.crc32 = &crc32_chorba_sse2;
 #endif
         ft.inflate_fast = &inflate_fast_sse2;
@@ -95,6 +95,16 @@ static void init_functable(void) {
         ft.inflate_fast = &inflate_fast_ssse3;
     }
 #endif
+
+    // X86 - SSE4.1
+#ifdef X86_SSE41
+    if (cf.x86.has_sse41) {
+#if !defined(WITHOUT_CHORBA) && !defined(NO_CHORBA_SSE)
+        ft.crc32 = &crc32_chorba_sse41;
+#endif
+    }
+#endif
+
     // X86 - SSE4.2
 #ifdef X86_SSE42
     if (cf.x86.has_sse42) {
@@ -139,6 +149,11 @@ static void init_functable(void) {
         ft.chunkmemset_safe = &chunkmemset_safe_avx512;
         ft.chunksize = &chunksize_avx512;
         ft.inflate_fast = &inflate_fast_avx512;
+#  ifdef HAVE_BUILTIN_CTZLL
+        ft.compare256 = &compare256_avx512;
+        ft.longest_match = &longest_match_avx512;
+        ft.longest_match_slow = &longest_match_slow_avx512;
+#  endif
     }
 #endif
 #ifdef X86_AVX512VNNI
@@ -241,11 +256,56 @@ static void init_functable(void) {
     }
 #endif
 
+    // RISCV - ZBC
+#ifdef RISCV_CRC32_ZBC
+    if (cf.riscv.has_zbc) {
+        ft.crc32 = &crc32_riscv64_zbc;
+    }
+#endif
 
     // S390
 #ifdef S390_CRC32_VX
     if (cf.s390.has_vx)
         ft.crc32 = crc32_s390_vx;
+#endif
+
+    // LOONGARCH
+#ifdef LOONGARCH_CRC
+    if (cf.loongarch.has_crc) {
+        ft.crc32 = crc32_loongarch64;
+        ft.crc32_fold = &crc32_fold_loongarch64;
+        ft.crc32_fold_copy = &crc32_fold_copy_loongarch64;
+    }
+#endif
+#ifdef LOONGARCH_LSX
+    if (cf.loongarch.has_lsx) {
+        ft.adler32 = &adler32_lsx;
+        ft.adler32_fold_copy = &adler32_fold_copy_lsx;
+        ft.slide_hash = slide_hash_lsx;
+#  ifdef HAVE_BUILTIN_CTZ
+        ft.compare256 = &compare256_lsx;
+        ft.longest_match = &longest_match_lsx;
+        ft.longest_match_slow = &longest_match_slow_lsx;
+#  endif
+        ft.chunksize = &chunksize_lsx;
+        ft.chunkmemset_safe = &chunkmemset_safe_lsx;
+        ft.inflate_fast = &inflate_fast_lsx;
+    }
+#endif
+#ifdef LOONGARCH_LASX
+    if (cf.loongarch.has_lasx) {
+        ft.adler32 = &adler32_lasx;
+        ft.adler32_fold_copy = &adler32_fold_copy_lasx;
+        ft.slide_hash = slide_hash_lasx;
+#  ifdef HAVE_BUILTIN_CTZ
+        ft.compare256 = &compare256_lasx;
+        ft.longest_match = &longest_match_lasx;
+        ft.longest_match_slow = &longest_match_slow_lasx;
+#  endif
+        ft.chunksize = &chunksize_lasx;
+        ft.chunkmemset_safe = &chunkmemset_safe_lasx;
+        ft.inflate_fast = &inflate_fast_lasx;
+    }
 #endif
 
     // Assign function pointers individually for atomic operation

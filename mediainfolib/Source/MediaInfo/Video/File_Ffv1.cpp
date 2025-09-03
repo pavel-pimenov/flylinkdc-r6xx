@@ -959,12 +959,9 @@ void File_Ffv1::Parameters()
     Element_Begin1("Parameters");
 
     //Parsing
-    states States;
+    states States, States2[states_size];
     memset(States, 128, states_size);
-    int32u coder_type, colorspace_type, bits_per_raw_sample=8, intra=0;
-
-    KeyFramePassed = true;
-    micro_version = 0;
+    memset(States2, 128, states_size*states_size);
     Get_RU (States, version,                                    "version");
     if ( ConfigurationRecord_IsPresent && version<=1)
     {
@@ -1131,7 +1128,7 @@ void File_Ffv1::Parameters()
                 for (size_t k = 0; k < states_size; k++)
                 {
                     int32s value;
-                    Get_RS (States, value,                  "initial_state_delta");
+                    Get_RS (States2[k], value,              "initial_state_delta");
                     if (coder_type)
                         plane_states[i][j][k] = value;
                 }
@@ -1983,15 +1980,7 @@ void File_Ffv1::copy_plane_states_to_slice(int8u plane_count)
                 current_slice->plane_states[i][j] = new int8u [states_size];
             for (size_t k = 0; k < states_size; k++)
             {
-                const auto ps = plane_states[idx];
-                if (ps) // https://github.com/MediaArea/MediaInfoLib/issues/1853
-                {
-                    current_slice->plane_states[i][j][k] = ps[j][k];
-                }
-                else
-                {
-                    current_slice->plane_states[i][j][k] = 0;
-                }
+                current_slice->plane_states[i][j][k] = plane_states[idx][j][k];
             }
         }
     }

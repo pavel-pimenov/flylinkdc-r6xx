@@ -4,15 +4,9 @@
  *  be found in the License.html file in the root of the source tree.
  */
 
-//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-//
-// Information about MPEG files
-//
-//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
 //---------------------------------------------------------------------------
-#ifndef MediaInfo_MpegH
-#define MediaInfo_MpegH
+#ifndef MediaInfo_File__MultipleParsingH
+#define MediaInfo_File__MultipleParsingH
 //---------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------
@@ -37,6 +31,9 @@ public :
     ~File__MultipleParsing();
 
 private :
+    //Streams management
+    void Streams_Finish();
+
     //Buffer - Global
     void Read_Buffer_Init();
     void Read_Buffer_Unsynched();

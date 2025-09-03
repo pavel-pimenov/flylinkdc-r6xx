@@ -2361,6 +2361,8 @@ retry:
 			, m_settings.get_int(settings_pack::i2p_outbound_quantity)
 			, m_settings.get_int(settings_pack::i2p_inbound_length)
 			, m_settings.get_int(settings_pack::i2p_outbound_length)
+			, m_settings.get_int(settings_pack::i2p_inbound_length_variance)
+			, m_settings.get_int(settings_pack::i2p_outbound_length_variance)
 		};
 		m_i2p_conn.open(m_settings.get_str(settings_pack::i2p_hostname)
 			, m_settings.get_int(settings_pack::i2p_port)
@@ -4893,11 +4895,6 @@ retry:
 		// the scope
 		auto abort_torrent = aux::scope_end([&]{ if (torrent_ptr) torrent_ptr->abort(); });
 
-#ifndef TORRENT_DISABLE_EXTENSIONS
-		auto extensions = std::move(params.extensions);
-		auto const userdata = std::move(params.userdata);
-#endif
-
 		// copy the most important fields from params to pass back in the
 		// add_torrent_alert
 		add_torrent_params alert_params;
@@ -4907,6 +4904,11 @@ retry:
 		alert_params.save_path = params.save_path;
 		alert_params.userdata = params.userdata;
 		alert_params.trackerid = params.trackerid;
+
+#ifndef TORRENT_DISABLE_EXTENSIONS
+		auto extensions = std::move(params.extensions);
+		auto const userdata = params.userdata;
+#endif
 
 		auto const flags = params.flags;
 
@@ -6396,7 +6398,7 @@ retry:
 				{
 					session_log(">>> SET_DSCP [ tcp (%s %d) value: %x e: %s ]"
 						, l->sock->local_endpoint().address().to_string().c_str()
-						, l->sock->local_endpoint().port(), value, ec.message().c_str());
+						, l->sock->local_endpoint().port(), std::uint32_t(value), ec.message().c_str());
 				}
 #endif
 			}
@@ -6412,7 +6414,7 @@ retry:
 					session_log(">>> SET_DSCP [ udp (%s %d) value: %x e: %s ]"
 						, l->udp_sock->sock.local_endpoint().address().to_string().c_str()
 						, l->udp_sock->sock.local_port()
-						, value, ec.message().c_str());
+						, std::uint32_t(value), ec.message().c_str());
 				}
 #endif
 			}

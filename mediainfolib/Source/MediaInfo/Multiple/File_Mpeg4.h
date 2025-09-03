@@ -14,6 +14,7 @@
 #include "MediaInfo/File__HasReferences.h"
 #include "MediaInfo/MediaInfo_Internal.h"
 #include "MediaInfo/Multiple/File_Mpeg4_Descriptors.h"
+#include <memory>
 class File_MpegPs;
 //---------------------------------------------------------------------------
 
@@ -206,6 +207,9 @@ private :
     void moov_trak_mdia_minf_stbl_stsd_mebx_keys();
     void moov_trak_mdia_minf_stbl_stsd_mebx_keys_PHDR();
     void moov_trak_mdia_minf_stbl_stsd_mebx_keys_PHDR_keyd();
+    void moov_trak_mdia_minf_stbl_stsd_mebx_keys_xxxx();
+    void moov_trak_mdia_minf_stbl_stsd_mebx_keys_xxxx_keyd();
+    void moov_trak_mdia_minf_stbl_stsd_mebx_keys_xxxx_dtyp();
     void moov_trak_mdia_minf_stbl_stsd_stpp();
     void moov_trak_mdia_minf_stbl_stsd_stpp_btrt() {moov_trak_mdia_minf_stbl_stsd_xxxx_btrt();}
     void moov_trak_mdia_minf_stbl_stsd_text();
@@ -219,6 +223,7 @@ private :
     void moov_trak_mdia_minf_stbl_stsd_xxxxVideo();
     void moov_trak_mdia_minf_stbl_stsd_xxxxOthers(const string& CodecIDAddition);
     void moov_trak_mdia_minf_stbl_stsd_xxxx_alac();
+    void moov_trak_mdia_minf_stbl_stsd_xxxx_amve();
     void moov_trak_mdia_minf_stbl_stsd_xxxx_AALP();
     void moov_trak_mdia_minf_stbl_stsd_xxxx_ACLR();
     void moov_trak_mdia_minf_stbl_stsd_xxxx_APRG();
@@ -260,6 +265,7 @@ private :
     void moov_trak_mdia_minf_stbl_stsd_xxxx_jp2h() {jp2h();}
     void moov_trak_mdia_minf_stbl_stsd_xxxx_jp2h_colr() {jp2h_colr();}
     void moov_trak_mdia_minf_stbl_stsd_xxxx_jp2h_ihdr() {jp2h_ihdr();}
+    void moov_trak_mdia_minf_stbl_stsd_xxxx_iacb();
     void moov_trak_mdia_minf_stbl_stsd_xxxx_lhvC();
     void moov_trak_mdia_minf_stbl_stsd_xxxx_mdcv();
     void moov_trak_mdia_minf_stbl_stsd_xxxx_mhaC();
@@ -271,6 +277,15 @@ private :
     void moov_trak_mdia_minf_stbl_stsd_xxxx_sinf_imif();
     void moov_trak_mdia_minf_stbl_stsd_xxxx_sinf_schm();
     void moov_trak_mdia_minf_stbl_stsd_xxxx_sinf_schi();
+    void moov_trak_mdia_minf_stbl_stsd_xxxx_st3d();
+    void moov_trak_mdia_minf_stbl_stsd_xxxx_sv3d();
+    void moov_trak_mdia_minf_stbl_stsd_xxxx_sv3d_svhd();
+    void moov_trak_mdia_minf_stbl_stsd_xxxx_sv3d_proj();
+    void moov_trak_mdia_minf_stbl_stsd_xxxx_sv3d_proj_prhd();
+    void moov_trak_mdia_minf_stbl_stsd_xxxx_sv3d_proj_cbmp();
+    void moov_trak_mdia_minf_stbl_stsd_xxxx_sv3d_proj_equi();
+    void moov_trak_mdia_minf_stbl_stsd_xxxx_sv3d_proj_mshp();
+    void moov_trak_mdia_minf_stbl_stsd_xxxx_sv3d_proj_mshp_mesh();
     void moov_trak_mdia_minf_stbl_stsd_xxxx_udts();
     void moov_trak_mdia_minf_stbl_stsd_xxxx_vexu();
     void moov_trak_mdia_minf_stbl_stsd_xxxx_vexu_eyes();
@@ -330,11 +345,12 @@ private :
     void moov_trak_udta_free() { moov_udta_free(); }
     void moov_trak_udta_Xtra() { moov_udta_Xtra(); }
     void moov_trak_udta_xxxx();
+    void moov_trak_uuid();
+    void moov_trak_uuid_SphericalVideo();
     void moov_udta();
     void moov_udta_AllF();
     void moov_udta_chpl();
     void moov_udta_clsf();
-    void moov_udta_cprt();
     void moov_udta_date();
     void moov_udta_DcMD();
     void moov_udta_DcMD_Cmbo();
@@ -400,9 +416,6 @@ private :
     void wide();
 
     //Helpers
-    bool Element_Level_Get();
-    bool Element_Name_Get();
-    bool Element_Size_Get();
     Ztring Language_Get(int16u Language);
     bool IsQt();
     enum method
@@ -419,8 +432,16 @@ private :
     void Descriptors();
     void TimeCode_Associate(int32u TrackID);
     void AddCodecConfigurationBoxInfo();
+    void Loop_CheckValue(int32u& Value, int64u RemainingSize, int8u MinBlockSize, const char* Name);
+    void Loop_CheckValue(int32u& Value, int8u MinBlockSize, const char* Name);
+    void Loop_CheckValue(int16u& Value, int8u MinBlockSize, const char* Name) { int32u Value2 = Value; Loop_CheckValue(Value2, MinBlockSize, Name); Value = Value2; }
+    void Loop_CheckValue(int8u& Value, int8u MinBlockSize, const char* Name) { int32u Value2 = Value; Loop_CheckValue(Value2, MinBlockSize, Name); Value = Value2; }
+    void Loop_CheckValue_BS(int32u& Value, int8u MinBlockSize, const char* Name);
+    void Loop_CheckValue_BS(int16u& Value, int8u MinBlockSize, const char* Name) { int32u Value2 = Value; Loop_CheckValue_BS(Value2, MinBlockSize, Name); Value = Value2; }
+    void Loop_CheckValue_BS(int8u& Value, int8u MinBlockSize, const char* Name) { int32u Value2 = Value; Loop_CheckValue_BS(Value2, MinBlockSize, Name); Value = Value2; }
 
     //Temp
+    int128u                                 Name_UUID;
     bool List;
     bool                                    mdat_MustParse;
     int32u                                  moov_cmov_dcom_Compressor;
@@ -456,6 +477,9 @@ private :
     size_t                                  StreamOrder;
     int32u                                  meta_pitm_item_ID;
     std::vector<std::vector<int32u> >       meta_iprp_ipma_Entries;
+    #if MEDIAINFO_TRACE
+    int64u                                  meta_iprp_ipco_File_Offset;
+    #endif
     int8u*                                  meta_iprp_ipco_Buffer;
     size_t                                  meta_iprp_ipco_Buffer_Size; //Used as property_index if no buffer
     int16u                                  channelcount;
@@ -562,6 +586,7 @@ private :
         bool                    AllForcedSamples;
         bool                    IsImage;
         bool                    IsCaption;
+        bool                    MayHaveCaption;
         bool                    tkhd_Found;
         int32u                  TrackID;
         std::vector<mdat_Pos_Type> mdat_Pos;
@@ -661,7 +686,9 @@ private :
             AllForcedSamples=false;
             IsImage=false;
             IsCaption=false;
+            MayHaveCaption=false;
             tkhd_Found=false;
+            TrackID = 0;
             CleanAperture_Width=0;
             CleanAperture_Height=0;
             CleanAperture_PixelAspectRatio=0;
@@ -737,6 +764,17 @@ private :
     #if MEDIAINFO_CONFORMANCE
         bool            IsCmaf;
     #endif
+
+    //meta_idat parsing
+    struct idat_item {
+        int64u offset{};
+        int64u length{};
+        std::unique_ptr<File__Analyze> parser;
+    };
+    std::map<int16u, idat_item> idat_items;
+
+    //Gain map
+    std::shared_ptr<void> GainMap_metadata_ISO;
 };
 
 } //NameSpace

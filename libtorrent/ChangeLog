@@ -1,5 +1,6 @@
 2.1.0 not released
 
+	* deprecated remap_files(), and prevent it from breaking v2 torrents
 	* fix peer_info holding an i2p destination
 	* implement i2p_pex, peer exchange support for i2p torrents
 	* deprecate torrent_alert::torrent_name()
@@ -19,7 +20,15 @@
 
 2.0.12
 
+	* add option to send host header in HTTP proxy CONNECT command
+	* cache DNS failures for a shorter time
+	* file_renamed_alert is always posted, regardless of alert mask
+	* add feature to request resume data synchronously
+	* don't leak file descriptors to child processes (O_CLOEXEC)
+	* optimize the utp resend
+	* optimize tracker announcements
 	* fix handling of invalid filenames
+	* add support for I2CP inbound.lengthVariance and outbound.lengthVariance tunnel settings
 
 2.0.11 released
 

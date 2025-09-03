@@ -308,9 +308,9 @@ void File__Analyze::Get_BFP4(int8u Bits, float32 &Info, const char* Name)
     int32u Fraction=BS->Get4(32-Bits);
     BS_End();
     Element_Offset-=4; //Because of BS_End()
-    if (Integer>=(1<<Bits)/2)
+    if (Bits && Integer>=(1<<Bits)/2)
         Integer-=1<<Bits;
-    Info=Integer+((float32)Fraction)/(1<<(32-Bits));
+    Info=Integer+((float32)Fraction)/(1LL<<(32-Bits));
     if (Trace_Activated) Param(Name, Info);
     Element_Offset+=4;
 }
@@ -1924,6 +1924,13 @@ void File__Analyze::Get_UTF8(int64u Bytes, Ztring &Info, const char* Name)
     Info.From_UTF8((const char*)(Buffer+Buffer_Offset+(size_t)Element_Offset), (size_t)Bytes);
     if (Trace_Activated && Bytes) Param(Name, Info);
     Element_Offset+=Bytes;
+}
+
+//---------------------------------------------------------------------------
+void File__Analyze::Peek_UTF8(int64u Bytes, Ztring &Info)
+{
+    INTEGRITY_SIZE_ATLEAST_STRING(Bytes);
+    Info.From_UTF8((const char*)(Buffer+Buffer_Offset+(size_t)Element_Offset), (size_t)Bytes);
 }
 
 //---------------------------------------------------------------------------

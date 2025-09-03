@@ -120,6 +120,7 @@
     <ClInclude Include="include\libtorrent\aux_\request_blocks.hpp" />
     <ClInclude Include="include\libtorrent\aux_\resolver.hpp" />
     <ClInclude Include="include\libtorrent\aux_\resolver_interface.hpp" />
+    <ClInclude Include="include\libtorrent\aux_\resolve_duplicate_filenames.hpp" />
     <ClInclude Include="include\libtorrent\aux_\resolve_links.hpp" />
     <ClInclude Include="include\libtorrent\aux_\route.h" />
     <ClInclude Include="include\libtorrent\aux_\rtc_signaling.hpp" />
@@ -413,6 +414,7 @@
     <ClCompile Include="src\receive_buffer.cpp" />
     <ClCompile Include="src\request_blocks.cpp" />
     <ClCompile Include="src\resolver.cpp" />
+    <ClCompile Include="src\resolve_duplicate_filenames.cpp" />
     <ClCompile Include="src\resolve_links.cpp" />
     <ClCompile Include="src\rtc_signaling.cpp" />
     <ClCompile Include="src\rtc_stream.cpp" />

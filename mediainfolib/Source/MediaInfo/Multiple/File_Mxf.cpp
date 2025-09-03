@@ -6627,7 +6627,6 @@ void File_Mxf::Data_Parse()
                 {
                     Fill();
                     Open_Buffer_Unsynch();
-                    Finish();
                 }
             }
         }

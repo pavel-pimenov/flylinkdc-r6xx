@@ -851,6 +851,9 @@
     <ClInclude Include="include\libtorrent\extensions\i2p_pex.hpp">
       <Filter>Header Files\libtorrent\extensions</Filter>
     </ClInclude>
+    <ClInclude Include="include\libtorrent\aux_\resolve_duplicate_filenames.hpp">
+      <Filter>Header Files\libtorrent\aux_</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\kademlia\dht_storage.cpp">
@@ -1367,6 +1370,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\i2p_pex.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\resolve_duplicate_filenames.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

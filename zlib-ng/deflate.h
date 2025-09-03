@@ -227,7 +227,7 @@ struct ALIGNED_(64) internal_state {
 #   define max_insert_length  max_lazy_match
     /* Insert new strings in the hash table only if the match length is not
      * greater than this length. This saves time but degrades compression.
-     * max_insert_length is used only for compression levels <= 3.
+     * max_insert_length is used only for compression levels <= 6.
      */
 
     update_hash_cb          update_hash;
@@ -432,7 +432,6 @@ void Z_INTERNAL zng_tr_flush_block(deflate_state *s, char *buf, uint32_t stored_
 void Z_INTERNAL zng_tr_flush_bits(deflate_state *s);
 void Z_INTERNAL zng_tr_align(deflate_state *s);
 void Z_INTERNAL zng_tr_stored_block(deflate_state *s, char *buf, uint32_t stored_len, int last);
-uint16_t Z_INTERNAL PREFIX(bi_reverse)(unsigned code, int len);
 void Z_INTERNAL PREFIX(flush_pending)(PREFIX3(streamp) strm);
 #define d_code(dist) ((dist) < 256 ? zng_dist_code[dist] : zng_dist_code[256+((dist)>>7)])
 /* Mapping from a distance to a distance code. dist is the distance - 1 and

@@ -96,6 +96,9 @@
     <Filter Include="ThirdParty\tfsxml">
       <UniqueIdentifier>{4f92a948-5ddc-49f2-9f5e-b59b41be4d6a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ThirdParty\fmt">
+      <UniqueIdentifier>{a13eb776-9cfd-4415-908a-daf323bbdf6e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\MediaInfo\File__Analyze.cpp">
@@ -824,6 +827,30 @@
     <ClCompile Include="Source\MediaInfo\Video\File_HdrVividMetadata.cpp">
       <Filter>Source Files\Video</Filter>
     </ClCompile>
+    <ClCompile Include="Source\MediaInfo\Image\File_GainMap.cpp">
+      <Filter>Source Files\Image</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ThirdParty\fmt\format.cc">
+      <Filter>ThirdParty\fmt</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\MediaInfo\Audio\File_Iamf.cpp">
+      <Filter>Source Files\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\MediaInfo\Tag\File_C2pa.cpp">
+      <Filter>Source Files\Tag</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\MediaInfo\Tag\File_Exif.cpp">
+      <Filter>Source Files\Tag</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\MediaInfo\Tag\File_Iim.cpp">
+      <Filter>Source Files\Tag</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\MediaInfo\Tag\File_SphericalVideo.cpp">
+      <Filter>Source Files\Tag</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\MediaInfo\Image\File_WebP.cpp">
+      <Filter>Source Files\Image</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\MediaInfo\File__Analyse_Automatic.h">
@@ -1545,6 +1572,33 @@
     </ClInclude>
     <ClInclude Include="Source\MediaInfo\Video\File_HdrVividMetadata.h">
       <Filter>Header Files\Video</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\MediaInfo\Image\File_GainMap.h">
+      <Filter>Header Files\Image</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ThirdParty\fmt\base.h">
+      <Filter>ThirdParty\fmt</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ThirdParty\fmt\format.h">
+      <Filter>ThirdParty\fmt</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ThirdParty\fmt\format-inl.h">
+      <Filter>ThirdParty\fmt</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\MediaInfo\Tag\File_C2pa.h">
+      <Filter>Source Files\Tag</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\MediaInfo\Tag\File_Exif.h">
+      <Filter>Source Files\Tag</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\MediaInfo\Tag\File_Iim.h">
+      <Filter>Source Files\Tag</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\MediaInfo\Image\File_WebP.h">
+      <Filter>Source Files\Image</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\MediaInfo\Tag\File_SphericalVideo.h">
+      <Filter>Source Files\Tag</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

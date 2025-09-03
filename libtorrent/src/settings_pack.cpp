@@ -213,6 +213,7 @@ namespace {
 		SET(allow_idna, false, nullptr),
 		SET(enable_set_file_valid_data, false, nullptr),
 		SET(socks5_udp_send_local_ep, false, nullptr),
+		SET(proxy_send_host_in_connect, false, nullptr),
 	}});
 
 	CONSTEXPR_SETTINGS
@@ -377,6 +378,8 @@ namespace {
 		SET(i2p_inbound_length, 3, nullptr),
 		SET(i2p_outbound_length, 3, nullptr),
 		SET(announce_port, 0, nullptr),
+		SET(i2p_inbound_length_variance, 0, nullptr),
+		SET(i2p_outbound_length_variance, 0, nullptr),
 		SET(min_websocket_announce_interval, 1 * 60, nullptr),
 		SET(webtorrent_connection_timeout, 2 * 60, nullptr)
 	}});
