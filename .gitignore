@@ -40,4 +40,5 @@ MakeDefs/MakeDefs.exe
 *.mmdb
 *.tar.gz
 GeoLite2-Country_*
+build-win
 
