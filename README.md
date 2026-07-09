@@ -1,8 +1,13 @@
 FlylinkDC++ r6xx
 ==============
 
-* Special thanks https://pvs-studio.com
-* http://www.softpedia.com/get/Internet/File-Sharing/FlylinkDC.shtml
+## SAST Tools
+
+[PVS-Studio](https://pvs-studio.com/pvs-studio/?utm_source=website&utm_medium=github&utm_campaign=open_source) - static analyzer for C, C++, C#, and Java code.
+
+## softpedia
+
+http://www.softpedia.com/get/Internet/File-Sharing/FlylinkDC.shtml
 
 ## Быстрый старт (кросс-компиляция под Windows из Ubuntu)
 
