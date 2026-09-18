@@ -1,19 +1,11 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
-echo "=== Установка необходимых пакетов ==="
-# sudo apt update
-# sudo apt install -y cmake mingw-w64
+source_dir="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
+build_dir="$source_dir/build-win"
 
-echo "=== Создание директории сборки ==="
-mkdir -p build-win
-cd build-win
-
-echo "=== Запуск CMake с тулчейном MinGW ==="
-cmake -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain-mingw64.cmake ..
-
-echo "=== Сборка проекта ==="
-make -j$(nproc)
-
-echo "=== Готово ==="
-echo "Исполняемый файл: $(pwd)/flylinkdc.exe"
+cmake -S "$source_dir" -B "$build_dir" \
+    -DCMAKE_TOOLCHAIN_FILE="$source_dir/cmake/Toolchain-mingw64.cmake" \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DBUILD_SHARED_LIBS=OFF
+cmake --build "$build_dir" --parallel "${JOBS:-$(nproc)}"
