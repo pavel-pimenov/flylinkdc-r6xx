@@ -78,23 +78,11 @@ static bool hardware_gcm(void) {
 }
 
 static const char g_ciphersuites[] =
-    "ECDHE-ECDSA-AES128-GCM-SHA256:"
+	
     "ECDHE-RSA-AES128-GCM-SHA256:"
-    "ECDHE-ECDSA-AES128-SHA256:"
+    "ECDHE-ECDSA-AES128-GCM-SHA256:"
     "ECDHE-RSA-AES128-SHA256:"
-    "ECDHE-ECDSA-AES128-SHA:"
-    "ECDHE-RSA-AES128-SHA:"
-    "DHE-RSA-AES128-SHA:"
-    "AES128-SHA:"
-    "ECDHE-ECDSA-AES256-GCM-SHA384:"
-    "ECDHE-RSA-AES256-GCM-SHA384:"
-    "ECDHE-ECDSA-AES256-SHA384:"
-    "ECDHE-RSA-AES256-SHA384:"
-    "ECDHE-ECDSA-AES256-SHA:"
-    "ECDHE-RSA-AES256-SHA:"
-    "AES256-GCM-SHA384:"
-    "AES256-SHA256:"
-    "AES256-SHA";
+    "ECDHE-ECDSA-AES256-GCM-SHA384";
     
 CryptoManager::CryptoManager()
 	:
@@ -177,8 +165,8 @@ void CryptoManager::setContextOptions(SSL_CTX* aCtx, bool aServer) {
 	// https://github.com/pavel-pimenov/flylinkdc-r5xx/issues/1737
 	const char ciphersuitesTls13[] =
 	    "TLS_AES_128_GCM_SHA256:"
-	    "TLS_AES_256_GCM_SHA384:"
-	    "TLS_CHACHA20_POLY1305_SHA256";
+	    "TLS_CHACHA20_POLY1305_SHA256:"
+	    "TLS_AES_256_GCM_SHA384";
 	    
 	SSL_CTX_set_ciphersuites(aCtx, ciphersuitesTls13);
 #endif
