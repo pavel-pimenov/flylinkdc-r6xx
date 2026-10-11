@@ -1,6 +1,12 @@
 ﻿timestamp,config,target,scope,minutes,warnings,errors,exe_bytes,exit,notes
 2026-10-11 21:34:22,Release,Rebuild,FlyLinkDC_2022.sln,2.21,0,0,20198400,0,"WPO+unified v143 verified"
 2026-10-11 21:36:15,Release,Rebuild,FlyLinkDC_2022.sln,2.13,0,0,20198400,0,"perf summary measured"
-2026-10-11 21:48:17,Debug,Rebuild,FlyLinkDC_2022.sln,0,79,0,0,53357056,0,code analysis off (test)
-2026-10-11 21:50:32,Debug,Rebuild,FlyLinkDC_2022.sln,2,02,260,0,0,1,code analysis on (baseline)
-2026-10-11 21:56:12,Debug,Build,FlyLinkDC_2022.sln,0,82,0,0,53357056,0,build only (no analysis)
+2026-10-11 21:48:17,Debug,Rebuild,FlyLinkDC_2022.sln,0.79,0,0,53357056,0,code analysis off (test)
+2026-10-11 21:50:32,Debug,Rebuild,FlyLinkDC_2022.sln,2.02,260,0,0,1,code analysis on (baseline)
+2026-10-11 21:56:12,Debug,Build,FlyLinkDC_2022.sln,0.82,0,0,53357056,0,build only (no analysis)
+2026-10-11 22:01:17,Release,Build,FlyLinkDC_2022.sln,0.43,0,0,20198400,0,after stats setup
+2026-10-11 22:01:27,Debug,Build,FlyLinkDC_2022.sln,0.01,0,0,53357056,0,test kaspersky exclusions
+2026-10-11 22:09:38,Debug,Build,FlyLinkDC_2022.sln,0.02,0,0,53357056,0,pch/opt baseline
+2026-10-11 22:09:43,Release,Build,FlyLinkDC_2022.sln,0.01,0,0,20198400,0,pch/opt baseline
+2026-10-11 22:49:37,Release,Build,FlyLinkDC_2022.sln,1.52,0,0,20198400,0,build only after LTCG/IPDB phase
+2026-10-11 22:49:57,Release,Build,FlyLinkDC_2022.sln,0.01,0,0,20198400,0,incremental build test
