@@ -1343,7 +1343,7 @@ void CFlyServerConfig::loadTorrentSearchEngine()
 {
 	if (g_lua_source_search_engine.empty())
 	{
-		std::async(std::launch::async,
+		auto l_load_lua_future = std::async(std::launch::async,
 			[&] {
 			try
 			{
@@ -1371,6 +1371,7 @@ void CFlyServerConfig::loadTorrentSearchEngine()
 			}
 		}
 		);
+		l_load_lua_future.get();
 	}
 }
 //======================================================================================================
@@ -1701,6 +1702,7 @@ static void getDiskAndMemoryStat(Json::Value& p_info)
 		DWORD l_handle_count = 0;
 		const auto l_hc_ok = GetProcessHandleCount(GetCurrentProcess(), &l_handle_count);
 		dcassert(l_hc_ok);
+		(void)l_hc_ok;
 		l_handle_info["Handle"] = int(l_handle_count); // TODO научить jsoncpp понимать DWORD
 		auto getResourceCounter = [](int p_type_object) -> unsigned
 		{
@@ -3236,6 +3238,7 @@ bool getMediaInfo(const string& p_name, CFlyMediaInfo& p_media, int64_t p_size, 
 	//extern crash_rpt::CrashRpt g_crashRpt;
 	//CFlyCrashReportInformer l_crash_info(L"MediainfoTTH",Text::toT(p_tth.toBase32()).c_str());
 	const auto l_doctor_dump_key = L"Mediainfo";
+	(void)l_doctor_dump_key;
 #endif
 	try
 	{
@@ -3457,6 +3460,5 @@ bool getMediaInfo(const string& p_name, CFlyMediaInfo& p_media, int64_t p_size, 
 #ifndef _DEBUG
 //	g_crashRpt.RemoveUserInfoFromReport(l_doctor_dump_key);
 #endif
-	return false;
 }
 //=========================================================================================

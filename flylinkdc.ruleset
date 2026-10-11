@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RuleSet Name="FlylinkDC Native Recommended" Description="NativeRecommendedRules with rules that only fire as false positives in this codebase (ATL/WTL/SDK header annotations and legacy-API advisories) turned off. All other recommended rules stay enabled." ToolsVersion="15.0">
+  <Include Path="NativeRecommendedRules.ruleset" Action="Default" />
+  <Rules AnalyzerId="Microsoft.Analyzers.NativeCodeAnalysis" RuleNamespace="Microsoft.Rules.Native">
+    <Rule Id="C28159" Action="None" />
+    <Rule Id="C28251" Action="None" />
+    <Rule Id="C26494" Action="Warning" />
+  </Rules>
+</RuleSet>

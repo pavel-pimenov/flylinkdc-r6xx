@@ -113,9 +113,9 @@ class ChatCtrl: public CWindowImpl<ChatCtrl, CRichEditCtrl>
 			bool m_bThirdPerson;
 			bool m_bUseEmo;
 			bool m_is_url;
-			bool m_isFavorite;
-			bool m_is_ban;
-			bool m_is_op;
+			bool m_isFavorite = false;
+			bool m_is_ban = false;
+			bool m_is_op = false;
 			bool m_is_disable_style;
 			CFlyChatCache(const Identity& p_id, const bool bMyMess, const bool bThirdPerson,
 			              const tstring& sExtra, const tstring& sMsg, const CHARFORMAT2& cf, bool bUseEmo, bool p_is_remove_rn = true);

@@ -761,6 +761,7 @@ void DownloadManager::removeDownload(const DownloadPtr& d)
 			}
 			catch (const Exception& e)
 			{
+				(void)e;
 #ifdef _DEBUG
 				//dcassert(0);
 				LogManager::message("DownloadManager::removeDownload error =" + std::string(e.what()));
@@ -966,6 +967,8 @@ void DownloadManager::onTorrentAlertNotify()
 				try
 				{
 #ifdef _DEBUG
+#pragma warning(push)
+#pragma warning(disable : 4541) /* typeid on polymorphic type with /GR- (debug-only diagnostics) */
 					if (const auto l_log_alert = lt::alert_cast<lt::log_alert>(a))
 					{
 						LogManager::torrent_message("log_alert: " + a->message() + " info:" + std::string(a->what()));
@@ -994,6 +997,7 @@ void DownloadManager::onTorrentAlertNotify()
 							// LogManager::torrent_message("torrent_log_alert: " + a->message() + " info:" + std::string(a->what()));
 						}
 					}
+#pragma warning(pop)
 #endif
 #ifndef _DEBUG
 					if (!ClientManager::isBeforeShutdown())

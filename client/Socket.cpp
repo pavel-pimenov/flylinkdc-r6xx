@@ -170,11 +170,12 @@ uint16_t Socket::accept(const Socket& listeningSocket)
 }
 
 
-uint16_t Socket::bind(uint16_t aPort, const string& aIp /* = 0.0.0.0 */)
+uint16_t Socket::bind(uint16_t aPort, string aIp /* = 0.0.0.0 */)
 {
 	//LogManager::message("[bind] aAddr = " + aIp + " port = " + Util::toString(aPort));
 	sockaddr_in sock_addr = { { 0 } };
-	
+	if (aIp.empty())
+		aIp = "0.0.0.0";
 	sock_addr.sin_family = AF_INET;
 	sock_addr.sin_port = htons(aPort);
 	sock_addr.sin_addr.s_addr = inet_addr(aIp.c_str());
@@ -182,7 +183,7 @@ uint16_t Socket::bind(uint16_t aPort, const string& aIp /* = 0.0.0.0 */)
 	{
 #ifdef _DEBUG
 		const string l_error = Util::translateError();
-		dcdebug("Bind failed, retrying with INADDR_ANY: %s\n", l_error.c_str()); //-V111
+		dcdebug("Bind failed, ip = %s error: %s\n", aIp.c_str(), l_error.c_str());
 #endif
 		sock_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 		//TODO - обработать ошибку с 10048 - занят порт

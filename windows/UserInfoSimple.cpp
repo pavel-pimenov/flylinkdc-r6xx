@@ -178,7 +178,7 @@ uint64_t UserInfoSimple::inputSlotTime()
 		{
 			if (deftext[i] == L':') n++;
 		}
-		unsigned int d, h, m;
+		unsigned int d = 0, h = 0, m = 0;
 		switch (n)
 		{
 			case 1:

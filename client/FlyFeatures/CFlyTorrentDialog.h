@@ -174,7 +174,7 @@ private:
 			TStringPairArray l_info;
 
 			if (m_ti->creation_date() > 0) {
-				char buf[50];
+				char buf[50] = {0};
 				auto l_time = m_ti->creation_date();
 				tm* l_loc = localtime(&l_time);
 				if (l_loc && strftime(buf, 21, "%Y-%m-%d %H:%M:%S", l_loc))

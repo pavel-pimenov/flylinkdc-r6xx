@@ -677,7 +677,7 @@ HubFrame* HubFrame::openHubWindow(bool p_is_auto_connect,
                                  )
 {
 	CFlyLock(g_frames_cs);
-	HubFrame* frm;
+	HubFrame* frm = nullptr;
 	const auto i = g_frames.find(p_server);
 	if (i == g_frames.end())
 	{
@@ -862,7 +862,7 @@ void HubFrame::processFrameCommand(const tstring& fullMessageText, const tstring
 	}
 	else if ((stricmp(cmd.c_str(), _T("favorite")) == 0) || (stricmp(cmd.c_str(), _T("fav")) == 0))
 	{
-		FavoriteManager::AutoStartType l_autoConnect;
+		FavoriteManager::AutoStartType l_autoConnect = FavoriteManager::NOT_CHANGE;
 		if (param == _T("a"))
 		{
 			l_autoConnect = FavoriteManager::ADD;
@@ -1454,7 +1454,7 @@ void HubFrame::addStatus(const tstring& aLine, const bool bInChat /*= true*/, co
 							LogManager::message(l_message);
 						}
 					}
-					catch (const std::exception& e) {
+					catch (const std::exception&) {
 						LogManager::message("Error convert IP = " + l_ip);
 					}
 				}
@@ -2395,7 +2395,7 @@ void HubFrame::storeColumsInfo()
 				fhe->setWindowSizeX(rc.Width());
 				fhe->setWindowSizeY(rc.Height());
 			}
-			if (wp.showCmd == SW_SHOWNORMAL || wp.showCmd == SW_SHOW || wp.showCmd == SW_SHOWMAXIMIZED || wp.showCmd == SW_MAXIMIZE)
+			if (wp.showCmd == SW_SHOWNORMAL || wp.showCmd == SW_SHOW || wp.showCmd == SW_SHOWMAXIMIZED)
 			{
 				fhe->setWindowType((int)wp.showCmd);
 			}

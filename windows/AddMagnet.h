@@ -18,8 +18,8 @@
 
 #pragma once
 
-
-#include "../client/Util.h"
+#include "WinUtil.h"
+#include "wtl_flylinkdc.h"
 
 class HIconWrapper;
 class AddMagnet : public CDialogImpl<AddMagnet>

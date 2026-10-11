@@ -300,7 +300,7 @@ LRESULT MessagePanel::onEmoticons(WORD /*wNotifyCode*/, WORD /*wID*/, HWND hWndC
 		if (!dlg.result.empty())
 		{
 			// !BUGMASTER!
-			int start, end;
+			int start = 0, end = 0;
 			int len = m_ctrlMessage->GetWindowTextLength();
 			m_ctrlMessage->GetSel(start, end);
 			std::vector<TCHAR> l_message(len + 1);

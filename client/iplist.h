@@ -60,7 +60,7 @@ class IPList
 				
 				bool check(uint32_t p_IPNum)
 				{
-					bool found;
+					bool found = false;
 					if (!m_ipNumList.empty())
 					{
 						p_IPNum = p_IPNum & m_ipmask;

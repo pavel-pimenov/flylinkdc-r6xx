@@ -317,7 +317,7 @@ COLORREF HLS2RGB(HLSCOLOR hls)
 	{
 		return RGB(HLS_L(hls), HLS_L(hls), HLS_L(hls));
 	}
-	float rm1, rm2;
+	float rm1 = 0, rm2 = 0;
 	
 	if (luminance <= 0.5f) rm2 = luminance + luminance * saturation;
 	else                     rm2 = luminance + saturation - luminance * saturation;
@@ -603,6 +603,7 @@ void ISPImage::init()
 			{
 				const auto l_res_merge =  m_images.AddIcon(m_add_images.GetIcon(i));
 				dcassert(l_res_merge);
+				(void)l_res_merge;
 			}
 		}
 	}
@@ -952,6 +953,7 @@ void Fonts::init()
 		g_fontHeightPixl = -::MulDiv(lf[0].lfHeight, l_pix, 72);
 		int l_res = ReleaseDC(NULL, hDC);
 		dcassert(l_res);
+		(void)l_res;
 	}
 }
 
@@ -1223,7 +1225,8 @@ void WinUtil::setClipboard(const tstring& str)
 	
 	// Lock the handle and copy the text to the buffer.
 	TCHAR* lptstrCopy = (TCHAR*)GlobalLock(hglbCopy);
-	_tcscpy(lptstrCopy, str.c_str());
+	if (lptstrCopy != nullptr)
+		_tcscpy(lptstrCopy, str.c_str());
 	GlobalUnlock(hglbCopy);
 	
 	// Place the handle on the clipboard.
@@ -2592,7 +2595,8 @@ int FileImage::getIconIndex(const string& aFileName)
 		{
 			//CFlyFastLock(m_cs);
 			m_images.AddIcon(fi.hIcon);
-			::DestroyIcon(fi.hIcon);
+			if (fi.hIcon != nullptr)
+				::DestroyIcon(fi.hIcon);
 			m_indexis[l_x] = m_imageCount++;
 			return m_imageCount - 1;
 		}
@@ -2889,7 +2893,8 @@ bool WinUtil::shutDown(int action)
 		case 5:
 		{
 			typedef bool (CALLBACK * LPLockWorkStation)(void);
-			LPLockWorkStation _d_LockWorkStation = (LPLockWorkStation)GetProcAddress(LoadLibrary(_T("user32")), "LockWorkStation");
+			HMODULE l_hUser32 = ::LoadLibrary(_T("user32"));
+			LPLockWorkStation _d_LockWorkStation = l_hUser32 ? (LPLockWorkStation)GetProcAddress(l_hUser32, "LockWorkStation") : nullptr;
 			if (_d_LockWorkStation)
 			{
 				_d_LockWorkStation();
@@ -3614,9 +3619,9 @@ bool WinUtil::CreateShortCut(const tstring& pszTargetfile, const tstring& pszTar
                              int iShowmode, const tstring& pszCurdir,
                              const tstring& pszIconfile, int iIconindex)
 {
-	HRESULT       hRes;                  /* Returned COM result code */
-	IShellLink*   pShellLink;            /* IShellLink object pointer */
-	IPersistFile* pPersistFile;          /* IPersistFile object pointer */
+	HRESULT       hRes = E_INVALIDARG;                  /* Returned COM result code */
+	IShellLink*   pShellLink = nullptr;            /* IShellLink object pointer */
+	IPersistFile* pPersistFile = nullptr;          /* IPersistFile object pointer */
 	
 	hRes = E_INVALIDARG;
 	if (pszTargetfile.length() > 0 && pszLinkfile.length() > 0
@@ -3884,6 +3889,6 @@ void Preview::clearPreviewMenu()
 
 UINT Preview::getPreviewMenuIndex()
 {
-	return (UINT)(HMENU)g_previewMenu;
+	return (UINT_PTR)(HMENU)g_previewMenu;
 }
 

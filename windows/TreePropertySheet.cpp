@@ -269,7 +269,8 @@ void TreePropertySheet::addTransparency()
 void TreePropertySheet::setTransp(int p_Layered)
 {
 	typedef bool (CALLBACK * LPFUNC)(HWND hwnd, COLORREF crKey, BYTE bAlpha, DWORD dwFlags);
-	LPFUNC _d_SetLayeredWindowAttributes = (LPFUNC)GetProcAddress(LoadLibrary(_T("user32")), "SetLayeredWindowAttributes");
+	HMODULE l_hUser32 = ::LoadLibrary(_T("user32"));
+	LPFUNC _d_SetLayeredWindowAttributes = l_hUser32 ? (LPFUNC)GetProcAddress(l_hUser32, "SetLayeredWindowAttributes") : nullptr;
 	if (_d_SetLayeredWindowAttributes)
 	{
 		SetWindowLongPtr(GWL_EXSTYLE, GetWindowLongPtr(GWL_EXSTYLE) | WS_EX_LAYERED /*| WS_EX_TRANSPARENT*/);
@@ -456,7 +457,7 @@ LRESULT TreePropertySheet::onSelChanged(int /*idCtrl*/, LPNMHDR pnmh, BOOL& /* b
 			ctrlTree.SelectItem(next);
 			if (SETTING(REMEMBER_SETTINGS_PAGE))
 			{
-				SET_SETTING(PAGE, (int)next);
+				SET_SETTING(PAGE, static_cast<int>(ctrlTree.GetItemData(next)));
 			}
 		}
 	}

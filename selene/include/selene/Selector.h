@@ -188,6 +188,8 @@ public:
         Selector copy{*this};
         const auto state = _state; // gcc-5.1 doesn't support implicit member capturing
         const auto eh = _exception_handler;
+        (void)state;
+        (void)eh;
         copy._functor_arguments = make_Refs(_state, std::forward<Args>(args)...);
         copy._functor_active = true;
         return copy;

@@ -146,8 +146,8 @@ enum eTypeDIC
 };
 struct CFlyIPRange
 {
-	uint32_t m_start_ip;
-	uint32_t m_stop_ip;
+	uint32_t m_start_ip = 0;
+	uint32_t m_stop_ip = 0;
 	CFlyIPRange() //: m_start_ip(0), m_stop_ip(0)
 	{
 	}
@@ -171,7 +171,7 @@ struct CFlyP2PGuardIP : public CFlyIPRange
 #endif
 struct CFlyLocationIP : public CFlyIPRange
 {
-	uint16_t m_flag_index;
+	uint16_t m_flag_index = 0;
 	string m_location;
 	CFlyLocationIP() // : m_flag_index(0)
 	{
@@ -219,17 +219,17 @@ struct CFlyLastIPCacheItem
 
 struct CFlyFileInfo
 {
-	int64_t  m_size;
-	int64_t  m_TimeStamp;
+	int64_t  m_size = 0;
+	int64_t  m_TimeStamp = 0;
 	TTHValue m_tth;
-	uint32_t m_hit;
-	int64_t m_StampShare;
+	uint32_t m_hit = 0;
+	int64_t m_StampShare = 0;
 	std::shared_ptr<CFlyMediaInfo> m_media_ptr;
 #ifdef FLYLINKDC_USE_ONLINE_SWEEP_DB
 	bool     m_found;
 #endif
-	bool     m_recalc_ftype;
-	char     m_ftype;
+	bool     m_recalc_ftype = false;
+	char     m_ftype = 0;
 	CFlyFileInfo()
 	{
 	}
@@ -481,6 +481,7 @@ class CFlylinkDBManager : public Singleton<CFlylinkDBManager>
 				                                        Text::fromT(*i),
 				                                        CFlyRegistryValue()));
 				dcassert(l_res.second);
+				(void)l_res;
 			}
 			save_registry(l_values, p_Segment, true);
 		}

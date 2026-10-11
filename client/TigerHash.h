@@ -66,7 +66,7 @@ class TigerHash
 	private:
 		enum { BLOCK_SIZE = 512 / 8 };
 		/** 512 bit blocks for the compress function */
-		uint8_t tmp[BLOCK_SIZE];
+		uint8_t tmp[BLOCK_SIZE] = {};
 		/** State / final hash value */
 		uint64_t res[3];
 		/** Total number of bytes compressed */

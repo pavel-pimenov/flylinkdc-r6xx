@@ -241,7 +241,7 @@ LRESULT WaitingUsersFrame::onRemove(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*h
 
 LRESULT WaitingUsersFrame::onContextMenu(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, BOOL& /*bHandled*/)
 {
-	RECT rc;
+	RECT rc = {};
 	POINT pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
 	m_ctrlList.GetHeader().GetWindowRect(&rc);
 	if (PtInRect(&rc, pt))
@@ -693,8 +693,8 @@ LRESULT WaitingUsersFrame::onCustomDraw(int /*idCtrl*/, LPNMHDR pnmh, BOOL& bHan
 					return CDRF_SKIPDEFAULT;
 				}
 			}
+			[[fallthrough]];
 		}
-		// Fall through
 		default:
 			return CDRF_DODEFAULT;
 	}

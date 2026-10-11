@@ -20,13 +20,13 @@ class CFlySearchItemTTH
 		bool m_is_skip;
 		CFlySearchItemTTH(const TTHValue& p_tth, const std::string& p_search):
 			m_is_passive(p_search.size() > 4 && p_search.compare(0, 4, "Hub:", 4) == 0),
-			m_tth(std::move(p_tth)),
-			m_search(std::move(p_search)),
+			m_tth(p_tth),
+			m_search(p_search),
 			m_is_skip(false)
 		{
 			dcassert(m_search.size() > 4);
 		}
-		CFlySearchItemTTH(CFlySearchItemTTH && arg) :
+		CFlySearchItemTTH(CFlySearchItemTTH && arg) noexcept :
 			m_tth(std::move(arg.m_tth)),
 			m_search(std::move(arg.m_search)),
 			m_is_passive(std::move(arg.m_is_passive)),

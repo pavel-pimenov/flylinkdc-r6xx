@@ -151,6 +151,7 @@ void SharedFileStream::check_before_destoy()
 		CFlyFastLock(g_shares_file_cs);
 		auto& l_pool = g_rwpool;
 		dcassert(l_pool.empty());
+		(void)l_pool;
 	}
 	cleanup();
 }

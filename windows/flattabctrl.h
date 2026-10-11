@@ -293,14 +293,9 @@ class ATL_NO_VTABLE FlatTabCtrlImpl : public CWindowImpl< T, TBase, TWinTraits>
 			}
 		}
 		
-		void setColor(HWND aWnd, COLORREF p_color)
+		void setColor(HWND /*aWnd*/, COLORREF /*p_color*/)
 		{
-			return; //
-			if (TabInfo* ti = getTabInfo(aWnd))
-			{
-				//ti->m_color_pen = p_color;
-				m_needsInvalidate = true;
-			}
+			// TODO: color support is currently disabled.
 		}
 		
 		void updateText(HWND aWnd, LPCTSTR text)
@@ -521,7 +516,7 @@ class ATL_NO_VTABLE FlatTabCtrlImpl : public CWindowImpl< T, TBase, TWinTraits>
 							}
 							
 							m_bClose.MoveWindow(rcs.left, rcs.top, 16, 16);
-							bool l_is_enabled;
+							bool l_is_enabled = false;
 							if (
 							    pt.x >= rcs.left
 							    &&
@@ -686,6 +681,7 @@ class ATL_NO_VTABLE FlatTabCtrlImpl : public CWindowImpl< T, TBase, TWinTraits>
 				}
 			}
 			int l_res = ::ReleaseDC(m_hWnd, dc);
+			(void)l_res;
 			dcassert(l_res);
 			return 0;
 		}
@@ -972,7 +968,7 @@ class ATL_NO_VTABLE FlatTabCtrlImpl : public CWindowImpl< T, TBase, TWinTraits>
 						if (m_len >= MAX_LENGTH)
 						{
 							::GetWindowText(hWnd, textNew.data(), MAX_LENGTH); // diff[0]
-							textNew[MAX_LENGTH - 2] = _T('…');
+							textNew[MAX_LENGTH - 2] = _T('\x2026');
 							m_len = MAX_LENGTH - 1;
 						}
 						else
@@ -1024,7 +1020,7 @@ class ATL_NO_VTABLE FlatTabCtrlImpl : public CWindowImpl< T, TBase, TWinTraits>
 						if (m_len >= MAX_LENGTH)
 						{
 							::_tcsncpy(name.data(), text, MAX_LENGTH - 2); // diff[0]
-							name[MAX_LENGTH - 2] = _T('…');
+							name[MAX_LENGTH - 2] = _T('\x2026');
 							name[MAX_LENGTH - 1] = _T('\0');
 							m_len = MAX_LENGTH - 1;
 						}
@@ -1062,6 +1058,7 @@ class ATL_NO_VTABLE FlatTabCtrlImpl : public CWindowImpl< T, TBase, TWinTraits>
 								if (dc)
 								{
 									int l_res = ::ReleaseDC(hWnd, dc);
+									(void)l_res;
 									dcassert(l_res);
 								}
 							}
@@ -1186,7 +1183,7 @@ class ATL_NO_VTABLE FlatTabCtrlImpl : public CWindowImpl< T, TBase, TWinTraits>
 			}
 			if (l_tabBrush)
 			{
-				DWORD l_color_tab;
+				DWORD l_color_tab = 0;
 				if (!tab->m_bState)
 				{
 					if (aActive)
@@ -1452,6 +1449,7 @@ class ATL_NO_VTABLE FlatTabCtrlImpl : public CWindowImpl< T, TBase, TWinTraits>
 			if (l_hIcon)
 			{
 				const BOOL l_res = DrawIconEx(dc.m_hDC, pos - 18, ypos + height_plus_ico, l_hIcon, 16, 16, NULL, NULL, DI_NORMAL | DI_COMPAT);
+				(void)l_res;
 				dcassert(l_res);
 			}
 			

@@ -247,7 +247,7 @@ class Socket
 		virtual void create(SocketType aType = TYPE_TCP);
 		
 		/** Binds a socket to a certain local port and possibly IP. */
-		virtual uint16_t bind(uint16_t aPort = 0, const string& aIp = "0.0.0.0");
+		virtual uint16_t bind(uint16_t aPort = 0, string aIp = "0.0.0.0");
 		virtual void listen();
 		/** Accept a socket.
 		@return remote port */

@@ -76,7 +76,7 @@ void FavHubGroupsDlg::save()
 {
 	FavHubGroups groups;
 	string name;
-	FavHubGroupProperties group;
+	FavHubGroupProperties group = {};
 	
 	for (int i = 0; i < ctrlGroups.GetItemCount(); ++i)
 	{

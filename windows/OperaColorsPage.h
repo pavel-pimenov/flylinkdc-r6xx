@@ -166,11 +166,11 @@ class OperaColorsPage : public CPropertyPage<IDD_OPERACOLORS_PAGE>, public PropP
 		
 		typedef CButton CCheckBox;
 		
-		COLORREF crProgressDown;
-		COLORREF crProgressUp;
-		COLORREF crProgressTextDown;
-		COLORREF crProgressTextUp;
-		COLORREF crProgressSegment;
+		COLORREF crProgressDown = 0;
+		COLORREF crProgressUp = 0;
+		COLORREF crProgressTextDown = 0;
+		COLORREF crProgressTextUp = 0;
+		COLORREF crProgressSegment = 0;
 		CCheckBox ctrlProgressOverride1;
 		CCheckBox ctrlProgressOverride2;
 		CButton ctrlProgressDownDrawer;
@@ -187,8 +187,8 @@ class OperaColorsPage : public CPropertyPage<IDD_OPERACOLORS_PAGE>, public PropP
 		
 		void BrowseForPic(int DLGITEM);
 		
-		COLORREF crMenubarLeft;
-		COLORREF crMenubarRight;
+		COLORREF crMenubarLeft = 0;
+		COLORREF crMenubarRight = 0;
 		CButton ctrlLeftColor;
 		CButton ctrlRightColor;
 		CCheckBox ctrlTwoColors;

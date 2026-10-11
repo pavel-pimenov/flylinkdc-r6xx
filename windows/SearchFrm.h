@@ -690,10 +690,10 @@ class SearchFrame : public MDITabChildWindowImpl < SearchFrame, RGB(127, 127, 25
 		//CContainedWindow        m_treeContainer;
 		CTreeViewCtrl           m_ctrlSearchFilterTree;
 		HTREEITEM   m_RootTreeItem;
-		HTREEITEM   m_RootVirusTreeItem;
-		HTREEITEM   m_RootTorrentRSSTreeItem;
-		HTREEITEM   m_24HTopTorrentTreeItem;
-		int m_skull_index;
+		HTREEITEM   m_RootVirusTreeItem = nullptr;
+		HTREEITEM   m_RootTorrentRSSTreeItem = nullptr;
+		HTREEITEM   m_24HTopTorrentTreeItem = nullptr;
+		int m_skull_index = 0;
 		HTREEITEM   m_CurrentTreeItem;
 		HTREEITEM   m_OldTreeItem;
 		std::unordered_map<string, HTREEITEM> m_category_map;

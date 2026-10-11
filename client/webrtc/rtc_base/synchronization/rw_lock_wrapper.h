@@ -107,12 +107,17 @@ rw_lock_.ReleaseLockExclusive();
   RWLockWrapper& rw_lock_;
 };
 
+#ifndef FLY_LOCK_CONCAT
+#define FLY_LOCK_CONCAT2(a, b) a##b
+#define FLY_LOCK_CONCAT(a, b) FLY_LOCK_CONCAT2(a, b)
+#endif
+
 #ifdef FLYLINKDC_USE_PROFILER_CS
-#define CFlyReadLock(cs) webrtc::ReadLockScoped l_lock(cs,__FUNCTION__, __LINE__);
-#define CFlyWriteLock(cs) webrtc::WriteLockScoped l_lock(cs,__FUNCTION__, __LINE__);
+#define CFlyReadLock(cs) webrtc::ReadLockScoped FLY_LOCK_CONCAT(l_fly_lock_, __COUNTER__)(cs,__FUNCTION__, __LINE__);
+#define CFlyWriteLock(cs) webrtc::WriteLockScoped FLY_LOCK_CONCAT(l_fly_lock_, __COUNTER__)(cs,__FUNCTION__, __LINE__);
 #else
-#define CFlyReadLock(cs) webrtc::ReadLockScoped l_lock(cs);
-#define CFlyWriteLock(cs) webrtc::WriteLockScoped l_lock(cs);
+#define CFlyReadLock(cs) webrtc::ReadLockScoped FLY_LOCK_CONCAT(l_fly_lock_, __COUNTER__)(cs);
+#define CFlyWriteLock(cs) webrtc::WriteLockScoped FLY_LOCK_CONCAT(l_fly_lock_, __COUNTER__)(cs);
 #endif
 
 }  // namespace webrtc

@@ -179,8 +179,11 @@ typedef CriticalSection FastCriticalSection;
 typedef Lock FastLock;
 
 
-#define CFlyLock(cs) FastLock l_lock(cs);
-#define CFlyFastLock(cs) FastLock l_lock(cs);
+#define FLY_LOCK_CONCAT2(a, b) a##b
+#define FLY_LOCK_CONCAT(a, b) FLY_LOCK_CONCAT2(a, b)
+
+#define CFlyLock(cs) FastLock FLY_LOCK_CONCAT(l_fly_lock_, __COUNTER__)(cs);
+#define CFlyFastLock(cs) FastLock FLY_LOCK_CONCAT(l_fly_lock_, __COUNTER__)(cs);
 
 
 #endif // !defined(THREAD_H)

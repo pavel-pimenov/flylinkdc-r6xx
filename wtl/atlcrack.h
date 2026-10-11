@@ -25,7 +25,7 @@
 
 #define BEGIN_MSG_MAP_EX(theClass) \
 public: \
-	BOOL m_bMsgHandled; \
+	BOOL m_bMsgHandled = FALSE; \
 	/* "handled" management for cracked handlers */ \
 	BOOL IsMsgHandled() const \
 	{ \

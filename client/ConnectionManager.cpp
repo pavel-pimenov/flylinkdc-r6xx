@@ -218,6 +218,7 @@ void ConnectionManager::test_tcp_port()
 			l_tcp_port.push_back(SETTING(TLS_PORT));
 		}
 		const bool l_is_tcp_port_send = CFlyServerJSON::pushTestPort(l_udp_port, l_tcp_port, l_external_ip, 0, CryptoManager::TLSOk() ? "TCP+TLS" : "TCP");
+		(void)l_is_tcp_port_send;
 		//dcassert(l_is_tcp_port_send);
 	}
 	g_is_test_tcp_port = true;
@@ -894,6 +895,7 @@ void ConnectionManager::accept(const Socket& sock, bool secure, Server* p_server
 	}
 	catch (const Exception& e)
 	{
+		(void)e;
 #ifdef _DEBUG
 		LogManager::message("uc->accept(sock) Error = " + e.getError());
 #endif
@@ -1068,7 +1070,7 @@ bool ConnectionManager::checkIpFlood(const string& aIPServer, uint16_t aPort, co
 			l_debug_key = " Time: " + Util::getShortTimeString() + " Hub info = " + p_HubInfo; // https://drdump.com/Problem.aspx?ClientID=guest&ProblemID=92733
 			if (!p_userInfo.empty())
 			{
-				l_debug_key + " UserInfo = [" + p_userInfo + ']';
+				l_debug_key += " UserInfo = [" + p_userInfo + ']';
 			}
 			l_cur_value.m_original_query_for_debug[l_debug_key]++;
 		}

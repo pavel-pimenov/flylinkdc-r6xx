@@ -116,7 +116,7 @@ class ExListViewCtrl : public CWindowImpl<ExListViewCtrl, CListViewCtrl, CContro
 		
 		int find(const tstring& aText, int aStart = -1, bool aPartial = false) const
 		{
-			LV_FINDINFO fi;
+			LV_FINDINFO fi = {};
 			fi.flags = aPartial ? LVFI_PARTIAL : LVFI_STRING;
 			fi.psz = aText.c_str();
 			return FindItem(&fi, aStart);

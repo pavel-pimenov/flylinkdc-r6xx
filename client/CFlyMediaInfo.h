@@ -146,7 +146,7 @@ class CFlyMediaInfo
 			{
 				char l_buf[30];
 				l_buf[0] = 0;
-				_snprintf(l_buf, _countof(l_buf), "%ux%u", m_mediaX, m_mediaY);
+				_snprintf_s(l_buf, _countof(l_buf), _TRUNCATE, "%ux%u", m_mediaX, m_mediaY);
 				return l_buf;
 			}
 			return string();

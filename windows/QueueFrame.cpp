@@ -237,6 +237,7 @@ const tstring QueueFrame::QueueItemInfo::getText(int col) const
 					}
 				}
 			}
+			[[fallthrough]];
 		}
 		case COLUMN_SEGMENTS:
 		{
@@ -535,7 +536,7 @@ HTREEITEM QueueFrame::addDirectory(const string& dir, bool isFileList /* = false
 	
 	// More complicated, we have to find the last available tree item and then see...
 	string::size_type i = 0;
-	string::size_type j;
+	string::size_type j = 0;
 	
 	HTREEITEM next = NULL;
 	HTREEITEM parent = NULL;
@@ -1391,6 +1392,7 @@ LRESULT QueueFrame::onContextMenu(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, B
 					singleMenu.EnableMenuItem((UINT_PTR)(HMENU)readdMenu, MFS_ENABLED);
 				}
 				
+				#pragma warning(suppress:6011)
 				priorityMenu.CheckMenuItem(ii->getPriority(), MF_BYPOSITION | MF_CHECKED);
 				if (ii->getAutoPriority())
 					priorityMenu.CheckMenuItem(7, MF_BYPOSITION | MF_CHECKED);
@@ -1675,7 +1677,7 @@ LRESULT QueueFrame::onSegments(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/,
 
 LRESULT QueueFrame::onPriority(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
-	QueueItem::Priority p;
+	QueueItem::Priority p = QueueItem::DEFAULT;
 	
 	switch (wID)
 	{
@@ -2206,6 +2208,7 @@ LRESULT QueueFrame::onCustomDraw(int /*idCtrl*/, LPNMHDR pnmh, BOOL& bHandled)
 				
 				return CDRF_SKIPDEFAULT;
 			}
+			[[fallthrough]];
 		}
 		default:
 			return CDRF_DODEFAULT;

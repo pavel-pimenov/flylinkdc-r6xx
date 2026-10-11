@@ -346,6 +346,7 @@ bool File::renameFile(const tstring& p_source, const tstring& p_target)
 		}
 		catch (FileException & e)
 		{
+			(void)e;
 			dcassert(0);
 #ifndef _CONSOLE
 			l_log.log("Error copy file: " + e.getError());
@@ -475,6 +476,7 @@ void File::ensureDirectory(const tstring & aFile)
 	{
 		const auto l_dir = formatPath(aFile.substr(0, start + 1));
 		const BOOL result = ::CreateDirectory(l_dir.c_str(), NULL);
+		(void)result;
 #if 0
 		const auto l_last_error_code = GetLastError();
 		string l_error;

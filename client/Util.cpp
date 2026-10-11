@@ -2282,6 +2282,7 @@ bool Util::setRegistryValueInt(const TCHAR* p_key, DWORD p_value)
 	const LSTATUS status = ::RegSetValueEx(hk, p_key, NULL, REG_DWORD, reinterpret_cast<const BYTE*>(&p_value), sizeof(DWORD));
 	const auto status_close = ::RegCloseKey(hk);
 	dcassert(status_close == ERROR_SUCCESS);
+	(void)status_close;
 	dcassert(status == ERROR_SUCCESS);
 	return status == ERROR_SUCCESS;
 }
@@ -2296,6 +2297,7 @@ DWORD Util::getRegistryValueInt(const TCHAR* p_key)
 		LONG lRes = ::RegQueryValueEx(hk, p_key, NULL, &dwType, reinterpret_cast<LPBYTE>(&l_value), &nBytes);
 		const auto status_close = ::RegCloseKey(hk);
 		dcassert(status_close == ERROR_SUCCESS);
+		(void)status_close;
 		if (dwType != REG_DWORD)
 			return 0;
 		if (lRes == ERROR_SUCCESS)
@@ -3279,4 +3281,3 @@ double Util::toDouble(const string& aString)
  * @file
  * $Id: Util.cpp 575 2011-08-25 19:38:04Z bigmuscle $
  */
-	

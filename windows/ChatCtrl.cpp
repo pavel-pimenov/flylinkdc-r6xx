@@ -102,7 +102,7 @@ void ChatCtrl::Initialize()
 		const SCODE sc = ::CreateILockBytesOnHGlobal(NULL, TRUE, &m_lpLockBytes);
 		if (sc == S_OK && m_lpLockBytes)
 		{
-			::StgCreateDocfileOnILockBytes(m_lpLockBytes,
+			(void)::StgCreateDocfileOnILockBytes(m_lpLockBytes,
 			                               STGM_SHARE_EXCLUSIVE | STGM_CREATE | STGM_READWRITE, 0, &m_pStorage);
 		}
 	}
@@ -606,7 +606,7 @@ void ChatCtrl::AppendTextParseURL(CAtlString& sMsgLower, const CFlyChatCacheText
 				if (temp != -1 && temp < linkEndSpaceOrBad)
 					linkEndSpaceOrBad = temp;
 			}
-			LONG linkEnd;
+			LONG linkEnd = 0;
 			if (linkEndSpaceOrBad != -1)
 			{
 				linkEnd = linkEndSpaceOrBad;
@@ -649,18 +649,18 @@ void ChatCtrl::AppendTextParseURL(CAtlString& sMsgLower, const CFlyChatCacheText
 						_T("x.do"), // (Description Online URL) - Web link to the Description online
 					};
 					tstring temp = originalLink;
-					tstring::size_type i = 0;
+					tstring::size_type l_i = 0;
 					bool needsToReplaceOrig = false;
 					while (1)
 					{
-						i = temp.find(_T('&'), i);
-						if (i == tstring::npos)
+						l_i = temp.find(_T('&'), l_i);
+						if (l_i == tstring::npos)
 							break;
 							
 						bool isInvalidParamFound = false;
 						for (size_t count = 0; count < _countof(Paramethers); count++)
 						{
-							if (temp.compare(i + 1, Paramethers[count].size(), Paramethers[count]) == 0)
+							if (temp.compare(l_i + 1, Paramethers[count].size(), Paramethers[count]) == 0)
 							{
 								isInvalidParamFound = false;
 								break;
@@ -672,11 +672,11 @@ void ChatCtrl::AppendTextParseURL(CAtlString& sMsgLower, const CFlyChatCacheText
 						if (isInvalidParamFound)
 						{
 							needsToReplaceOrig = true;
-							temp.replace(i, 1, _T("%26"));
-							i += 3;
+							temp.replace(l_i, 1, _T("%26"));
+							l_i += 3;
 						}
 						else
-							i++;
+							l_i++;
 					};
 					
 					if (needsToReplaceOrig)
@@ -820,7 +820,7 @@ void ChatCtrl::AppendTextParseBB(CAtlString& sMsgLower, const CFlyChatCacheTextO
 			LONG BBStart = sMsgLower.Find(currentTag, 0);
 			while (BBStart != -1)
 			{
-				LONG BBEnd;
+				LONG BBEnd = 0;
 				const CAtlString currentTagEnd(WinUtil::toAtlString(g_EndBBTag[i].tag));
 				const LONG BBEndTerminate = sMsgLower.Find(currentTagEnd, BBStart + currentTag.GetLength());
 				if (BBEndTerminate > BBStart)
@@ -1219,7 +1219,7 @@ LRESULT ChatCtrl::OnRButtonDown(POINT pt, const UserPtr& user /*= nullptr*/)
 		return 1;
 		
 	const int iCharPos = CharFromPos(pt);
-	int iBegin, iEnd;
+	int iBegin = 0, iEnd = 0;
 	if ((lSelEnd > lSelBegin) && (iCharPos >= lSelBegin) && (iCharPos <= lSelEnd))
 	{
 		if (!HitIP(pt, g_sSelectedIP, iBegin, iEnd))
@@ -1240,7 +1240,7 @@ LRESULT ChatCtrl::OnRButtonDown(POINT pt, const UserPtr& user /*= nullptr*/)
 
 LRESULT ChatCtrl::onMouseWheel(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
-	RECT rc;
+	RECT rc = {};
 	POINT pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) }; // location of mouse click
 	SCROLLINFO si = { 0 };
 	
@@ -1422,15 +1422,18 @@ LRESULT ChatCtrl::onUpdateSmile(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM lParam,
 		
 		if (spInPlaceSite)// && spInPlaceSite->GetWindow(&hwndParent) == S_OK)
 		{
-			OLEINPLACEFRAMEINFO frameInfo;
-			RECT rcPos, rcClip;
+			OLEINPLACEFRAMEINFO frameInfo = {};
+			RECT rcPos = {}, rcClip = {};
 			frameInfo.cb = sizeof(OLEINPLACEFRAMEINFO);
 			
+			#pragma warning(push)
+			#pragma warning(disable:6387)
 			if (spInPlaceSite->GetWindowContext(NULL,
 			                                    NULL, &rcPos, &rcClip, NULL) == S_OK)
 			{
 				::InvalidateRect(m_hWnd, &rcPos, FALSE);
 			}
+			#pragma warning(pop)
 		}
 		safe_release(spClientSite);
 	}

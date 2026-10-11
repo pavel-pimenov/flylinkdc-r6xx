@@ -9,7 +9,7 @@ CBmp::CBmp(HBITMAP hBMP):
 HBITMAP CBmp::CreateCompatibleBitmap(HDC hDC, int w, int h)
 {
 
-	bool bNeedFree;
+	bool bNeedFree = false;
 	
 	if (hDC == NULL)
 	{
@@ -26,6 +26,7 @@ HBITMAP CBmp::CreateCompatibleBitmap(HDC hDC, int w, int h)
 	{
 		int l_res = ReleaseDC(NULL, hDC);
 		dcassert(l_res);
+		(void)l_res;
 	}
 	
 	return m_hBMP;
@@ -95,6 +96,7 @@ CBmp::operator HDC()
 		m_hDC = CreateCompatibleDC(hDC);
 		int l_res = ReleaseDC(NULL, hDC);
 		dcassert(l_res);
+		(void)l_res;
 		_ASSERTE(m_hDC);
 		
 		m_hBMPorg = (HBITMAP)SelectObject(m_hDC, m_hBMP);

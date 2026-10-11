@@ -107,7 +107,8 @@ void PopupManager::Show(const tstring &aMsg, const tstring &aTitle, int Icon, bo
 	if (SETTING(POPUP_TYPE) != /*CUSTOM*/ BALLOON)
 	{
 		typedef bool (CALLBACK * LPFUNC)(HWND hwnd, COLORREF crKey, BYTE bAlpha, DWORD dwFlags);
-		LPFUNC _d_SetLayeredWindowAttributes = (LPFUNC)GetProcAddress(LoadLibrary(_T("user32")), "SetLayeredWindowAttributes");
+		HMODULE l_hUser32 = ::LoadLibrary(_T("user32"));
+		LPFUNC _d_SetLayeredWindowAttributes = l_hUser32 ? (LPFUNC)GetProcAddress(l_hUser32, "SetLayeredWindowAttributes") : nullptr;
 		if (_d_SetLayeredWindowAttributes)
 		{
 			p->SetWindowLongPtr(GWL_EXSTYLE, p->GetWindowLongPtr(GWL_EXSTYLE) | WS_EX_LAYERED | WS_EX_TRANSPARENT);

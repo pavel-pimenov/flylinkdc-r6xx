@@ -183,9 +183,9 @@ class OperaColors
 			}
 			struct FCIMapper
 			{
-				COLORREF c1;
-				COLORREF c2;
-				bool bLight;
+				COLORREF c1 = 0;
+				COLORREF c2 = 0;
+				bool bLight = false;
 //				FCIMapper(): c1(0),c2(0),bLight(false)
 //				{
 //				}

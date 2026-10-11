@@ -58,7 +58,7 @@ void BaseChatFrame::createChatCtrl()
 		{
 			dcdebug("Error create BaseChatFrame::createChatCtrl %s",
 			        Util::translateError().c_str());
-			dcdebug("RICHEDIT_CLASS = %s", RICHEDIT_CLASS);
+			dcdebug("RICHEDIT_CLASS = %ls", RICHEDIT_CLASS);
 			dcassert(0);
 		}
 		else
@@ -365,6 +365,7 @@ bool BaseChatFrame::processingServices(UINT uMsg, WPARAM wParam, LPARAM /*lParam
 					bHandled = TRUE;
 					break;
 				}
+				[[fallthrough]];
 			default:
 				bHandled = FALSE;
 				break;

@@ -86,8 +86,8 @@ string GeoIP::getCountry(const string& ip) const {
 			params["engname"] = [&] { return parseData(res, "country", "names", language.c_str(), NULL); };
 			//params["name"] = [&] { return parseData(res, "country", "names", language.c_str(), NULL); };
 			//params["officialname"] = [&] { return parseData(res, "country", "names", language.c_str(), NULL); };
-			const auto  res = Util::formatParams(setting, params);
-			return  res;
+			const auto l_formatted = Util::formatParams(setting, params);
+			return  l_formatted;
 		}
 		else {
 			if (gai_error != 0) {

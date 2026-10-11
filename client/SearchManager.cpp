@@ -92,7 +92,7 @@ void SearchManager::listen()
 		socket->setBlocking(true);
 		if (BOOLSETTING(AUTO_DETECT_CONNECTION))
 		{
-			g_search_port = socket->bind(0, BaseUtil::emptyString);
+			g_search_port = socket->bind(0);
 		}
 		else
 		{
@@ -488,7 +488,7 @@ void SearchManager::onRES(const AdcCommand& cmd, const UserPtr& from, const boos
 	int64_t size = -1;
 	string file;
 	string tth;
-	uint32_t l_token = -1; // 0 == auto
+	uint32_t l_token = static_cast<uint32_t>(-1); // 0 == auto
 	
 	for (auto i = cmd.getParameters().cbegin(); i != cmd.getParameters().cend(); ++i)
 	{

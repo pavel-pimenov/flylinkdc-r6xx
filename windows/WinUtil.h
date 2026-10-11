@@ -1379,6 +1379,7 @@ class WinUtil
 				sz = getTextWidth(str, dc);
 				const int l_res = ::ReleaseDC(g_mainWnd, dc);
 				dcassert(l_res);
+				(void)l_res;
 			}
 			return sz;
 		}
@@ -1399,6 +1400,7 @@ class WinUtil
 			const LONG h = getTextHeight(dc, fnt);
 			const int l_res = ::ReleaseDC(wnd, dc);
 			dcassert(l_res);
+			(void)l_res;
 			return h;
 		}
 		
@@ -1415,6 +1417,7 @@ class WinUtil
 			TEXTMETRIC tm = {0};
 			const BOOL l_res = ::GetTextMetrics(dc, &tm);
 			dcassert(l_res);
+			(void)l_res;
 			return tm.tmHeight;
 		}
 		

@@ -51,18 +51,18 @@ class UserListColours : public CPropertyPage<IDD_USERLIST_COLOURS_PAGE>, public 
 		void refreshPreview();
 		
 		CListBox n_lsbList;
-		int normalColour;
-		int favoriteColour;
-		int favEnemyColour;
-		int reservedSlotColour;
-		int ignoredColour;
-		int fastColour;
-		int serverColour;
-		int pasiveColour;
-		int opColour;
-		int fullCheckedColour;
-		int badClientColour;
-		int badFilelistColour;
+		int normalColour = 0;
+		int favoriteColour = 0;
+		int favEnemyColour = 0;
+		int reservedSlotColour = 0;
+		int ignoredColour = 0;
+		int fastColour = 0;
+		int serverColour = 0;
+		int pasiveColour = 0;
+		int opColour = 0;
+		int fullCheckedColour = 0;
+		int badClientColour = 0;
+		int badFilelistColour = 0;
 		
 		ExCImage m_png_users;
 		CFlyHyperLink m_hlink_users;

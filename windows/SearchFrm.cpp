@@ -2291,7 +2291,7 @@ tstring SearchFrame::getDownloadDirectory(WORD wID)
 
 LRESULT SearchFrame::onDownloadWithPrio(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
-	QueueItem::Priority p;
+	QueueItem::Priority p = QueueItem::DEFAULT;
 	
 	switch (wID)
 	{
@@ -2565,7 +2565,7 @@ void SearchFrame::UpdateLayout(BOOL bResizeBars)
 	if (ctrlStatus.IsWindow())
 	{
 		CRect sr;
-		int w[5];
+		int w[5] = {};
 		ctrlStatus.GetClientRect(sr);
 		int tmp = (sr.Width()) > 420 ? 376 : ((sr.Width() > 116) ? sr.Width() - 100 : 16);
 		
@@ -4316,13 +4316,9 @@ LRESULT SearchFrame::onCustomDraw(int /*idCtrl*/, LPNMHDR pnmh, BOOL& /*bHandled
 #ifdef FLYLINKDC_USE_GEO_IP
 						if (BOOLSETTING(ENABLE_COUNTRYFLAG))
 						{
-							SearchInfo* si = reinterpret_cast<SearchInfo*>(cd->nmcd.lItemlParam);
-							if (si)
-							{
-								const POINT ps = { rc.left, top };
-								g_flagImage.DrawCountry(cd->nmcd.hdc, Text::fromT(si->columns[COLUMN_IP]), ps);
-								l_step += 25;
-							}
+							const POINT ps = { rc.left, top };
+							g_flagImage.DrawCountry(cd->nmcd.hdc, Text::fromT(si->columns[COLUMN_IP]), ps);
+							l_step += 25;
 						}
 #endif
 #ifdef FLYLINKDC_USE_CUSTOM_LOCATIONS

@@ -116,10 +116,10 @@ class PropPageTextStyles: public CPropertyPage<IDD_TEXT_STYLES_PAGE>, public Pro
 				string m_sPreviewText;
 				
 				PropPageTextStyles *m_pParent;
-				SettingsManager::IntSetting m_iBackColor;
-				SettingsManager::IntSetting m_iForeColor;
-				SettingsManager::IntSetting m_iBold;
-				SettingsManager::IntSetting m_iItalic;
+				SettingsManager::IntSetting m_iBackColor = SettingsManager::INT_FIRST;
+				SettingsManager::IntSetting m_iForeColor = SettingsManager::INT_FIRST;
+				SettingsManager::IntSetting m_iBold = SettingsManager::INT_FIRST;
+				SettingsManager::IntSetting m_iItalic = SettingsManager::INT_FIRST;
 		};
 		
 	protected:
@@ -144,7 +144,7 @@ class PropPageTextStyles: public CPropertyPage<IDD_TEXT_STYLES_PAGE>, public Pro
 		TextStyleSettings TextStyles[ TS_LAST ];
 		CListBox m_lsbList;
 		ChatCtrl m_Preview;
-		LOGFONT m_Font;
+		LOGFONT m_Font = {};
 		COLORREF m_BackColor;
 		COLORREF m_ForeColor;
 		COLORREF fg, bg;//, err, alt;

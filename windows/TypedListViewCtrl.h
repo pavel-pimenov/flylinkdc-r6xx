@@ -1044,7 +1044,7 @@ class TypedListViewCtrl : public CWindowImpl<TypedListViewCtrl<T, ctrlId>, CList
 	public:
 		void SetItemFilled(const LPNMLVCUSTOMDRAW p_cd, const CRect& p_rc2, COLORREF p_textColor = Colors::g_textColor, COLORREF p_textColorUnfocus = Colors::g_textColor)
 		{
-			COLORREF color;
+			COLORREF color = 0;
 			if (GetItemState((int)p_cd->nmcd.dwItemSpec, LVIS_SELECTED) & LVIS_SELECTED)
 			{
 				if (m_hWnd == ::GetFocus())
@@ -1362,6 +1362,7 @@ class TypedTreeListViewCtrl : public TypedListViewCtrl<T, ctrlId>
 				ParentPair* pp = findParentPair(parent->getGroupCond());
 				
 				const auto l_id = deleteItem(item); // TODO - разобраться почему тут не удаляет.
+				(void)l_id;
 #ifdef _DEBUG
 				if (l_id < 0)
 				{

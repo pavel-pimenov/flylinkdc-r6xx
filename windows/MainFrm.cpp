@@ -477,6 +477,7 @@ void MainFrame::createMainMenu(void)
 	}
 #endif
 	
+	#pragma warning(suppress:6387)
 	SetMenu(NULL);  // remove old menu
 }
 
@@ -1300,11 +1301,11 @@ LRESULT MainFrame::onWinampButton(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl
 		HWND hwndiTunes = FindWindow(_T("iTunes"), _T("iTunes"));
 		if (::IsWindow(hwndiTunes))
 		{
-			IiTunes *iITunes;
-			CoInitialize(NULL);
+			IiTunes *iITunes = nullptr;
+			(void)CoInitialize(NULL);
 			if (SUCCEEDED(::CoCreateInstance(CLSID_iTunesApp, NULL, CLSCTX_LOCAL_SERVER, IID_IiTunes, (PVOID *)&iITunes)))
 			{
-				long currVol;
+				long currVol = 0;
 				switch (wID)
 				{
 					case IDC_WINAMP_BACK:
@@ -1661,7 +1662,7 @@ LRESULT MainFrame::onSpeaker(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, BOOL& 
 			
 			{
 				//CLockRedraw<true> l_lock_draw(m_ctrlStatus.m_hWnd);
-				BOOL l_result;
+				BOOL l_result = FALSE;
 				if (m_statusText[0] != str[0])
 				{
 					m_statusText[0] = str[0];
@@ -1859,7 +1860,7 @@ LRESULT MainFrame::onSpeaker(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, BOOL& 
 void MainFrame::parseCommandLine(const tstring& cmdLine)
 {
 	const string::size_type i = 0;
-	string::size_type j;
+	string::size_type j = 0;
 	tstring l_cmdLine = cmdLine;
 	int l_e = cmdLine.size() - 1;
 	
@@ -2784,7 +2785,7 @@ void MainFrame::UpdateLayout(BOOL bResizeBars /* = TRUE */)
 		if (m_ctrlStatus.IsWindow() && m_ctrlLastLines.IsWindow())
 		{
 			CRect sr;
-			int w[STATUS_PART_LAST];
+			int w[STATUS_PART_LAST] = {};
 			
 			bool bIsHashing = HashManager::getInstance()->IsHashing();
 			m_ctrlStatus.GetClientRect(sr);
@@ -3072,7 +3073,7 @@ LRESULT MainFrame::onTaskbarButton(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lP
 			dcassert(0);
 		}
 	}
-	THUMBBUTTON buttons[3]; // Количество кнопок.
+	THUMBBUTTON buttons[3] = {}; // Количество кнопок.
 	const int l_sizeTip = _countof(buttons[0].szTip) - 1;
 	buttons[0].dwMask = THB_ICON | THB_TOOLTIP | THB_FLAGS;
 	buttons[0].iId = IDC_OPEN_DOWNLOADS;
@@ -3456,7 +3457,7 @@ LRESULT MainFrame::onWindowRestoreAll(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /
 	HWND tmpWnd = GetWindow(GW_CHILD); //getting client window
 	HWND ClientWnd = tmpWnd; //saving client window handle
 	tmpWnd = ::GetWindow(tmpWnd, GW_CHILD); //getting first child window
-	BOOL bmax;
+	BOOL bmax = FALSE;
 	while (tmpWnd != NULL)
 	{
 		::ShowWindow(tmpWnd, SW_RESTORE);
@@ -3696,7 +3697,7 @@ void MainFrame::on(QueueManagerListener::Added, const QueueItemPtr& qi) noexcept
 void MainFrame::on(QueueManagerListener::TryAdding, const string& fileName, int64_t newSize, int64_t existingSize, time_t existingTime, int option) noexcept
 {
 	unique_ptr<CheckTargetDlg> dlg(new CheckTargetDlg(fileName, newSize, existingSize, existingTime, option));
-	int l_option;
+	int l_option = 0;
 	if (dlg->DoModal(*this) == IDOK)
 	{
 		l_option = dlg->GetOption();
@@ -3791,6 +3792,7 @@ LRESULT MainFrame::OnToolbarDropDown(int idCtrl, LPNMHDR pnmh, BOOL& /*bHandled*
 		// Create a point
 		CPoint pt(rect.left, rect.bottom);
 		// Map the points
+		#pragma warning(suppress:6387)
 		toolbar.MapWindowPoints(HWND_DESKTOP, &pt, 1);
 		// Load the menu
 		int iCurrentMediaSelection = SETTING(MEDIA_PLAYER);

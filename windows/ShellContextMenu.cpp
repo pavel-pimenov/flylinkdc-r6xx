@@ -40,7 +40,7 @@ void CShellContextMenu::SetPath(const tstring& strPath)
 	
 	// get IShellFolder interface of Desktop(root of shell namespace)
 	IShellFolder* psfDesktop = nullptr;
-	SHGetDesktopFolder(&psfDesktop);
+	(void)SHGetDesktopFolder(&psfDesktop);
 	
 	// ParseDisplayName creates a PIDL from a file system path relative to the IShellFolder interface
 	// but since we use the Desktop as our interface and the Desktop is the namespace root
@@ -50,7 +50,8 @@ void CShellContextMenu::SetPath(const tstring& strPath)
 	
 	// now we need the parent IShellFolder interface of pidl, and the relative PIDL to that interface
 	typedef HRESULT(CALLBACK * LPFUNC)(LPCITEMIDLIST pidl, REFIID riid, void **ppv, LPCITEMIDLIST * ppidlLast);
-	LPFUNC MySHBindToParent = (LPFUNC)GetProcAddress(LoadLibrary(_T("shell32")), "SHBindToParent");
+	HMODULE hShell32 = ::LoadLibrary(_T("shell32"));
+	LPFUNC MySHBindToParent = hShell32 ? (LPFUNC)GetProcAddress(hShell32, "SHBindToParent") : nullptr;
 	if (MySHBindToParent == NULL) return;
 	
 	MySHBindToParent(pidl, IID_IShellFolder, (LPVOID*)&m_psfFolder, NULL);
@@ -66,7 +67,16 @@ void CShellContextMenu::SetPath(const tstring& strPath)
 	MySHBindToParent(pidl, IID_IShellFolder, (LPVOID*)&psfFolder, (LPCITEMIDLIST*)&pidlItem);
 	
 	// copy pidlItem to m_pidlArray
-	m_pidlArray = (LPITEMIDLIST *) realloc(m_pidlArray, sizeof(LPITEMIDLIST));
+	LPITEMIDLIST *pidlArrayNew = (LPITEMIDLIST *) realloc(m_pidlArray, sizeof(LPITEMIDLIST));
+	if (pidlArrayNew == nullptr)
+	{
+		WinUtil::safe_sh_free(pidl);
+		safe_release(psfFolder);
+		safe_release(psfDesktop);
+		return;
+	}
+	m_pidlArray = pidlArrayNew;
+	m_pidlArray[0] = nullptr;
 	int nSize = 0;
 	LPITEMIDLIST pidlTemp = pidlItem;
 	if (pidlTemp)
@@ -76,6 +86,13 @@ void CShellContextMenu::SetPath(const tstring& strPath)
 			pidlTemp = (LPITEMIDLIST)(((LPBYTE) pidlTemp) + pidlTemp->mkid.cb);
 		}
 	LPITEMIDLIST pidlRet = (LPITEMIDLIST) calloc(nSize + sizeof(USHORT), sizeof(BYTE));
+	if (pidlRet == nullptr)
+	{
+		WinUtil::safe_sh_free(pidl);
+		safe_release(psfFolder);
+		safe_release(psfDesktop);
+		return;
+	}
 	CopyMemory(pidlRet, pidlItem, nSize);
 	m_pidlArray[0] = pidlRet;
 	WinUtil::safe_sh_free(pidl);
@@ -215,7 +232,10 @@ LRESULT CALLBACK CShellContextMenu::HookWndProc(HWND hWnd, UINT message, WPARAM 
 		case WM_DRAWITEM:
 		case WM_MEASUREITEM:
 			if (wParam)
+			{
 				break; // if wParam != 0 then the message is not menu-related
+			}
+			[[fallthrough]];
 				
 		case WM_INITMENUPOPUP:
 			if (g_IContext2)

@@ -62,7 +62,7 @@ class MainFrame : public CMDIFrameWindowImpl<MainFrame>, public CUpdateUI<MainFr
 		{
 			tstring Title;
 			tstring Message;
-			int Icon;
+			int Icon = 0;
 		};
 		
 		enum
@@ -596,11 +596,11 @@ class MainFrame : public CMDIFrameWindowImpl<MainFrame>, public CUpdateUI<MainFr
 		CMenu tbMenu;
 		CMenu tabAWAYMenu;
 		CMenu winampMenu;
-		RECT  m_tabAWAYRect;
+		RECT  m_tabAWAYRect = {};
 		
 #ifdef SCALOLAZ_SPEEDLIMIT_DLG
-		RECT tabSPEED_INRect;
-		RECT tabSPEED_OUTRect;
+		RECT tabSPEED_INRect = {};
+		RECT tabSPEED_OUTRect = {};
 #endif
 		
 		UINT m_trayMessage;

@@ -26,8 +26,7 @@ HIconWrapper::~HIconWrapper()
 		//A shared icon is valid as long as the module from which it was loaded remains in memory.
 		// The following functions obtain a shared icon.
 	{
-		dcdrun(const BOOL l_res =) DestroyIcon(m_icon);
-		// Ругаемся на кастомных иконках dcassert(l_res);
+		DestroyIcon(m_icon);
 	}
 }
 HICON HIconWrapper::load(WORD id, int cx, int cy, UINT p_fuLoad)
@@ -55,7 +54,9 @@ HICON HIconWrapper::load(WORD id, int cx, int cy, UINT p_fuLoad)
 #endif
 		{
 			icon = (HICON)::LoadImage(g_current, MAKEINTRESOURCE(id), IMAGE_ICON, cx, cy, m_fuload);
+			#ifdef _DEBUG
 			dcdebug("!!!!!!!![step - 2] (HICON)::LoadImage: ID = %d icon = %p this = %p fuLoad = %x\n", id, icon, this, m_fuload);
+			#endif
 		}
 	}
 	dcassert(icon);

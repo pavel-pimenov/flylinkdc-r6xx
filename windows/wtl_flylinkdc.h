@@ -195,7 +195,7 @@ class CFlyTimerAdapter : public CFlyHandlerAdapter
 			if (m_timer_id)
 			{
 				ATLASSERT(::IsWindow(m_win_handler));
-				BOOL l_res;
+				BOOL l_res = FALSE;
 				if (m_timer_id_event)
 					l_res = KillTimer(m_win_handler, m_timer_id_event);
 				else

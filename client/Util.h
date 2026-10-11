@@ -693,61 +693,61 @@ class Util : public BaseUtil
 		static string toString(short val)
 		{
 			char buf[8];
-			_snprintf(buf, _countof(buf), "%d", (int)val);
+			_snprintf_s(buf, _countof(buf), _TRUNCATE, "%d", (int)val);
 			return buf;
 		}
 		static string toString(uint16_t val)
 		{
 			char buf[8];
-			_snprintf(buf, _countof(buf), "%u", (unsigned int)val);
+			_snprintf_s(buf, _countof(buf), _TRUNCATE, "%u", (unsigned int)val);
 			return buf;
 		}
 		static string toString(int val)
 		{
 			char buf[16];
-			_snprintf(buf, _countof(buf), "%d", val);
+			_snprintf_s(buf, _countof(buf), _TRUNCATE, "%d", val);
 			return buf;
 		}
 		static string toStringPercent(int val)
 		{
 			char buf[16];
-			_snprintf(buf, _countof(buf), "%d%%", val);
+			_snprintf_s(buf, _countof(buf), _TRUNCATE, "%d%%", val);
 			return buf;
 		}
 		static string toString(unsigned int val)
 		{
 			char buf[16];
-			_snprintf(buf, _countof(buf), "%u", val);
+			_snprintf_s(buf, _countof(buf), _TRUNCATE, "%u", val);
 			return buf;
 		}
 		static string toString(long val)
 		{
 			char buf[24]; //-V112
-			_snprintf(buf, _countof(buf), "%ld", val);
+			_snprintf_s(buf, _countof(buf), _TRUNCATE, "%ld", val);
 			return buf;
 		}
 		static string toHexString(long val)
 		{
 			char buf[24];
-			_snprintf(buf, _countof(buf), "%X", (unsigned long)val);
+			_snprintf_s(buf, _countof(buf), _TRUNCATE, "%X", (unsigned long)val);
 			return buf;
 		}
 		static string toString(unsigned long val)
 		{
 			char buf[24]; //-V112
-			_snprintf(buf, _countof(buf), "%lu", val);
+			_snprintf_s(buf, _countof(buf), _TRUNCATE, "%lu", val);
 			return buf;
 		}
 		static string toString(long long val)
 		{
 			char buf[24];
-			_snprintf(buf, _countof(buf), I64_FMT, val);
+			_snprintf_s(buf, _countof(buf), _TRUNCATE, I64_FMT, val);
 			return buf;
 		}
 		static string toString(unsigned long long val)
 		{
 			char buf[24];
-			_snprintf(buf, _countof(buf), U64_FMT, val);
+			_snprintf_s(buf, _countof(buf), _TRUNCATE, U64_FMT, val);
 			return buf;
 		}
 		static string toString(void* val)
@@ -758,7 +758,7 @@ class Util : public BaseUtil
 		static string toString(double val)
 		{
 			char buf[24];
-			_snprintf(buf, _countof(buf), "%0.2f", val);
+			_snprintf_s(buf, _countof(buf), _TRUNCATE, "%0.2f", val);
 			return buf;
 		}
 		
@@ -780,42 +780,42 @@ class Util : public BaseUtil
 		static wstring toStringW(int32_t val)
 		{
 			wchar_t buf[32];
-			_snwprintf(buf, _countof(buf), L"%d", val);
+			_snwprintf_s(buf, _countof(buf), _TRUNCATE, L"%d", val);
 			return buf;
 		}
 		
 		static wstring toStringW(uint32_t val)
 		{
 			wchar_t buf[32];
-			_snwprintf(buf, _countof(buf), L"%u", val);
+			_snwprintf_s(buf, _countof(buf), _TRUNCATE, L"%u", val);
 			return buf;
 		}
 		
 		static wstring toStringW(int64_t val)
 		{
 			wchar_t buf[64];
-			_snwprintf(buf, _countof(buf), _T(I64_FMT), val);
+			_snwprintf_s(buf, _countof(buf), _TRUNCATE, _T(I64_FMT), val);
 			return buf;
 		}
 		
 		static wstring toStringW(uint64_t val)
 		{
 			wchar_t buf[64];
-			_snwprintf(buf, _countof(buf), _T(U64_FMT), val);
+			_snwprintf_s(buf, _countof(buf), _TRUNCATE, _T(U64_FMT), val);
 			return buf;
 		}
 		
 		static wstring toStringW(double val)
 		{
 			wchar_t buf[20];
-			_snwprintf(buf, _countof(buf), L"%0.2f", val);
+			_snwprintf_s(buf, _countof(buf), _TRUNCATE, L"%0.2f", val);
 			return buf;
 		}
 		
 		static string toHexEscape(char val)
 		{
 			char buf[sizeof(int) * 2 + 1 + 1];
-			_snprintf(buf, _countof(buf), "%%%X", val & 0x0FF);
+			_snprintf_s(buf, _countof(buf), _TRUNCATE, "%%%X", val & 0x0FF);
 			return buf;
 		}
 		static char fromHexEscape(const string &aString)
@@ -1276,7 +1276,7 @@ class BackgroundTaskExecuter : public Thread, protected CFlyStopThread
 #endif
 			for (;;)
 			{
-				TASK_TYPE next;
+				TASK_TYPE next = TASK_TYPE();
 				{
 					for (uint64_t lbefore = 0;;)
 					{

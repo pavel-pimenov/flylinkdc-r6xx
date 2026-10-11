@@ -553,8 +553,8 @@ string ShareManager::findFileAndRealPath(const string& virtualFile, TTHValue& p_
 		const string l_path = i->second->getRealPathL();
 		{
 			CFlyFastLock(g_csTTHPathCache);
-			auto& i = g_tth_path_cache[l_tth];
-			i.first = l_path;
+			auto& l_cache_item = g_tth_path_cache[l_tth];
+			l_cache_item.first = l_path;
 		}
 		return l_path;
 	}
@@ -1287,8 +1287,8 @@ ShareManager::Directory::Ptr ShareManager::buildTreeL(__int64& p_path_id, const 
 				{
 					if (isInSkipList(l_lower_name))
 					{
-						const auto l_ext = Util::getFileExtWithoutDot(l_lower_name);
-						if (l_ext != "!ut") //  && l_ext != "crdownload"
+						const auto l_skip_ext = Util::getFileExtWithoutDot(l_lower_name);
+						if (l_skip_ext != "!ut") //  && l_ext != "crdownload"
 						{
 							// !qb, jc!, ob!, dmf, mta, dmfr, !ut, !bt, bc!, getright, antifrag, pusd, dusd, download, crdownload
 							LogManager::message(STRING(USER_DENIED_SHARE_THIS_FILE) + ' ' + l_file_name
@@ -2460,7 +2460,7 @@ void ShareManager::Directory::search(SearchResultList& aResults, StringSearch::L
 	        (((p_search_param.m_file_type == Search::TYPE_ANY) && sizeOk) || (p_search_param.m_file_type == Search::TYPE_DIRECTORY)))
 	{
 // We satisfied all the search words! Add the directory...(NMDC searches don't support directory size)
-		const SearchResultCore l_sr(SearchResult::TYPE_DIRECTORY, 0, getFullName(), TTHValue(), -1 /*token*/);
+		const SearchResultCore l_sr(SearchResult::TYPE_DIRECTORY, 0, getFullName(), TTHValue(), static_cast<uint8_t>(-1) /*token*/);
 		aResults.push_back(l_sr);
 		ShareManager::incHits();
 	}
@@ -2502,7 +2502,7 @@ void ShareManager::Directory::search(SearchResultList& aResults, StringSearch::L
 			// Check file type...
 			if (checkType(i->getName(), p_search_param.m_file_type))
 			{
-				const SearchResultCore l_sr(SearchResult::TYPE_FILE, i->getSize(), getFullName() + i->getName(), i->getTTH(), -1  /*token*/);
+				const SearchResultCore l_sr(SearchResult::TYPE_FILE, i->getSize(), getFullName() + i->getName(), i->getTTH(), static_cast<uint8_t>(-1)  /*token*/);
 				aResults.push_back(l_sr);
 				ShareManager::incHits();
 				if (aResults.size() >= p_search_param.m_max_results)
@@ -2530,7 +2530,7 @@ bool ShareManager::search_tth(const TTHValue& p_tth, SearchResultList& aResults,
 	{
 		const auto &l_fileMap = i->second;
 		// TODO - для TTH сильно толстый объект  SearchResult
-		const SearchResultCore sr(SearchResult::TYPE_FILE, l_fileMap->getSize(), l_fileMap->getParent()->getFullName() + l_fileMap->getName(), l_fileMap->getTTH(), -1/*token*/);
+		const SearchResultCore sr(SearchResult::TYPE_FILE, l_fileMap->getSize(), l_fileMap->getParent()->getFullName() + l_fileMap->getName(), l_fileMap->getTTH(), static_cast<uint8_t>(-1)/*token*/);
 		incHits();
 		aResults.push_back(sr);
 		return true;
@@ -2552,7 +2552,7 @@ bool ShareManager::searchTTHArray(CFlySearchArrayTTH& p_all_search_array, const 
 		{
 			dcassert(i->second->getParent());
 			const auto &l_fileMap = i->second;
-			const SearchResultBaseTTH l_result(SearchResult::TYPE_FILE,
+			const SearchResultBaseTTH l_search_result(SearchResult::TYPE_FILE,
 			                                   l_fileMap->getSize(),
 			                                   l_fileMap->getParent()->getFullName() + l_fileMap->getName(),
 			                                   l_fileMap->getTTH(),
@@ -2560,7 +2560,7 @@ bool ShareManager::searchTTHArray(CFlySearchArrayTTH& p_all_search_array, const 
 			                                   UploadManager::getFreeSlots()
 			                                  );
 			incHits();
-			j->m_toSRCommand = std::make_unique<string>(l_result.toSR(*p_client));
+			j->m_toSRCommand = std::make_unique<string>(l_search_result.toSR(*p_client));
 			COMMAND_DEBUG("[TTH]$Search " + j->m_search + " TTH = " + j->m_tth.toBase32(), DebugTask::HUB_IN, p_client->getIpPort());
 		}
 		else
@@ -2845,7 +2845,7 @@ void ShareManager::Directory::search(SearchResultList& aResults, AdcSearch& aStr
 	if (cur->empty() && aStrings.m_exts.empty() && sizeOk)
 	{
 // We satisfied all the search words! Add the directory...
-		const SearchResultCore l_sr(SearchResult::TYPE_DIRECTORY, getDirSizeFast(), getFullName(), TTHValue(), -1  /*token*/);
+		const SearchResultCore l_sr(SearchResult::TYPE_DIRECTORY, getDirSizeFast(), getFullName(), TTHValue(), static_cast<uint8_t>(-1)  /*token*/);
 		aResults.push_back(l_sr);
 		ShareManager::incHits();
 	}
@@ -2877,7 +2877,7 @@ void ShareManager::Directory::search(SearchResultList& aResults, AdcSearch& aStr
 			// Check file type...
 			if (aStrings.hasExt(i->getName()))
 			{
-				const SearchResultCore l_sr(SearchResult::TYPE_FILE, i->getSize(), getFullName() + i->getName(), i->getTTH(), -1  /*token*/);
+				const SearchResultCore l_sr(SearchResult::TYPE_FILE, i->getSize(), getFullName() + i->getName(), i->getTTH(), static_cast<uint8_t>(-1)  /*token*/);
 				aResults.push_back(l_sr);
 				ShareManager::incHits();
 				if (aResults.size() >= maxResults)

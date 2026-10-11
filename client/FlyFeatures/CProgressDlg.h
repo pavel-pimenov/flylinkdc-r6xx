@@ -49,7 +49,7 @@ template<class T, int idd, int time> class CProgressDlg :
 		{
 			m_Progress = GetDlgItem(IDC_PROGRESS);
 			
-			unsigned ThreadId;
+			unsigned ThreadId = 0;
 			m_FuncParams.pParams = m_pParams;
 			m_FuncParams.pProgress = this;
 			
@@ -115,7 +115,7 @@ template<class T, int idd, int time> class CProgressDlg :
 		
 		CProgressDlg(LPTHREAD_START_ROUTINE func, T* params, LPCTSTR capture): m_Func(func),
 			m_TimerId(101), m_hThread(0), m_pParams(params), m_Capture(capture),
-			m_FirstTime(0)
+			m_FirstTime(0), m_Dt(0), m_MaxTime(0), m_FuncParams()
 		{
 		}
 		

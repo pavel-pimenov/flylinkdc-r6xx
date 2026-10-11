@@ -3,6 +3,9 @@
 
 #pragma once
 
+#pragma warning(push)
+#pragma warning(disable : 6255)
+
 /////////////////////////////////////////////////////////////////////////////
 // CPropertyItemEditors - Editors for Property controls
 //
@@ -71,7 +74,7 @@ class CPropertyEditWindow :
 			{
 				case VK_ESCAPE:
 					m_fCancel = true;
-					// FALL THROUGH...
+					[[fallthrough]];
 				case VK_RETURN:
 					// Force focus to parent to update value (see OnKillFocus()...)
 					::SetFocus(GetParent());
@@ -142,7 +145,7 @@ class CPropertyDropWindowImpl :
 		DECLARE_WND_SUPERCLASS(NULL, TBase::GetWndClassName())
 		
 		CContainedWindowT<CButton> m_wndButton;
-		bool m_bReadOnly;
+		bool m_bReadOnly = false;
 		
 		virtual void OnFinalMessage(HWND /*hWnd*/)
 		{
@@ -215,6 +218,7 @@ class CPropertyDropWindowImpl :
 				bHandled = FALSE;
 				return 0;
 			}
+			int lLow = 0, lHigh = 0;
 			switch (wParam)
 			{
 				case VK_F2:
@@ -233,7 +237,6 @@ class CPropertyDropWindowImpl :
 				case VK_DOWN:
 					return ::PostMessage(GetParent(), WM_USER_PROP_NAVIGATE, LOWORD(wParam), 0);
 				case VK_LEFT:
-					int lLow, lHigh;
 					SendMessage(EM_GETSEL, (WPARAM) &lLow, (LPARAM) &lHigh);
 					if (lLow != lHigh || lLow != 0) break;
 					return ::PostMessage(GetParent(), WM_USER_PROP_NAVIGATE, LOWORD(wParam), 0);
@@ -403,7 +406,7 @@ class CPropertyListWindow :
 		DECLARE_WND_SUPERCLASS(_T("WTL_InplacePropertyList"), CEdit::GetWndClassName())
 		
 		CContainedWindowT<CListBox> m_wndList;
-		int m_cyList;      // Used to resize the listbox when first shown
+		int m_cyList = 0;      // Used to resize the listbox when first shown
 		
 		typedef CPropertyDropWindowImpl<CPropertyListWindow> baseClass;
 		
@@ -720,7 +723,7 @@ class CPropertyButtonWindow :
 	public:
 		DECLARE_WND_SUPERCLASS(_T("WTL_InplacePropertyButton"), CEdit::GetWndClassName())
 		
-		IProperty* m_prop; // BUG: Dangerous reference
+		IProperty* m_prop = nullptr; // BUG: Dangerous reference
 		
 		typedef CPropertyDropWindowImpl<CPropertyButtonWindow> baseClass;
 		
@@ -756,5 +759,7 @@ class CPropertyButtonWindow :
 		}
 };
 
+
+#pragma warning(pop)
 
 #endif // __PROPERTYITEMEDITORS__H

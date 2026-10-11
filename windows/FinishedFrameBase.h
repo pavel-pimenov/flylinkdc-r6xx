@@ -896,7 +896,7 @@ class FinishedFrameBase : public MDITabChildWindowImpl < T, RGB(0, 0, 0), icon >
 		std::unordered_map<HTREEITEM, unsigned> m_tree_torrent;
 		CTreeViewCtrl           m_ctrlTree;
 		CContainedWindow        m_treeContainer;
-		HTREEITEM               m_RootItem;
+		HTREEITEM               m_RootItem = nullptr;
 		class CFlyTreeItem
 		{
 			public:
@@ -953,10 +953,10 @@ class FinishedFrameBase : public MDITabChildWindowImpl < T, RGB(0, 0, 0), icon >
 		int64_t m_totalCountLast;
 		
 		FinishedManager::eType m_type;
-		SettingsManager::IntSetting boldFinished;
-		SettingsManager::StrSetting columnWidth;
-		SettingsManager::StrSetting columnOrder;
-		SettingsManager::StrSetting columnVisible;
+		SettingsManager::IntSetting boldFinished = SettingsManager::INT_FIRST;
+		SettingsManager::StrSetting columnWidth = SettingsManager::STR_FIRST;
+		SettingsManager::StrSetting columnOrder = SettingsManager::STR_FIRST;
+		SettingsManager::StrSetting columnVisible = SettingsManager::STR_FIRST;
 		
 		
 		static int columnSizes[FinishedItem::COLUMN_LAST];

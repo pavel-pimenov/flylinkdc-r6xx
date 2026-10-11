@@ -9,18 +9,18 @@
 
 class CAnimatedButton: public CWindowImpl<CAnimatedButton, CButton>
 {
-		CGDIImage *m_pImage;
-		HDC m_hDC;
-		bool m_bInited;
-		int m_xBk;
-		int m_yBk;
-		int m_xSrc;
-		int m_ySrc;
-		int m_wSrc;
-		int m_hSrc;
-		int m_h, m_w;
+		CGDIImage *m_pImage = nullptr;
+		HDC m_hDC = nullptr;
+		bool m_bInited = false;
+		int m_xBk = 0;
+		int m_yBk = 0;
+		int m_xSrc = 0;
+		int m_ySrc = 0;
+		int m_wSrc = 0;
+		int m_hSrc = 0;
+		int m_h = 0, m_w = 0;
 		
-		HDC m_hBackDC;
+		HDC m_hBackDC = nullptr;
 		
 		static bool __cdecl OnFrameChanged(CGDIImage *pImage, LPARAM lParam);
 		

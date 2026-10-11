@@ -24,7 +24,10 @@ CBarShader::~CBarShader(void)
 void CBarShader::BuildModifiers()
 {
 	static const double dDepths[5] = { 5.5, 4.0, 3.0, 2.50, 2.25 };     //aqua bar - smoother gradient jumps...
-	double  depth = dDepths[((m_used3dlevel > 5) ? (256 - m_used3dlevel) : m_used3dlevel) - 1];
+	int l_depthIndex = (m_used3dlevel > 5) ? (256 - m_used3dlevel) : m_used3dlevel;
+	if (l_depthIndex < 1) l_depthIndex = 1;
+	else if (l_depthIndex > 5) l_depthIndex = 5;
+	double  depth = dDepths[l_depthIndex - 1];
 	uint32_t dwCount = CalcHalfHeight(m_iHeight);
 	double piOverDepth = M_PI / depth;
 	double base = M_PI_2 - piOverDepth;
@@ -83,7 +86,7 @@ void CBarShader::FillRange(uint64_t qwStart, uint64_t qwEnd, COLORREF crColor)
 		
 	if (qwStart >= qwEnd)
 		return;
-	POSITION endprev, endpos = m_Spans.FindFirstKeyAfter(qwEnd + 1ui64);
+	POSITION endprev = nullptr, endpos = m_Spans.FindFirstKeyAfter(qwEnd + 1ui64);
 	
 	if ((endprev = endpos) != NULL)
 		m_Spans.GetPrev(endpos);
@@ -149,7 +152,7 @@ void CBarShader::Draw(CDC& dc, int iLeft, int iTop, int P3DDepth)
 		else
 		{
 			double dRed = 0, dGreen = 0, dBlue = 0;
-			uint32_t dwRed, dwGreen, dwBlue;
+			uint32_t dwRed = 0, dwGreen = 0, dwBlue = 0;
 			uint64_t qwLast = qwStart, qwEnd = qwStart + iBytesInOnePixel;
 			
 			do
@@ -203,7 +206,7 @@ void CBarShader::FillRect(CDC& dc, LPCRECT rectSpan, COLORREF crColor)
 			BuildModifiers();
 			
 		double  dblRed = GetRValue(crColor), dblGreen = GetGValue(crColor), dblBlue = GetBValue(crColor);
-		double  dAdd;
+		double  dAdd = 0;
 		
 		if (m_used3dlevel > 5)      //Cax2 aqua bar
 		{
@@ -217,7 +220,7 @@ void CBarShader::FillRect(CDC& dc, LPCRECT rectSpan, COLORREF crColor)
 		else
 			dAdd = 0;
 			
-		RECT        rect;
+		RECT        rect = {};
 		int         iTop = rectSpan->top, iBot = rectSpan->bottom;
 		const size_t l_count = static_cast<size_t>(CalcHalfHeight(m_iHeight));
 		dcassert(m_pdblModifiers.size() <= l_count);
@@ -294,8 +297,8 @@ _RGB2HUE_END:
 RGBTRIPLE OperaColors::HUE2RGB(double m0, double m2, double h)
 {
 	RGBTRIPLE rgbt = {0, 0, 0};
-	double m1, F = 0;
-	int n;
+	double m1 = 0, F = 0;
+	int n = 0;
 	while (h < 0)
 		h += 360;
 	while (h >= 360)
@@ -352,7 +355,7 @@ HLSTRIPLE OperaColors::RGB2HLS(BYTE red, BYTE green, BYTE blue)
 	double r = (double)red / 255;
 	double g = (double)green / 255;
 	double b = (double)blue / 255;
-	double m0 = MIN3(r, g, b), m2 = MAX3(r, g, b), d;
+	double m0 = MIN3(r, g, b), m2 = MAX3(r, g, b), d = 0;
 	HLSTRIPLE hlst = {0, -1, -1};
 	
 	hlst.hlstLightness = (m2 + m0) / 2;
@@ -377,7 +380,7 @@ HLSTRIPLE OperaColors::RGB2HLS(BYTE red, BYTE green, BYTE blue)
 RGBTRIPLE OperaColors::HLS2RGB(double hue, double lightness, double saturation)
 {
 	RGBTRIPLE rgbt = {0, 0, 0};
-	double d;
+	double d = 0;
 	
 	if (EqualD(lightness, 1))
 	{

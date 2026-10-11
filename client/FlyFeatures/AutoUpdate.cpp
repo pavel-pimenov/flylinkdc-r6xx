@@ -349,6 +349,7 @@ void AutoUpdate::startUpdateThisThread()
 							// Download RTF file from Server
 							string programRtfData;
 							size_t l_dataRTFSize = Util::getDataFromInetSafe(false, programUpdateDescription, programRtfData);
+							(void)l_dataRTFSize;
 							if (m_guiDelegate && !ClientManager::isBeforeShutdown())
 							{
 								idResult = UpdateResult(m_guiDelegate->ShowDialogUpdate(l_message, programRtfData, l_files4Description));
@@ -461,11 +462,11 @@ void AutoUpdate::startUpdateThisThread()
 								{
 									if (l_userAsk)
 									{
-										const tstring l_message = TSTRING(AUTOUPDATE_DOWNLOAD_FAILED) + _T("\r\n") + TSTRING(FAILED_TO_LOAD) + _T("\r\n") + Text::toT(l_errorFileName);
-										CFlyServerJSON::pushError(63, Text::fromT(l_message));
+										const tstring l_messageT = TSTRING(AUTOUPDATE_DOWNLOAD_FAILED) + _T("\r\n") + TSTRING(FAILED_TO_LOAD) + _T("\r\n") + Text::toT(l_errorFileName);
+										CFlyServerJSON::pushError(63, Text::fromT(l_messageT));
 										if (!ClientManager::isBeforeShutdown())
 										{
-											::MessageBox(m_mainFrameHWND, l_message.c_str(), getFlylinkDCAppCaptionWithVersionT().c_str(), MB_OK | MB_ICONERROR);
+											::MessageBox(m_mainFrameHWND, l_messageT.c_str(), getFlylinkDCAppCaptionWithVersionT().c_str(), MB_OK | MB_ICONERROR);
 										}
 									}
 									else
@@ -631,7 +632,7 @@ bool AutoUpdate::prepareFile(const AutoUpdateFile& file, const string& tempFolde
 		if (file.m_packer == AutoUpdateFile::Zip)
 		{
 			UnZFilter unzip;
-			unPacked  = (unzip(l_binary_data.data(), (size_t &)sizeRead, out.get(), outSize) && outSize == file.m_size);
+			unPacked  = (unzip(l_binary_data.data(), (size_t &)sizeRead, out.get(), outSize) && static_cast<int64_t>(outSize) == file.m_size);
 		}
 		else if (file.m_packer == AutoUpdateFile::BZip2)
 		{
@@ -639,7 +640,7 @@ bool AutoUpdate::prepareFile(const AutoUpdateFile& file, const string& tempFolde
 			try
 			{
 				unbzip(l_binary_data.data(), (size_t &)sizeRead, out.get(), outSize);
-				unPacked = (outSize == file.m_size) ;
+				unPacked = (static_cast<int64_t>(outSize) == file.m_size) ;
 			}
 			catch (const Exception&)
 			{

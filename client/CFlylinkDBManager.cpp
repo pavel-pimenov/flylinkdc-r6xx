@@ -866,6 +866,7 @@ void CFlylinkDBManager::load_all_hub_into_cacheL()
 		const auto l_id = l_q.getint(0);
 		const auto& l_res = m_DIC[e_DIC_HUB - 1].insert(std::make_pair(l_hub_name, l_id));
 		dcassert(l_res.second == true);
+		(void)l_res;
 #ifdef FLYLINKDC_USE_CACHE_HUB_URLS
 		m_HubNameMap[l_id] = l_hub_name;
 #endif
@@ -1764,6 +1765,7 @@ void CFlylinkDBManager::load_registry(CFlyRegistryMap& p_values, eTypeSegment p_
 			                                        l_q.getstring(0),
 			                                        CFlyRegistryValue(l_q.getstring(1), l_q.getint64(2))));
 			dcassert(l_res.second);
+			(void)l_res;
 		}
 	}
 	catch (const database_error& e)
@@ -4038,6 +4040,7 @@ void CFlylinkDBManager::load_dir(__int64 p_path_id, CFlyDirMap& p_dir_map, bool 
 			}
 			const auto l_is_tth_ok = l_q.getblob(2, &l_info.m_tth, 24);
 			dcassert(l_is_tth_ok);
+			(void)l_is_tth_ok;
 			dcassert(l_info.m_tth != TTHValue());
 		}
 		// тормозит...

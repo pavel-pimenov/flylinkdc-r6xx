@@ -67,7 +67,7 @@ DirectoryListingFrame::~DirectoryListingFrame()
 
 void DirectoryListingFrame::openWindow(const tstring& aFile, const tstring& aDir, const HintedUser& aHintedUser, int64_t aSpeed, bool p_isDCLST /*= false*/)
 {
-	bool l_is_users_map_exists;
+	bool l_is_users_map_exists = false;
 	{
 		CFlyLock(g_csUsersMap);
 		auto i = g_usersMap.end();
@@ -762,7 +762,7 @@ LRESULT DirectoryListingFrame::onDownloadDirWithPrio(WORD /*wNotifyCode*/, WORD 
 	{
 		DirectoryListing::Directory* dir = (DirectoryListing::Directory*)ctrlTree.GetItemData(t);
 		
-		QueueItem::Priority p;
+		QueueItem::Priority p = QueueItem::DEFAULT;
 		switch (wID - 90)
 		{
 			case IDC_PRIORITY_PAUSED:
@@ -864,7 +864,7 @@ LRESULT DirectoryListingFrame::onDownload(WORD /*wNotifyCode*/, WORD /*wID*/, HW
 
 LRESULT DirectoryListingFrame::onDownloadWithPrio(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
-	QueueItem::Priority p;
+	QueueItem::Priority p = QueueItem::DEFAULT;
 	
 	switch (wID)
 	{

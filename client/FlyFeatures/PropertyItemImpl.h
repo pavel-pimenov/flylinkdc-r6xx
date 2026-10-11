@@ -3,6 +3,9 @@
 
 #pragma once
 
+#pragma warning(push)
+#pragma warning(disable : 6255)
+
 /////////////////////////////////////////////////////////////////////////////
 // CPropertyItemImpl - Property implementations for the Property controls
 //
@@ -95,7 +98,7 @@ class CProperty : public IProperty
 		virtual void DrawName(PROPERTYDRAWINFO& di)
 		{
 			CDCHandle dc(di.hDC);
-			COLORREF clrBack, clrFront;
+			COLORREF clrBack = 0, clrFront = 0;
 			if ((di.state & ODS_DISABLED) != 0)
 			{
 				clrFront = di.clrDisabled;
@@ -992,5 +995,7 @@ inline HPROPERTY PropCreateReadOnlyItem(LPCTSTR pstrName, LPCTSTR pstrValue = _T
 	return new CPropertyReadOnlyItem(pstrName, pstrValue, lParam);
 }
 
+
+#pragma warning(pop)
 
 #endif // __PROPERTYITEMIMPL__H

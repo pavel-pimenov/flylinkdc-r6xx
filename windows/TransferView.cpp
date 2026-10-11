@@ -455,12 +455,12 @@ LRESULT TransferView::onContextMenu(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam,
 				transferMenu.AppendMenu(MF_SEPARATOR);
 				if (!main && (i = ctrlTransfers.GetNextItem(i, LVNI_SELECTED)) != -1)
 				{
-					const ItemInfo* ii = ctrlTransfers.getItemData(i);
-					if (ii)
+					const ItemInfo* ii2 = ctrlTransfers.getItemData(i);
+					if (ii2)
 					{
 						bCustomMenu = true;
 						
-						reinitUserMenu(ii->m_hintedUser.user, ii->m_hintedUser.hint);
+						reinitUserMenu(ii2->m_hintedUser.user, ii2->m_hintedUser.hint);
 						
 						if (getSelectedUser())
 						{
@@ -486,7 +486,7 @@ LRESULT TransferView::onContextMenu(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam,
 					{
 						const string l_target = Text::fromT(ii->m_target);
 #ifdef FLYLINKDC_USE_DROP_SLOW
-						bool slowDisconnect;
+						bool slowDisconnect = false;
 						{
 							QueueManager::LockFileQueueShared l_fileQueue;
 							const auto& queue = l_fileQueue.getQueueL();
@@ -609,8 +609,11 @@ LRESULT TransferView::onForce(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl
 		}
 		else
 		{
-			ii->transferFailed = false;
-			ConnectionManager::getInstance()->force(ii->m_hintedUser);
+			if (ii)
+			{
+				ii->transferFailed = false;
+				ConnectionManager::getInstance()->force(ii->m_hintedUser);
+			}
 		}
 	}
 	return 0;
@@ -844,7 +847,7 @@ LRESULT TransferView::onCustomDraw(int /*idCtrl*/, LPNMHDR pnmh, BOOL& bHandled)
 							rc9.right = rc9.left + 16;
 							rc9.bottom = rc9.top + 16;
 							
-							int64_t speedmark;
+							int64_t speedmark = 0;
 							if (!BOOLSETTING(THROTTLE_ENABLE))
 							{
 								const int64_t speedignore = Util::toInt64(SETTING(UPLOAD_SPEED));
@@ -1002,7 +1005,7 @@ LRESULT TransferView::onCustomDraw(int /*idCtrl*/, LPNMHDR pnmh, BOOL& bHandled)
 				if (!ii)
 					return CDRF_DODEFAULT;
 				ctrlTransfers.GetSubItemRect((int)cd->nmcd.dwItemSpec, cd->iSubItem, LVIR_BOUNDS, rc);
-				COLORREF color;
+				COLORREF color = 0;
 				if (ctrlTransfers.GetItemState((int)cd->nmcd.dwItemSpec, LVIS_SELECTED) & LVIS_SELECTED)
 				{
 					if (ctrlTransfers.m_hWnd == ::GetFocus())
@@ -1076,7 +1079,7 @@ LRESULT TransferView::onCustomDraw(int /*idCtrl*/, LPNMHDR pnmh, BOOL& bHandled)
 				cd->clrText = OperaColors::blendColors(Colors::g_bgColor, Colors::g_textColor, 0.4);
 				return CDRF_NEWFONT;
 			}
-			// Fall through
+			[[fallthrough]];
 		}
 		default:
 			return CDRF_DODEFAULT;
@@ -1952,6 +1955,7 @@ const tstring TransferView::ItemInfo::getText(uint8_t col) const
 			{
 				return m_hits == -1 ? m_hubs : (Util::toStringW(running) + _T(' ') + TSTRING(NUMBER_OF_SEGMENTS));
 			}
+			[[fallthrough]];
 		case COLUMN_STATUS:
 		{
 #ifndef _DEBUG

@@ -28,7 +28,11 @@ class NetworkPage;
 class PropertiesDlg : public TreePropertySheet
 {
 	public:
-		static const size_t g_numPages = 37;
+#ifdef SSA_INCLUDE_FILE_SHARE_PAGE
+	static const size_t g_numPages = 38;
+#else
+	static const size_t g_numPages = 37;
+#endif
 		
 		BEGIN_MSG_MAP(PropertiesDlg)
 		COMMAND_ID_HANDLER(IDOK, onOK)

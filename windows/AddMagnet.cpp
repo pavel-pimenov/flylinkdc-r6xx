@@ -17,10 +17,10 @@
  */
 
 #include "stdafx.h"
-#include "Resource.h"
-#include "WinUtil.h"
-#include "AddMagnet.h"
 
+#include "Resource.h"
+#include "AddMagnet.h"
+#include "WinUtil.h"
 
 LRESULT AddMagnet::onFocus(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 {

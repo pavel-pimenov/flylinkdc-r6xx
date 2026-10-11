@@ -85,6 +85,7 @@ PropertiesDlg::PropertiesDlg(HWND parent) : TreePropertySheet(CTSTRING(SETTINGS)
 	pages[n++] = new Popups();
 	pages[n++] = new Sounds();
 	pages[n++] = new ToolbarPage();
+	#pragma warning(suppress:6386)
 	pages[n++] = new WindowsPage();
 	pages[n++] = new TabsPage();
 	pages[n++] = new AdvancedPage();

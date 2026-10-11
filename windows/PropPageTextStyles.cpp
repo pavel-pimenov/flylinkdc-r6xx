@@ -74,8 +74,8 @@ PropPageTextStyles::clrs PropPageTextStyles::colours[] =
 
 LRESULT PropPageTextStyles::onSelectColor(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
-	int color;
-	SettingsManager::IntSetting key;
+	int color = 0;
+	SettingsManager::IntSetting key = SettingsManager::INT_FIRST;
 	switch (wID)
 	{
 		case IDC_DUPE_COLOR:
@@ -314,7 +314,8 @@ void PropPageTextStyles::RefreshPreview()
 	CHARFORMAT2 old = Colors::g_TextStyleMyNick;
 	CHARFORMAT2 old2 = Colors::g_TextStyleTimestamp;
 	m_Preview.SetTextStyleMyNick(TextStyles[ TS_MYNICK ]);
-	Colors::g_TextStyleTimestamp = TextStyles[ TS_TIMESTAMP ];
+	#pragma warning(suppress:26437)
+	Colors::g_TextStyleTimestamp = static_cast<const CHARFORMAT2&>(TextStyles[ TS_TIMESTAMP ]);
 	m_Preview.SetWindowText(_T(""));
 	
 	{

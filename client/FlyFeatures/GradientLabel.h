@@ -3,6 +3,9 @@
 
 #pragma once
 
+#pragma warning(push)
+#pragma warning(disable : 6255)
+
 /////////////////////////////////////////////////////////////////////////////
 // GradientLabel - Gradient label control implementation
 //
@@ -277,5 +280,7 @@ class CColorSwitch
 			m_label.SetTextColor(m_color_stop);
 		}
 };
+
+#pragma warning(pop)
 
 #endif //__GRADIENTLABEL_H__

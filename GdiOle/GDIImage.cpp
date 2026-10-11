@@ -346,6 +346,7 @@ HDC CGDIImage::CreateBackDC(COLORREF clrBack, int iPaddingW, int iPaddingH)
 					{
 						SelectObject(hRetDC, hBrush);
 						int l_res = ::ReleaseDC(NULL, hDC);
+						(void)l_res;
 						ATLASSERT(l_res);
 						BitBlt(hRetDC, 0, 0, m_pImage->GetWidth() + iPaddingW, m_pImage->GetHeight() + iPaddingH, NULL, 0, 0, PATCOPY);
 					}
@@ -406,6 +407,7 @@ void CGDIImage::GDIImageDeath(CGDIImage* p_image)
 {
     CFlyFastLock(g_GDIcs);
     const auto l_size = g_GDIImageSet.size();
+    (void)l_size;
     g_GDIImageSet.erase(p_image);
     dcassert(g_GDIImageSet.size() == l_size - 1);
 }

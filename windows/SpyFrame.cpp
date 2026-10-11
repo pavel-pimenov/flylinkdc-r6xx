@@ -184,7 +184,7 @@ void SpyFrame::UpdateLayout(BOOL bResizeBars /* = TRUE */)
 	if (ctrlStatus.IsWindow())
 	{
 		CRect sr;
-		int w[6];
+		int w[6] = {};
 		ctrlStatus.GetClientRect(sr);
 		
 		const int tmp = sr.Width() > 616 ? 516 : (sr.Width() > 116 ? sr.Width() - 100 : 16);

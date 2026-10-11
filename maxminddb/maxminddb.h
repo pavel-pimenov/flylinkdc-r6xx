@@ -5,6 +5,12 @@ extern "C" {
 #ifndef MAXMINDDB_H
 #define MAXMINDDB_H
 
+#if defined(_MSC_VER)
+/* Anonymous struct/union is a standard C11 / MSVC extension. */
+#pragma warning(push)
+#pragma warning(disable : 4201)
+#endif
+
 #include "maxminddb_config.h"
 #include <stdarg.h>
 #include <stdbool.h>
@@ -241,6 +247,10 @@ MMDB_dump_entry_data_list(FILE *const stream,
                           MMDB_entry_data_list_s *const entry_data_list,
                           int indent);
 extern const char *MMDB_strerror(int error_code);
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
 
 #endif /* MAXMINDDB_H */
 

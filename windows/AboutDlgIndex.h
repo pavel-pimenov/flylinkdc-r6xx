@@ -18,15 +18,12 @@
 class AboutDlgIndex : public CDialogImpl<AboutDlgIndex>
 {
 	public:
-		static const int m_log_page = 0;        // Temp : deactivate Log Page (VERSION_HISTORY), because code not present
-		
 		enum { IDD = IDD_ABOUTTABS };
 		enum
 		{
 			ABOUT,
 			CHAT_COMMANDS,
-			STATISTICS,
-			VERSION_HISTORY,
+			STATISTICS
 		};
 		AboutDlgIndex(): m_pTabDialog(0)
 		{
@@ -77,8 +74,6 @@ class AboutDlgIndex : public CDialogImpl<AboutDlgIndex>
 				tcItem.pszText = (LPWSTR) _T("Update Log");
 				m_Page4 = std::unique_ptr<AboutLogDlg>(new AboutLogDlg());
 				tcItem.lParam = (LPARAM)&m_Page4;
-				if (m_log_page > 0)
-					m_ctrTab.InsertItem(3, &tcItem);
 				m_Page4->Create(m_ctrTab.m_hWnd, AboutLogDlg::IDD);
 			}
 			
@@ -106,8 +101,6 @@ class AboutDlgIndex : public CDialogImpl<AboutDlgIndex>
 			m_Page1->ShowWindow(SW_HIDE);
 			m_Page2->ShowWindow(SW_HIDE);
 			m_Page3->ShowWindow(SW_HIDE);
-			if (m_log_page > 0)
-				m_Page4->ShowWindow(SW_HIDE);
 			m_pTabDialog = pos;
 			
 			CRect rc;
@@ -133,15 +126,6 @@ class AboutDlgIndex : public CDialogImpl<AboutDlgIndex>
 				{
 					m_Page3->MoveWindow(&rc);
 					m_Page3->ShowWindow(SW_SHOW);
-					break;
-				}
-				case VERSION_HISTORY: // Version History, Log
-				{
-					if (m_log_page > 0)
-					{
-						m_Page4->MoveWindow(&rc);
-						m_Page4->ShowWindow(SW_SHOW);
-					}
 					break;
 				}
 			}

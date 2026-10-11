@@ -180,7 +180,7 @@ FolderTree::FolderTree()
 	for (size_t i = 0; i < _countof(m_dwMediaID); i++)
 		m_dwMediaID[i] = 0xFFFFFFFF;
 	m_pShellFolder = 0;
-	SHGetDesktopFolder(&m_pShellFolder);
+	(void)SHGetDesktopFolder(&m_pShellFolder);
 	m_bDisplayNetwork = true;
 	m_dwNetworkItemTypes = RESOURCETYPE_ANY;
 	m_hMyComputerRoot = NULL;
@@ -948,7 +948,7 @@ bool FolderTree::IsMediaValid(const tstring &sDrive)
 		return true;
 		
 	//Return FALSE if the drive is empty (::GetVolumeInformation fails)
-	DWORD dwSerialNumber;
+	DWORD dwSerialNumber = 0;
 	int nDrive = sDrive[0] - _T('A');
 	if (GetSerialNumber(sDrive, dwSerialNumber))
 		m_dwMediaID[nDrive] = dwSerialNumber;
@@ -986,7 +986,7 @@ bool FolderTree::EnumNetwork(HTREEITEM hParent)
 	NETRESOURCE* pNetResource = pItem->m_pNetResource;
 	
 	//Setup for the network enumeration
-	HANDLE hEnum;
+	HANDLE hEnum = nullptr;
 	DWORD dwResult = WNetOpenEnum(pNetResource ? RESOURCE_GLOBALNET : RESOURCE_CONTEXT, m_dwNetworkItemTypes,
 	                              0, pNetResource ? pNetResource : NULL, &hEnum);
 	                              
@@ -1105,7 +1105,7 @@ bool FolderTree::EnumNetwork(HTREEITEM hParent)
 	        TRACE(_T("Cannot complete network drive enumeration, Error:%d\n"), dwResult);
 	*/
 	//Clean up the enumeration handle
-	WNetCloseEnum(hEnum);
+	(void)WNetCloseEnum(hEnum);
 	
 	//Free up the heap memory we have used
 	delete [] lpnrDrv;
@@ -1540,7 +1540,7 @@ HTREEITEM FolderTree::HasSharedParent(HTREEITEM hItem)
 
 void FolderTree::ShareParentButNotSiblings(HTREEITEM hItem)
 {
-	FolderTreeItemInfo* pItem;
+	FolderTreeItemInfo* pItem = nullptr;
 	HTREEITEM hParent = GetParentItem(hItem);
 	if (!GetChecked(hParent))
 	{

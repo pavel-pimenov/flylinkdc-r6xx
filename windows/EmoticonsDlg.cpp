@@ -444,8 +444,7 @@ LRESULT CAnimatedButton::onClose(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lPar
 	
 	if (m_hDC)
 	{
-		dcdrun(int l_res =)::ReleaseDC(m_hWnd, m_hDC);
-		// TODO dcassert(l_res);
+		::ReleaseDC(m_hWnd, m_hDC);
 		m_hDC = nullptr;
 	}
 	

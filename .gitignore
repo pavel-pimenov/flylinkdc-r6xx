@@ -42,3 +42,5 @@ MakeDefs/MakeDefs.exe
 GeoLite2-Country_*
 build-win
 
+/compiled/*.lastcodeanalysissucceeded
+/compiled/Settings/tth-history.leveldb/*.ldb

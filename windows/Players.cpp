@@ -42,10 +42,10 @@ string Players::getItunesSpam(HWND playerWnd /*= NULL*/)
 	if (playerWnd != NULL)
 	{
 		// Pointer
-		IiTunes *iITunes;
+		IiTunes *iITunes = nullptr;
 		
 		// Load COM library
-		CoInitialize(NULL);
+		(void)CoInitialize(NULL);
 		
 		// Others
 		StringMap params;
@@ -54,7 +54,7 @@ string Players::getItunesSpam(HWND playerWnd /*= NULL*/)
 		//Create an instance of the top-level object.  iITunes is an interface pointer to IiTunes.  (weird capitalization, but that's how Apple did it)
 		if (SUCCEEDED(::CoCreateInstance(CLSID_iTunesApp, NULL, CLSCTX_LOCAL_SERVER, IID_IiTunes, (PVOID *)&iITunes)))
 		{
-			long length(0), elapsed;
+			long length(0), elapsed(0);
 			
 			//pTrack is a pointer to the track.  This gets passed to other functions to get track data.  wasTrack lets you check if the track was grabbed.
 			IITTrack *pTrack = 0;
@@ -157,7 +157,7 @@ string Players::getItunesSpam(HWND playerWnd /*= NULL*/)
 			if (elapsed > 0)
 			{
 				params["elapsed"] = Util::formatSeconds(elapsed);
-				int intPercent;
+				int intPercent = 0;
 				if (length > 0)
 				{
 					intPercent = elapsed * 100 / length;
@@ -437,7 +437,7 @@ string Players::getWMPSpam(HWND playerWnd /*= NULL*/, HWND g_mainWnd /*= NULL*/)
 	if (playerWnd != NULL)
 	{
 		// Load COM
-		CoInitialize(NULL);
+		(void)CoInitialize(NULL);
 		
 		// Pointers
 		CComPtr<IWMPPlayer>                 Player;
@@ -695,7 +695,7 @@ string Players::getWMPSpam(HWND playerWnd /*= NULL*/, HWND g_mainWnd /*= NULL*/)
 				Media->get_duration(&length);//TODO: on WMP 12 may be 0.01, need fix
 				if (elapsed > 0 && length >= elapsed)
 				{
-					int intPercent;
+					int intPercent = 0;
 					if (int(length) > 0)
 					{
 						intPercent = int(elapsed * 100.0 / length);
@@ -749,7 +749,7 @@ string Players::getWinampSpam(HWND playerWnd, int playerType)
 	if (playerWnd)
 	{
 		StringMap params;
-		int majorVersion, minorVersion;
+		int majorVersion = 0, minorVersion = 0;
 		string version;
 		if (playerType == 1)
 		{
@@ -874,7 +874,7 @@ string Players::getWinampSpam(HWND playerWnd, int playerType)
 		{
 			curPos /= 1000;
 		}
-		int intPercent;
+		int intPercent = 0;
 		if (length > 0)
 		{
 			intPercent = curPos * 100 / length;

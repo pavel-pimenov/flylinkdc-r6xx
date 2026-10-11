@@ -4278,7 +4278,7 @@ public:
 	operator PROPSHEETPAGE*() { return &m_psp; }
 
 // Construction
-	CPropertyPageImpl(ATL::_U_STRINGorID title = (LPCTSTR)NULL)
+	CPropertyPageImpl(ATL::_U_STRINGorID title = 0U)
 	{
 		// initialize PROPSHEETPAGE struct
 		memset(&m_psp, 0, sizeof(PROPSHEETPAGE));
@@ -4648,7 +4648,7 @@ class CPropertyPage : public CPropertyPageImpl<CPropertyPage<t_wDlgTemplateID> >
 public:
 	enum { IDD = t_wDlgTemplateID };
 
-	CPropertyPage(ATL::_U_STRINGorID title = (LPCTSTR)NULL) : CPropertyPageImpl<CPropertyPage>(title)
+	CPropertyPage(ATL::_U_STRINGorID title = 0U) : CPropertyPageImpl<CPropertyPage>(title)
 	{ }
 
 	DECLARE_EMPTY_MSG_MAP()

@@ -79,7 +79,7 @@ bool HashManager::StreamStore::loadTree(const string& p_filePath, TigerTree& p_T
 			TTHStreamHeader h;
 			if (l_stream.read(&h, l_sz) != sizeof(TTHStreamHeader))
 				return false;
-			if (uint64_t(l_fileSize) != h.fileSize || l_timeStamp != uint64_t(h.timeStamp) || !validateCheckSum(h))
+			if (uint64_t(l_fileSize) != h.fileSize || uint64_t(l_timeStamp) != uint64_t(h.timeStamp) || !validateCheckSum(h))
 				return false;
 			const size_t l_datalen = TigerTree::calcBlocks(l_fileSize, h.blockSize) * TTHValue::BYTES;
 			l_sz = l_datalen;

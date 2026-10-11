@@ -855,7 +855,7 @@ class ATL_NO_VTABLE CPropertyListImpl :
 			int iIndent = (m_dwExtStyle & PLS_EX_CATEGORIZED) != 0 ? CATEGORY_INDENT : 0;
 			if (pt.x == m_iMiddle + iIndent)
 			{
-				const auto l_id = MAKEINTRESOURCE(IDC_SIZEWE);
+				const auto l_id = (LPCTSTR)IDC_SIZEWE;
 				auto l_cursor = ::LoadCursor(NULL, l_id);
 				::SetCursor(l_cursor);
 				return FALSE;
@@ -881,7 +881,7 @@ class ATL_NO_VTABLE CPropertyListImpl :
 			// Fonts
 			if (!m_TextFont.IsNull()) m_TextFont.DeleteObject();
 			if (!m_CategoryFont.IsNull()) m_CategoryFont.DeleteObject();
-			LOGFONT lf;
+			LOGFONT lf = {};
 			HFONT hFont = (HFONT)::SendMessage(GetParent(), WM_GETFONT, 0, 0);
 			if (hFont == NULL) hFont = AtlGetDefaultGuiFont();
 			::GetObject(hFont, sizeof(lf), &lf);

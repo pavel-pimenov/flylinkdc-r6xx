@@ -20,17 +20,6 @@
 #include <delayimp.h>
 #include <signal.h>
 
-#ifdef _DEBUG
-#ifndef _WIN64
-// #define FLYLINKDC_USE_VLD // 3>LINK : fatal error LNK1104: cannot open file 'vld.lib' VLD качать тут https://kinddragon.github.io/vld/
-#endif
-#endif
-#ifdef FLYLINKDC_USE_VLD
-//[!] ¬ключать только при наличии VLD и только в _DEBUG
-#define VLD_DEFAULT_MAX_DATA_DUMP 1
-//#define VLD_FORCE_ENABLE // Uncoment this define to enable VLD in release
-#include "C:\Program Files (x86)\Visual Leak Detector\include\vld.h" // VLD качать тут https://kinddragon.github.io/vld/
-#endif
 
 #include "Resource.h"
 #include "MainFrm.h"
@@ -120,6 +109,7 @@ LRESULT CALLBACK splashCallback(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 		DeleteObject(hFont);
 		int l_res = ReleaseDC(hwnd, dc);
 		dcassert(l_res);
+		(void)l_res;
 	}
 	
 	return DefWindowProc(hwnd, uMsg, wParam, lParam);
@@ -253,6 +243,7 @@ void CreateSplash()
 		rc.bottom = rc.top + g_splash_size_y;
 		int l_res = g_splash.ReleaseDC(dc);
 		dcassert(l_res);
+		(void)l_res;
 		g_splash.HideCaret();
 		g_splash.SetWindowPos(NULL, &rc, SWP_SHOWWINDOW);
 		g_splash.SetWindowLongPtr(GWLP_WNDPROC, (LONG_PTR)&splashCallback);

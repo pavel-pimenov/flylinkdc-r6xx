@@ -749,7 +749,7 @@ void PublicHubsFrame::UpdateLayout(BOOL bResizeBars /* = TRUE */)
 	if (ctrlStatus.IsWindow())
 	{
 		CRect sr;
-		int w[3];
+		int w[3] = {};
 		ctrlStatus.GetClientRect(sr);
 		int tmp = (sr.Width() > 600) ? 180 : 150;
 		

@@ -97,9 +97,9 @@ class ClientManager : public Speaker<ClientManagerListener>,
 		
 		struct UserParams
 		{
-			int64_t m_bytesShared;
-			int m_slots;
-			int m_limit;
+			int64_t m_bytesShared = 0;
+			int m_slots = 0;
+			int m_limit = 0;
 			std::string m_ip;
 			std::string m_tag;
 			std::string m_nick;

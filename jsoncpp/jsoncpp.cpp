@@ -2521,6 +2521,10 @@ Value const& Value::nullRef = Value::nullSingleton();
 #endif
 
 #if !defined(JSON_USE_INT64_DOUBLE_CONVERSION)
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4389) /* signed/unsigned mismatch in template */
+#endif
 template <typename T, typename U>
 static inline bool InRange(double d, T min, U max) {
   // The casts can lose precision, but we are looking only for
@@ -2528,6 +2532,9 @@ static inline bool InRange(double d, T min, U max) {
   return d >= static_cast<double>(min) && d <= static_cast<double>(max) &&
          !(static_cast<U>(d) == min && d != static_cast<double>(min));
 }
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
 #else  // if !defined(JSON_USE_INT64_DOUBLE_CONVERSION)
 static inline double integerToDouble(Json::UInt64 value) {
   return static_cast<double>(Int64(value / 2)) * 2.0 +
