@@ -24,7 +24,10 @@
 - [ ] Phase D — остаточный проход по окнам/компонентам:
   - [ ] скроллбары, меню (owner-draw), тултипы, заголовки колонок, сплиттеры.
   - [ ] проверка на светлой теме (регрессии), контрольная сборка Release|x64
-    на Windows-ноде (в этом окружении собрать нельзя).
+    на Windows-ноде. Debug x64 уже собирается 0/0 (см. HISTORY.md).
+- [x] Phase D — сборочные фиксы Debug x64 (MSVC доступен в текущем окружении,
+  VS 18 Insiders): `PropertyList.h` (`FlyTheme::getSysColor`, `CBrush::CreateSolidBrush`),
+  `AppearancePage.cpp` (combo `AddString`).
 
 ## Обновление вендорных библиотек (vendor-update.py)
 
@@ -79,15 +82,15 @@
   `include/libtorrent/pread_disk_io.hpp`, `include/libtorrent/aux_/{pread_disk_job,pread_storage,disk_cache,back_pressure,precomputed_block_hashes,merge_block_requests,visit_block_iovecs}.hpp`,
   `include/libtorrent/random.hpp`) добавлен в манифест (485->499), дерево и
   `libtorrent_2022.vcxproj` (+8 ClInclude/+5 ClCompile) с `.filters`. `vendor-update.py
-  --vendor libtorrent` воспроизводит: add=0 update=12 delete=0 unchanged=487. НЕ закоммичено.
+  --vendor libtorrent` воспроизводит: add=0 update=12 delete=0 unchanged=487. Закоммичено `59ea1ac3` (Debug x64 собран 0/0).
 - [x] mediainfolib 25.07->26.10: база форка — тег v25.07 (2025-07-29, `History_DLL.txt`
   совпал). 17 конфликтов ребаза разрешены вручную (upstream — чистки warnings и новые
   сигнатуры/рефакторинг; сохранены правки форка: zlib-ng `zng_*`, доп. include в PreComp.h,
   `Offset` в File_Pac.cpp, класс `File__Base_Avc_Hevc`). Добавлены 3 новых парсера
   (`Image/File_AmigaIcon`, `Video/File_Apv`, `Video/File_Av2`) в манифест (509->515),
-  дерево и `MediaInfoLib_2022.vcxproj` (+.filters). Патч перегенерирован (171696 б, 110 файлов),
+  дерево и `MediaInfoLib_2022.vcxproj` (+.filters). Патч перегенерирован (172771 б, 110 файлов),
   verify 515/0; `vendor-update.py --vendor mediainfolib` -> add=0 update=110 delete=0 unchanged=405.
-  НЕ закоммичено (нужна контрольная сборка MSVC).
+  Закоммичено `9d541b1f` (правки сборочных ошибок + патч — `47f48519`); Debug x64 собран 0/0.
 - [ ] При первом реальном прогоне новых вендоров создаются коммиты через
   `commit()` (git add → porcelain → commit). Нюанс на Windows при
   core.autocrlf=true: у LF-исходников (tar.gz с GitHub) после синка
@@ -96,8 +99,8 @@
   porcelain чистый и повторный синк даёт «no changes».
   Поэтому перед коммитом дерева достаточно `git add` (скрипт делает сам);
   уровень безопасной проверки — `git diff --stat` пустой.
-- [ ] После обновлений — контрольная сборка Release|x64 (0 предупреждений/0
-  ошибок) и Debug|x64, дымовой запуск exe на Windows.
+- [x] Debug|x64 — полная solution собрана: 0 предупреждений/0 ошибок.
+- [ ] Release|x64 (0 предупреждений/0 ошибок) и дымовой запуск exe на Windows.
 
 ## Сборка (правила — только Docker, см. AGENTS.md)
 

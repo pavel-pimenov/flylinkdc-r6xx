@@ -10,3 +10,10 @@
 2026-10-11 22:09:43,Release,Build,FlyLinkDC_2022.sln,0.01,0,0,20198400,0,pch/opt baseline
 2026-10-11 22:49:37,Release,Build,FlyLinkDC_2022.sln,1.52,0,0,20198400,0,build only after LTCG/IPDB phase
 2026-10-11 22:49:57,Release,Build,FlyLinkDC_2022.sln,0.01,0,0,20198400,0,incremental build test
+2026-10-13 01:09:08,Debug,Build,mediainfolib\MediaInfoLib_2022.vcxproj,0,04,0,2,53357056,1,vendor rebase check mediainfolib
+2026-10-13 01:11:16,Debug,Build,mediainfolib\MediaInfoLib_2022.vcxproj,0,11,0,6,53357056,1,vendor rebase check mediainfolib (fix1)
+2026-10-13 01:18:43,Debug,Build,mediainfolib\MediaInfoLib_2022.vcxproj,0,05,0,0,53357056,0,vendor rebase check mediainfolib (fix2)
+2026-10-13 01:19:01,Debug,Build,libtorrent\libtorrent_2022.vcxproj,0,01,0,1,53357056,1,vendor rebase check libtorrent
+2026-10-13 01:22:05,Debug,Build,FlyLinkDC_2022.sln,0,71,0,12,53357056,1,full solution after vendor rebases
+2026-10-13 01:29:27,Debug,Build,FlyLinkDC_2022.sln,0,03,0,6,53357056,1,phaseD build fix round2
+2026-10-13 01:30:57,Debug,Build,FlyLinkDC_2022.sln,0,12,0,0,54387200,0,phaseD build fix round3

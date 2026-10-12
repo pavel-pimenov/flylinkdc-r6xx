@@ -44,3 +44,4 @@ build-win
 
 /compiled/*.lastcodeanalysissucceeded
 /compiled/Settings/tth-history.leveldb/*.ldb
+vc17/
