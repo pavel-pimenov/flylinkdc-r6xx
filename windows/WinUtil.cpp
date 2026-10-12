@@ -1080,7 +1080,9 @@ void Colors::init()
 		
 	if (WinUtil::g_mainWnd && ::IsWindow(WinUtil::g_mainWnd))
 	{
-		WinUtil::applyDarkTitleBar(WinUtil::g_mainWnd);
+		WinUtil::initDarkMode();
+		WinUtil::applyDarkMode(WinUtil::g_mainWnd);
+		WinUtil::applyDarkModeToAllWindows();
 		::RedrawWindow(WinUtil::g_mainWnd, nullptr, nullptr, RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN);
 	}
 }
@@ -3856,6 +3858,114 @@ void WinUtil::applyDarkTitleBar(HWND p_hWnd)
 		::FreeLibrary(l_dwmapi);
 	}
 }
+namespace
+{
+	bool isDarkModeSupported()
+	{
+		const OSVERSIONINFOEX& l_vi = CompatibilityManager::getVersionInfo();
+		return l_vi.dwMajorVersion > 10 || (l_vi.dwMajorVersion == 10 && l_vi.dwBuildNumber >= 17763);
+	}
+
+	FARPROC getUxThemeProc(const char* p_name)
+	{
+		static HMODULE s_uxtheme = ::LoadLibrary(_T("uxtheme.dll"));
+		return s_uxtheme ? ::GetProcAddress(s_uxtheme, p_name) : nullptr;
+	}
+
+	bool isDarkThemeWindowClass(const wchar_t* p_class)
+	{
+		static const wchar_t* const g_classes[] =
+		{
+			L"SysListView32", L"SysTreeView32", L"SysHeader32", L"ScrollBar",
+			L"Edit", L"ComboBox", L"msctls_statusbar32", L"tooltips_class32"
+		};
+		for (const wchar_t* l_name : g_classes)
+		{
+			if (wcscmp(p_class, l_name) == 0)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	void applyDarkModeToWindow(HWND p_hWnd, bool p_dark)
+	{
+		if (!p_hWnd)
+		{
+			return;
+		}
+		wchar_t l_class[64] = { 0 };
+		if (::GetClassName(p_hWnd, l_class, _countof(l_class)) && isDarkThemeWindowClass(l_class))
+		{
+			SetWindowTheme(p_hWnd, p_dark ? L"DarkMode_Explorer" : nullptr, nullptr);
+		}
+		for (HWND l_child = ::GetWindow(p_hWnd, GW_CHILD); l_child; l_child = ::GetWindow(l_child, GW_HWNDNEXT))
+		{
+			applyDarkModeToWindow(l_child, p_dark);
+		}
+	}
+
+	BOOL CALLBACK applyDarkModeEnumProc(HWND p_hWnd, LPARAM p_lParam)
+	{
+		DWORD l_pid = 0;
+		::GetWindowThreadProcessId(p_hWnd, &l_pid);
+		if (l_pid == static_cast<DWORD>(p_lParam))
+		{
+			WinUtil::applyDarkMode(p_hWnd);
+		}
+		return TRUE;
+	}
+}
+
+void WinUtil::initDarkMode()
+{
+	typedef int (WINAPI *SetPreferredAppModeFn)(int);
+	typedef void (WINAPI *FlushMenuThemesFn)();
+
+	if (!isDarkModeSupported())
+	{
+		return;
+	}
+	static const SetPreferredAppModeFn s_setPreferredAppMode = reinterpret_cast<SetPreferredAppModeFn>(getUxThemeProc(MAKEINTRESOURCEA(135)));
+	static const FlushMenuThemesFn s_flushMenuThemes = reinterpret_cast<FlushMenuThemesFn>(getUxThemeProc(MAKEINTRESOURCEA(136)));
+	if (s_setPreferredAppMode)
+	{
+		s_setPreferredAppMode(SettingsManager::isDarkTheme() ? 2 : 0);
+	}
+	if (s_flushMenuThemes)
+	{
+		s_flushMenuThemes();
+	}
+}
+
+void WinUtil::applyDarkMode(HWND p_hWnd)
+{
+	typedef BOOL (WINAPI *AllowDarkModeForWindowFn)(HWND, BOOL);
+
+	applyDarkTitleBar(p_hWnd);
+	if (!isDarkModeSupported())
+	{
+		return;
+	}
+	const bool l_dark = SettingsManager::isDarkTheme();
+	static const AllowDarkModeForWindowFn s_allowDarkModeForWindow = reinterpret_cast<AllowDarkModeForWindowFn>(getUxThemeProc(MAKEINTRESOURCEA(133)));
+	if (s_allowDarkModeForWindow && p_hWnd)
+	{
+		s_allowDarkModeForWindow(p_hWnd, l_dark ? TRUE : FALSE);
+	}
+	applyDarkModeToWindow(p_hWnd, l_dark);
+}
+
+void WinUtil::applyDarkModeToAllWindows()
+{
+	if (!isDarkModeSupported())
+	{
+		return;
+	}
+	::EnumWindows(&applyDarkModeEnumProc, static_cast<LPARAM>(::GetCurrentProcessId()));
+}
+
 COLORREF Colors::getSysColor(int nIndex)
 {
 	return FlyTheme::getSysColor(nIndex);

@@ -13,6 +13,13 @@
 - Контрольная сборка MSVC (VS 18 Insiders) Debug x64: полная solution — 0 предупреждений/0 ошибок (exe 54387200 б). Сборочные ошибки mediainfolib и их правки: `File__Analyze.h` (возвращены форковые reason-строки `Trusted_IsNot("RanOutOfData")`/`"SynchLost"` при upstream-сигнатуре `SynchLost` из 3 аргументов), `Image/File_Png.cpp` (убран дублирующий внутренний guard `MEDIAINFO_ICC_YES`, оставлен внешний upstream-guard), `Multiple/File_Mk.cpp` (`to_string` -> `std::to_string`, 2 места), `Image/File_Jpeg.cpp` и `Video/File_Av1.cpp` (`#define FMT_UNICODE 0` перед `ThirdParty/fmt/format.h`). Release x64 (Build и чистый Rebuild solution) — тоже 0 предупреждений/0 ошибок (exe 20661760 б).
 - Побочно исправлена сборка phase D тёмной темы (`e543387e`): `client/FlyFeatures/PropertyList.h` (`Colors::getSysColor` -> `FlyTheme::getSysColor` + `#include "Colors.h"`, локальный `CBrush::CreateSolidBrush` вместо `CBrush(COLORREF)`) и `windows/AppearancePage.cpp` (combo `AddString` с `const std::wstring` -> `.c_str()`). В `.gitignore` добавлен `vc17/` (артефакты MSBuild вендоров).
 
+### Тёмный режим интерфейса: меню и общие контролы (uxtheme)
+- `WinUtil::initDarkMode()` — тёмные меню: динамически загружает из `uxtheme.dll` недокументированные `SetPreferredAppMode` (ordinal 135) и `FlushMenuThemes` (ordinal 136); выполняется только при тёмной теме и Windows 10 build >= 17763 (иначе no-op).
+- `WinUtil::applyDarkMode(HWND)` — тёмный заголовок окна (`DwmSetWindowAttribute`) + `AllowDarkModeForWindow` (ordinal 133) + рекурсивный `SetWindowTheme(L"DarkMode_Explorer")` для общих контролов (listview/treeview/header/scrollbar/edit/combo/statusbar/tooltip) — тёмные скроллбары и заголовки колонок; при светлой теме тема контролов возвращается (`SetWindowTheme(..., nullptr, ...)`). `WinUtil::applyDarkModeToAllWindows()` применяет ко всем top-level окнам процесса (`EnumWindows`).
+- Точки вызова: `MainFrame::OnCreate` (`initDarkMode` + `applyDarkMode`) и `Colors::init()` (переприменение при смене темы и ко всем открытым окнам).
+- Все вызовы uxtheme защищены проверкой версии ОС и динамической загрузкой; на старых ОС поведение прежнее (только тёмный заголовок).
+- Сборка MSVC Debug и Release x64 после изменений — 0 предупреждений/0 ошибок.
+
 ## 2026-10-12
 ### Обновление вендорных библиотек до актуальных версий (vendor-update.py)
 - Обновлены и выверены 1:1 (upstream + патч == дерево, 0 расхождений): lua 5.4.6 -> 5.4.9 (патч — только восстановление $Id: в lzio.c/lzio.h), unrar 6.23 -> 6.24 (unrarsrc-6.2.12; патч — UnRAR.vcxproj, win32stm.cpp), jsoncpp 1.9.6 -> 1.9.8, snappy 1.2.0 -> 1.3.1.

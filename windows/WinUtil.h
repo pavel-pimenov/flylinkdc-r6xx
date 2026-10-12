@@ -1593,6 +1593,9 @@ class WinUtil
 		static bool isUseExplorerTheme();
 		static void SetWindowThemeExplorer(HWND p_hWnd);
 		static void applyDarkTitleBar(HWND p_hWnd);
+		static void initDarkMode();
+		static void applyDarkMode(HWND p_hWnd);
+		static void applyDarkModeToAllWindows();
 		static tstring getAddresses(CComboBox& BindCombo);
 		static bool isTeredo();
 		

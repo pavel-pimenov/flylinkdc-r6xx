@@ -511,7 +511,8 @@ LRESULT MainFrame::OnCreate(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/,
 	g_fly_server_stat.startTick(CFlyServerStatistics::TIME_START_GUI);
 #endif // FLYLINKDC_USE_GATHER_STATISTICS
 	
-	WinUtil::applyDarkTitleBar(m_hWnd);
+	WinUtil::initDarkMode();
+	WinUtil::applyDarkMode(m_hWnd);
 	
 	if (CompatibilityManager::isIncompatibleSoftwareFound())
 	{

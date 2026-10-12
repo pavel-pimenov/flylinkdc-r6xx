@@ -22,9 +22,10 @@
   `PopupDlg.h` (фон INFOBK + owned brush), включая мёртвые `DimEdit.h`,
   `grid/PropertyGrid.h`, `MiniHTML.h`, `PropertyList.h`, `PropertyView.h`.
 - [ ] Phase D — остаточный проход по окнам/компонентам:
-  - [ ] скроллбары, меню (owner-draw), тултипы, заголовки колонок, сплиттеры.
-  - [ ] проверка на светлой теме (регрессии), контрольная сборка Release|x64
-    на Windows-ноде. Debug x64 уже собирается 0/0 (см. HISTORY.md).
+  - [x] меню и общие контролы (скроллбары, заголовки колонок, тултипы) —
+    uxtheme (`WinUtil::initDarkMode`/`applyDarkMode`, DarkMode_Explorer).
+  - [ ] сплиттеры и owner-draw элементы отдельных окон.
+  - [ ] проверка на светлой теме (регрессии) и дымовой запуск exe.
 - [x] Phase D — сборочные фиксы Debug x64 (MSVC доступен в текущем окружении,
   VS 18 Insiders): `PropertyList.h` (`FlyTheme::getSysColor`, `CBrush::CreateSolidBrush`),
   `AppearancePage.cpp` (combo `AddString`).
