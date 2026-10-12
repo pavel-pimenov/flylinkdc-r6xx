@@ -1876,5 +1876,7 @@ enum Strings   // @DontAdd
 	DATETIME_MINUTES, // "min."
 	DATETIME_SECOND, // "second"
 	DATETIME_SECONDS, // "sec."
+	THEME_LIGHT, // "Light"
+	THEME_DARK, // "Dark"
 	LAST // @DontAdd
 };

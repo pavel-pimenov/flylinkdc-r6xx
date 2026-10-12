@@ -861,10 +861,10 @@ class ATL_NO_VTABLE FlatTabCtrlImpl : public CWindowImpl< T, TBase, TWinTraits>
 		
 		void updateTabs()
 		{
-			g_color_shadow = GetSysColor(COLOR_BTNSHADOW);
-			g_color_light = GetSysColor(COLOR_BTNHIGHLIGHT);
-			g_color_face =  GetSysColor(COLOR_WINDOW); //SETTING(TAB_SELECTED_BORDER_COLOR);
-			g_color_filllight = GetSysColor(COLOR_HIGHLIGHT);
+			g_color_shadow = Colors::getSysColor(COLOR_BTNSHADOW);
+			g_color_light = Colors::getSysColor(COLOR_BTNHIGHLIGHT);
+			g_color_face =  Colors::getSysColor(COLOR_WINDOW); //SETTING(TAB_SELECTED_BORDER_COLOR);
+			g_color_filllight = Colors::getSysColor(COLOR_HIGHLIGHT);
 			g_color_shadow_gdi = Gdiplus::Color(GetRValue(g_color_shadow), GetGValue(g_color_shadow), GetBValue(g_color_shadow));
 			g_color_light_gdi = Gdiplus::Color(GetRValue(g_color_light), GetGValue(g_color_light), GetBValue(g_color_light));
 			g_color_face_gdi = Gdiplus::Color(GetRValue(g_color_face), GetGValue(g_color_face), GetBValue(g_color_face));
@@ -1405,7 +1405,7 @@ class ATL_NO_VTABLE FlatTabCtrlImpl : public CWindowImpl< T, TBase, TWinTraits>
 			                         (tab->m_dirty ?
 			                          dc.SetTextColor(SETTING(TAB_ACTIVITY_TEXT_COLOR))
 			                          :
-			                          dc.SetTextColor(GetSysColor(COLOR_BTNTEXT))))
+			                          dc.SetTextColor(Colors::getSysColor(COLOR_BTNTEXT))))
 			                        :
 			                        dc.SetTextColor(SETTING(TAB_OFFLINE_TEXT_COLOR));
 			                        

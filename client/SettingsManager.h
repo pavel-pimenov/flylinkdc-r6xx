@@ -171,7 +171,7 @@ class SettingsManager : public Singleton<SettingsManager>, public Speaker<Settin
 		                };
 		                
 		enum IntSetting { INT_FIRST = STR_LAST + 1,
-		                  INCOMING_CONNECTIONS = INT_FIRST, AVDB_BLOCK_CONNECTIONS, AUTO_PASSIVE_INCOMING_CONNECTIONS, XXX_BLOCK_SHARE, FORCE_PASSIVE_INCOMING_CONNECTIONS, TCP_PORT, SLOTS, AUTO_FOLLOW, CLEAR_SEARCH,
+		                  INCOMING_CONNECTIONS = INT_FIRST, AVDB_BLOCK_CONNECTIONS, AUTO_PASSIVE_INCOMING_CONNECTIONS, XXX_BLOCK_SHARE, FORCE_PASSIVE_INCOMING_CONNECTIONS, TCP_PORT, SLOTS, AUTO_FOLLOW, CLEAR_SEARCH, THEME,
 		                  BACKGROUND_COLOR, TEXT_COLOR, SHARE_HIDDEN,
 		                  SHARE_VIRTUAL, SHARE_SYSTEM,
 		                  FILTER_MESSAGES, MINIMIZE_TRAY,
@@ -439,6 +439,12 @@ class SettingsManager : public Singleton<SettingsManager>, public Speaker<Settin
 		                  SETTINGS_LAST = INT_LAST
 		                };
 		                
+		enum ThemeMode
+		{
+			THEME_LIGHT,
+			THEME_DARK
+		};
+		
 		enum {  INCOMING_DIRECT, INCOMING_FIREWALL_UPNP, INCOMING_FIREWALL_NAT,
 		        INCOMING_FIREWALL_PASSIVE
 		     };
@@ -470,6 +476,10 @@ class SettingsManager : public Singleton<SettingsManager>, public Speaker<Settin
 		static bool getBool(IntSetting key, const bool useDefault = true)
 		{
 			return get(key, useDefault) != 0;
+		}
+		static bool isDarkTheme()
+		{
+			return get(THEME, true) == THEME_DARK;
 		}
 		static bool set(StrSetting key, const string& value);
 		static bool set(IntSetting key, int value);

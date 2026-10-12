@@ -70,7 +70,16 @@ void AppearancePage::write()
 {
 	PropPage::write(*this, items, listItems, GetDlgItem(IDC_APPEARANCE_BOOLEANS));
 	
-#ifdef FLYLINKDC_USE_THEME_MANAGER
+#ifndef FLYLINKDC_USE_THEME_MANAGER
+	ctrlTheme.Attach(GetDlgItem(IDC_THEME_COMBO));
+	const int l_theme_index = ctrlTheme.GetCurSel();
+	if (l_theme_index >= 0 && l_theme_index != SETTING(THEME))
+	{
+		g_settings->set(SettingsManager::THEME, l_theme_index);
+		Colors::init();
+	}
+	ctrlTheme.Detach();
+#else
 	ctrlTheme.Attach(GetDlgItem(IDC_THEME_COMBO));
 	const string l_filetheme = WinUtil::getDataFromMap(ctrlTheme.GetCurSel(), m_ThemeList);
 	if (SETTING(THEME_MANAGER_THEME_DLL_NAME) != l_filetheme)
@@ -90,6 +99,15 @@ LRESULT AppearancePage::onInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*
 	PropPage::read(*this, items, listItems, GetDlgItem(IDC_APPEARANCE_BOOLEANS));
 	
 	ctrlList.Attach(GetDlgItem(IDC_APPEARANCE_BOOLEANS));
+	
+#ifndef FLYLINKDC_USE_THEME_MANAGER
+	ctrlTheme.Attach(GetDlgItem(IDC_THEME_COMBO));
+	ctrlTheme.ResetContent();
+	ctrlTheme.AddString(TSTRING(THEME_LIGHT));
+	ctrlTheme.AddString(TSTRING(THEME_DARK));
+	ctrlTheme.SetCurSel(SETTING(THEME));
+	ctrlTheme.Detach();
+#endif
 	
 #ifdef FLYLINKDC_USE_THEME_MANAGER
 	ctrlTheme.Attach(GetDlgItem(IDC_THEME_COMBO));

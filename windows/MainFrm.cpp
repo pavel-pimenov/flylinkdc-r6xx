@@ -511,6 +511,8 @@ LRESULT MainFrame::OnCreate(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/,
 	g_fly_server_stat.startTick(CFlyServerStatistics::TIME_START_GUI);
 #endif // FLYLINKDC_USE_GATHER_STATISTICS
 	
+	WinUtil::applyDarkTitleBar(m_hWnd);
+	
 	if (CompatibilityManager::isIncompatibleSoftwareFound())
 	{
 		if (CFlylinkDBManager::getInstance()->get_registry_variable_string(e_IncopatibleSoftwareList) != CompatibilityManager::getIncompatibleSoftwareList())

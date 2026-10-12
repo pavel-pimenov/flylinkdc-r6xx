@@ -441,8 +441,8 @@ LRESULT SearchFrame::onCreate(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*
 	ctrlGridFilters.InsertColumn(FGC_ADD, _T("Add"), LVCFMT_LEFT, 14, 0);
 	ctrlGridFilters.InsertColumn(FGC_REMOVE, _T("Del"), LVCFMT_LEFT, 14, 0);
 	
-	ctrlGridFilters.SetBkColor(GetSysColor(COLOR_3DFACE));
-	ctrlGridFilters.SetTextColor(GetSysColor(COLOR_BTNTEXT));
+	ctrlGridFilters.SetBkColor(Colors::getSysColor(COLOR_3DFACE));
+	ctrlGridFilters.SetTextColor(Colors::getSysColor(COLOR_BTNTEXT));
 	
 	insertIntofilter(ctrlGridFilters);
 #endif
@@ -973,8 +973,8 @@ BOOL SearchFrame::ListDraw(HWND /*hwnd*/, UINT /*uCtrlId*/, DRAWITEMSTRUCT *dis)
 			ctrlFiletype.GetLBText(dis->itemID, szText);
 			if (dis->itemState & ODS_SELECTED)
 			{
-				SetTextColor(dis->hDC, GetSysColor(COLOR_HIGHLIGHTTEXT));
-				SetBkColor(dis->hDC, GetSysColor(COLOR_HIGHLIGHT));
+				SetTextColor(dis->hDC, Colors::getSysColor(COLOR_HIGHLIGHTTEXT));
+				SetBkColor(dis->hDC, Colors::getSysColor(COLOR_HIGHLIGHT));
 			}
 			else
 			{
@@ -2920,9 +2920,9 @@ LRESULT SearchFrame::onCtlColor(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, BOO
 #endif
 	   )
 	{
-		::SetBkColor(hDC, ::GetSysColor(COLOR_3DFACE));
-		::SetTextColor(hDC, ::GetSysColor(COLOR_BTNTEXT));
-		return (LRESULT)::GetSysColorBrush(COLOR_3DFACE);
+		::SetBkColor(hDC, Colors::getSysColor(COLOR_3DFACE));
+		::SetTextColor(hDC, Colors::getSysColor(COLOR_BTNTEXT));
+		return (LRESULT)(SettingsManager::isDarkTheme() ? Colors::g_bgBrush : ::GetSysColorBrush(COLOR_3DFACE));
 	}
 	else
 	{

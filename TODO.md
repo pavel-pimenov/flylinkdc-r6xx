@@ -3,6 +3,32 @@
 Все задачи и план сессии фиксируются здесь, чтобы можно было продолжить работу
 после разрыва сессии (пропал интернет, закрыт терминал и т.п.).
 
+## Тёмная тема интерфейса WTL (Light/Dark)
+
+Цель: полный тёмный UI с опцией возврата к светлой теме.
+
+- [x] Phase A — инфраструктура: настройка `THEME` + `ThemeMode`, `isDarkTheme()`,
+  тёмная палитра-переопределение дефолтов в `SettingsManager::get(IntSetting)`,
+  тег/дефолт/import-export dctheme, строки `THEME_LIGHT/DARK`.
+- [x] Phase B — `Colors::getSysColor` + `WinUtil::applyDarkTitleBar` (DWM),
+  миграция `GetSysColor` в видимых компонентах (табы, списки/выделение,
+  transfers, search, emoticons, colors pages, public hubs, GradientLabel).
+- [x] Phase C — комбо выбора темы в `AppearancePage` (`IDC_THEME_COMBO`),
+  live re-apply (`Colors::init()` в `write()` + заголовок/RedrawWindow),
+  форс краски PropPage-диалогов в тёмном режиме.
+- [ ] Phase D — остаточный проход по окнам/компонентам:
+  - [ ] `windows/grid/PropertyGrid.h` (вендорный; добавить include WinUtil.h и
+    заменить `::GetSysColor` в `OnSettingChange`) — FlySQLExplorer и др.
+  - [ ] `windows/DimEdit.h` (текст контрола), `client/FlyFeatures/MiniHTML.h`
+    (палитра named-colors/BTNFACE, 677-678), `PropertyList.h`, `PropertyView.h`
+    (конструктор, 125-129) — требуют `#include "../windows/WinUtil.h"`.
+  - [ ] `windows/wtl_flylinkdc.h:241` (`COLOR_HOTLIGHT` для ссылок) — сейчас
+    нельзя (циклический include WinUtil.h ← wtl_flylinkdc.h); подумать об
+    отдельном лёгком заголовке цветов.
+  - [ ] скроллбары, меню (owner-draw), тултипы, заголовки колонок, сплиттеры.
+  - [ ] проверка на светлой теме (регрессии), контрольная сборка Release|x64
+    на Windows-ноде (в этом окружении собрать нельзя).
+
 ## Обновление вендорных библиотек (vendor-update.py)
 
 Скрипт `vendor-update.py` скачивает вендорные исходники с upstream-URL,
@@ -23,10 +49,24 @@
   без правки zlib-ng_2022.vcxproj. Перед коммитом: проверить сборку MSVC
   (Debug/Release x64), при необходимости добавить/убрать исходники в vcxproj,
   решить судьбу генерируемых заголовков.
-- [ ] Остальные вендоры в конфиг скрипта (по аналогии): boost, openssl, bzip2,
-  leveldb, libtorrent, lua, jsoncpp, maxminddb, snappy, selene, mediainfolib,
-  Zenlib, unrar. У каждого проверить локальные патчи проекта перед заведением
-  в конфиг.
+- [x] Остальные вендоры в конфиг скрипта (по аналогии).
+- [x] jsoncpp (база 1.9.6, амальгамация `amalgamate.py`), maxminddb 1.7.1,
+  boost 1.88, leveldb 1.23, ZenLib 0.4.41 — заведены в конфиг (`select` +
+  `generate` + внешние патчи `vendor-patches/*.patch` через `git apply`,
+  манифесты `vendor-manifests/*.txt`). Для каждого проверено 1:1
+  воспроизведение дерева, `--dry-run` проходит. Коммит пока НЕ создан
+  (вся работа в working tree: vendor-update.py, vendor-patches/, vendor-manifests/).
+- [ ] Прочие вендоры по аналогии: openssl, bzip2, libtorrent, lua, snappy,
+  selene, mediainfolib, unrar. У каждого проверить локальные патчи проекта
+  перед заведением в конфиг.
+- [ ] При первом реальном прогоне новых вендоров создаются коммиты через
+  `commit()` (git add → porcelain → commit). Нюанс на Windows при
+  core.autocrlf=true: у LF-исходников (tar.gz с GitHub) после синка
+  `git status` может показывать файлы как Modified — это артефакт stat/EOL-представления
+  (контент байт-в-байт совпадает, проверено hash-object); после `git add`
+  porcelain чистый и повторный синк даёт «no changes».
+  Поэтому перед коммитом дерева достаточно `git add` (скрипт делает сам);
+  уровень безопасной проверки — `git diff --stat` пустой.
 - [ ] После обновлений — контрольная сборка Release|x64 (0 предупреждений/0
   ошибок) и Debug|x64, дымовой запуск exe на Windows.
 

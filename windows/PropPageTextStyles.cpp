@@ -206,7 +206,7 @@ LRESULT PropPageTextStyles::onInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARA
 		onResetColor(i);
 	}
 	
-	setForeColor(ctrlTabExample, GetSysColor(COLOR_3DFACE));
+	setForeColor(ctrlTabExample, Colors::getSysColor(COLOR_3DFACE));
 	
 	ctrlTabList.SetCurSel(0);
 	BOOL bTmp;

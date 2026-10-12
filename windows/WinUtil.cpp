@@ -959,10 +959,13 @@ void Fonts::init()
 
 void Colors::init()
 {
+	if (g_bgBrush)
+		::DeleteObject(g_bgBrush);
+	
 	g_textColor = SETTING(TEXT_COLOR);
 	g_bgColor = SETTING(BACKGROUND_COLOR);
 	
-	g_bgBrush = CreateSolidBrush(Colors::g_bgColor); // Leak
+	g_bgBrush = CreateSolidBrush(Colors::g_bgColor);
 	
 	CHARFORMAT2 cf;
 	memzero(&cf, sizeof(CHARFORMAT2));
@@ -1073,6 +1076,12 @@ void Colors::init()
 		g_TextStyleURL.dwEffects |= CFE_BOLD;
 	if (SETTING(TEXT_URL_ITALIC))
 		g_TextStyleURL.dwEffects |= CFE_ITALIC;
+		
+	if (WinUtil::g_mainWnd && ::IsWindow(WinUtil::g_mainWnd))
+	{
+		WinUtil::applyDarkTitleBar(WinUtil::g_mainWnd);
+		::RedrawWindow(WinUtil::g_mainWnd, nullptr, nullptr, RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN);
+	}
 }
 
 void WinUtil::uninit()
@@ -3829,6 +3838,64 @@ void WinUtil::SetWindowThemeExplorer(HWND p_hWnd)
 	if (isUseExplorerTheme())
 	{
 		SetWindowTheme(p_hWnd, L"explorer", NULL);
+	}
+}
+void WinUtil::applyDarkTitleBar(HWND p_hWnd)
+{
+	const HMODULE l_dwmapi = ::LoadLibrary(_T("dwmapi.dll"));
+	if (l_dwmapi)
+	{
+		typedef HRESULT(WINAPI* DwmSetWindowAttributeFn)(HWND, DWORD, LPCVOID, DWORD);
+		const DwmSetWindowAttributeFn l_setAttr = (DwmSetWindowAttributeFn)::GetProcAddress(l_dwmapi, "DwmSetWindowAttribute");
+		if (l_setAttr)
+		{
+			const BOOL l_dark = SettingsManager::isDarkTheme() ? TRUE : FALSE;
+			l_setAttr(p_hWnd, 20, &l_dark, sizeof(l_dark)); // DWMWA_USE_IMMERSIVE_DARK_MODE = 20
+		}
+		::FreeLibrary(l_dwmapi);
+	}
+}
+COLORREF Colors::getSysColor(int nIndex)
+{
+	if (!SettingsManager::isDarkTheme())
+		return ::GetSysColor(nIndex);
+	switch (nIndex)
+	{
+		case COLOR_WINDOW:
+		case COLOR_BTNFACE:
+		case COLOR_MENU:
+		case COLOR_3DLIGHT:
+		case COLOR_BTNHIGHLIGHT:
+		case COLOR_APPWORKSPACE:
+			return RGB(36, 38, 40);
+		case COLOR_WINDOWTEXT:
+		case COLOR_MENUTEXT:
+		case COLOR_BTNTEXT:
+		case COLOR_CAPTIONTEXT:
+			return RGB(224, 224, 225);
+		case COLOR_HIGHLIGHT:
+			return RGB(25, 62, 120);
+		case COLOR_HIGHLIGHTTEXT:
+			return RGB(255, 255, 255);
+		case COLOR_GRAYTEXT:
+		case COLOR_BTNSHADOW:
+			return RGB(110, 112, 116);
+		case COLOR_HOTLIGHT:
+			return RGB(110, 170, 255);
+		case COLOR_INFOBK:
+			return RGB(42, 45, 50);
+		case COLOR_INFOTEXT:
+			return RGB(224, 224, 225);
+		case COLOR_WINDOWFRAME:
+			return RGB(20, 22, 24);
+		case COLOR_ACTIVECAPTION:
+		case COLOR_GRADIENTACTIVECAPTION:
+			return RGB(40, 44, 52);
+		case COLOR_INACTIVECAPTION:
+		case COLOR_GRADIENTINACTIVECAPTION:
+			return RGB(36, 38, 40);
+		default:
+			return ::GetSysColor(nIndex);
 	}
 }
 

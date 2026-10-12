@@ -1186,7 +1186,7 @@ struct Colors
 	{
 		if (cd->nmcd.dwItemSpec % 2 != 0)
 		{
-			cd->clrTextBk = HLS_TRANSFORM(((cd->clrTextBk == CLR_DEFAULT) ? ::GetSysColor(COLOR_WINDOW) : cd->clrTextBk), -9, 0);
+			cd->clrTextBk = HLS_TRANSFORM(((cd->clrTextBk == CLR_DEFAULT) ? Colors::getSysColor(COLOR_WINDOW) : cd->clrTextBk), -9, 0);
 		}
 		/*
 		Error #315: UNINITIALIZED READ: reading 0x0025db48-0x0025db4c 4 byte(s)
@@ -1242,6 +1242,7 @@ struct Colors
 	static COLORREF g_bgColor;
 	
 	static HBRUSH g_bgBrush;
+	static COLORREF getSysColor(int nIndex);
 	static LRESULT setColor(const HDC p_hdc)
 	{
 		::SetBkColor(p_hdc, g_bgColor);
@@ -1591,6 +1592,7 @@ class WinUtil
 		
 		static bool isUseExplorerTheme();
 		static void SetWindowThemeExplorer(HWND p_hWnd);
+		static void applyDarkTitleBar(HWND p_hWnd);
 		static tstring getAddresses(CComboBox& BindCombo);
 		static bool isTeredo();
 		

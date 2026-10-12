@@ -1221,7 +1221,7 @@ LRESULT PublicHubsFrame::onCustomDraw(int /*idCtrl*/, LPNMHDR pnmh, BOOL& /*bHan
 		{
 			if (isOnline(getPubServer((int)cd->nmcd.dwItemSpec)))
 			{
-				cd->clrTextBk = HLS_TRANSFORM(((cd->clrTextBk == CLR_DEFAULT) ? ::GetSysColor(COLOR_WINDOW) : cd->clrTextBk), -9, 0);
+				cd->clrTextBk = HLS_TRANSFORM(((cd->clrTextBk == CLR_DEFAULT) ? Colors::getSysColor(COLOR_WINDOW) : cd->clrTextBk), -9, 0);
 			}
 			return CDRF_NEWFONT;
 		}

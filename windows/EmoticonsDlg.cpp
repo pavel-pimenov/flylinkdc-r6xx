@@ -243,7 +243,7 @@ LRESULT EmoticonsDlg::onInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lP
 						}
 						else
 						{
-							if (const HBITMAP l_h_bm = e->getEmotionBmp(GetSysColor(COLOR_BTNFACE)))
+							if (const HBITMAP l_h_bm = e->getEmotionBmp(Colors::getSysColor(COLOR_BTNFACE)))
 							{
 								CButton emoButton;
 								const tstring smajl = e->getEmotionText();
@@ -387,7 +387,7 @@ LRESULT CAnimatedButton::onCreate(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lPa
 		int img_h = m_pImage->GetHeight();
 		
 		m_hDC = ::GetDC(m_hWnd);
-		m_hBackDC = m_pImage->CreateBackDC(GetSysColor(COLOR_BTNFACE), m_w, m_h);
+		m_hBackDC = m_pImage->CreateBackDC(Colors::getSysColor(COLOR_BTNFACE), m_w, m_h);
 		
 		int iOffsetX = (m_w - img_w) / 2;
 		int iOffsetY = (m_h - img_h) / 2;

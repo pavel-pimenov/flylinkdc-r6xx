@@ -153,7 +153,7 @@ static const char* g_settingTags[] =
 	"IncomingConnections",
 	"AvdbBlcokConnections",
 	"AutoPassiveIncomingConnections",
-	"XXXBlockShare", "ForcePassiveIncomingConnections", "InPort", "Slots", "AutoFollow", "ClearSearch",
+	"XXXBlockShare", "ForcePassiveIncomingConnections", "InPort", "Slots", "AutoFollow", "ClearSearch", "Theme",
 	"BackgroundColor", "TextColor", "ShareHidden",
 	"ShareVirtual", "ShareSystem",
 	"FilterMessages", "MinimizeToTray",
@@ -673,6 +673,7 @@ void SettingsManager::setDefaults()
 	//setDefault(BANDWIDTH_LIMIT_END, 0);
 	//setDefault(THROTTLE_ENABLE, false);
 	setDefault(EXTRA_DOWNLOAD_SLOTS, 3);
+	setDefault(THEME, THEME_LIGHT);
 	
 	setDefault(BACKGROUND_COLOR, RGB(255, 255, 255));
 	setDefault(TEXT_COLOR, RGB(67, 98, 154));
@@ -2007,12 +2008,98 @@ const string& SettingsManager::get(StrSetting key, const bool useDefault /*= tru
 		return strDefaults[key - STR_FIRST];
 }
 
+namespace {
+bool isDarkThemeActive()
+{
+	return SettingsManager::get(SettingsManager::THEME, true) == SettingsManager::THEME_DARK;
+}
+
+bool getDarkThemeColor(const SettingsManager::IntSetting key, int& value)
+{
+	switch (key)
+	{
+		case SettingsManager::BACKGROUND_COLOR: value = RGB(36, 38, 40); break;
+		case SettingsManager::TEXT_COLOR: value = RGB(224, 224, 225); break;
+		case SettingsManager::TEXT_GENERAL_BACK_COLOR: value = RGB(36, 38, 40); break;
+		case SettingsManager::TEXT_GENERAL_FORE_COLOR: value = RGB(214, 214, 214); break;
+		case SettingsManager::TEXT_MYOWN_BACK_COLOR: value = RGB(42, 44, 48); break;
+		case SettingsManager::TEXT_MYOWN_FORE_COLOR: value = RGB(168, 224, 168); break;
+		case SettingsManager::TEXT_PRIVATE_BACK_COLOR: value = RGB(36, 38, 40); break;
+		case SettingsManager::TEXT_PRIVATE_FORE_COLOR: value = RGB(150, 190, 255); break;
+		case SettingsManager::TEXT_SYSTEM_BACK_COLOR: value = RGB(36, 42, 50); break;
+		case SettingsManager::TEXT_SYSTEM_FORE_COLOR: value = RGB(140, 220, 160); break;
+		case SettingsManager::TEXT_SERVER_BACK_COLOR: value = RGB(40, 40, 45); break;
+		case SettingsManager::TEXT_SERVER_FORE_COLOR: value = RGB(140, 220, 160); break;
+		case SettingsManager::TEXT_TIMESTAMP_BACK_COLOR: value = RGB(36, 38, 40); break;
+		case SettingsManager::TEXT_TIMESTAMP_FORE_COLOR: value = RGB(120, 170, 250); break;
+		case SettingsManager::TEXT_MYNICK_BACK_COLOR: value = RGB(44, 52, 44); break;
+		case SettingsManager::TEXT_MYNICK_FORE_COLOR: value = RGB(110, 210, 110); break;
+		case SettingsManager::TEXT_FAV_BACK_COLOR: value = RGB(36, 38, 40); break;
+		case SettingsManager::TEXT_FAV_FORE_COLOR: value = RGB(90, 180, 255); break;
+		case SettingsManager::TEXT_OP_BACK_COLOR: value = RGB(36, 38, 40); break;
+		case SettingsManager::TEXT_OP_FORE_COLOR: value = RGB(130, 210, 130); break;
+		case SettingsManager::TEXT_URL_BACK_COLOR: value = RGB(36, 38, 40); break;
+		case SettingsManager::TEXT_URL_FORE_COLOR: value = RGB(110, 170, 255); break;
+		case SettingsManager::TEXT_ENEMY_BACK_COLOR: value = RGB(44, 40, 38); break;
+		case SettingsManager::TEXT_ENEMY_FORE_COLOR: value = RGB(255, 150, 120); break;
+		case SettingsManager::PROGRESS_TEXT_COLOR_DOWN: value = RGB(170, 255, 170); break;
+		case SettingsManager::PROGRESS_TEXT_COLOR_UP: value = RGB(255, 190, 220); break;
+		case SettingsManager::ERROR_COLOR: value = RGB(255, 120, 120); break;
+		case SettingsManager::MENUBAR_LEFT_COLOR: value = RGB(28, 86, 150); break;
+		case SettingsManager::MENUBAR_RIGHT_COLOR: value = RGB(42, 54, 68); break;
+		case SettingsManager::RESERVED_SLOT_COLOR: value = RGB(255, 140, 0); break;
+		case SettingsManager::IGNORED_COLOR: value = RGB(140, 140, 140); break;
+		case SettingsManager::FAVORITE_COLOR: value = RGB(170, 180, 230); break;
+		case SettingsManager::NORMAL_COLOUR: value = RGB(214, 214, 214); break;
+		case SettingsManager::FIREBALL_COLOR: value = RGB(255, 110, 110); break;
+		case SettingsManager::SERVER_COLOR: value = RGB(150, 150, 255); break;
+		case SettingsManager::PASIVE_COLOR: value = RGB(170, 180, 230); break;
+		case SettingsManager::OP_COLOR: value = RGB(160, 255, 160); break;
+		case SettingsManager::FULL_CHECKED_COLOUR: value = RGB(120, 255, 120); break;
+		case SettingsManager::BAD_CLIENT_COLOUR: value = RGB(255, 90, 90); break;
+		case SettingsManager::BAD_FILELIST_COLOUR: value = RGB(230, 110, 230); break;
+		case SettingsManager::POPUP_BACKCOLOR: value = RGB(64, 74, 90); break;
+		case SettingsManager::POPUP_TEXTCOLOR: value = RGB(255, 255, 255); break;
+		case SettingsManager::POPUP_TITLE_TEXTCOLOR: value = RGB(255, 255, 255); break;
+		case SettingsManager::BAN_COLOR: value = RGB(120, 160, 220); break;
+		case SettingsManager::DUPE_COLOR: value = RGB(150, 255, 235); break;
+		case SettingsManager::VIRUS_COLOR: value = RGB(255, 90, 90); break;
+		case SettingsManager::DUPE_EX1_COLOR: value = RGB(150, 255, 235); break;
+		case SettingsManager::DUPE_EX2_COLOR: value = RGB(170, 190, 255); break;
+		case SettingsManager::DUPE_EX3_COLOR: value = RGB(170, 255, 170); break;
+		case SettingsManager::COLOUR_DUPE: value = RGB(120, 220, 160); break;
+		case SettingsManager::PROGRESS_BACK_COLOR: value = RGB(70, 70, 70); break;
+		case SettingsManager::PROGRESS_COMPRESS_COLOR: value = RGB(255, 190, 80); break;
+		case SettingsManager::PROGRESS_SEGMENT_COLOR: value = RGB(90, 140, 235); break;
+		case SettingsManager::COLOR_RUNNING: value = RGB(150, 160, 255); break;
+		case SettingsManager::COLOR_DOWNLOADED: value = RGB(255, 255, 150); break;
+		case SettingsManager::COLOR_VERIFIED: value = RGB(140, 255, 140); break;
+		case SettingsManager::COLOR_AVOIDING: value = RGB(185, 95, 95); break;
+		case SettingsManager::UPLOAD_BAR_COLOR: value = RGB(120, 220, 120); break;
+		case SettingsManager::DOWNLOAD_BAR_COLOR: value = RGB(120, 180, 255); break;
+		case SettingsManager::TAB_SELECTED_COLOR: value = RGB(60, 120, 190); break;
+		case SettingsManager::TAB_SELECTED_BORDER_COLOR: value = RGB(255, 150, 150); break;
+		case SettingsManager::TAB_OFFLINE_COLOR: value = RGB(205, 115, 80); break;
+		case SettingsManager::TAB_ACTIVITY_COLOR: value = RGB(150, 210, 60); break;
+		case SettingsManager::TAB_SELECTED_TEXT_COLOR: value = RGB(210, 245, 255); break;
+		case SettingsManager::TAB_OFFLINE_TEXT_COLOR: value = RGB(255, 200, 160); break;
+		case SettingsManager::TAB_ACTIVITY_TEXT_COLOR: value = RGB(190, 255, 160); break;
+		case SettingsManager::HUB_IN_FAV_BK_COLOR: value = RGB(180, 170, 70); break;
+		case SettingsManager::HUB_IN_FAV_CONNECT_BK_COLOR: value = RGB(150, 210, 80); break;
+		default: return false;
+	}
+	return true;
+}
+}
+
 int SettingsManager::get(IntSetting key, const bool useDefault /*= true*/)
 {
 	if (isSet[key] || !useDefault)
 		return intSettings[key - INT_FIRST];
-	else
-		return intDefaults[key - INT_FIRST];
+	int l_dark_color = 0;
+	if (key != THEME && isDarkThemeActive() && getDarkThemeColor(key, l_dark_color))
+		return l_dark_color;
+	return intDefaults[key - INT_FIRST];
 }
 
 bool SettingsManager::set(IntSetting key, const std::string& value)
@@ -2046,6 +2133,7 @@ void SettingsManager::importDctheme(const tstring& file, const bool asDefault /*
 		{
 			xml.stepIn();
 			importData("Font", TEXT_FONT);
+			importData("Theme", THEME);
 			importData("BackgroundColor", BACKGROUND_COLOR);
 			importData("TextColor", TEXT_COLOR);
 			importData("DownloadBarColor", DOWNLOAD_BAR_COLOR);
@@ -2191,6 +2279,7 @@ void SettingsManager::exportDctheme(const tstring& file)
 	xml.stepIn();
 	
 	exportData("Font", TEXT_FONT);
+	exportData("Theme", THEME);
 	exportData("BackgroundColor", BACKGROUND_COLOR);
 	exportData("TextColor", TEXT_COLOR);
 	exportData("DownloadBarColor", DOWNLOAD_BAR_COLOR);

@@ -193,7 +193,7 @@ class ATL_NO_VTABLE CGradientLabelImpl : public CWindowImpl< T, TBase, TWinTrait
 			COLORREF clrCptn = m_bActive ?  RGB(106, 181, 255) : 255; 
 			
 			// Gradient from left to right or from bottom to top
-			COLORREF clrCptnRight = ::GetSysColor(COLOR_BTNFACE);
+			COLORREF clrCptnRight = Colors::getSysColor(COLOR_BTNFACE);
 			
 			// This will make 2^6 = 64 fountain steps
 			int nShift = 6;
@@ -235,7 +235,7 @@ class ATL_NO_VTABLE CGradientLabelImpl : public CWindowImpl< T, TBase, TWinTrait
 			DoGradientFill(dc, rcClient);
 			
 			dc.SetBkMode(TRANSPARENT);
-			dc.SetTextColor(m_clrText == CLR_INVALID ? ::GetSysColor(COLOR_CAPTIONTEXT) : m_clrText);
+			dc.SetTextColor(m_clrText == CLR_INVALID ? Colors::getSysColor(COLOR_CAPTIONTEXT) : m_clrText);
 			HFONT hOldFont = dc.SelectFont(GetFont());
 			
 			int nLen = GetWindowTextLength();

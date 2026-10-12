@@ -675,7 +675,7 @@ LRESULT TransferView::onCustomDraw(int /*idCtrl*/, LPNMHDR pnmh, BOOL& bHandled)
 					// Get the color of this bar
 					COLORREF clr = SETTING(PROGRESS_OVERRIDE_COLORS) ?
 					               (l_ii->download ? (!l_ii->parent ? SETTING(DOWNLOAD_BAR_COLOR) : SETTING(PROGRESS_SEGMENT_COLOR)) : SETTING(UPLOAD_BAR_COLOR)) :
-					               GetSysColor(COLOR_HIGHLIGHT);
+					               Colors::getSysColor(COLOR_HIGHLIGHT);
 					if (!l_ii->download && BOOLSETTING(UP_TRANSFER_COLORS))
 					{
 						const auto l_NumSlot = l_ii->getUser()->getSlots();
@@ -1010,9 +1010,9 @@ LRESULT TransferView::onCustomDraw(int /*idCtrl*/, LPNMHDR pnmh, BOOL& bHandled)
 				{
 					if (ctrlTransfers.m_hWnd == ::GetFocus())
 					{
-						color = GetSysColor(COLOR_HIGHLIGHT);
-						SetBkColor(cd->nmcd.hdc, GetSysColor(COLOR_HIGHLIGHT));
-						SetTextColor(cd->nmcd.hdc, GetSysColor(COLOR_HIGHLIGHTTEXT));
+						color = Colors::getSysColor(COLOR_HIGHLIGHT);
+						SetBkColor(cd->nmcd.hdc, Colors::getSysColor(COLOR_HIGHLIGHT));
+						SetTextColor(cd->nmcd.hdc, Colors::getSysColor(COLOR_HIGHLIGHTTEXT));
 					}
 					else
 					{

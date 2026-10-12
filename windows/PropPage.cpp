@@ -197,7 +197,7 @@ void PropPage::translate(HWND page, TextItem* textItems)
 #ifdef SCALOLAZ_PROPPAGE_COLOR
 LRESULT PropPage::OnCtlColorDlg(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
-	if (BOOLSETTING(SETTINGS_WINDOW_COLORIZE))
+	if (BOOLSETTING(SETTINGS_WINDOW_COLORIZE) || SettingsManager::isDarkTheme())
 	{
 		m_hDialogBrush = CreateSolidBrush(Colors::g_bgColor /*GetSysColor(COLOR_BTNFACE)*/);
 		return LRESULT(m_hDialogBrush);
@@ -209,7 +209,7 @@ LRESULT PropPage::OnCtlColorDlg(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& b
 }
 LRESULT PropPage::OnCtlColorStatic(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
-	if (BOOLSETTING(SETTINGS_WINDOW_COLORIZE))
+	if (BOOLSETTING(SETTINGS_WINDOW_COLORIZE) || SettingsManager::isDarkTheme())
 	{
 		HDC hdc = (HDC)wParam;
 		SetBkMode(hdc, TRANSPARENT);

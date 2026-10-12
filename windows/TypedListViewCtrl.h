@@ -1049,10 +1049,9 @@ class TypedListViewCtrl : public CWindowImpl<TypedListViewCtrl<T, ctrlId>, CList
 			{
 				if (m_hWnd == ::GetFocus())
 				{
-					// TODO: GetSysColor break the color of the theme for FlylinkDC? Use color from WinUtil to themed here?
-					color = GetSysColor(COLOR_HIGHLIGHT);
+					color = Colors::getSysColor(COLOR_HIGHLIGHT);
 					::SetBkColor(p_cd->nmcd.hdc, color);
-					::SetTextColor(p_cd->nmcd.hdc, GetSysColor(COLOR_HIGHLIGHTTEXT));
+					::SetTextColor(p_cd->nmcd.hdc, Colors::getSysColor(COLOR_HIGHLIGHTTEXT));
 				}
 				else
 				{
