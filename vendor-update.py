@@ -99,7 +99,7 @@ VENDORS = (
     },
     {
         'name': 'jsoncpp',
-        'url': 'https://github.com/open-source-parsers/jsoncpp/archive/refs/tags/1.9.6.zip',
+        'url': 'https://github.com/open-source-parsers/jsoncpp/archive/refs/tags/1.9.8.zip',
         'local': 'jsoncpp',
         'strip': 1,
         'generate': [sys.executable, 'amalgamate.py'],
@@ -169,7 +169,7 @@ VENDORS = (
     },
     {
         'name': 'lua',
-        'url': 'https://www.lua.org/ftp/lua-5.4.6.tar.gz',
+        'url': 'https://www.lua.org/ftp/lua-5.4.9.tar.gz',
         'local': 'lua',
         'strip': 1,
         'select': 'vendor-manifests/lua.txt',
@@ -181,7 +181,7 @@ VENDORS = (
     },
     {
         'name': 'unrar',
-        'url': 'https://www.rarlab.com/rar/unrarsrc-6.2.10.tar.gz',
+        'url': 'https://www.rarlab.com/rar/unrarsrc-6.2.12.tar.gz',
         'local': 'unrar',
         'strip': 1,
         'select': 'vendor-manifests/unrar.txt',
@@ -191,8 +191,8 @@ VENDORS = (
     },
     {
         'name': 'libtorrent',
-        'url': 'https://github.com/arvidn/libtorrent/releases/download/v2.1.0/'
-               'libtorrent-rasterbar-2.1.0.tar.gz',
+        'url': 'https://github.com/arvidn/libtorrent/releases/download/v2.1.2/'
+               'libtorrent-rasterbar-2.1.2.tar.gz',
         'local': 'libtorrent',
         'strip': 1,
         'select': 'vendor-manifests/libtorrent.txt',
@@ -204,7 +204,7 @@ VENDORS = (
     },
     {
         'name': 'mediainfolib',
-        'url': 'https://github.com/MediaArea/MediaInfoLib/archive/refs/tags/v25.07.tar.gz',
+        'url': 'https://github.com/MediaArea/MediaInfoLib/archive/refs/tags/v26.10.tar.gz',
         'local': 'mediainfolib',
         'strip': 1,
         'select': 'vendor-manifests/mediainfolib.txt',
@@ -214,11 +214,10 @@ VENDORS = (
     },
     {
         'name': 'snappy',
-        'url': 'https://github.com/google/snappy/archive/refs/tags/1.2.0.tar.gz',
+        'url': 'https://github.com/google/snappy/archive/refs/tags/1.3.1.tar.gz',
         'local': 'snappy',
         'strip': 1,
         'select': 'vendor-manifests/snappy.txt',
-        'diff': ['vendor-patches/snappy.patch'],
     },
     {
         'name': 'selene',

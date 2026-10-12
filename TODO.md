@@ -65,6 +65,17 @@
   `git add` → пустой `git diff --cached` → 0 ошибок `git apply`. Артефакты
   (`vendor-manifests/*.txt`, `vendor-patches/*.patch`, правки `vendor-update.py`)
   пока в working tree, коммит по запросу.
+- [x] Обновления до актуальных версий (безопасный набор), выверено 1:1:
+  lua 5.4.6->5.4.9, unrar 6.23->6.24, jsoncpp 1.9.6->1.9.8, snappy 1.2.0->1.3.1.
+  Патчи: lua — только $Id:; unrar — UnRAR.vcxproj + win32stm.cpp; jsoncpp — реальные
+  правки FlylinkDC (остальное было upstream-дрейфом); snappy — патч удалён
+  (upstream 1.3.1 уже имеет эти overload-ы). URL в vendor-update.py обновлены,
+  diff у snappy убран. Ещё НЕ закоммичено.
+- [ ] libtorrent 2.1.0->2.1.2: реальный форк (196 файлов в патче), ребаз даёт 27
+  конфликтов (torrent.cpp, peer_connection.cpp, merkle.cpp, alert.cpp,
+  settings_pack.cpp, path.cpp, ...). Нужен ручной порт + контрольная сборка MSVC.
+- [ ] mediainfolib 25.07->26.10: реальный форк (116 файлов), ребаз даёт 17
+  конфликтов. Нужен ручной порт + контрольная сборка MSVC.
 - [ ] При первом реальном прогоне новых вендоров создаются коммиты через
   `commit()` (git add → porcelain → commit). Нюанс на Windows при
   core.autocrlf=true: у LF-исходников (tar.gz с GitHub) после синка
