@@ -717,9 +717,11 @@ class ATL_NO_VTABLE FlatTabCtrlImpl : public CWindowImpl< T, TBase, TWinTraits>
 				CPaintDC l_dc(m_hWnd);
 				CMemoryDC dcMem(l_dc, rc);
 				
-				HBRUSH hBr = GetSysColorBrush(COLOR_BTNFACE);
-				dcMem.SelectBrush(hBr);
+				const HBRUSH hBr = ::CreateSolidBrush(Colors::getSysColor(COLOR_BTNFACE));
+				HBRUSH hOldBr = dcMem.SelectBrush(hBr);
 				dcMem.BitBlt(rc.left, rc.top, rc.Width(), rc.Height(), NULL, 0, 0, PATCOPY);
+				dcMem.SelectBrush(hOldBr);
+				::DeleteObject(hBr);
 				CSelectFont l_font(dcMem, Fonts::g_systemFont); //-V808
 				//ATLTRACE("%d, %d\n", rc.left, rc.right);
 				std::unique_ptr<Gdiplus::Graphics> graphics(new Gdiplus::Graphics(dcMem));

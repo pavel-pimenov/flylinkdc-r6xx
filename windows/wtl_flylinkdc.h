@@ -26,6 +26,7 @@
 #include <atlctrlx.h>
 #include "../client/w.h"
 #include "../client/SettingsManager.h"
+#include "Colors.h"
 #include "../client/ResourceManager.h"
 #include "../client/TaskQueue.h"
 
@@ -238,7 +239,7 @@ class CFlyHyperLink : public CHyperLink
 			SubclassWindow(p_dlg_window);
 			SetHyperLinkExtendedStyle(HLINK_COMMANDBUTTON | HLINK_UNDERLINEHOVER);
 			if (BOOLSETTING(WINDOWS_STYLE_URL))
-				m_clrLink = GetSysColor(COLOR_HOTLIGHT);
+				m_clrLink = FlyTheme::getSysColor(COLOR_HOTLIGHT);
 			ATLVERIFY(m_tip.AddTool(m_hWnd, p_tool.c_str(), &m_rcLink, 1));
 		}
 };

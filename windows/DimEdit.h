@@ -35,6 +35,7 @@
 #include <string>
 #include <AtlCrack.h>
 #include "../client/Util.h"
+#include "WinUtil.h"
 
 class CDimEdit : public CWindowImpl< CDimEdit, CEdit >
 {
@@ -132,8 +133,8 @@ class CDimEdit : public CWindowImpl< CDimEdit, CEdit >
 			CDCHandle dc(BeginPaint(&paint));
 			
 			//  Same idea here -- It's a system brush, and doesn't need to be deleted.
-			CBrushHandle brush;
-			brush.CreateSysColorBrush(COLOR_WINDOW);
+			CBrush brush;
+			brush.CreateSolidBrush(Colors::getSysColor(COLOR_WINDOW));
 			
 			//  Paint the background of the edit control's client area.
 			dc.FillRect(&paint.rcPaint, brush);
@@ -150,7 +151,7 @@ class CDimEdit : public CWindowImpl< CDimEdit, CEdit >
 			}
 			else      //  If the control is "normal", display the text on the left.
 			{
-				dc.SetTextColor(GetSysColor(COLOR_BTNTEXT));
+				dc.SetTextColor(Colors::getSysColor(COLOR_BTNTEXT));
 				dc.SetTextAlign(TA_LEFT);
 				const int length = GetWindowTextLength() + 1;
 				AutoArray<TCHAR> text(length);

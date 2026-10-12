@@ -122,11 +122,11 @@ class ATL_NO_VTABLE CPropertyViewImpl : public CWindowImpl< T, TBase, TWinTraits
 		CPropertyViewImpl() :
 			m_hFont(NULL),
 			m_hGroupFont(NULL),
-			m_clrText(::GetSysColor(COLOR_WINDOWTEXT)),
-			m_clrBack(::GetSysColor(COLOR_WINDOW)),
-			m_clrHighlite(::GetSysColor(COLOR_HIGHLIGHT)),
-			m_clrHighliteText(::GetSysColor(COLOR_HIGHLIGHTTEXT)),
-			m_clrBorder(::GetSysColor(COLOR_3DLIGHT))
+			m_clrText(Colors::getSysColor(COLOR_WINDOWTEXT)),
+			m_clrBack(Colors::getSysColor(COLOR_WINDOW)),
+			m_clrHighlite(Colors::getSysColor(COLOR_HIGHLIGHT)),
+			m_clrHighliteText(Colors::getSysColor(COLOR_HIGHLIGHTTEXT)),
+			m_clrBorder(Colors::getSysColor(COLOR_3DLIGHT))
 		{
 			::ZeroMemory(&m_tm, sizeof(m_tm));
 		}

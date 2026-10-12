@@ -58,6 +58,7 @@ class PopupWnd : public CWindowImpl<PopupWnd, CWindow>
 		{
 			DeleteObject(font);
 			DeleteObject(titlefont);
+		if (m_bgBrush) ::DeleteObject(m_bgBrush);
 		}
 		
 		LRESULT onLButtonDown(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& bHandled)
@@ -75,7 +76,8 @@ class PopupWnd : public CWindowImpl<PopupWnd, CWindow>
 				return 1;
 			}
 			
-			::SetClassLongPtr(m_hWnd, GCLP_HBRBACKGROUND, (LONG_PTR)::GetSysColorBrush(COLOR_INFOTEXT));
+			m_bgBrush = ::CreateSolidBrush(Colors::getSysColor(COLOR_INFOBK));
+			::SetClassLongPtr(m_hWnd, GCLP_HBRBACKGROUND, (LONG_PTR)m_bgBrush);
 			CRect rc;
 			GetClientRect(rc);
 			
@@ -208,6 +210,7 @@ class PopupWnd : public CWindowImpl<PopupWnd, CWindow>
 		LOGFONT myFont;
 		HFONT   titlefont;
 		HBITMAP m_bmp;
+		HBRUSH m_bgBrush = nullptr;
 };
 
 

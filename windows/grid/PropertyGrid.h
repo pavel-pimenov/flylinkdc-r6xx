@@ -50,6 +50,8 @@
 #endif //!((_WIN32_WINNT >= 0x0400) || (_WIN32_WINDOWS > 0x0400))
 
 
+#include "../WinUtil.h"
+
 // Include property base class
 #include "PropertyItem.h"
 
@@ -844,14 +846,14 @@ public:
    LRESULT OnSettingChange(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
    {
       // Standard colors
-      m_di.clrText = ::GetSysColor(COLOR_WINDOWTEXT);
-      m_di.clrBack = ::GetSysColor(COLOR_WINDOW);
-      m_di.clrSelText = ::GetSysColor(COLOR_HIGHLIGHTTEXT);
-      m_di.clrSelBack = ::GetSysColor(COLOR_HIGHLIGHT);
-      m_di.clrDisabled = ::GetSysColor(COLOR_GRAYTEXT);
-      m_di.clrDisabledBack = ::GetSysColor(COLOR_BTNFACE);
+      m_di.clrText = Colors::getSysColor(COLOR_WINDOWTEXT);
+      m_di.clrBack = Colors::getSysColor(COLOR_WINDOW);
+      m_di.clrSelText = Colors::getSysColor(COLOR_HIGHLIGHTTEXT);
+      m_di.clrSelBack = Colors::getSysColor(COLOR_HIGHLIGHT);
+      m_di.clrDisabled = Colors::getSysColor(COLOR_GRAYTEXT);
+      m_di.clrDisabledBack = Colors::getSysColor(COLOR_BTNFACE);
       // Border
-      m_di.clrBorder = ::GetSysColor(COLOR_BTNFACE);
+      m_di.clrBorder = Colors::getSysColor(COLOR_BTNFACE);
       if( !m_BorderPen.IsNull() ) m_BorderPen.DeleteObject();
       m_di.Border = m_BorderPen.CreatePen(PS_SOLID, 1, m_di.clrBorder);
       // Fonts

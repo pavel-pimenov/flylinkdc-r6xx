@@ -30,6 +30,15 @@
 - Проверки: все 5 сухих прогонов `--dry-run` проходят end-to-end (download → extract → generate → select → plan); `git apply` внутри репозитория воспроизводит локальные файлы без расхождений (тест в gitignored `build-win`). Версии детектируются по маркерам (json.h/configure-версии/maxminddb.h/db.h/History.txt/version.hpp).
 - Техника: для больших чередующихся патчей выбран внешний unified-diff вместо строковых замен; поддержан синтез «без перевода строки в конце файла» (`\ No newline at end of file`). Генератор `vendor-patches` и валидатор применялись разово из временных скриптов.
 
+### Фаза D: вынос палитры в лёгкий заголовок и консистентность
+- Новый `windows/Colors.h`: header-only `FlyTheme::getSysColor(int)` — точная копия палитры из `Colors::getSysColor`; зависимости только `<windows.h>` и `../client/SettingsManager.h`. Разрывает циклический include WinUtil.h ← wtl_flylinkdc.h (это позволяло взять ссылки `COLOR_HOTLIGHT` в `wtl_flylinkdc.h:241`).
+- `Colors::getSysColor` (windows/WinUtil.cpp, ~3858) теперь делегирует в `FlyTheme::getSysColor`.
+- `wtl_flylinkdc.h:241`: цвет ссылок `CFlyHyperLink` — `FlyTheme::getSysColor(COLOR_HOTLIGHT)`.
+- `flattabctrl.h:720`: фон вкладок — `CreateSolidBrush(Colors::getSysColor(COLOR_BTNFACE))` + восстановление прежней кисти и `DeleteObject`.
+- `PopupDlg.h`: фон PopupWnd исправлен с `COLOR_INFOTEXT` (чёрный, баг) на `COLOR_INFOBK`, кисть теперь собственная (`m_bgBrush`) с очисткой в деструкторе.
+- Мёртвый/неактивный код приведён к палитре без изменения поведения: `windows/DimEdit.h` (введён include WinUtil.h; `COLOR_WINDOW`/`COLOR_BTNTEXT`), вендорный `windows/grid/PropertyGrid.h` (`OnSettingChange`), `client/FlyFeatures/MiniHTML.h`, `PropertyList.h` (в т.ч. 2 `GetSysColorBrush(COLOR_3DFACE)` → `CBrush(...)`), `PropertyView.h`.
+- Кодировки проверены байт-безопасно: CP1251 сохранена (non-ASCII байты без изменений), U+FFFD отсутствует, diff содержит только целевые правки.
+
 ## 2026-10-11
 ### Release|x64 warning-clean и чистые компиляторные предупреждения Debug|x64
 - Release|x64 собран из FlylinkDC_2022.sln: 0 предупреждений и 0 ошибок; EXE линкуется, импорты — только системные DLL Windows, дымовой запуск на Windows успешен (процесс стартует и живёт).

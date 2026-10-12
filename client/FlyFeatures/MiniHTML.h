@@ -510,10 +510,10 @@ class CMiniHTML
 			else
 			{
 				// TODO: Implement more colors-by-name
-				if (::lstrcmp(pstrValue, _T("WINDOW")) == 0) clr = ::GetSysColor(COLOR_WINDOW);
-				else if (::lstrcmp(pstrValue, _T("WINDOWTEXT")) == 0) clr = ::GetSysColor(COLOR_WINDOWTEXT);
-				else if (::lstrcmp(pstrValue, _T("BUTTONFACE")) == 0) clr = ::GetSysColor(COLOR_BTNFACE);
-				else if (::lstrcmp(pstrValue, _T("BUTTONTEXT")) == 0) clr = ::GetSysColor(COLOR_BTNTEXT);
+				if (::lstrcmp(pstrValue, _T("WINDOW")) == 0) clr = Colors::getSysColor(COLOR_WINDOW);
+				else if (::lstrcmp(pstrValue, _T("WINDOWTEXT")) == 0) clr = Colors::getSysColor(COLOR_WINDOWTEXT);
+				else if (::lstrcmp(pstrValue, _T("BUTTONFACE")) == 0) clr = Colors::getSysColor(COLOR_BTNFACE);
+				else if (::lstrcmp(pstrValue, _T("BUTTONTEXT")) == 0) clr = Colors::getSysColor(COLOR_BTNTEXT);
 				else clr = RGB(0, 0, 0);
 			}
 			return clr;
@@ -674,8 +674,8 @@ class ATL_NO_VTABLE CMiniHtmlImpl : public CWindowImpl< T, TBase, TWinTraits >
 			LPTSTR pstrText = (LPTSTR) _alloca((nLen + 1) * sizeof(TCHAR));
 			GetWindowText(pstrText, nLen + 1);
 			
-			COLORREF clrText = m_clrText == CLR_INVALID ? ::GetSysColor(COLOR_BTNTEXT) : m_clrText;
-			COLORREF clrBack = m_clrBack == CLR_INVALID ? ::GetSysColor(COLOR_BTNFACE) : m_clrBack;
+			COLORREF clrText = m_clrText == CLR_INVALID ? Colors::getSysColor(COLOR_BTNTEXT) : m_clrText;
+			COLORREF clrBack = m_clrBack == CLR_INVALID ? Colors::getSysColor(COLOR_BTNFACE) : m_clrBack;
 			HFONT hFont = GetFont();
 			
 			m_minihtml.Paint(dc,

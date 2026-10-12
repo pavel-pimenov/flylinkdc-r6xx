@@ -28,6 +28,7 @@
 #include <iphlpapi.h>
 
 #include "WinUtil.h"
+#include "Colors.h"
 #include "MainFrm.h"
 #include "LimitEditDlg.h"
 
@@ -3857,46 +3858,7 @@ void WinUtil::applyDarkTitleBar(HWND p_hWnd)
 }
 COLORREF Colors::getSysColor(int nIndex)
 {
-	if (!SettingsManager::isDarkTheme())
-		return ::GetSysColor(nIndex);
-	switch (nIndex)
-	{
-		case COLOR_WINDOW:
-		case COLOR_BTNFACE:
-		case COLOR_MENU:
-		case COLOR_3DLIGHT:
-		case COLOR_BTNHIGHLIGHT:
-		case COLOR_APPWORKSPACE:
-			return RGB(36, 38, 40);
-		case COLOR_WINDOWTEXT:
-		case COLOR_MENUTEXT:
-		case COLOR_BTNTEXT:
-		case COLOR_CAPTIONTEXT:
-			return RGB(224, 224, 225);
-		case COLOR_HIGHLIGHT:
-			return RGB(25, 62, 120);
-		case COLOR_HIGHLIGHTTEXT:
-			return RGB(255, 255, 255);
-		case COLOR_GRAYTEXT:
-		case COLOR_BTNSHADOW:
-			return RGB(110, 112, 116);
-		case COLOR_HOTLIGHT:
-			return RGB(110, 170, 255);
-		case COLOR_INFOBK:
-			return RGB(42, 45, 50);
-		case COLOR_INFOTEXT:
-			return RGB(224, 224, 225);
-		case COLOR_WINDOWFRAME:
-			return RGB(20, 22, 24);
-		case COLOR_ACTIVECAPTION:
-		case COLOR_GRADIENTACTIVECAPTION:
-			return RGB(40, 44, 52);
-		case COLOR_INACTIVECAPTION:
-		case COLOR_GRADIENTINACTIVECAPTION:
-			return RGB(36, 38, 40);
-		default:
-			return ::GetSysColor(nIndex);
-	}
+	return FlyTheme::getSysColor(nIndex);
 }
 
 void Preview::startMediaPreview(WORD wID, const QueueItemPtr& qi)

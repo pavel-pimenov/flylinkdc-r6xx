@@ -16,15 +16,12 @@
 - [x] Phase C — комбо выбора темы в `AppearancePage` (`IDC_THEME_COMBO`),
   live re-apply (`Colors::init()` в `write()` + заголовок/RedrawWindow),
   форс краски PropPage-диалогов в тёмном режиме.
+- [x] Phase D — каркас: лёгкий `windows/Colors.h` (`FlyTheme::getSysColor`,
+  разрыв цикл. include WinUtil.h ← wtl_flylinkdc.h); `Colors::getSysColor`
+  (WinUtil.cpp) делегирует в него; ссылки `wtl_flylinkdc.h:241`, `flattabctrl.h`,
+  `PopupDlg.h` (фон INFOBK + owned brush), включая мёртвые `DimEdit.h`,
+  `grid/PropertyGrid.h`, `MiniHTML.h`, `PropertyList.h`, `PropertyView.h`.
 - [ ] Phase D — остаточный проход по окнам/компонентам:
-  - [ ] `windows/grid/PropertyGrid.h` (вендорный; добавить include WinUtil.h и
-    заменить `::GetSysColor` в `OnSettingChange`) — FlySQLExplorer и др.
-  - [ ] `windows/DimEdit.h` (текст контрола), `client/FlyFeatures/MiniHTML.h`
-    (палитра named-colors/BTNFACE, 677-678), `PropertyList.h`, `PropertyView.h`
-    (конструктор, 125-129) — требуют `#include "../windows/WinUtil.h"`.
-  - [ ] `windows/wtl_flylinkdc.h:241` (`COLOR_HOTLIGHT` для ссылок) — сейчас
-    нельзя (циклический include WinUtil.h ← wtl_flylinkdc.h); подумать об
-    отдельном лёгком заголовке цветов.
   - [ ] скроллбары, меню (owner-draw), тултипы, заголовки колонок, сплиттеры.
   - [ ] проверка на светлой теме (регрессии), контрольная сборка Release|x64
     на Windows-ноде (в этом окружении собрать нельзя).
