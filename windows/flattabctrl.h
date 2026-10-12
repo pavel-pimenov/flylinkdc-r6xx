@@ -1643,6 +1643,11 @@ class ATL_NO_VTABLE MDITabChildWindowImpl : public CMDIChildWindowImpl<T, TBase,
 				wndParent.SetRedraw(FALSE);
 				
 			HWND hWnd = CFrameWindowImplBase<TBase, TWinTraits >::Create(hWndParent, rect.m_lpRect, szWindowName, dwStyle, dwExStyle, (UINT)0U, atom, lpCreateParam);
+
+			if (hWnd)
+			{
+				WinUtil::applyDarkMode(hWnd);
+			}
 			
 			if (bMaximized)
 			{

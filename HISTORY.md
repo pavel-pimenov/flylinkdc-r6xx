@@ -18,6 +18,7 @@
 - `WinUtil::applyDarkMode(HWND)` — тёмный заголовок окна (`DwmSetWindowAttribute`) + `AllowDarkModeForWindow` (ordinal 133) + рекурсивный `SetWindowTheme(L"DarkMode_Explorer")` для общих контролов (listview/treeview/header/scrollbar/edit/combo/statusbar/tooltip) — тёмные скроллбары и заголовки колонок; при светлой теме тема контролов возвращается (`SetWindowTheme(..., nullptr, ...)`). `WinUtil::applyDarkModeToAllWindows()` применяет ко всем top-level окнам процесса (`EnumWindows`).
 - Точки вызова: `MainFrame::OnCreate` (`initDarkMode` + `applyDarkMode`) и `Colors::init()` (переприменение при смене темы и ко всем открытым окнам).
 - Все вызовы uxtheme защищены проверкой версии ОС и динамической загрузкой; на старых ОС поведение прежнее (только тёмный заголовок).
+- Тёмный режим применяется и к вновь открываемым MDI-фреймам: в `MDITabChildWindowImpl::Create` (`windows/flattabctrl.h`) после создания окна (дочерние контролы уже существуют) вызывается `WinUtil::applyDarkMode`.
 - Сборка MSVC Debug и Release x64 после изменений — 0 предупреждений/0 ошибок.
 
 ## 2026-10-12

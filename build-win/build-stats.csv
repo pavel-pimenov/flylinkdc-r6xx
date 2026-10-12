@@ -21,3 +21,5 @@
 2026-10-13 01:42:22,Release,Rebuild,FlyLinkDC_2022.sln,2,16,0,0,20661760,0,clean verify after vendor rebase + phase D
 2026-10-13 01:54:48,Debug,Build,FlyLinkDC_2022.sln,0,86,0,0,54389760,0,dark mode uxtheme helper
 2026-10-13 01:55:44,Release,Build,FlyLinkDC_2022.sln,0,47,0,0,20663808,0,dark mode uxtheme helper
+2026-10-13 02:01:45,Debug,Build,FlyLinkDC_2022.sln,0,48,0,0,54389760,0,dark mode for MDI frames
+2026-10-13 02:02:35,Release,Build,FlyLinkDC_2022.sln,0,42,0,0,20663296,0,dark mode for MDI frames
