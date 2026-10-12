@@ -1871,4 +1871,6 @@
 	<string name="DatetimeMinutes">min.</string>
 	<string name="DatetimeSecond">second</string>
 	<string name="DatetimeSeconds">sec.</string>
+	<string name="ThemeLight">Light</string>
+	<string name="ThemeDark">Dark</string>
 </resources>

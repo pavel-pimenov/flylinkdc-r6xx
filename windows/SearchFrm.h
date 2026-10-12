@@ -58,6 +58,35 @@ using namespace net::r_eg::text::wildcards;
 
 #define FLYLINKDC_USE_WINDOWS_TIMER_SEARCH_FRAME
 // С виндовым таймером у меня иногда вешается на ноуте.
+template <bool t_bVertical>
+class CFlySplitterWindowT : public CSplitterWindowImpl<CFlySplitterWindowT<t_bVertical> >
+{
+public:
+	CFlySplitterWindowT() : CSplitterWindowImpl<CFlySplitterWindowT<t_bVertical> >(t_bVertical)
+	{ }
+    void DrawSplitterBar(CDCHandle dc)
+    {
+        RECT rect = {};
+        if (GetSplitterBarRect(&rect))
+        {
+            dc.FillSolidRect(&rect, FlyTheme::getSysColor(COLOR_3DFACE));
+            if ((GetExStyle() & WS_EX_CLIENTEDGE) != 0)
+                dc.DrawEdge(&rect, EDGE_RAISED, t_bVertical ? (BF_LEFT | BF_RIGHT) : (BF_TOP | BF_BOTTOM));
+        }
+    }
+    void DrawSplitterPane(CDCHandle dc, int nPane)
+    {
+        RECT rect = {};
+        if (GetSplitterPaneRect(nPane, &rect))
+        {
+            if ((GetExStyle() & WS_EX_CLIENTEDGE) == 0)
+                dc.DrawEdge(&rect, EDGE_SUNKEN, BF_RECT | BF_ADJUST);
+            dc.FillSolidRect(&rect, FlyTheme::getSysColor(COLOR_APPWORKSPACE));
+        }
+    }
+};
+typedef CFlySplitterWindowT<true> CFlySplitterWindow;
+typedef CFlySplitterWindowT<false> CFlyHorSplitterWindow;
 class HIconWrapper;
 class SearchFrame : public MDITabChildWindowImpl < SearchFrame, RGB(127, 127, 255), IDR_SEARCH >,
 	private SearchManagerListener,
@@ -353,8 +382,8 @@ class SearchFrame : public MDITabChildWindowImpl < SearchFrame, RGB(127, 127, 25
 // #define FLYLINKDC_USE_TORRENT_PANEL
 #endif
 #ifdef FLYLINKDC_USE_TORRENT_PANEL
-		CHorSplitterWindow m_hzSplit;
-		CSplitterWindow m_vSplit;
+		CFlyHorSplitterWindow m_hzSplit;
+		CFlySplitterWindow m_vSplit;
 		CPaneContainer m_lPane;
 		CPaneContainer m_tPane;
 #endif

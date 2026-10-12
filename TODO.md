@@ -25,7 +25,8 @@
   - [x] меню и общие контролы (скроллбары, заголовки колонок, тултипы) —
     uxtheme (`WinUtil::initDarkMode`/`applyDarkMode`, DarkMode_Explorer).
   - [x] все MDI-фреймы (применение в `MDITabChildWindowImpl::Create`).
-  - [ ] сплиттеры и owner-draw элементы отдельных окон.
+  - [x] сплиттеры (`windows/SearchFrm.h`, `CFlySplitterWindowT::DrawSplitterBar`).
+  - [ ] owner-draw элементы отдельных окон.
   - [ ] проверка на светлой теме (регрессии) и дымовой запуск exe.
 - [x] Phase D — сборочные фиксы Debug x64 (MSVC доступен в текущем окружении,
   VS 18 Insiders): `PropertyList.h` (`FlyTheme::getSysColor`, `CBrush::CreateSolidBrush`),
