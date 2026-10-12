@@ -17,3 +17,5 @@
 2026-10-13 01:22:05,Debug,Build,FlyLinkDC_2022.sln,0,71,0,12,53357056,1,full solution after vendor rebases
 2026-10-13 01:29:27,Debug,Build,FlyLinkDC_2022.sln,0,03,0,6,53357056,1,phaseD build fix round2
 2026-10-13 01:30:57,Debug,Build,FlyLinkDC_2022.sln,0,12,0,0,54387200,0,phaseD build fix round3
+2026-10-13 01:39:44,Release,Build,FlyLinkDC_2022.sln,2,08,0,0,20661760,0,vendor rebase + phase D fixes
+2026-10-13 01:42:22,Release,Rebuild,FlyLinkDC_2022.sln,2,16,0,0,20661760,0,clean verify after vendor rebase + phase D
