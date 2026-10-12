@@ -53,9 +53,18 @@
   манифесты `vendor-manifests/*.txt`). Для каждого проверено 1:1
   воспроизведение дерева, `--dry-run` проходит. Коммит пока НЕ создан
   (вся работа в working tree: vendor-update.py, vendor-patches/, vendor-manifests/).
-- [ ] Прочие вендоры по аналогии: openssl, bzip2, libtorrent, lua, snappy,
-  selene, mediainfolib, unrar. У каждого проверить локальные патчи проекта
-  перед заведением в конфиг.
+- [x] Вендоры второй волны заведены и проверены 1:1 (манифест + патч == дерево):
+  bzip2 1.0.8, lua 5.4.6, unrar 6.23 (`unrarsrc-6.2.10`; у rarlab несогласованная
+  нумерация — 6.2.3 = 6.20 beta 3), libtorrent 2.1.0, mediainfolib 25.07,
+  snappy 1.2.0, selene (pin `5cde61c6…`), openssl (pin `b372b1f7…`,
+  OpenSSL_1_1_1-stable `1.1.1x-dev`). Скрипт: добавлена EOL-нормализация
+  распакованного upstream в LF (`normalize_lf`), `re.MULTILINE` для версий,
+  опциональный второй столбец в манифесте; фикс `git apply` (из корня репо с
+  `--directory` и `autocrlf=false`). Патчи генерируются против LF-нормализованных
+  деревьев (mediainfolib/unrar с CRLF-upstream). Проверка всех 8: sync →
+  `git add` → пустой `git diff --cached` → 0 ошибок `git apply`. Артефакты
+  (`vendor-manifests/*.txt`, `vendor-patches/*.patch`, правки `vendor-update.py`)
+  пока в working tree, коммит по запросу.
 - [ ] При первом реальном прогоне новых вендоров создаются коммиты через
   `commit()` (git add → porcelain → commit). Нюанс на Windows при
   core.autocrlf=true: у LF-исходников (tar.gz с GitHub) после синка

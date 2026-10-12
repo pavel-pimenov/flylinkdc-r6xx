@@ -1,0 +1,59 @@
+diff --git a/include/selene/Selector.h b/include/selene/Selector.h
+index 0555376..76fa2e5 100644
+--- a/include/selene/Selector.h
++++ b/include/selene/Selector.h
+@@ -188,6 +188,8 @@ public:
+         Selector copy{*this};
+         const auto state = _state; // gcc-5.1 doesn't support implicit member capturing
+         const auto eh = _exception_handler;
++        (void)state;
++        (void)eh;
+         copy._functor_arguments = make_Refs(_state, std::forward<Args>(args)...);
+         copy._functor_active = true;
+         return copy;
+diff --git a/include/selene/State.h b/include/selene/State.h
+index 7814a40..57b9ced 100644
+--- a/include/selene/State.h
++++ b/include/selene/State.h
+@@ -59,9 +59,17 @@ public:
+         return lua_gettop(_l);
+     }
+ 
+-    bool Load(const std::string &file) {
++    bool Load(std::string file_or_buffer, bool p_load_file, const char* p_name) {
+         ResetStackOnScopeExit savedStack(_l);
+-        int status = luaL_loadfile(_l, file.c_str());
++		int status;
++		if (p_load_file)
++			status = luaL_loadfile(_l, file_or_buffer.c_str());
++		else
++		{
++			status = luaL_loadbuffer(_l, file_or_buffer.c_str(), file_or_buffer.size(), p_name);
++			file_or_buffer = p_name;
++		}
++
+ #if LUA_VERSION_NUM >= 502
+         auto const lua_ok = LUA_OK;
+ #else
+@@ -70,10 +78,10 @@ public:
+         if (status != lua_ok) {
+             if (status == LUA_ERRSYNTAX) {
+                 const char *msg = lua_tostring(_l, -1);
+-                _exception_handler->Handle(status, msg ? msg : file + ": syntax error");
++                _exception_handler->Handle(status, msg ? msg : file_or_buffer + ": syntax error");
+             } else if (status == LUA_ERRFILE) {
+                 const char *msg = lua_tostring(_l, -1);
+-                _exception_handler->Handle(status, msg ? msg : file + ": file error");
++                _exception_handler->Handle(status, msg ? msg : file_or_buffer + ": file error");
+             }
+             return false;
+         }
+@@ -84,7 +92,7 @@ public:
+         }
+ 
+         const char *msg = lua_tostring(_l, -1);
+-        _exception_handler->Handle(status, msg ? msg : file + ": dofile failed");
++        _exception_handler->Handle(status, msg ? msg : file_or_buffer + ": dofile failed");
+         return false;
+     }
+ 

@@ -1,0 +1,135 @@
+diff --git a/snappy.cc b/snappy.cc
+index 08c2a98..877b65a 100644
+--- a/snappy.cc
++++ b/snappy.cc
+@@ -74,6 +74,7 @@
+ #include <cstdint>
+ #include <cstdio>
+ #include <cstring>
++#include <functional>
+ #include <memory>
+ #include <string>
+ #include <utility>
+@@ -1792,6 +1793,10 @@ bool GetUncompressedLength(Source* source, uint32_t* result) {
+   return decompressor.ReadUncompressedLength(result);
+ }
+ 
++size_t Compress(Source* reader, Sink* writer) {
++  return Compress(reader, writer, CompressionOptions{});
++}
++
+ size_t Compress(Source* reader, Sink* writer, CompressionOptions options) {
+   assert(options.level == 1 || options.level == 2);
+   int token = 0;
+@@ -2298,6 +2303,12 @@ bool IsValidCompressed(Source* compressed) {
+   return InternalUncompress(compressed, &writer);
+ }
+ 
++void RawCompress(const char* input, size_t input_length, char* compressed,
++                 size_t* compressed_length) {
++  RawCompress(input, input_length, compressed, compressed_length,
++              CompressionOptions{});
++}
++
+ void RawCompress(const char* input, size_t input_length, char* compressed,
+                  size_t* compressed_length, CompressionOptions options) {
+   ByteArraySource reader(input, input_length);
+@@ -2308,6 +2319,12 @@ void RawCompress(const char* input, size_t input_length, char* compressed,
+   *compressed_length = (writer.CurrentDestination() - compressed);
+ }
+ 
++void RawCompressFromIOVec(const struct iovec* iov, size_t uncompressed_length,
++                          char* compressed, size_t* compressed_length) {
++  RawCompressFromIOVec(iov, uncompressed_length, compressed, compressed_length,
++                       CompressionOptions{});
++}
++
+ void RawCompressFromIOVec(const struct iovec* iov, size_t uncompressed_length,
+                           char* compressed, size_t* compressed_length,
+                           CompressionOptions options) {
+@@ -2319,6 +2336,11 @@ void RawCompressFromIOVec(const struct iovec* iov, size_t uncompressed_length,
+   *compressed_length = writer.CurrentDestination() - compressed;
+ }
+ 
++size_t Compress(const char* input, size_t input_length,
++                std::string* compressed) {
++  return Compress(input, input_length, compressed, CompressionOptions{});
++}
++
+ size_t Compress(const char* input, size_t input_length, std::string* compressed,
+                 CompressionOptions options) {
+   // Pre-grow the buffer to the max length of the compressed output
+@@ -2331,6 +2353,11 @@ size_t Compress(const char* input, size_t input_length, std::string* compressed,
+   return compressed_length;
+ }
+ 
++size_t CompressFromIOVec(const struct iovec* iov, size_t iov_cnt,
++                         std::string* compressed) {
++  return CompressFromIOVec(iov, iov_cnt, compressed, CompressionOptions{});
++}
++
+ size_t CompressFromIOVec(const struct iovec* iov, size_t iov_cnt,
+                          std::string* compressed, CompressionOptions options) {
+   // Compute the number of bytes to be compressed.
+diff --git a/snappy.h b/snappy.h
+index bde378b..2f1b802 100644
+--- a/snappy.h
++++ b/snappy.h
+@@ -78,8 +78,10 @@ namespace snappy {
+ 
+   // Compress the bytes read from "*reader" and append to "*writer". Return the
+   // number of bytes written.
++  // First version is to preserve ABI.
++  size_t Compress(Source* reader, Sink* writer);
+   size_t Compress(Source* reader, Sink* writer,
+-                  CompressionOptions options = {});
++                  CompressionOptions options);
+ 
+   // Find the uncompressed length of the given stream, as given by the header.
+   // Note that the true length could deviate from this; the stream could e.g.
+@@ -98,16 +100,22 @@ namespace snappy {
+   // Original contents of *compressed are lost.
+   //
+   // REQUIRES: "input[]" is not an alias of "*compressed".
++  // First version is to preserve ABI.
+   size_t Compress(const char* input, size_t input_length,
+-                  std::string* compressed, CompressionOptions options = {});
++                  std::string* compressed);
++  size_t Compress(const char* input, size_t input_length,
++                  std::string* compressed, CompressionOptions options);
+ 
+   // Same as `Compress` above but taking an `iovec` array as input. Note that
+   // this function preprocesses the inputs to compute the sum of
+   // `iov[0..iov_cnt-1].iov_len` before reading. To avoid this, use
+   // `RawCompressFromIOVec` below.
++  // First version is to preserve ABI.
++  size_t CompressFromIOVec(const struct iovec* iov, size_t iov_cnt,
++                           std::string* compressed);
+   size_t CompressFromIOVec(const struct iovec* iov, size_t iov_cnt,
+                            std::string* compressed,
+-                           CompressionOptions options = {});
++                           CompressionOptions options);
+ 
+   // Decompresses "compressed[0..compressed_length-1]" to "*uncompressed".
+   // Original contents of "*uncompressed" are lost.
+@@ -151,14 +159,18 @@ namespace snappy {
+   //    ... Process(output, output_length) ...
+   //    delete [] output;
+   void RawCompress(const char* input, size_t input_length, char* compressed,
+-                   size_t* compressed_length, CompressionOptions options = {});
++                   size_t* compressed_length);
++  void RawCompress(const char* input, size_t input_length, char* compressed,
++                   size_t* compressed_length, CompressionOptions options);
+ 
+   // Same as `RawCompress` above but taking an `iovec` array as input. Note that
+   // `uncompressed_length` is the total number of bytes to be read from the
+   // elements of `iov` (_not_ the number of elements in `iov`).
++  void RawCompressFromIOVec(const struct iovec* iov, size_t uncompressed_length,
++                            char* compressed, size_t* compressed_length);
+   void RawCompressFromIOVec(const struct iovec* iov, size_t uncompressed_length,
+                             char* compressed, size_t* compressed_length,
+-                            CompressionOptions options = {});
++                            CompressionOptions options);
+ 
+   // Given data in "compressed[0..compressed_length-1]" generated by
+   // calling the Snappy::Compress routine, this routine

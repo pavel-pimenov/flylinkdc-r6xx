@@ -30,6 +30,24 @@
 - Проверки: все 5 сухих прогонов `--dry-run` проходят end-to-end (download → extract → generate → select → plan); `git apply` внутри репозитория воспроизводит локальные файлы без расхождений (тест в gitignored `build-win`). Версии детектируются по маркерам (json.h/configure-версии/maxminddb.h/db.h/History.txt/version.hpp).
 - Техника: для больших чередующихся патчей выбран внешний unified-diff вместо строковых замен; поддержан синтез «без перевода строки в конце файла» (`\ No newline at end of file`). Генератор `vendor-patches` и валидатор применялись разово из временных скриптов.
 
+### Вендоры второй волны: bzip2, lua, unrar, libtorrent, mediainfolib, snappy, selene, openssl
+- Заведены 8 вендоров; для каждого подтверждено 1:1-воспроизведение текущего дерева (манифест + патч == каталог в репозитории, 0 расхождений):
+  - bzip2 1.0.8 (`files`, 10 файлов; патч — `nGroups`→`BZ_N_GROUPS` в `compress.c`).
+  - lua 5.4.6 (`select` манифест 59 файлов с маппингом `src/x x`; патч — строки `$Id:` в `lzio.c/.h`).
+  - unrar 6.23 (`select` 153 файла; патч — 1 файл `UnRAR.vcxproj`). Выяснено, что у rarlab несогласованная нумерация: `unrarsrc-6.2.9.tar.gz` = 6.23 beta 1, `unrarsrc-6.2.10.tar.gz` = 6.23 final; `unrarsrc-6.2.3.tar.gz` = 6.20 beta 3 (не 6.23). Верный архив — `unrarsrc-6.2.10`, версия читается как 6.23 с обеих сторон.
+  - libtorrent 2.1.0 (release tarball, `select` 485 файлов; патч 196 файлов — локальные правки проекта, напр. `config.hpp`, `aux_/export.hpp`, `alert.hpp`).
+  - mediainfolib 25.07 (github tag v25.07, `select` 509 файлов; патч 116 файлов; версия из `History_DLL.txt`).
+  - snappy 1.2.0 (`select` 9 файлов; патч — `snappy.cc`/`snappy.h`; версии локально нет, ключ `version` опущен). Локальные `snappy-stubs-public-{linux,windows}.h` и `Snappy.vcxproj` — проектные файлы (в upstream их нет). В решении `.sln` snappy отсутствует (используется leveldb только как include-путь).
+  - selene: пин на коммит `5cde61c6c021ad1c096b03cc41c7d2325e0ca4eb` (master; 24/26 файлов совпадают, патч — `Selector.h`/`State.h`).
+  - openssl: пин на коммит ветки OpenSSL_1_1_1-stable `b372b1f76450acdfed1e2301a39810146e28b02c` (`1.1.1x-dev`); `select` 953 файла, патч 15 файлов (в основном сгенерированная таблица `crypto/ec/ecp_nistz256_table.c` ~1.25 МБ). Проектные/сгенерированные файлы — локальные-only: `build-for-windows/`, `vc17/`, `openssl_2022.vcxproj*`, `openssl_pch.*`, `crypto/buildinf.h`, `include/crypto/{bn_conf,dso_conf}.h`, `include/openssl/opensslconf.h`.
+- Доработки `vendor-update.py`:
+  - манифест `select` теперь допускает опциональный второй столбец `src_rel out_rel` (обратно совместимо со списком одиночных путей);
+  - `read_version` соединяет несколько групп через `.` и ищет с `re.MULTILINE` (для маркеров вида `^Version …`);
+  - добавлена нормализация переводов строк `normalize_lf()` распакованного upstream в LF перед планированием/копированием — обязательно для вендоров, отдающих CRLF (mediainfolib, snappy), иначе байтовое сравнение и `git apply` ломаются;
+  - исправлено применение `diff`-патчей: `git apply` запускается из корня репозитория с `--directory=<local>` и `-c core.autocrlf=false -c core.safecrlf=false` (иначе из подкаталога резолвинг путей идёт от корня репо и файлы молча пропускаются).
+- Правило репозитория: канонический EOL — LF (индекс хранит LF при `core.autocrlf=true`). Поэтому и upstream, и локальное дерево при генерации патча нормализуются в LF (CRLF→LF для не-бинарных файлов); итоговый патч EOL-независим и содержит LF-контекст. Это устранило отказ `git apply` на CRLF-патче unrar.
+- Идемпотентность проверяется так: `vendor-update.py --vendor N --no-commit` → `git add N` → `git diff --cached --stat` (должен быть пуст) → `git reset`. Промежуточный `git status` показывает файлы как Modified/«LF will be replaced by CRLF» — это stat-артефакт `core.autocrlf=true` (рабочий LF против ожидаемого CRLF), блоб при `git add` не меняется. Все 8 новых вендоров (bzip2, lua, unrar, libtorrent, mediainfolib, snappy, selene, openssl) проходят проверку: 0 ошибок применения патча, пустой `diff --cached`.
+
 ### Фаза D: вынос палитры в лёгкий заголовок и консистентность
 - Новый `windows/Colors.h`: header-only `FlyTheme::getSysColor(int)` — точная копия палитры из `Colors::getSysColor`; зависимости только `<windows.h>` и `../client/SettingsManager.h`. Разрывает циклический include WinUtil.h ← wtl_flylinkdc.h (это позволяло взять ссылки `COLOR_HOTLIGHT` в `wtl_flylinkdc.h:241`).
 - `Colors::getSysColor` (windows/WinUtil.cpp, ~3858) теперь делегирует в `FlyTheme::getSysColor`.

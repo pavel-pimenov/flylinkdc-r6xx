@@ -1,0 +1,22 @@
+diff --git a/lzio.c b/lzio.c
+index cd0a02d..c9e1f49 100644
+--- a/lzio.c
++++ b/lzio.c
+@@ -1,5 +1,5 @@
+ /*
+-** $Id: lzio.c $
++** $Id: lzio.c,v 1.37 2015/09/08 15:41:05 roberto Exp $
+ ** Buffered streams
+ ** See Copyright Notice in lua.h
+ */
+diff --git a/lzio.h b/lzio.h
+index 38f397f..e7b6f34 100644
+--- a/lzio.h
++++ b/lzio.h
+@@ -1,5 +1,5 @@
+ /*
+-** $Id: lzio.h $
++** $Id: lzio.h,v 1.31 2015/09/08 15:41:05 roberto Exp $
+ ** Buffered streams
+ ** See Copyright Notice in lua.h
+ */

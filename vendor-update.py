@@ -155,6 +155,91 @@ VENDORS = (
         'version': {'paths': ['History.txt'],
                     'pattern': r'^Version\s+([\d.]+)'},
     },
+    {
+        'name': 'bzip2',
+        'url': 'https://sourceware.org/pub/bzip2/bzip2-1.0.8.tar.gz',
+        'local': 'bzip2',
+        'strip': 1,
+        'files': ['blocksort.c', 'bzlib.c', 'bzlib.h', 'bzlib_private.h',
+                  'compress.c', 'crctable.c', 'decompress.c', 'huffman.c',
+                  'randtable.c', 'LICENSE'],
+        'diff': ['vendor-patches/bzip2.patch'],
+        'version': {'paths': ['bzlib.h'],
+                    'pattern': r'version\s+([\d.]+)\s+of'},
+    },
+    {
+        'name': 'lua',
+        'url': 'https://www.lua.org/ftp/lua-5.4.6.tar.gz',
+        'local': 'lua',
+        'strip': 1,
+        'select': 'vendor-manifests/lua.txt',
+        'diff': ['vendor-patches/lua.patch'],
+        'version': {'paths': ['src/lua.h', 'lua.h'],
+                    'pattern': r'LUA_VERSION_MAJOR\s+"(\d+)"[\s\S]*?'
+                               r'LUA_VERSION_MINOR\s+"(\d+)"[\s\S]*?'
+                               r'LUA_VERSION_RELEASE\s+"(\d+)"'},
+    },
+    {
+        'name': 'unrar',
+        'url': 'https://www.rarlab.com/rar/unrarsrc-6.2.10.tar.gz',
+        'local': 'unrar',
+        'strip': 1,
+        'select': 'vendor-manifests/unrar.txt',
+        'diff': ['vendor-patches/unrar.patch'],
+        'version': {'paths': ['version.hpp'],
+                    'pattern': r'RARVER_MAJOR\s+(\d+)[\s\S]*?RARVER_MINOR\s+(\d+)'},
+    },
+    {
+        'name': 'libtorrent',
+        'url': 'https://github.com/arvidn/libtorrent/releases/download/v2.1.0/'
+               'libtorrent-rasterbar-2.1.0.tar.gz',
+        'local': 'libtorrent',
+        'strip': 1,
+        'select': 'vendor-manifests/libtorrent.txt',
+        'diff': ['vendor-patches/libtorrent.patch'],
+        'version': {'paths': ['include/libtorrent/version.hpp'],
+                    'pattern': r'LIBTORRENT_VERSION_MAJOR\s+(\d+)[\s\S]*?'
+                               r'LIBTORRENT_VERSION_MINOR\s+(\d+)[\s\S]*?'
+                               r'LIBTORRENT_VERSION_TINY\s+(\d+)'},
+    },
+    {
+        'name': 'mediainfolib',
+        'url': 'https://github.com/MediaArea/MediaInfoLib/archive/refs/tags/v25.07.tar.gz',
+        'local': 'mediainfolib',
+        'strip': 1,
+        'select': 'vendor-manifests/mediainfolib.txt',
+        'diff': ['vendor-patches/mediainfolib.patch'],
+        'version': {'paths': ['History_DLL.txt'],
+                    'pattern': r'^Version\s+([\d.]+)'},
+    },
+    {
+        'name': 'snappy',
+        'url': 'https://github.com/google/snappy/archive/refs/tags/1.2.0.tar.gz',
+        'local': 'snappy',
+        'strip': 1,
+        'select': 'vendor-manifests/snappy.txt',
+        'diff': ['vendor-patches/snappy.patch'],
+    },
+    {
+        'name': 'selene',
+        'url': 'https://github.com/jeremyong/Selene/archive/{pin}.tar.gz',
+        'pin': '5cde61c6c021ad1c096b03cc41c7d2325e0ca4eb',
+        'local': 'selene',
+        'strip': 1,
+        'select': 'vendor-manifests/selene.txt',
+        'diff': ['vendor-patches/selene.patch'],
+    },
+    {
+        'name': 'openssl',
+        'url': 'https://github.com/openssl/openssl/archive/{pin}.tar.gz',
+        'pin': 'b372b1f76450acdfed1e2301a39810146e28b02c',
+        'local': 'openssl',
+        'strip': 1,
+        'select': 'vendor-manifests/openssl.txt',
+        'diff': ['vendor-patches/openssl.patch'],
+        'version': {'paths': ['include/openssl/opensslv.h'],
+                    'pattern': r'OPENSSL_VERSION_TEXT\s+"OpenSSL\s+(\S+)'},
+    },
 )
 
 
@@ -181,6 +266,18 @@ def extract(archive, dest):
             t.extractall(dest)
     else:
         raise SystemExit(f'cannot extract {archive}')
+
+
+def normalize_lf(root):
+    for p in root.rglob('*'):
+        if not p.is_file():
+            continue
+        data = p.read_bytes()
+        if b'\x00' in data:
+            continue
+        fixed = data.replace(b'\r\n', b'\n')
+        if fixed != data:
+            p.write_bytes(fixed)
 
 
 def source_root(vendor, extract_dir):
@@ -213,8 +310,11 @@ def read_version(root, spec):
         text = path.read_text(encoding='utf-8')
     except UnicodeDecodeError:
         text = path.read_text(encoding='latin-1')
-    m = re.search(spec['pattern'], text)
-    return m.group(1) if m else None
+    m = re.search(spec['pattern'], text, re.MULTILINE)
+    if not m:
+        return None
+    groups = m.groups()
+    return '.'.join(g for g in groups if g) if len(groups) > 1 else m.group(1)
 
 
 def normalize(p):
@@ -253,7 +353,8 @@ def plan(vendor, src, local):
             for line in manifest.read_text(encoding='utf-8').splitlines():
                 line = line.strip()
                 if line and not line.startswith('#'):
-                    items.append((line, line))
+                    parts = line.split()
+                    items.append((parts[0], parts[1]) if len(parts) > 1 else (parts[0], parts[0]))
         elif isinstance(sel, (list, tuple)):
             items = [(p, p) for p in sel]
         else:
@@ -342,8 +443,10 @@ def perform(vendor, src, local, plan_data):
     for patch_rel in vendor.get('diff', []):
         patch = REPO / patch_rel
         log(f'  apply patch {patch_rel}')
-        r = subprocess.run(['git', 'apply', '-p1', '--whitespace=nowarn', str(patch)],
-                           cwd=str(local), capture_output=True, text=True)
+        r = subprocess.run(['git', '-c', 'core.autocrlf=false', '-c', 'core.safecrlf=false',
+                            'apply', '-p1', '--whitespace=nowarn',
+                            '--directory=' + Path(vendor['local']).as_posix(), str(patch)],
+                           cwd=str(REPO), capture_output=True, text=True)
         if r.returncode:
             print(r.stdout, file=sys.stdout)
             print(r.stderr, file=sys.stderr)
@@ -391,6 +494,7 @@ def process(vendor, args):
     try:
         extract_dir = work / name
         extract(archive, extract_dir)
+        normalize_lf(extract_dir)
         src = source_root(vendor, extract_dir)
         if vendor.get('generate'):
             run_generate(vendor['generate'], src)
