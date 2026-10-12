@@ -44,6 +44,8 @@
 #endif //!((_WIN32_WINNT >= 0x0400) || (_WIN32_WINDOWS > 0x0400))
 
 
+#include "Colors.h"
+
 // Extended List styles
 #define PLS_EX_CATEGORIZED     0x00000001
 #define PLS_EX_SORTED          0x00000002
@@ -93,8 +95,8 @@ class CCategoryProperty : public CProperty
 			if ((di.dwExtStyle & PLS_EX_XPLOOK) != 0)
 			{
 				di.clrSelText = di.clrText;
-				di.clrBack = Colors::getSysColor(COLOR_3DFACE);
-				di.clrSelBack = Colors::getSysColor(COLOR_3DFACE);
+				di.clrBack = FlyTheme::getSysColor(COLOR_3DFACE);
+				di.clrSelBack = FlyTheme::getSysColor(COLOR_3DFACE);
 				CProperty::DrawName(di);
 				if ((di.state & ODS_SELECTED) != 0)
 				{
@@ -118,7 +120,9 @@ class CCategoryProperty : public CProperty
 		{
 			if ((di.dwExtStyle & PLS_EX_XPLOOK) != 0)
 			{
-				::FillRect(di.hDC,  &di.rcItem, CBrush(Colors::getSysColor(COLOR_3DFACE)));
+				CBrush brush;
+				brush.CreateSolidBrush(FlyTheme::getSysColor(COLOR_3DFACE));
+				::FillRect(di.hDC,  &di.rcItem, brush);
 			}
 		}
 		
@@ -869,13 +873,13 @@ class ATL_NO_VTABLE CPropertyListImpl :
 			// Custom styles
 			m_di.dwExtStyle = m_dwExtStyle;
 			// Standard colors
-			m_di.clrText = Colors::getSysColor(COLOR_WINDOWTEXT);
-			m_di.clrBack = Colors::getSysColor(COLOR_WINDOW);
-			m_di.clrSelText = Colors::getSysColor(COLOR_HIGHLIGHTTEXT);
-			m_di.clrSelBack = Colors::getSysColor(COLOR_HIGHLIGHT);
-			m_di.clrDisabled = Colors::getSysColor(COLOR_GRAYTEXT);
+			m_di.clrText = FlyTheme::getSysColor(COLOR_WINDOWTEXT);
+			m_di.clrBack = FlyTheme::getSysColor(COLOR_WINDOW);
+			m_di.clrSelText = FlyTheme::getSysColor(COLOR_HIGHLIGHTTEXT);
+			m_di.clrSelBack = FlyTheme::getSysColor(COLOR_HIGHLIGHT);
+			m_di.clrDisabled = FlyTheme::getSysColor(COLOR_GRAYTEXT);
 			// Border
-			m_di.clrBorder = Colors::getSysColor(COLOR_BTNFACE);
+			m_di.clrBorder = FlyTheme::getSysColor(COLOR_BTNFACE);
 			if (!m_BorderPen.IsNull()) m_BorderPen.DeleteObject();
 			m_di.Border = m_BorderPen.CreatePen(PS_SOLID, 1, m_di.clrBorder);
 			// Fonts
@@ -1082,7 +1086,9 @@ class ATL_NO_VTABLE CPropertyListImpl :
 				if ((m_dwExtStyle & PLS_EX_XPLOOK) != 0)
 				{
 					RECT rcIndent = { rc.left, rc.top, rc.left + CATEGORY_INDENT, rc.bottom };
-					dc.FillRect(&rcIndent, CBrush(Colors::getSysColor(COLOR_3DFACE)));
+					CBrush brush;
+					brush.CreateSolidBrush(FlyTheme::getSysColor(COLOR_3DFACE));
+					dc.FillRect(&rcIndent, brush);
 				}
 				// Paint plus/minus sign if it's actually a category item
 				if (kind == PROPKIND_CATEGORY)

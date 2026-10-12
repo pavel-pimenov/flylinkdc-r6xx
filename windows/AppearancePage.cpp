@@ -103,8 +103,8 @@ LRESULT AppearancePage::onInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*
 #ifndef FLYLINKDC_USE_THEME_MANAGER
 	ctrlTheme.Attach(GetDlgItem(IDC_THEME_COMBO));
 	ctrlTheme.ResetContent();
-	ctrlTheme.AddString(TSTRING(THEME_LIGHT));
-	ctrlTheme.AddString(TSTRING(THEME_DARK));
+	ctrlTheme.AddString(TSTRING(THEME_LIGHT).c_str());
+	ctrlTheme.AddString(TSTRING(THEME_DARK).c_str());
 	ctrlTheme.SetCurSel(SETTING(THEME));
 	ctrlTheme.Detach();
 #endif
