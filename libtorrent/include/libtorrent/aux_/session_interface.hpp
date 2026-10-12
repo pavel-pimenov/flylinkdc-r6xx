@@ -178,8 +178,7 @@ namespace libtorrent::aux {
 		// ask for which interface and port to bind outgoing peer connections on
 		virtual tcp::endpoint bind_outgoing_socket(socket_type& s, address const&
 			remote_address, error_code& ec) const = 0;
-		virtual bool verify_bound_address(address const& addr, bool utp
-			, error_code& ec) = 0;
+		virtual bool verify_bound_address(address const& addr, bool utp) = 0;
 
 #ifndef TORRENT_DISABLE_MUTABLE_TORRENTS
 		virtual std::vector<std::shared_ptr<torrent>> find_collection(
@@ -254,6 +253,7 @@ namespace libtorrent::aux {
 
 		virtual bool has_lsd() const = 0;
 		virtual void announce_lsd(sha1_hash const& ih, int port) = 0;
+		virtual void prioritize_lsd(std::weak_ptr<torrent> t) = 0;
 		virtual libtorrent::aux::utp_socket_manager* utp_socket_manager() = 0;
 		virtual void inc_boost_connections() = 0;
 		virtual std::vector<block_info>& block_info_storage() = 0;

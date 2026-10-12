@@ -14,7 +14,6 @@ see LICENSE file.
 #define TORRENT_EXPORT_HPP_INCLUDED
 
 #include <boost/config.hpp>
-#include "libtorrent/config.hpp"
 
 #include "libtorrent/aux_/deprecated.hpp"
 
@@ -29,7 +28,8 @@ see LICENSE file.
 # ifdef TORRENT_NO_DEPRECATE
 #  define TORRENT_ABI_VERSION 100
 # else
-#  define TORRENT_ABI_VERSION 1
+// must match the default in the Jamfile and CMakeLists.txt
+#define TORRENT_ABI_VERSION 2
 # endif
 #endif
 
@@ -58,26 +58,6 @@ see LICENSE file.
 #else
 # define TORRENT_VERSION_NAMESPACE_2
 # define TORRENT_VERSION_NAMESPACE_2_END
-#endif
-
-#ifdef TORRENT_USE_LIBGCRYPT
-# define TORRENT_CRYPTO_NAMESPACE inline namespace gcry {
-# define TORRENT_CRYPTO_NAMESPACE_END }
-#elif TORRENT_USE_COMMONCRYPTO
-# define TORRENT_CRYPTO_NAMESPACE inline namespace cc {
-# define TORRENT_CRYPTO_NAMESPACE_END }
-#elif TORRENT_USE_CRYPTOAPI
-# define TORRENT_CRYPTO_NAMESPACE inline namespace capi {
-# define TORRENT_CRYPTO_NAMESPACE_END }
-#elif defined TORRENT_USE_WOLFSSL
-# define TORRENT_CRYPTO_NAMESPACE inline namespace wcrypto {
-# define TORRENT_CRYPTO_NAMESPACE_END }
-#elif defined TORRENT_USE_LIBCRYPTO
-# define TORRENT_CRYPTO_NAMESPACE inline namespace lcrypto {
-# define TORRENT_CRYPTO_NAMESPACE_END }
-#else
-# define TORRENT_CRYPTO_NAMESPACE inline namespace builtin {
-# define TORRENT_CRYPTO_NAMESPACE_END }
 #endif
 
 // backwards compatibility with older versions of boost

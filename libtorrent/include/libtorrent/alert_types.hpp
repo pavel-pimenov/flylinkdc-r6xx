@@ -77,7 +77,7 @@ namespace libtorrent {
 	constexpr int user_alert_id = 10000;
 
 	// this constant represents "max_alert_index" + 1
-	constexpr int num_alert_types = 105;
+	constexpr int num_alert_types = 108;
 
 	// internal
 	constexpr int abi_alert_count = 128;
@@ -98,11 +98,11 @@ namespace libtorrent {
 	{
 		// the total number of nodes and replacement nodes
 		// in the routing table
-		int num_nodes;
-		int num_replacements;
+		int num_nodes = 0;
+		int num_replacements = 0;
 
 		// number of seconds since last activity
-		int last_active;
+		int last_active = 0;
 	};
 
 TORRENT_VERSION_NAMESPACE_4
@@ -3133,25 +3133,28 @@ TORRENT_VERSION_NAMESPACE_4
 
 TORRENT_VERSION_NAMESPACE_4_END
 
-	// this alert may be posted when the initial checking of resume data and files
-	// on disk (just existence, not piece hashes) completes. If a file belonging
-	// to the torrent is found on disk, but is larger than the file in the
-	// torrent, that's when this alert is posted.
-	// the client may want to call truncate_files() in that case, or perhaps
-	// interpret it as a sign that some other file is in the way, that shouldn't
-	// be overwritten.
-	struct TORRENT_EXPORT oversized_file_alert final : torrent_alert
-	{
-		// internal
-		explicit oversized_file_alert(aux::stack_allocator& alloc, torrent_handle h);
-		TORRENT_DEFINE_ALERT(oversized_file_alert, 98)
+// this alert may be posted when the initial checking of resume data and files
+// on disk (just existence, not piece hashes) completes. If a file belonging
+// to the torrent is found on disk, but is larger than the file in the
+// torrent, that's when this alert is posted.
+// the client may want to call truncate_files() in that case, or perhaps
+// interpret it as a sign that some other file is in the way, that shouldn't
+// be overwritten. If files in the torrent have been renamed, pass a
+// filenames view (built from torrent_handle::get_renamed_files()) rather
+// than the torrent_info's file_storage directly, to truncate the files at
+// their current on-disk paths.
+struct TORRENT_EXPORT oversized_file_alert final : torrent_alert
+{
+	// internal
+	explicit oversized_file_alert(aux::stack_allocator& alloc, torrent_handle h);
+	TORRENT_DEFINE_ALERT(oversized_file_alert, 98)
 
-		static constexpr alert_category_t static_category = alert_category::storage;
-		std::string message() const override;
+	static constexpr alert_category_t static_category = alert_category::storage;
+	std::string message() const override;
 
-		// hidden
-		file_index_t reserved;
-	};
+	// hidden
+	file_index_t reserved;
+};
 
 	// this alert is posted when two separate torrents (magnet links) resolve to
 	// the same torrent, thus causing the same torrent being added twice. In
@@ -3257,6 +3260,53 @@ TORRENT_VERSION_NAMESPACE_4_END
 
 		// list of trackers and their status for the torrent
 		std::vector<announce_entry> trackers;
+	};
+
+	// posted when torrent_handle::post_file_priorities() is called
+	struct TORRENT_EXPORT file_priorities_alert final : torrent_alert
+	{
+		// internal
+		TORRENT_UNEXPORT file_priorities_alert(aux::stack_allocator& alloc, torrent_handle h
+			, aux::vector<download_priority_t, file_index_t> p);
+		TORRENT_DEFINE_ALERT_PRIO(file_priorities_alert, 105, alert_priority::critical)
+
+		static constexpr alert_category_t static_category = alert_category::status;
+		std::string message() const override;
+
+		// the download priority of each file in the torrent
+		std::vector<download_priority_t> priorities;
+	};
+
+	// posted when torrent_handle::post_file_status() is called
+	struct TORRENT_EXPORT file_status_alert final : torrent_alert
+	{
+		// internal
+		TORRENT_UNEXPORT file_status_alert(aux::stack_allocator& alloc, torrent_handle h
+			, std::vector<open_file_state> s);
+		TORRENT_DEFINE_ALERT_PRIO(file_status_alert, 106, alert_priority::critical)
+
+		static constexpr alert_category_t static_category = alert_category::status;
+		std::string message() const override;
+
+		// the open-file state of each currently open file in the torrent.
+		// Files that are not open are not included. Each entry's ``file_index``
+		// field identifies which file it refers to.
+		std::vector<open_file_state> state;
+	};
+
+	// This alert is generated when libtorrent internally bans an IP address.
+	// The banned IP address can be accessed through the ``banned_address`` member.
+	struct TORRENT_EXPORT ip_ban_alert final : alert
+	{
+		// internal
+		TORRENT_UNEXPORT ip_ban_alert(aux::stack_allocator& alloc, address const& addr);
+		TORRENT_DEFINE_ALERT(ip_ban_alert, 107)
+
+		static constexpr alert_category_t static_category = alert_category::ip_block;
+		std::string message() const override;
+
+		// the IP address that was banned
+		aux::noexcept_movable<address> banned_address;
 	};
 
 	// internal

@@ -3,7 +3,7 @@
 Copyright (c) 2017-2018, 2020-2021, Alden Torres
 Copyright (c) 2017-2022, Arvid Norberg
 Copyright (c) 2017, Steven Siloti
-Copyright (c) 2021, Vladimir Golovnev (glassez)
+Copyright (c) 2021, 2026, Vladimir Golovnev (glassez)
 All rights reserved.
 
 You may use, distribute and modify this code under the terms of the BSD license,
@@ -42,7 +42,7 @@ namespace {
 				tier = std::clamp(std::size_t(*tier_it++), std::size_t{0}, std::size_t{1024});
 
 			if (tr_list.size() <= tier)
-				tr_list.resize(tier + 1);
+				tr_list.resize(tier + 1, entry(entry::list_t));
 
 			tr_list[tier].list().emplace_back(tr);
 		}
@@ -100,11 +100,14 @@ namespace {
 		ret["disable_dht"] = bool(atp.flags & torrent_flags::disable_dht);
 		ret["disable_lsd"] = bool(atp.flags & torrent_flags::disable_lsd);
 		ret["disable_pex"] = bool(atp.flags & torrent_flags::disable_pex);
+		ret["disable_v1_hashes"] = bool(atp.flags & torrent_flags::disable_v1_hashes);
 
 		ret["added_time"] = atp.added_time;
 		ret["completed_time"] = atp.completed_time;
 
 		ret["save_path"] = atp.save_path;
+		ret["part_file_dir"] = atp.part_file_dir;
+		ret["root_certificate"] = atp.root_certificate;
 
 		if (!atp.name.empty()) ret["name"] = atp.name;
 
@@ -134,7 +137,7 @@ namespace {
 			auto const& trees = atp.merkle_trees;
 			auto& ret_trees = ret["trees"].list();
 			ret_trees.reserve(atp.merkle_trees.size());
-			for (file_index_t f(0); f < file_index_t{int(atp.merkle_trees.size())}; ++f)
+			for (file_index_t f : atp.merkle_trees.range())
 			{
 				auto const& tree = trees[f];
 				ret_trees.emplace_back(entry::dictionary_t);
@@ -361,7 +364,15 @@ namespace {
 			}
 		}
 
-		if (!atp.ti->similar_torrents().empty() && !atp.ti->info("similar"))
+		bdecode_node info_dict;
+		if (!atp.ti->similar_torrents().empty() || !atp.ti->collections().empty())
+		{
+			auto const sec = atp.ti->info_section();
+			error_code ec;
+			bdecode(sec.data(), sec.data() + sec.size(), info_dict, ec);
+		}
+
+		if (!atp.ti->similar_torrents().empty() && !info_dict.dict_find("similar"))
 		{
 			auto& l = ret["similar"].list();
 			l.reserve(atp.ti->similar_torrents().size());
@@ -369,7 +380,7 @@ namespace {
 				l.emplace_back(n.to_string());
 		}
 
-		if (!atp.ti->collections().empty() && !atp.ti->info("collections"))
+		if (!atp.ti->collections().empty() && !info_dict.dict_find("collections"))
 		{
 			auto& l = ret["collections"].list();
 			l.reserve(atp.ti->collections().size());

@@ -123,6 +123,12 @@ namespace libtorrent::aux {
 		// because we have connected to it and it told us it was a seed
 		std::uint32_t seed:1;
 
+		// this peer confirmed via BEP-21 (LTEP upload_only=1) that it will
+		// not download any more. A seed is upload_only by implication,
+		// but a partial seed can be upload_only without being a seed, so
+		// this is tracked separately from seed:1.
+		std::uint32_t upload_only:1;
+
 		// we've been told that this peer is upload-only, but we don't know for
 		// sure because we haven't connected to it yet. If we are finished, we
 		// will de-prioritize peers that may be seeds
@@ -157,18 +163,18 @@ namespace libtorrent::aux {
 		// type (true = encrypted, false = standard).
 		// This will be toggled everytime either an
 		// encrypted or non-encrypted handshake fails.
-		bool pe_support:1;
+		std::uint32_t pe_support:1;
 #endif
 
 		// this is true if the v6 union member in addr is
 		// the one to use, false if it's the v4 one
-		bool is_v6_addr:1;
+		std::uint32_t is_v6_addr:1;
 #if TORRENT_USE_I2P
 		// set if the i2p_destination is in use in the addr union
-		bool is_i2p_addr:1;
+		std::uint32_t is_i2p_addr:1;
 #endif
 #if TORRENT_USE_RTC
-		bool is_rtc_addr:1;
+		std::uint32_t is_rtc_addr:1;
 #endif
 
 		// if this is true, the torrent_peer has previously
@@ -178,26 +184,26 @@ namespace libtorrent::aux {
 		// that was partially requested from this torrent_peer it
 		// will leave parole mode and continue download
 		// pieces as normal peers.
-		bool on_parole:1;
+		std::uint32_t on_parole:1;
 
 		// is set to true if this torrent_peer has been banned
-		bool banned:1;
+		std::uint32_t banned:1;
 
 		// we think this torrent_peer supports uTP
-		bool supports_utp:1;
+		std::uint32_t supports_utp:1;
 		// we have been connected via uTP at least once
-		bool confirmed_supports_utp:1;
-		bool supports_holepunch:1;
+		std::uint32_t confirmed_supports_utp:1;
+		std::uint32_t supports_holepunch:1;
 		// this is set to one for web seeds. Web seeds
 		// are not stored in the policy m_peers list,
 		// and are exempt from connect candidate bookkeeping
 		// so, any torrent_peer with the web_seed bit set, is
 		// never considered a connect candidate
-		bool web_seed:1;
+		std::uint32_t web_seed:1;
 		// this peer supports protocol version 2
-		bool protocol_v2:1;
+		std::uint32_t protocol_v2:1;
 #if TORRENT_USE_ASSERTS
-		bool in_use = true;
+		std::uint32_t in_use = true;
 #endif
 	};
 
@@ -229,7 +235,7 @@ namespace libtorrent::aux {
 #if TORRENT_USE_RTC
 	struct TORRENT_EXTRA_EXPORT rtc_peer : torrent_peer
 	{
-		rtc_peer(tcp::endpoint const& ep, peer_source_flags_t src);
+		rtc_peer(tcp::endpoint ep, peer_source_flags_t src);
 		rtc_peer(rtc_peer const&) = delete;
 		rtc_peer& operator=(rtc_peer const&) = delete;
 		rtc_peer(rtc_peer&&) = default;

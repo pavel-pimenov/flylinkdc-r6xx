@@ -12,8 +12,10 @@ see LICENSE file.
 #include <cctype>
 #include <cstring>
 #include <algorithm>
+#include <charconv>
 #include <cstdlib>
 #include <cinttypes>
+#include <system_error>
 
 #include "libtorrent/config.hpp"
 #include "libtorrent/aux_/http_parser.hpp"
@@ -62,27 +64,40 @@ namespace libtorrent::aux {
 
 		// otherwise it's likely to be just the path, or a relative path
 		std::string url = referrer;
+		std::size_t const scheme_end = url.find("://");
+
+		// the referrer is not a valid full URL
+		if (scheme_end == std::string::npos)
+			return location;
+
+		std::size_t const authority_start = scheme_end + 3;
+		std::size_t const suffix = url.find_first_of("?#", authority_start);
+		std::size_t const path_end = suffix == std::string::npos ? url.size() : suffix;
 
 		if (location[0] == '/')
 		{
 			// it's an absolute path. replace the path component of
 			// referrer with location.
 
-			// first skip the url scheme of the referer
-			std::size_t i = url.find("://");
+			// find the end of the authority without considering slashes in the
+			// query string or fragment
+			std::size_t const path_start = url.find('/', authority_start);
+			url.resize(std::min(path_start, path_end));
 
-			// if the referrer doesn't appear to have a proper URL scheme
-			// just return the location verbatim (and probably fail)
-			if (i == std::string::npos)
-				return location;
-
-			// then skip the hostname and port, it's fine for this to fail, in
-			// case the referrer doesn't have a path component, it's just the
-			// url-scheme and hostname, in which case we just append the location
-			i = url.find_first_of('/', i + 3);
-			if (i != std::string::npos)
-				url.resize(i);
-
+			url += location;
+		}
+		else if (location[0] == '?')
+		{
+			// a query reference replaces the current query and fragment
+			url.resize(path_end);
+			url += location;
+		}
+		else if (location[0] == '#')
+		{
+			// a fragment reference preserves the current path and query
+			std::size_t const fragment = url.find('#', authority_start);
+			if (fragment != std::string::npos)
+				url.resize(fragment);
 			url += location;
 		}
 		else
@@ -90,18 +105,15 @@ namespace libtorrent::aux {
 			// some web servers send out relative paths
 			// in the location header.
 
-			// remove the leaf filename
-			// first skip the url scheme of the referer
-			std::size_t start = url.find("://");
-
-			// the referrer is not a valid full URL
-			if (start == std::string::npos)
-				return location;
+			// remove the query string and fragment before finding the leaf
+			// filename
+			url.resize(path_end);
 
 			std::size_t end = url.find_last_of('/');
 			// if the / we find is part of the scheme, there is no / in the path
 			// component or hostname.
-			if (end <= start + 2) end = std::string::npos;
+			if (end <= scheme_end + 2)
+				end = std::string::npos;
 
 			// if this fails, the referrer is just url-scheme and hostname. We can
 			// just append the location to it.
@@ -204,7 +216,18 @@ restart_response:
 			m_protocol = libtorrent::read_until(line, ' ', line_end);
 			if (m_protocol.substr(0, 5) == "HTTP/")
 			{
-				m_status_code = atoi(libtorrent::read_until(line, ' ', line_end).c_str());
+				std::string const code_str = libtorrent::read_until(line, ' ', line_end);
+				char const* const code_end = code_str.data() + code_str.size();
+				auto const r = std::from_chars(code_str.data(), code_end, m_status_code);
+				// require a non-negative status code that consumed the full
+				// substring. negative values would also collide with the -1
+				// sentinel meaning "status line not yet parsed"
+				if (r.ec != std::errc{} || r.ptr != code_end || m_status_code < 0)
+				{
+					m_state = error_state;
+					error = true;
+					return ret;
+				}
 				m_server_message = libtorrent::read_until(line, '\r', line_end);
 
 				// HTTP 1.0 always closes the connection after
@@ -290,7 +313,7 @@ restart_response:
 				}
 				else if (name == "connection")
 				{
-					m_connection_close = string_begins_no_case("close", value.c_str());
+					m_connection_close = string_begins_no_case("close", value);
 				}
 				else if (name == "content-range")
 				{
@@ -301,7 +324,7 @@ restart_response:
 					// in their content-range. Don't treat it as an error
 					// if we can't find it, just assume the byte counters
 					// start immediately
-					if (string_begins_no_case("bytes ", ptr)) ptr += 6;
+					if (string_begins_no_case("bytes ", value)) ptr += 6;
 					char* end;
 					m_range_start = std::strtoll(ptr, &end, 10);
 					if (m_range_start < 0
@@ -338,7 +361,7 @@ restart_response:
 				}
 				else if (name == "transfer-encoding")
 				{
-					m_chunked_encoding = string_begins_no_case("chunked", value.c_str());
+					m_chunked_encoding = string_begins_no_case("chunked", value);
 				}
 
 				TORRENT_ASSERT(m_recv_pos <= int(recv_buffer.size()));
@@ -633,4 +656,3 @@ restart_response:
 #ifdef __clang__
 #pragma clang diagnostic pop
 #endif
-

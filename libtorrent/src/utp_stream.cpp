@@ -366,8 +366,14 @@ utp_stream::~utp_stream()
 	{
 		UTP_LOGV("%8p: utp_stream destructed\n", static_cast<void*>(m_impl));
 		m_impl->destroy();
-		m_impl->detach();
-		m_impl = nullptr;
+		// destroy() may invoke a shutdown completion handler which already
+		// detaches and clears m_impl (see on_read/on_write/on_connect). Only
+		// detach here if that hasn't happened.
+		if (m_impl)
+		{
+			m_impl->detach();
+			m_impl = nullptr;
+		}
 	}
 }
 
@@ -2298,6 +2304,18 @@ bool utp_socket_impl::cancel_handlers(error_code const& ec, bool shutdown)
 	if (write) utp_stream::on_write(m_userdata, 0, ec, shutdown);
 	if (writeable) utp_stream::on_writeable(m_userdata, ec);
 	if (connect) utp_stream::on_connect(m_userdata, ec, shutdown);
+
+	// when shutdown=true, on_write/on_read above set utp_stream::m_impl=nullptr,
+	// so ~utp_stream() will skip destroy() and never clear these buffers.
+	// clear them here to prevent use-after-free when socket_drained() fires later
+	// with m_write_buffer_size > 0 pointing into freed send-buffer memory.
+	if (shutdown)
+	{
+		m_write_buffer.clear();
+		m_write_buffer_size = 0;
+		m_read_buffer.clear();
+		m_read_buffer_size = 0;
+	}
 	return ret;
 }
 

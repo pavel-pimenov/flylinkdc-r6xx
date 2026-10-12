@@ -74,11 +74,27 @@ namespace aux {
 	// settings.
 	struct TORRENT_EXPORT settings_interface
 	{
+		// store the value of a single setting. ``name`` is one of the
+		// enum values from ``settings_pack::string_types``,
+		// ``int_types`` or ``bool_types``. The setter must match the
+		// type of the setting: ``set_str()`` only accepts names from
+		// ``string_types``, ``set_int()`` from ``int_types`` and
+		// ``set_bool()`` from ``bool_types``. Passing a name of the
+		// wrong type asserts in debug builds and is ignored otherwise.
 		virtual void set_str(int name, std::string val) = 0;
 		virtual void set_int(int name, int val) = 0;
 		virtual void set_bool(int name, bool val) = 0;
+
+		// returns true if a value has been explicitly set for the
+		// setting ``name``. If false, reads of that setting return
+		// the default value.
 		virtual bool has_val(int name) const = 0;
 
+		// retrieve the current value of a single setting. ``name`` is
+		// one of the enum values from ``settings_pack::string_types``,
+		// ``int_types`` or ``bool_types``. The getter must match the
+		// type of the setting; if no value has been set, the default
+		// value of the setting is returned.
 		virtual std::string const& get_str(int name) const = 0;
 		virtual int get_int(int name) const = 0;
 		virtual bool get_bool(int name) const = 0;
@@ -114,6 +130,7 @@ namespace aux {
 	//
 	struct TORRENT_EXPORT settings_pack final : settings_interface
 	{
+		// hidden
 		friend TORRENT_EXTRA_EXPORT void apply_pack_impl(settings_pack const*
 			, aux::session_settings_single_thread&
 			, std::vector<void(aux::session_impl::*)()>*);
@@ -132,6 +149,7 @@ namespace aux {
 		void set_int(int name, int val) override;
 		void set_bool(int name, bool val) override;
 		template <typename Type, typename Tag>
+		// hidden
 		void set_int(int name, flags::bitfield_flag<Type, Tag> const val)
 		{ set_int(name, static_cast<int>(static_cast<Type>(val))); }
 
@@ -367,7 +385,18 @@ namespace aux {
 			// ``router.bittorrent.com:6881``,
 			// ``dht.transmissionbt.com:6881``
 			// ``router.bt.ouinet.work:6881``,
+			//
+			// These nodes are added as DHT router nodes, which are trusted
+			// bootstrap endpoints. As such, they are not subject to the
+			// ``ip_filter``.
 			dht_bootstrap_nodes,
+
+			// Overrides the NAT-PMP service gateway. When set, libtorrent won't try
+			// to resolve the default gateway and instead will send the requests to
+			// the address specified. This only takes affect when NAT-PMP first
+			// starts. If you change this setting after NAT-PMP has been
+			// enabled, you need to disable it and re-enable it.
+			natpmp_gateway,
 
 			// This is the STUN server used by WebTorrent to enable ICE NAT
 			// traversal for WebRTC. It must have the format ``hostname:port``.
@@ -859,7 +888,10 @@ namespace aux {
 			prefer_rc4,
 
 			// if true, hostname lookups are done via the configured proxy (if
-			// any). This is only supported by SOCKS5 and HTTP.
+			// any). This is only supported by SOCKS5 and HTTP. Since the
+			// hostname is never resolved locally in this case, ip_filter and
+			// ssrf_mitigation cannot be applied to these connections, as
+			// their target IP is never known to the client.
 			proxy_hostnames,
 
 			// if true, peer connections are made (and accepted) over the
@@ -950,11 +982,12 @@ namespace aux {
 			// small piece sizes
 			piece_extent_affinity,
 
-			// when set to true, the certificate of HTTPS trackers and HTTPS web
-			// seeds will be validated against the system's certificate store
-			// (as defined by OpenSSL). If the system does not have a
-			// certificate store, this option may have to be disabled in order
-			// to get trackers and web seeds to work).
+			// when set to true, the certificate of HTTPS trackers, HTTPS web
+			// seeds and WebTorrent (wss://) trackers will be validated
+			// against the system's certificate store (as defined by
+			// OpenSSL/GnuTLS). If the system does not have a certificate
+			// store, this option may have to be disabled in order to get
+			// trackers and web seeds to work).
 			validate_https_trackers,
 
 			// when enabled, tracker and web seed requests are subject to
@@ -973,6 +1006,10 @@ namespace aux {
 			//
 			// Web seeds on global IPs (i.e. not local network) may not redirect
 			// to a local network address
+			//
+			// this mitigation does not apply to connections whose hostname is
+			// resolved by a proxy (see proxy_hostnames), since the target IP
+			// is never known to the client in that case
 			ssrf_mitigation,
 
 			// when disabled, any tracker or web seed with an IDNA hostname
@@ -1006,7 +1043,46 @@ namespace aux {
 			// connecting to. When this option is true, the hostname will be
 			// sent. This feature can be useful if the proxy is used to
 			// man-in-the-middle connections.
+			//
+			// this only controls what's put in the CONNECT request and Host
+			// header, it does not affect whether the hostname is resolved
+			// locally first. proxy_hostnames controls that, and is also
+			// what's required to keep the hostname from reaching the
+			// regular resolver (and ip_filter) before the CONNECT request
+			// is sent. The two settings are orthogonal and independently
+			// combinable.
 			proxy_send_host_in_connect,
+
+			// When set, downloaded files will have the no-copy-on-write flag
+			// (``FS_NOCOW_FL``) set on Linux. This mitigates heavy
+			// fragmentation on filesystems like btrfs, but has the unfortunate
+			// side effect of disabling useful CoW-related features including
+			// checksumming and compression, and adding additional restrictions
+			// on the use of reflinks. A NOCOW file can only be reflinked to NOCOW
+			// directories, which can be a surprising change for existing users.
+			// Therefore, this option is disabled by default.
+			//
+			// An alternative to this option is for the user to manually set the
+			// NOCOW flag on the download directory, which will cause all files
+			// created within it to have the NOCOW flag set.
+			disk_disable_copy_on_write,
+
+			// determines if connections from the same Peer ID as existing
+			// connections should be rejected or not. Typically, we
+			// only establish a single connection with each peer. If
+			// a peer has multiple IP addresses, enabling this feature
+			// may improve transfer efficiency, but it may also
+			// increase network load.
+			allow_multiple_connections_per_pid,
+
+			// when set to true, the IP filter set by set_ip_filter() is also
+			// applied to the DHT, rejecting incoming messages from and
+			// refusing to store routing table entries for filtered
+			// addresses. This is not applied retroactively; DHT nodes
+			// already in the routing table when the filter is set (or
+			// updated) are not removed, and remain in use until they are
+			// naturally evicted.
+			apply_filter_to_dht,
 
 			max_bool_setting_internal
 		};
@@ -1300,11 +1376,14 @@ namespace aux {
 
 			// ``peer_dscp`` determines the DSCP field in the IP header of every
 			// packet sent to peers (including web seeds). ``0x0`` means no marking,
-			// ``0x04`` represents Lower Effort. For more details see `RFC 8622`_.
+			// ``0x01`` represents Lower Effort. For more details see `RFC 8622`_
+			// and IANA's `dscp registry`_.
 			//
 			// .. _`RFC 8622`: http://www.faqs.org/rfcs/rfc8622.html
+			// .. _`dscp registry`: https://www.iana.org/assignments/dscp-registry/dscp-registry.xhtml
 			//
-			// ``peer_tos`` is the backwards compatible name for this setting.
+			// ``peer_tos`` is the old name for ``peer_dscp``, it's still
+			// available for backwards compatibility.
 			peer_dscp,
 
 			// hidden
@@ -1565,6 +1644,12 @@ namespace aux {
 			// 1000 ms). Setting this to a low value (around 100) means higher
 			// resolution bandwidth quota distribution, setting it to a higher
 			// value saves CPU cycles.
+			//
+			// A negative value disables the once-per-second gate on the
+			// ``second_tick`` path (the heavier per-torrent work). The timer
+			// itself still fires every millisecond. This is intended for test
+			// and fuzzing scenarios that need the session to react instantly; do
+			// not use it in production.
 			tick_interval,
 
 			// ``share_mode_target`` specifies the target share ratio for share
@@ -2044,6 +2129,15 @@ namespace aux {
 			// When writing to a local SSD (especially in DAX mode) using memory
 			// mapped files likely gives the best performance.
 			// The values for this setting are specified as mmap_write_mode_t.
+			//
+			// A very important consideration when changing this is that some
+			// operating systems and filesystems do not support mixing write
+			// calls with memory mapped files. Notably, Windows does not
+			// support mixing, since windows does not use the page cache for
+			// caching files. Also, ZFS and Btrfs use their own caching layer,
+			// not the page cache, so they also do not support mixing. Since
+			// reading large files always happen via mmap, enabling writes via
+			// write calls on this systems may cause corruption.
 			disk_write_mode,
 
 			// when using mmap_disk_io, files smaller than this number of blocks
@@ -2081,6 +2175,10 @@ namespace aux {
 			i2p_inbound_length_variance,
 			i2p_outbound_length_variance,
 
+			// The life time of NAT-PMP and PCP port-mappings, specified in
+			// seconds.
+			natpmp_lease_duration,
+
 			// this is the minimum allowed announce interval for a WebSocket
 			// tracker used by WebTorrent to signal WebRTC connections. This is
 			// specified in seconds and is used as a sanity check on what is
@@ -2090,6 +2188,12 @@ namespace aux {
 			// the WebRTC connection timeout used by WebTorrent (in seconds)
 			webtorrent_connection_timeout,
 
+			// the maximum number of WebRTC offers generated and advertised
+			// per WebTorrent tracker announce. It also limits the number of
+			// concurrent incoming WebRTC negotiations per torrent. Set this
+			// to 0 to disable WebTorrent offers.
+			max_webtorrent_offers,
+
 			max_int_setting_internal
 		};
 
@@ -2098,6 +2202,9 @@ namespace aux {
 		constexpr static int num_bool_settings = int(max_bool_setting_internal) - int(bool_type_base);
 		constexpr static int num_int_settings = int(max_int_setting_internal) - int(int_type_base);
 
+		// values for ``settings_pack::mmap_file_write_mode``; selects
+		// the strategy used by the disk subsystem when writing data to
+		// disk.
 		enum mmap_write_mode_t : std::uint8_t
 		{
 			// disable writing to disk via mmap, always use normal write calls
@@ -2112,8 +2219,21 @@ namespace aux {
 			auto_mmap_write,
 		};
 
-		enum suggest_mode_t : std::uint8_t { no_piece_suggestions = 0, suggest_read_cache = 1 };
+		// values for ``settings_pack::suggest_mode``; controls whether
+		// libtorrent sends SUGGEST messages to peers.
+		enum suggest_mode_t : std::uint8_t
+		{
+			// disables suggestion messages
+			no_piece_suggestions = 0,
 
+			// sends suggest messages for the pieces currently in the read
+			// cache, as a hint to peers about cache-friendly piece selection
+			suggest_read_cache = 1
+		};
+
+		// values for ``settings_pack::choking_algorithm``; selects the
+		// algorithm used to decide which peers to unchoke when we are
+		// downloading.
 		enum choking_algorithm_t : std::uint8_t
 		{
 			// This is the traditional choker with a fixed number of unchoke
@@ -2134,6 +2254,9 @@ namespace aux {
 #endif
 		};
 
+		// values for ``settings_pack::seed_choking_algorithm``;
+		// selects the algorithm used to decide which peers to unchoke
+		// while seeding.
 		enum seed_choking_algorithm_t : std::uint8_t
 		{
 			// which round-robins the peers that are unchoked
@@ -2155,6 +2278,9 @@ namespace aux {
 			anti_leech
 		};
 
+		// values for ``settings_pack::disk_io_read_mode`` and
+		// ``disk_io_write_mode``; controls whether the OS file cache
+		// is used by disk reads and writes.
 		enum io_buffer_mode_t : std::uint8_t
 		{
 			enable_os_cache = 0,
@@ -2168,6 +2294,9 @@ namespace aux {
 			write_through = 3,
 		};
 
+		// values for ``settings_pack::mixed_mode_algorithm``;
+		// controls how bandwidth is divided between TCP and uTP
+		// connections when both protocols are in use.
 		enum bandwidth_mixed_algo_t : std::uint8_t
 		{
 			// disables the mixed mode bandwidth balancing
@@ -2209,6 +2338,9 @@ namespace aux {
 			pe_both = 3
 		};
 
+		// values for ``settings_pack::proxy_type``; selects which
+		// proxy protocol (if any) outgoing connections are routed
+		// through.
 		enum proxy_type_t : std::uint8_t
 		{
 			// No proxy server is used and all other fields are ignored.

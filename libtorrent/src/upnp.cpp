@@ -28,6 +28,8 @@ see LICENSE file.
 #include "libtorrent/aux_/numeric_cast.hpp"
 #include "libtorrent/aux_/ssl.hpp"
 #include "libtorrent/aux_/scope_end.hpp"
+#include "libtorrent/aux_/ip_helpers.hpp"
+#include "libtorrent/aux_/string_util.hpp" // for format_host_for_connect
 
 #if defined TORRENT_ASIO_DEBUGGING
 #include "libtorrent/aux_/debug.hpp"
@@ -63,6 +65,15 @@ namespace upnp_errors
 
 static error_code ignore_error;
 
+bool aux::is_upnp_xml_content_type(string_view content_type)
+{
+	content_type = strip_string(split_string(content_type, ';').first);
+	return string_equal_no_case(content_type, "text/xml"_sv)
+		|| string_equal_no_case(content_type, "text/soap+xml"_sv)
+		|| string_equal_no_case(content_type, "application/xml"_sv)
+		|| string_equal_no_case(content_type, "application/soap+xml"_sv);
+}
+
 upnp::rootdevice::rootdevice() = default;
 
 #if TORRENT_USE_ASSERTS
@@ -81,13 +92,13 @@ upnp::rootdevice::rootdevice(rootdevice&&) noexcept = default;
 upnp::rootdevice& upnp::rootdevice::operator=(rootdevice&&) & = default;
 
 // TODO: 2 use boost::asio::ip::network instead of netmask
-upnp::upnp(io_context& ios
-	, aux::session_settings const& settings
-	, aux::portmap_callback& cb
-	, address_v4 const listen_address
-	, address_v4 const netmask
-	, std::string listen_device
-	, listen_socket_handle ls)
+upnp::upnp(io_context& ios,
+	aux::session_settings const& settings,
+	aux::portmap_callback& cb,
+	address_v4 const listen_address,
+	address_v4 const netmask,
+	std::string listen_device,
+	listen_socket_handle ls)
 	: m_settings(settings)
 	, m_callback(cb)
 	, m_io_service(ios)
@@ -101,12 +112,13 @@ upnp::upnp(io_context& ios
 	, m_netmask(netmask)
 	, m_device(std::move(listen_device))
 #if TORRENT_USE_SSL
-	, m_ssl_ctx(ssl::context::sslv23_client)
+	, m_ssl_ctx(ssl::context::tls_client)
 #endif
 	, m_listen_handle(std::move(ls))
 {
 #if TORRENT_USE_SSL
 	m_ssl_ctx.set_verify_mode(aux::ssl::context::verify_none);
+	m_ssl_ctx.set_options(aux::ssl::no_legacy_tls_versions);
 #endif
 }
 
@@ -146,6 +158,18 @@ namespace {
 	address_v4 const ssdp_multicast_addr = make_address_v4("239.255.255.250");
 	int const ssdp_port = 1900;
 
+	// reject Location/control-URL hosts a real IGD would never use, to block
+	// SSRF via forged SSDP replies or device descriptions. RFC1918 stays
+	// allowed since that is where real devices live. only IP literals are
+	// checked here, not DNS names.
+	bool invalid_upnp_host(std::string const& hostname)
+	{
+		error_code ec;
+		address const addr = make_address(hostname.c_str(), ec);
+		if (ec) return false;
+		return addr.is_unspecified() || addr.is_loopback() || aux::is_link_local(addr)
+			|| addr.is_multicast();
+	}
 }
 
 void upnp::open_multicast_socket(aux::socket_package& s, error_code& ec)
@@ -156,6 +180,8 @@ void upnp::open_multicast_socket(aux::socket_package& s, error_code& ec)
 	s.socket.set_option(udp::socket::reuse_address(true), ec);
 	if (ec) return;
 	s.socket.bind(udp::endpoint(m_listen_address, ssdp_port), ec);
+	if (ec) return;
+	s.socket.non_blocking(true, ec);
 	if (ec) return;
 	s.socket.set_option(join_group(ssdp_multicast_addr), ec);
 	if (ec) return;
@@ -176,6 +202,8 @@ void upnp::open_unicast_socket(aux::socket_package& s, error_code& ec)
 	s.socket.open(udp::v4(), ec);
 	if (ec) return;
 	s.socket.bind(udp::endpoint(m_listen_address, 0), ec);
+	if (ec) return;
+	s.socket.non_blocking(true, ec);
 	if (ec) return;
 
 	ADD_OUTSTANDING_ASYNC("upnp::on_reply");
@@ -228,7 +256,11 @@ void upnp::discover_device_impl()
 	m_unicast.socket.send_to(boost::asio::buffer(msearch, sizeof(msearch) - 1)
 		, udp::endpoint(ssdp_multicast_addr, ssdp_port), 0, ucast_ec);
 
-	if (mcast_ec && ucast_ec)
+	auto const dropped = [](error_code const& e) {
+		return e == boost::asio::error::would_block || e == boost::asio::error::try_again;
+	};
+
+	if (mcast_ec && ucast_ec && !dropped(mcast_ec) && !dropped(ucast_ec))
 	{
 #ifndef TORRENT_DISABLE_LOGGING
 		if (should_log())
@@ -419,7 +451,7 @@ void upnp::connect(rootdevice& d)
 		d.upnp_connection = std::make_shared<aux::http_connection>(m_io_service
 			, m_resolver
 			, std::bind(&upnp::on_upnp_xml, self(), _1, _2
-				, std::ref(d), _4), true, default_max_bottled_buffer_size
+				, std::ref(d), _4), default_max_bottled_buffer_size
 			, http_connect_handler()
 			, http_filter_handler()
 			, hostname_filter_handler()
@@ -614,6 +646,19 @@ void upnp::on_reply(aux::socket_package& s, error_code const& ec, std::size_t co
 			return;
 		}
 
+		if (invalid_upnp_host(d.hostname))
+		{
+#ifndef TORRENT_DISABLE_LOGGING
+			if (should_log())
+			{
+				log("ignoring rootdevice from %s with invalid address: %s",
+					print_endpoint(from).c_str(),
+					d.hostname.c_str());
+			}
+#endif
+			return;
+		}
+
 #ifndef TORRENT_DISABLE_LOGGING
 		if (should_log())
 		{
@@ -694,16 +739,25 @@ void upnp::post(upnp::rootdevice const& d, char const* soap
 	TORRENT_ASSERT(d.upnp_connection);
 	TORRENT_ASSERT(!d.disabled);
 
+	// IPv6 literals must be bracketed in the Host header (RFC 3986); parse_url
+	// strips the brackets, so re-add them here for v6 device addresses.
+	std::string const host =
+		format_host_for_connect(d.hostname, static_cast<unsigned short>(d.port));
 	char header[2048];
-	std::snprintf(header, sizeof(header), "POST %s HTTP/1.1\r\n"
-		"Host: %s:%d\r\n"
+	std::snprintf(header,
+		sizeof(header),
+		"POST %s HTTP/1.1\r\n"
+		"Host: %s\r\n"
 		"Content-Type: text/xml; charset=\"utf-8\"\r\n"
 		"Content-Length: %d\r\n"
 		"Soapaction: \"%s#%s\"\r\n\r\n"
-		"%s"
-		, d.path.c_str(), d.hostname.c_str(), d.port
-		, int(strlen(soap)), d.service_namespace.c_str(), soap_action
-		, soap);
+		"%s",
+		d.path.c_str(),
+		host.c_str(),
+		int(strlen(soap)),
+		d.service_namespace.c_str(),
+		soap_action,
+		soap);
 
 	d.upnp_connection->m_sendbuffer = header;
 
@@ -831,7 +885,7 @@ void upnp::update_map(rootdevice& d, port_mapping_t const i)
 		d.upnp_connection = std::make_shared<http_connection>(m_io_service
 			, m_resolver
 			, std::bind(&upnp::on_upnp_map_response, self(), _1, _2
-				, std::ref(d), i, _4), true, default_max_bottled_buffer_size
+				, std::ref(d), i, _4), default_max_bottled_buffer_size
 			, std::bind(&upnp::create_port_mapping, self(), _1, std::ref(d), i)
 			, http_filter_handler()
 			, hostname_filter_handler()
@@ -850,7 +904,7 @@ void upnp::update_map(rootdevice& d, port_mapping_t const i)
 		d.upnp_connection = std::make_shared<aux::http_connection>(m_io_service
 			, m_resolver
 			, std::bind(&upnp::on_upnp_unmap_response, self(), _1, _2
-				, std::ref(d), i, _4), true, default_max_bottled_buffer_size
+				, std::ref(d), i, _4), default_max_bottled_buffer_size
 			, std::bind(&upnp::delete_port_mapping, self(), std::ref(d), i)
 			, http_filter_handler()
 			, hostname_filter_handler()
@@ -1069,11 +1123,27 @@ void upnp::on_upnp_xml(error_code const& e
 		return;
 	}
 
+	// control URL host comes from the untrusted device description; validate
+	// it the same way as the rootdevice Location above.
+	if (invalid_upnp_host(d.hostname))
+	{
+#ifndef TORRENT_DISABLE_LOGGING
+		if (should_log())
+		{
+			log("ignoring control URL '%s' with invalid address: %s",
+				d.control_url.c_str(),
+				d.hostname.c_str());
+		}
+#endif
+		d.disabled = true;
+		return;
+	}
+
 	if (d.upnp_connection) d.upnp_connection->close();
 	d.upnp_connection = std::make_shared<http_connection>(m_io_service
 		, m_resolver
 		, std::bind(&upnp::on_upnp_get_ip_address_response, self(), _1, _2
-			, std::ref(d), _4), true, default_max_bottled_buffer_size
+			, std::ref(d), _4), default_max_bottled_buffer_size
 		, std::bind(&upnp::get_ip_address, self(), std::ref(d))
 		, http_filter_handler()
 		, hostname_filter_handler()
@@ -1149,7 +1219,10 @@ void find_error_code(int const type, string_view string, error_code_parse_state&
 	}
 	else if (type == xml_string && state.in_error_code)
 	{
-		state.error_code = std::atoi(std::string(string).c_str());
+		// leave error_code at -1 if the device sent something that isn't a
+		// number, or a number that doesn't fit in an int
+		if (auto const code = aux::parse_decimal(string))
+			state.error_code = *code;
 		state.exit = true;
 	}
 }
@@ -1386,12 +1459,7 @@ void upnp::on_upnp_map_response(error_code const& e
 	}
 
 	std::string const& ct = p.header("content-type");
-	if (!ct.empty()
-		&& ct.find_first_of("text/xml") == std::string::npos
-		&& ct.find_first_of("text/soap+xml") == std::string::npos
-		&& ct.find_first_of("application/xml") == std::string::npos
-		&& ct.find_first_of("application/soap+xml") == std::string::npos
-		)
+	if (!ct.empty() && !aux::is_upnp_xml_content_type(ct))
 	{
 #ifndef TORRENT_DISABLE_LOGGING
 		log("error while adding port map: invalid content-type, \"%s\". "
@@ -1599,7 +1667,7 @@ void upnp::on_expire(error_code const& ec)
 		auto& d = const_cast<rootdevice&>(dev);
 		TORRENT_ASSERT(d.magic == 1337);
 		if (d.disabled) continue;
-		for (port_mapping_t m{0}; m < m_mappings.end_index(); ++m)
+		for (port_mapping_t m : m_mappings.range())
 		{
 			if (d.mapping[m].expires == max_time())
 				continue;

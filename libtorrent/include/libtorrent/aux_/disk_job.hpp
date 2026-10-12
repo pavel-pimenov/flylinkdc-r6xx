@@ -12,6 +12,7 @@ see LICENSE file.
 
 #include "libtorrent/fwd.hpp"
 #include "libtorrent/error_code.hpp"
+#include "libtorrent/time.hpp" // for time_point
 #include "libtorrent/aux_/tailqueue.hpp"
 #include "libtorrent/sha1_hash.hpp"
 #include "libtorrent/disk_interface.hpp"
@@ -126,6 +127,12 @@ namespace job {
 		// passed in/out
 		// number of bytes 'buf' points to
 		std::uint16_t buffer_size;
+
+		// non-owning view of the bytes this write covers. Written once by
+		// disk_cache::insert() under the cache mutex; the flushing thread
+		// reads it without the mutex, so we need it to be stable across
+		// buffer moves between owners (wjob.buf <-> v2 hash queue entry).
+		char const* borrowed_buf = nullptr;
 	};
 
 	// the hash jobs computes the SHA-1 hash of a whole piece. If the
@@ -234,6 +241,7 @@ namespace job {
 		// the piece to clear
 		piece_index_t piece;
 	};
+
 }
 
 	// disk_job is a generic base class to disk io subsystem-specifit jobs (e.g.
@@ -289,6 +297,15 @@ namespace job {
 
 		// the type of job this is
 		job_action_t get_type() const { return job_action_t(action.index()); }
+
+#if TORRENT_DISK_LATENCY_STATS
+		// the time this job was added to the disk job queue, stamped on the
+		// network thread. At completion (also on the network thread) the
+		// elapsed time is bucketed into the disk_read_latency* histogram, so
+		// the measured interval includes both the disk-thread queue and the
+		// completion queue. Only present in disk-latency-stats builds.
+		time_point start_time{};
+#endif
 
 #if TORRENT_USE_ASSERTS
 		bool in_use = false;

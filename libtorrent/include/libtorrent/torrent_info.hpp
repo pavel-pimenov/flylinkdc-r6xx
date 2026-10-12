@@ -97,6 +97,11 @@ namespace aux {
 		// counter. This operation is not cheap and a malicious torrent may pose
 		// a DoS attack, stalling torrent parsing.
 		int max_duplicate_filenames = 500;
+
+		// the max depth of the directory structure of files in the torrent. It
+		// protects against malicious torrents with a deeply nested directory
+		// structure.
+		int max_directory_depth = 100;
 	};
 
 	using torrent_info_flags_t = flags::bitfield_flag<std::uint8_t, struct torrent_info_flags_tag>;
@@ -111,9 +116,10 @@ TORRENT_VERSION_NAMESPACE_4
 #if TORRENT_ABI_VERSION < 4
 		// The constructor that takes an info-hash will initialize the info-hash
 		// to the given value, but leave all other fields empty. This is used
-		// internally when downloading torrents without the metadata. The
-		// metadata will be created by libtorrent as soon as it has been
-		// downloaded from the swarm.
+		// internally when downloading torrents without the metadata. Note that
+		// this object is not filled in once the metadata has been downloaded
+		// from the swarm; the torrent installs a new torrent_info internally,
+		// retrievable via ``torrent_handle::torrent_file()``.
 		//
 		// The constructor that takes a bdecode_node will create a torrent_info
 		// object from the information found in the given torrent_file. The
@@ -169,6 +175,15 @@ TORRENT_VERSION_NAMESPACE_4
 		torrent_info(std::string const& filename, error_code& ec);
 #endif
 
+		// constructs an empty ``torrent_info`` containing only an
+		// info-hash. Useful for magnet links: the resulting object has
+		// no metadata (no file list, no piece hashes) but the info-hash
+		// is set so it can be passed to ``session::add_torrent()``.
+		//
+		// This object is not filled in once metadata is received from
+		// peers. The torrent installs a new ``torrent_info`` instance
+		// internally rather than updating this one. Retrieve the populated
+		// metadata via ``torrent_handle::torrent_file()``.
 		explicit torrent_info(info_hash_t const& info_hash);
 
 		torrent_info(torrent_info const& t);
@@ -198,7 +213,7 @@ TORRENT_VERSION_NAMESPACE_4
 
 		// hidden
 		torrent_info& operator=(torrent_info const&) = delete;
-		torrent_info& operator=(torrent_info&&);
+		torrent_info& operator=(torrent_info&&) noexcept;
 
 		// The file_storage object contains the information on how to map the
 		// pieces to files. It is separated from the torrent_info object as the
@@ -318,10 +333,13 @@ TORRENT_VERSION_NAMESPACE_4
 		// ``set_web_seeds()`` replaces all web seeds with the ones specified in
 		// the ``seeds`` vector.
 		//
-		// The ``extern_auth`` argument can be used for other authorization
-		// schemes than basic HTTP authorization. If set, it will override any
-		// username and password found in the URL itself. The string will be sent
-		// as the HTTP authorization header's value (without specifying "Basic").
+		// The ``extern_auth`` argument sets the ``auth`` field of the
+		// web_seed_entry. If set, it overrides any username and password found
+		// in the URL itself, and it is sent verbatim as the value of the HTTP
+		// ``Authorization`` header (it is not transformed in any way). For HTTP
+		// basic authentication the value must therefore be ``"Basic "`` followed
+		// by the base64 encoding of ``username:password``. See web_seed_entry
+		// for the security implications of this field across redirects.
 		//
 		// The ``extra_headers`` argument defaults to an empty list, but can be
 		// used to insert custom HTTP headers in the requests to a specific web
@@ -329,9 +347,9 @@ TORRENT_VERSION_NAMESPACE_4
 		//
 		// See http-seeding_ for more information.
 		TORRENT_DEPRECATED
-		void add_url_seed(std::string const& url
-			, std::string const& ext_auth = std::string()
-			, web_seed_entry::headers_t const& ext_headers = web_seed_entry::headers_t());
+		void add_url_seed(std::string const& url,
+			std::string const& extern_auth = std::string(),
+			web_seed_entry::headers_t const& ext_headers = web_seed_entry::headers_t());
 		TORRENT_DEPRECATED
 		std::vector<web_seed_entry> const& web_seeds() const { return m_web_seeds; }
 		TORRENT_DEPRECATED
@@ -508,9 +526,25 @@ TORRENT_VERSION_NAMESPACE_4
 		// except for the last piece, which may be shorter.
 		int piece_size(piece_index_t index) const { return m_files.piece_size(index); }
 
+		// returns the piece size appropriate for computing request lengths.
+		// for v2-only torrents, pieces at the end of files may be shorter than
+		// the main piece size. For v1 and hybrid torrents, piece sizes must be
+		// full (except for the last piece) in order to correctly compute the
+		// piece hash.
+		// Note: this is not a trivial accessor. For v2-only torrents it calls
+		// file_storage::piece_size2(), which performs an O(log n) upper_bound
+		// over the file list to find the file boundary that may shorten the
+		// piece. Cache the result when calling it repeatedly for the same
+		// piece in a hot path.
+		int piece_size_for_req(piece_index_t index) const
+		{
+			return v1()
+				? m_files.piece_size(index)
+				: m_files.piece_size2(index);
+		}
+
 		// ``hash_for_piece()`` takes a piece-index and returns the 20-bytes
-		// sha1-hash for that piece and ``info_hash()`` returns the 20-bytes
-		// sha1-hash for the info-section of the torrent file.
+		// sha1-hash for that piece.
 		// ``hash_for_piece_ptr()`` returns a pointer to the 20 byte sha1 digest
 		// for the piece. Note that the string is not 0-terminated.
 		sha1_hash hash_for_piece(piece_index_t index) const;
@@ -526,6 +560,9 @@ TORRENT_VERSION_NAMESPACE_4
 			return &m_info_section[std::ptrdiff_t(m_piece_hashes) + idx * 20];
 		}
 
+		// returns true if the metadata for this torrent has been loaded
+		// (i.e. the file list is populated). For a ``torrent_info``
+		// constructed from just an info-hash this returns false.
 		bool is_loaded() const { return m_files.num_files() > 0; }
 
 #if TORRENT_ABI_VERSION <= 2
@@ -613,10 +650,18 @@ TORRENT_VERSION_NAMESPACE_4
 		bool parse_info_section(bdecode_node const& info, error_code& ec);
 #endif
 
+#if TORRENT_ABI_VERSION < 4
 		// This function looks up keys from the info-dictionary of the loaded
 		// torrent file. It can be used to access extension values put in the
 		// .torrent file. If the specified key cannot be found, it returns nullptr.
+		// This function os not thread safe, because it relies on lazily
+		// parsing the infor section to find keys. For this reason it's been
+		// deprecated. As a substitute you can parse the info section yourself.
+		// It's immutable and safe to access from multiple threads. see
+		// info_section().
+		TORRENT_DEPRECATED
 		bdecode_node info(char const* key) const;
+#endif
 
 		// returns a the raw info section of the torrent file.
 		// The underlying buffer is still owned by the torrent_info object
@@ -702,8 +747,9 @@ TORRENT_VERSION_NAMESPACE_4
 #endif
 
 	private:
-
-		void parse_info_section_impl(bdecode_node const& info, error_code& ec, int max_pieces);
+		void parse_info_section_impl(
+			bdecode_node const& info, error_code& ec, load_torrent_limits const& cfg
+		);
 
 #if TORRENT_USE_INVARIANT_CHECKS
 		friend struct ::lt::invariant_access;
@@ -783,9 +829,11 @@ TORRENT_VERSION_NAMESPACE_4
 		std::time_t m_creation_date = 0;
 #endif
 
+#if TORRENT_ABI_VERSION < 4
 		// the info section parsed. points into m_info_section
-		// parsed lazily
+		// parsed lazily, only used to service the deprecated info() accessor
 		mutable bdecode_node m_info_dict;
+#endif
 
 		// the hash(es) that identify this torrent
 		info_hash_t m_info_hash;
@@ -796,6 +844,11 @@ TORRENT_VERSION_NAMESPACE_4
 
 		// the number of bytes in m_info_section
 		std::int32_t m_info_section_size = 0;
+
+		// offset into m_info_section and byte-length of the "ssl-cert" string.
+		// only valid when (m_flags & ssl_torrent) is set.
+		std::int32_t m_ssl_cert_offset = 0;
+		int m_ssl_cert_size = 0;
 
 		// this is used when creating a torrent. If there's
 		// only one file there are cases where it's impossible

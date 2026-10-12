@@ -294,14 +294,12 @@ void apply_deprecated_dht_settings(settings_pack& sett, bdecode_node const& s)
 				// if "routes" does not contain a single route to the internet,
 				// we don't use the last case. On MacOS, we can be notified of
 				// network changes *before* the routing table is updated
-				bool const local
-					= ipface.interface_address.is_loopback()
+				bool const local = ipface.interface_address.is_loopback()
 					|| is_link_local(ipface.interface_address)
 					|| (ipface.flags & if_flags::loopback)
-					|| (!is_global(ipface.interface_address)
-						&& !(ipface.flags & if_flags::pointopoint)
-						&& has_any_internet_route(routes)
-						&& !has_internet_route(ipface.name, family(ipface.interface_address), routes));
+					|| (!is_global(ipface.interface_address) && has_any_internet_route(routes)
+						&& !has_internet_route(
+							ipface.name, family(ipface.interface_address), routes));
 
 				eps.emplace_back(ipface.interface_address, uep.port, uep.device
 					, uep.ssl, uep.flags | listen_socket_t::was_expanded
@@ -507,6 +505,7 @@ bool ssl_server_name_callback(ssl::stream_handle_type stream_handle, std::string
 		, m_work(make_work_guard(m_io_context))
 #if TORRENT_USE_I2P
 		, m_i2p_conn(m_io_context)
+		, m_i2p_reconnect_timer(m_io_context)
 #endif
 		, m_created(clock_type::now())
 		, m_last_tick(m_created)
@@ -537,6 +536,7 @@ bool ssl_server_name_callback(ssl::stream_handle_type stream_handle, std::string
 #if !defined TORRENT_DISABLE_LOGGING || TORRENT_USE_ASSERTS
 		validate_settings();
 #endif
+		sanitize_settings();
 	}
 
 	template <typename Fun, typename... Args>
@@ -572,6 +572,12 @@ bool ssl_server_name_callback(ssl::stream_handle_type stream_handle, std::string
 
 #if TORRENT_USE_SSL
 		error_code ec;
+		m_ssl_ctx.set_options(ssl::no_legacy_tls_versions, ec);
+#ifndef TORRENT_DISABLE_LOGGING
+		if (ec)
+			session_log("SSL set_options failed: %s", ec.message().c_str());
+		ec.clear();
+#endif
 		m_ssl_ctx.set_default_verify_paths(ec);
 #ifndef TORRENT_DISABLE_LOGGING
 		if (ec) session_log("SSL set_default verify_paths failed: %s", ec.message().c_str());
@@ -609,17 +615,32 @@ bool ssl_server_name_callback(ssl::stream_handle_type stream_handle, std::string
 		m_ssl_ctx.load_verify_file("/etc/ssl/cert.pem", ec);
 #ifndef TORRENT_DISABLE_LOGGING
 		if (ec) session_log("SSL load_verify_file failed: %s", ec.message().c_str());
-		ec.clear();
 #endif
+		ec.clear();
 		m_ssl_ctx.add_verify_path("/etc/ssl/certs", ec);
 #ifndef TORRENT_DISABLE_LOGGING
 		if (ec) session_log("SSL add_verify_path failed: %s", ec.message().c_str());
-		ec.clear();
 #endif
+		ec.clear();
 #endif // __APPLE__
+#ifdef __linux__
+		// Debian, Ubuntu, Alpine, openSUSE
+		m_ssl_ctx.load_verify_file("/etc/ssl/certs/ca-certificates.crt", ec);
+#ifndef TORRENT_DISABLE_LOGGING
+		if (ec) session_log("SSL load_verify_file failed: %s", ec.message().c_str());
+#endif
+		ec.clear();
+		// RHEL, Fedora, CentOS
+		m_ssl_ctx.load_verify_file("/etc/pki/tls/certs/ca-bundle.crt", ec);
+#ifndef TORRENT_DISABLE_LOGGING
+		if (ec) session_log("SSL load_verify_file failed: %s", ec.message().c_str());
+#endif
+		ec.clear();
+#endif // __linux__
 #endif // TORRENT_USE_SSL
 #ifdef TORRENT_SSL_PEERS
 		m_peer_ssl_ctx.set_verify_mode(ssl::context::verify_none, ec);
+		m_peer_ssl_ctx.set_options(ssl::no_legacy_tls_versions, ec);
 		ssl::set_server_name_callback(ssl::get_handle(m_peer_ssl_ctx), ssl_server_name_callback, this, ec);
 #endif // TORRENT_SSL_PEERS
 
@@ -697,15 +718,6 @@ bool ssl_server_name_callback(ssl::stream_handle_type stream_handle, std::string
 		add_outstanding_async("session_impl::on_tick");
 #endif
 		post(m_io_context, [this]{ wrap(&session_impl::on_tick, error_code()); });
-
-		int const lsd_announce_interval
-			= m_settings.get_int(settings_pack::local_service_announce_interval);
-		int const delay = std::max(lsd_announce_interval
-			/ std::max(static_cast<int>(m_torrents.size()), 1), 1);
-		m_lsd_announce_timer.expires_after(seconds(delay));
-		ADD_OUTSTANDING_ASYNC("session_impl::on_lsd_announce");
-		m_lsd_announce_timer.async_wait([this](error_code const& e) {
-			wrap(&session_impl::on_lsd_announce, e); } );
 
 #ifndef TORRENT_DISABLE_LOGGING
 		session_log(" done starting session");
@@ -824,6 +836,7 @@ bool ssl_server_name_callback(ssl::stream_handle_type stream_handle, std::string
 				val = settings.dict_find_int("allowed_enc_level");
 				if (val) s.set_int(settings_pack::allowed_enc_level, int(val.int_value()));
 			});
+			sanitize_settings();
 		}
 #endif
 
@@ -1003,10 +1016,6 @@ bool ssl_server_name_callback(ssl::stream_handle_type stream_handle, std::string
 		session_log(" *** ABORT CALLED ***");
 #endif
 
-		// at this point we cannot call the notify function anymore, since the
-		// session will become invalid.
-		m_alerts.set_notify_function({});
-
 #ifndef TORRENT_DISABLE_EXTENSIONS
 		for (auto& ext : m_ses_extensions[plugins_all_idx])
 		{
@@ -1030,6 +1039,7 @@ bool ssl_server_name_callback(ssl::stream_handle_type stream_handle, std::string
 		m_timer.cancel();
 
 #if TORRENT_USE_I2P
+		m_i2p_reconnect_timer.cancel();
 		m_i2p_conn.close(ec);
 #endif
 		stop_ip_notifier();
@@ -1043,13 +1053,15 @@ bool ssl_server_name_callback(ssl::stream_handle_type stream_handle, std::string
 		m_lsd_announce_timer.cancel();
 
 #ifdef TORRENT_SSL_PEERS
+		// close(), for a socket with a pending async_accept_handshake(), only
+		// cancels the operation, the completion handler still runs later,
+		// asynchronously, and touches the socket. So it must stay alive in
+		// m_incoming_sockets until ssl_handshake() observes the cancellation
+		// and erases it there
+		for (auto const& s : m_incoming_sockets)
 		{
-			auto const sockets = std::move(m_incoming_sockets);
-			for (auto const& s : sockets)
-			{
-				s->close(ec);
-				TORRENT_ASSERT(!ec);
-			}
+			s->close(ec);
+			TORRENT_ASSERT(!ec);
 		}
 #endif
 
@@ -1179,6 +1191,7 @@ bool ssl_server_name_callback(ssl::stream_handle_type stream_handle, std::string
 		TORRENT_ASSERT(is_single_thread());
 		if (!m_ip_filter) m_ip_filter = std::make_shared<ip_filter>();
 		m_ip_filter->add_rule(addr, addr, ip_filter::blocked);
+		if (m_alerts.should_post<ip_ban_alert>()) m_alerts.emplace_alert<ip_ban_alert>(addr);
 		for (auto& i : m_torrents)
 			i->set_ip_filter(m_ip_filter);
 	}
@@ -1276,7 +1289,12 @@ namespace {
 		}
 		else
 		{
-			TORRENT_ASSERT(req.kind == tracker_request::i2p);
+			// the only request that may legitimately have no outgoing socket
+			// is an i2p announce/scrape; it uses the SAM bridge rather than
+			// one of our listen sockets. Other flags (high_priority,
+			// scrape_request, ...) may be combined with i2p, so check the
+			// bit rather than equality.
+			TORRENT_ASSERT(req.kind & tracker_request::i2p);
 			req.listen_port = 1;
 		}
 		m_tracker_manager.queue_request(get_context(), std::move(req), m_settings, c);
@@ -1390,10 +1408,12 @@ namespace {
 	int session_impl::copy_pertinent_channels(peer_class_set const& set
 		, int channel, bandwidth_channel** dst, int const max)
 	{
+		TORRENT_ASSERT(max >= 0);
 		int num_channels = set.num_classes();
 		int num_copied = 0;
 		for (int i = 0; i < num_channels; ++i)
 		{
+			if (num_copied >= max) break;
 			peer_class* pc = m_classes.at(set.class_at(i));
 			TORRENT_ASSERT(pc);
 			if (pc == nullptr) continue;
@@ -1402,7 +1422,6 @@ namespace {
 			if (chan->throttle() == 0) continue;
 			dst[num_copied] = chan;
 			++num_copied;
-			if (num_copied == max) break;
 		}
 		return num_copied;
 	}
@@ -1510,11 +1529,39 @@ namespace {
 		validate_setting(settings_pack::disk_io_read_mode, 0, 3);
 		validate_setting(settings_pack::disk_io_write_mode, 0, 3);
 		validate_setting(settings_pack::choking_algorithm, 0, 3);
-		validate_setting(settings_pack::seed_choking_algorithm, 0, 3);
+		validate_setting(settings_pack::seed_choking_algorithm, 0, 2);
 		validate_setting(settings_pack::suggest_mode, 0, 1);
 		validate_setting(settings_pack::disk_write_mode, 0, 2);
 	}
 #endif
+
+	void session_impl::sanitize_settings()
+	{
+		// allowed_enc_level is a bitmask of settings_pack::pe_plaintext and
+		// settings_pack::pe_rc4. any bits outside of pe_both, or a value with
+		// neither bit set, are invalid; the PE handshake code relies on this
+		// always being one of pe_plaintext, pe_rc4 or pe_both. fall back to
+		// allowing both.
+		int const enc_level = m_settings.get_int(settings_pack::allowed_enc_level);
+		if (enc_level != settings_pack::pe_plaintext && enc_level != settings_pack::pe_rc4
+			&& enc_level != settings_pack::pe_both)
+			m_settings.set_int(settings_pack::allowed_enc_level, settings_pack::pe_both);
+
+		int const out_policy = m_settings.get_int(settings_pack::out_enc_policy);
+		if (out_policy != settings_pack::pe_forced && out_policy != settings_pack::pe_enabled
+			&& out_policy != settings_pack::pe_disabled)
+			m_settings.set_int(settings_pack::out_enc_policy, settings_pack::pe_disabled);
+
+		int const in_policy = m_settings.get_int(settings_pack::in_enc_policy);
+		if (in_policy != settings_pack::pe_forced && in_policy != settings_pack::pe_enabled
+			&& in_policy != settings_pack::pe_disabled)
+			m_settings.set_int(settings_pack::in_enc_policy, settings_pack::pe_disabled);
+
+		int const seed_choke = m_settings.get_int(settings_pack::seed_choking_algorithm);
+		if (seed_choke != settings_pack::round_robin && seed_choke != settings_pack::fastest_upload
+			&& seed_choke != settings_pack::anti_leech)
+			m_settings.set_int(settings_pack::seed_choking_algorithm, settings_pack::round_robin);
+	}
 
 	void session_impl::apply_settings_pack_impl(settings_pack const& pack)
 	{
@@ -1543,6 +1590,8 @@ namespace {
 #if !defined TORRENT_DISABLE_LOGGING || TORRENT_USE_ASSERTS
 		validate_settings();
 #endif
+
+		sanitize_settings();
 
 		m_disk_thread->settings_updated();
 
@@ -1885,6 +1934,9 @@ retry:
 
 				return ret;
 			}
+
+			if (udp_bind_ep.port() == 0)
+				udp_bind_ep = ret->udp_sock->sock.local_endpoint(ec);
 		}
 
 		if (bind_ep.port() != udp_bind_ep.port())
@@ -2036,8 +2088,30 @@ retry:
 
 		// if we don't proxy peer connections, don't apply the special logic for
 		// proxies
-		if (m_settings.get_int(settings_pack::proxy_type) != settings_pack::none
-			&& m_settings.get_bool(settings_pack::proxy_peer_connections))
+		bool const use_proxy = m_settings.get_int(settings_pack::proxy_type) != settings_pack::none
+			&& m_settings.get_bool(settings_pack::proxy_peer_connections);
+
+		// the interface list is needed to build per-interface listen endpoints
+		// below (when not proxying peer connections), and to refresh the cache
+		// verify_bound_address() relies on for every peer connection (only
+		// relevant when outgoing_interfaces restricts which interfaces we
+		// bind to). Skip the netlink round-trip when neither applies.
+		std::vector<ip_interface> ifs;
+		if (!use_proxy || !m_outgoing_interfaces.empty())
+		{
+			ifs = enum_net_interfaces(m_io_context, ec);
+			if (ec && m_alerts.should_post<listen_failed_alert>())
+			{
+				m_alerts.emplace_alert<listen_failed_alert>(
+					"", operation_t::enum_if, ec, socket_type_t::tcp);
+			}
+			else if (!ec)
+			{
+				m_cached_interfaces = ifs;
+			}
+		}
+
+		if (use_proxy)
 		{
 			// we will be able to accept incoming connections over UDP. so use
 			// one of the ports the user specified to use a consistent port
@@ -2053,12 +2127,6 @@ retry:
 		}
 		else
 		{
-			std::vector<ip_interface> const ifs = enum_net_interfaces(m_io_context, ec);
-			if (ec && m_alerts.should_post<listen_failed_alert>())
-			{
-				m_alerts.emplace_alert<listen_failed_alert>(""
-					, operation_t::enum_if, ec, socket_type_t::tcp);
-			}
 			auto const routes = enum_routes(m_io_context, ec);
 			if (ec && m_alerts.should_post<listen_failed_alert>())
 			{
@@ -2342,6 +2410,16 @@ retry:
 		}
 	}
 
+#if TORRENT_USE_I2P
+
+	namespace {
+		// I2P reconnection timing constants
+		constexpr seconds initial_reconnect_delay = seconds(1);
+		constexpr seconds max_reconnect_delay = minutes(5);
+	}
+
+#endif
+
 	void session_impl::update_i2p_bridge()
 	{
 		// we need this socket to be open before we
@@ -2349,6 +2427,11 @@ retry:
 		// pause the session now and resume it once we've
 		// established the i2p SAM connection
 #if TORRENT_USE_I2P
+		// Cancel any pending reconnection timer
+		m_i2p_reconnect_timer.cancel();
+		m_i2p_reconnecting = false;
+		m_i2p_reconnect_delay = initial_reconnect_delay;
+
 		if (m_settings.get_str(settings_pack::i2p_hostname).empty())
 		{
 			error_code ec;
@@ -2388,6 +2471,7 @@ retry:
 #endif
 
 #if TORRENT_USE_I2P
+
 	void session_impl::on_i2p_open(error_code const& ec)
 	{
 		if (ec)
@@ -2399,7 +2483,15 @@ retry:
 			if (should_log())
 				session_log("i2p open failed (%d) %s", ec.value(), ec.message().c_str());
 #endif
+			// Schedule reconnection attempt with exponential backoff
+			schedule_i2p_reconnect();
+			return;
 		}
+
+		// Connection successful, reset backoff delay
+		m_i2p_reconnecting = false;
+		m_i2p_reconnect_delay = initial_reconnect_delay;
+
 		// now that we have our i2p connection established
 		// it's OK to start torrents and use this socket to
 		// do i2p name lookups
@@ -2447,6 +2539,59 @@ retry:
 		incoming_connection(std::move(*m_i2p_listen_socket));
 		m_i2p_listen_socket.reset();
 		open_new_incoming_i2p_connection();
+	}
+
+	void session_impl::schedule_i2p_reconnect()
+	{
+		if (m_abort) return;
+
+		// If I2P is not configured, don't schedule reconnection
+		if (m_settings.get_str(settings_pack::i2p_hostname).empty()) return;
+
+		// Already reconnecting
+		if (m_i2p_reconnecting) return;
+
+#ifndef TORRENT_DISABLE_LOGGING
+		if (should_log())
+			session_log("scheduling i2p reconnection in %d seconds", m_i2p_reconnect_delay.count());
+#endif
+
+		m_i2p_reconnecting = true;
+
+		// Cancel any existing timer
+		m_i2p_reconnect_timer.cancel();
+
+		// Schedule reconnection with current delay
+		m_i2p_reconnect_timer.expires_after(m_i2p_reconnect_delay);
+		std::weak_ptr<session_impl> self = shared_from_this();
+		m_i2p_reconnect_timer.async_wait(
+			[self](error_code const& ec) {
+				if (auto sp = self.lock()) {
+					sp->on_i2p_reconnect_timer(ec);
+				}
+			});
+
+		// Apply exponential backoff for next attempt
+		m_i2p_reconnect_delay *= 2;
+		if (m_i2p_reconnect_delay > max_reconnect_delay) m_i2p_reconnect_delay = max_reconnect_delay;
+	}
+
+	void session_impl::on_i2p_reconnect_timer(error_code const& ec)
+	{
+		if (ec == boost::asio::error::operation_aborted) return;
+		if (m_abort) return;
+
+		// Check if I2P is still configured and not already connected
+		if (m_settings.get_str(settings_pack::i2p_hostname).empty()) return;
+		if (m_i2p_conn.is_open()) return;
+
+#ifndef TORRENT_DISABLE_LOGGING
+		if (should_log())
+			session_log("attempting i2p reconnection");
+#endif
+
+		// Attempt to reconnect
+		update_i2p_bridge();
 	}
 #endif
 
@@ -3023,20 +3168,8 @@ retry:
 						, endp, peer_blocked_alert::invalid_local_interface);
 				return;
 			}
-			if (!verify_bound_address(local.address(), is_utp(s), ec))
+			if (!verify_bound_address(local.address(), is_utp(s)))
 			{
-				if (ec)
-				{
-#ifndef TORRENT_DISABLE_LOGGING
-					if (should_log())
-					{
-						session_log("<== INCOMING CONNECTION [ rejected, not allowed local interface: %s ]"
-							, print_error(ec).c_str());
-					}
-#endif
-					return;
-				}
-
 #ifndef TORRENT_DISABLE_LOGGING
 				if (should_log())
 				{
@@ -3439,7 +3572,8 @@ retry:
 		}
 
 		ADD_OUTSTANDING_ASYNC("session_impl::on_tick");
-		milliseconds const tick_interval(m_abort ? 100 : m_settings.get_int(settings_pack::tick_interval));
+		int const raw_tick_ms = m_settings.get_int(settings_pack::tick_interval);
+		milliseconds const tick_interval(m_abort ? 100 : std::max(1, raw_tick_ms));
 		m_timer.expires_at(now + tick_interval);
 		m_timer.async_wait(aux::make_handler([this](error_code const& err)
 		{ wrap(&session_impl::on_tick, err); }, m_tick_handler_storage, *this));
@@ -3454,8 +3588,10 @@ retry:
 		m_ssl_utp_socket_manager.tick(now);
 #endif
 
-		// only tick the following once per second
-		if (now - m_last_second_tick < seconds(1)) return;
+		// only tick the following once per second; a negative tick_interval bypasses
+		// this gate (intended for testing/fuzzing where the second_tick must fire
+		// on every fast tick)
+		if ((m_abort || raw_tick_ms >= 0) && now - m_last_second_tick < seconds(1)) return;
 
 #ifndef TORRENT_DISABLE_DHT
 		if (m_dht
@@ -3464,9 +3600,30 @@ retry:
 			update_dht_announce_interval();
 #endif
 
+		if (has_lsd()
+			&& m_lsd_interval_update_torrents < 40
+			&& m_lsd_interval_update_torrents != int(m_torrents.size()))
+			update_lsd_announce_interval();
+
 		m_utp_socket_manager.decay();
 #ifdef TORRENT_SSL_PEERS
 		m_ssl_utp_socket_manager.decay();
+#endif
+
+#if TORRENT_USE_I2P
+		// Check I2P connection health and reconnect if needed
+		// This handles cases where the connection drops during operation
+		// (e.g., after sleep/hibernation or SAM bridge restart)
+		if (!m_settings.get_str(settings_pack::i2p_hostname).empty()
+			&& !m_i2p_conn.is_open()
+			&& !m_i2p_reconnecting)
+		{
+#ifndef TORRENT_DISABLE_LOGGING
+			if (should_log())
+				session_log("i2p connection lost, scheduling reconnection");
+#endif
+			schedule_i2p_reconnect();
+		}
 #endif
 
 		int const tick_interval_ms = aux::numeric_cast<int>(total_milliseconds(now - m_last_second_tick));
@@ -3503,6 +3660,7 @@ retry:
 		switch (m_settings.get_int(settings_pack::mixed_mode_algorithm))
 		{
 			case settings_pack::prefer_tcp:
+			default:
 				set_upload_rate_limit(m_tcp_peer_class, 0);
 				set_download_rate_limit(m_tcp_peer_class, 0);
 				break;
@@ -3881,13 +4039,23 @@ retry:
 
 		if (m_abort) return;
 
-		ADD_OUTSTANDING_ASYNC("session_impl::on_lsd_announce");
-		// announce on local network every 5 minutes
-		int const delay = std::max(m_settings.get_int(settings_pack::local_service_announce_interval)
-			/ std::max(int(m_torrents.size()), 1), 1);
-		m_lsd_announce_timer.expires_after(seconds(delay));
-		m_lsd_announce_timer.async_wait([this](error_code const& err) {
-			wrap(&session_impl::on_lsd_announce, err); });
+		update_lsd_announce_interval();
+
+		if (!m_lsd_torrents.empty())
+		{
+			std::shared_ptr<torrent> t;
+			do
+			{
+				t = m_lsd_torrents.front().lock();
+				m_lsd_torrents.pop_front();
+			} while (!t && !m_lsd_torrents.empty());
+
+			if (t)
+			{
+				t->lsd_announce();
+				return;
+			}
+		}
 
 		if (m_torrents.empty()) return;
 
@@ -3897,6 +4065,60 @@ retry:
 		++m_next_lsd_torrent;
 		if (m_next_lsd_torrent >= m_torrents.size())
 			m_next_lsd_torrent = 0;
+	}
+
+	void session_impl::prioritize_lsd(std::weak_ptr<torrent> t)
+	{
+		TORRENT_ASSERT(!m_abort);
+		if (m_abort) return;
+
+		m_lsd_torrents.push_back(t);
+#ifndef TORRENT_DISABLE_LOGGING
+		std::shared_ptr<torrent> tor = t.lock();
+		if (tor && should_log())
+			session_log("prioritizing LSD announce: \"%s\"", tor->name().c_str());
+#endif
+		// trigger an LSD announce right away if we just added a new torrent and
+		// there's no back-log. in the timer handler, as long as there are more
+		// high priority torrents to be announced to LSD, it will keep the
+		// timer interval short until all torrents have been announced.
+		if (m_lsd_torrents.size() == 1)
+		{
+			ADD_OUTSTANDING_ASYNC("session_impl::on_lsd_announce");
+			m_lsd_announce_timer.expires_after(seconds(0));
+			m_lsd_announce_timer.async_wait([this](error_code const& err) {
+				wrap(&session_impl::on_lsd_announce, err); });
+		}
+	}
+
+	void session_impl::update_lsd_announce_interval()
+	{
+		if (!has_lsd())
+		{
+#ifndef TORRENT_DISABLE_LOGGING
+			session_log("not starting LSD announce timer: LSD disabled");
+#endif
+			return;
+		}
+
+		if (m_abort) return;
+
+		m_lsd_interval_update_torrents = int(m_torrents.size());
+
+		ADD_OUTSTANDING_ASYNC("session_impl::on_lsd_announce");
+		int delay = std::max(1000 * m_settings.get_int(settings_pack::local_service_announce_interval)
+			/ std::max(int(m_torrents.size()), 1), 1);
+
+		if (!m_lsd_torrents.empty())
+		{
+			// we have prioritized torrents that need an initial LSD announce.
+			// Don't wait too long until we announce those.
+			delay = std::min(4000, delay);
+		}
+
+		m_lsd_announce_timer.expires_after(milliseconds(delay));
+		m_lsd_announce_timer.async_wait([this](error_code const& e) {
+			wrap(&session_impl::on_lsd_announce, e); });
 	}
 
 	void session_impl::auto_manage_checking_torrents(std::vector<torrent*>& list
@@ -4866,9 +5088,8 @@ retry:
 		return torrent_handle(find_torrent(info_hash));
 	}
 
-	void session_impl::async_add_torrent(add_torrent_params* params)
+	void session_impl::async_add_torrent(std::unique_ptr<add_torrent_params> params)
 	{
-		std::unique_ptr<add_torrent_params> holder(params);
 		error_code ec;
 		add_torrent(std::move(*params), ec);
 	}
@@ -5003,7 +5224,7 @@ retry:
 		using ret_t = std::tuple<std::shared_ptr<torrent>, info_hash_t, bool>;
 
 #if TORRENT_ABI_VERSION == 1
-		if (string_begins_no_case("magnet:", params.url.c_str()))
+		if (string_begins_no_case("magnet:", params.url))
 		{
 			parse_magnet_uri(params.url, params, ec);
 			if (ec) return ret_t{ptr_t(), params.info_hashes, false};
@@ -5100,6 +5321,13 @@ retry:
 			l.reserve(num_torrents + 1);
 		}
 
+		// the torrent may have inserted itself into any of m_torrent_lists,
+		// so we must abort() before the torrent destructs, to avoid a dangling
+		// pointer in the list
+		auto abort_partial = aux::scope_end([&] {
+			if (torrent_ptr) torrent_ptr->abort();
+		});
+
 		try
 		{
 			torrent_ptr = std::make_shared<torrent>(*this, m_paused, std::move(params));
@@ -5110,6 +5338,8 @@ retry:
 			ec = e.code();
 			return ret_t{ptr_t(), params.info_hashes, false};
 		}
+
+		abort_partial.disarm();
 
 		// it's fine to copy this moved-from info_hash_t object, since its move
 		// construction is just a copy.
@@ -5246,8 +5476,7 @@ retry:
 	// sure one of the allowed interfaces exists and maybe that it's the
 	// default route. For systems that have SO_BINDTODEVICE, it should be
 	// enough to just know that one of the devices exist
-	bool session_impl::verify_bound_address(address const& addr, bool utp
-		, error_code& ec)
+	bool session_impl::verify_bound_address(address const& addr, bool utp)
 	{
 		TORRENT_UNUSED(utp);
 
@@ -5264,12 +5493,15 @@ retry:
 		}
 
 		// we didn't find the address as an IP in the interface list. Now,
-		// resolve which device (if any) has this IP address.
-		std::string const device = device_for_address(addr, m_io_context, ec);
-		if (ec) return false;
+		// resolve which device (if any) has this IP address. Cached, since
+		// this runs on every incoming and outgoing peer connection.
+		auto const iter = std::find_if(m_cached_interfaces.begin(),
+			m_cached_interfaces.end(),
+			[&addr](ip_interface const& iface) { return iface.interface_address == addr; });
 
 		// if no device was found to have this address, we fail
-		if (device.empty()) return false;
+		if (iter == m_cached_interfaces.end()) return false;
+		std::string const device = iter->name;
 
 		return std::any_of(m_outgoing_interfaces.begin(), m_outgoing_interfaces.end()
 			, [&device](std::string const& s) { return s == device; });
@@ -5668,13 +5900,22 @@ retry:
 		{
 			// the natpmp constructor may fail and call the callbacks
 			// into the session_impl.
-			s->natpmp_mapper = std::make_shared<natpmp>(m_io_context, *this, listen_socket_handle(s));
+			s->natpmp_mapper = std::make_shared<natpmp>(m_io_context, m_settings, *this, listen_socket_handle(s));
 			ip_interface ip;
 			ip.interface_address = s->local_endpoint.address();
 			ip.netmask = s->netmask;
 			std::strncpy(ip.name, s->device.c_str(), sizeof(ip.name) - 1);
 			ip.name[sizeof(ip.name) - 1] = '\0';
-			s->natpmp_mapper->start(ip);
+
+			std::string gateway = m_settings.get_str(settings_pack::natpmp_gateway);
+			std::optional<address> gateway_addr = std::nullopt;
+			if (!gateway.empty())
+			{
+				error_code ec;
+				gateway_addr = make_address(gateway, ec);
+				if (ec) gateway_addr.reset();
+			}
+			s->natpmp_mapper->start(ip, gateway_addr);
 		}
 	}
 
@@ -5704,7 +5945,9 @@ retry:
 		{
 			// TODO: 1 report the proper address of the router as the source IP of
 			// this vote of our external address, instead of the empty address
-			listen_socket->external_address.cast_vote(external_ip, source_router, address());
+			auto sock = ls.m_sock.lock();
+			TORRENT_ASSERT(sock);
+			if (sock) set_external_address(sock, external_ip, source_router, address());
 		}
 
 		// need to check whether this mapping is for one of session ports (it could also be a user mapping)
@@ -6808,7 +7051,7 @@ retry:
 
 #endif
 
-	alert* session_impl::wait_for_alert(time_duration max_wait)
+	bool session_impl::wait_for_alert(time_duration max_wait)
 	{
 		return m_alerts.wait_for_alert(max_wait);
 	}
@@ -6853,6 +7096,7 @@ retry:
 				s->lsd.reset();
 			}
 		}
+		update_lsd_announce_interval();
 	}
 
 	void session_impl::start_natpmp()
@@ -7088,6 +7332,8 @@ retry:
 #endif
 		return false;
 	}
+
+	ip_filter const* session_impl::get_dht_ip_filter() const { return m_ip_filter.get(); }
 
 	void session_impl::set_external_address(
 		tcp::endpoint const& local_endpoint, address const& ip

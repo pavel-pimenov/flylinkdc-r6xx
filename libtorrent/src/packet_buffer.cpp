@@ -18,6 +18,20 @@ namespace aux {
 	bool compare_less_wrap(std::uint32_t lhs, std::uint32_t rhs
 		, std::uint32_t mask);
 
+	namespace {
+
+		constexpr packet_buffer::index_type index_mask = 0xffff;
+
+		bool is_in_range(packet_buffer::index_type const idx,
+			packet_buffer::index_type const first,
+			packet_buffer::index_type const capacity)
+		{
+			TORRENT_ASSERT_VAL(idx <= index_mask, idx);
+			return ((idx - first) & index_mask) < capacity;
+		}
+
+	}
+
 #if TORRENT_USE_INVARIANT_CHECKS
 	void packet_buffer::check_invariant() const
 	{
@@ -29,6 +43,38 @@ namespace aux {
 		TORRENT_ASSERT(count == m_size);
 	}
 #endif
+
+	void packet_buffer::grow_to_include(index_type idx)
+	{
+		if (compare_less_wrap(idx, m_first, 0xffff))
+		{
+			// Index comes before m_first. If we have room, we can simply
+			// adjust m_first backward.
+
+			std::uint32_t free_space = 0;
+
+			for (index_type i = (m_first - 1) & (m_capacity - 1); i != (m_first & (m_capacity - 1));
+				 i = (i - 1) & (m_capacity - 1))
+			{
+				if (m_storage[i & (m_capacity - 1)])
+					break;
+				++free_space;
+			}
+
+			if (((m_first - idx) & 0xffff) > free_space)
+				reserve(((m_first - idx) & 0xffff) + m_capacity - free_space);
+
+			m_first = idx;
+		}
+		else
+		{
+			// idx is beyond the current window; grow forward to include it.
+			// (idx - m_first) & 0xffff is the wrapped distance to idx, which
+			// stays correct even once m_first + m_capacity overflows past
+			// 0xffff.
+			reserve(((idx - m_first) & 0xffff) + 1);
+		}
+	}
 
 	packet_ptr packet_buffer::insert(index_type idx, packet_ptr value)
 	{
@@ -42,38 +88,8 @@ namespace aux {
 
 		if (m_size != 0)
 		{
-			if (compare_less_wrap(idx, m_first, 0xffff))
-			{
-				// Index comes before m_first. If we have room, we can simply
-				// adjust m_first backward.
-
-				std::uint32_t free_space = 0;
-
-				for (index_type i = (m_first - 1) & (m_capacity - 1);
-						i != (m_first & (m_capacity - 1)); i = (i - 1) & (m_capacity - 1))
-				{
-					if (m_storage[i & (m_capacity - 1)])
-						break;
-					++free_space;
-				}
-
-				if (((m_first - idx) & 0xffff) > free_space)
-					reserve(((m_first - idx) & 0xffff) + m_capacity - free_space);
-
-				m_first = idx;
-			}
-			else if (idx >= m_first + m_capacity)
-			{
-				reserve(idx - m_first + 1);
-			}
-			else if (idx < m_first)
-			{
-				// We have wrapped.
-				if (idx >= ((m_first + m_capacity) & 0xffff) && m_capacity < 0xffff)
-				{
-					reserve(m_capacity + (idx + 1 - ((m_first + m_capacity) & 0xffff)));
-				}
-			}
+			if (!is_in_range(idx, m_first, m_capacity))
+				grow_to_include(idx);
 			if (compare_less_wrap(m_last, (idx + 1) & 0xffff, 0xffff))
 				m_last = (idx + 1) & 0xffff;
 		}
@@ -100,10 +116,7 @@ namespace aux {
 	packet* packet_buffer::at(index_type idx) const
 	{
 		INVARIANT_CHECK;
-		if (idx >= m_first + m_capacity)
-			return nullptr;
-
-		if (compare_less_wrap(idx, m_first, 0xffff))
+		if (!is_in_range(idx, m_first, m_capacity))
 			return nullptr;
 
 		std::size_t const mask = m_capacity - 1;
@@ -119,7 +132,7 @@ namespace aux {
 		while (new_size < size)
 			new_size <<= 1;
 
-		aux::unique_ptr<packet_ptr[], index_type> new_storage(new packet_ptr[new_size]);
+		auto new_storage = aux::make_unique<packet_ptr[], index_type>(new_size);
 
 		for (index_type i = m_first; i < (m_first + m_capacity); ++i)
 			new_storage[i & (new_size - 1)] = std::move(m_storage[i & (m_capacity - 1)]);
@@ -131,11 +144,7 @@ namespace aux {
 	packet_ptr packet_buffer::remove(index_type idx)
 	{
 		INVARIANT_CHECK;
-		// TODO: use compare_less_wrap for this comparison as well
-		if (idx >= m_first + m_capacity)
-			return {};
-
-		if (compare_less_wrap(idx, m_first, 0xffff))
+		if (!is_in_range(idx, m_first, m_capacity))
 			return {};
 
 		std::size_t const mask = m_capacity - 1;

@@ -221,6 +221,11 @@ namespace aux {
 		case 'l':
 			ret = entry(entry::list_t);
 			++in; // 'l'
+			if (in == end)
+			{
+				err = true;
+				return;
+			}
 			while (*in != 'e')
 			{
 				ret.list().emplace_back();
@@ -245,6 +250,11 @@ namespace aux {
 		case 'd':
 			ret = entry(entry::dictionary_t);
 			++in; // 'd'
+			if (in == end)
+			{
+				err = true;
+				return;
+			}
 			while (*in != 'e')
 			{
 				entry key;
@@ -273,9 +283,14 @@ namespace aux {
 				if (err) return;
 				TORRENT_ASSERT(*in == ':');
 				++in; // ':'
-				int len = atoi(len_s.c_str());
+				auto const len = aux::parse_decimal(len_s);
+				if (!len || *len < 0)
+				{
+					err = true;
+					return;
+				}
 				ret = entry(entry::string_t);
-				read_string(in, end, len, ret.string(), err);
+				read_string(in, end, *len, ret.string(), err);
 				if (err) return;
 			}
 			else

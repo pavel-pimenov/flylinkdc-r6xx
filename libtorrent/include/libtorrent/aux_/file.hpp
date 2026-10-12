@@ -37,10 +37,6 @@ see LICENSE file.
 #define _GNU_SOURCE
 #endif
 
-#ifndef _XOPEN_SOURCE
-#define _XOPEN_SOURCE 600
-#endif
-
 #include <unistd.h>
 #include <sys/uio.h>
 #include <fcntl.h>
@@ -65,8 +61,11 @@ namespace libtorrent::aux {
 	const handle_type invalid_handle = -1;
 #endif
 
-	int pwrite_all(handle_type handle
-		, span<char const> buf
+	TORRENT_EXTRA_EXPORT int pwrite_all(
+		handle_type handle, span<char const> buf, std::int64_t file_offset, error_code& ec);
+
+	int pwritev_all(handle_type handle
+		, span<span<char const> const> bufs
 		, std::int64_t file_offset
 		, error_code& ec);
 
@@ -75,6 +74,9 @@ namespace libtorrent::aux {
 		, std::int64_t file_offset
 		, error_code& ec);
 
+	void advise_dont_need(handle_type handle, std::int64_t offset, std::int64_t len);
+	void sync_file(handle_type handle, std::int64_t offset, std::int64_t len);
+
 	struct TORRENT_EXTRA_EXPORT file_handle
 	{
 		file_handle(): m_fd(invalid_handle) {}
@@ -82,8 +84,8 @@ namespace libtorrent::aux {
 		file_handle(file_handle const& rhs) = delete;
 		file_handle& operator=(file_handle const& rhs) = delete;
 
-		file_handle(file_handle&& rhs) : m_fd(rhs.m_fd) { rhs.m_fd = invalid_handle; }
-		file_handle& operator=(file_handle&& rhs) &;
+		file_handle(file_handle&& rhs) noexcept : m_fd(rhs.m_fd) { rhs.m_fd = invalid_handle; }
+		file_handle& operator=(file_handle&& rhs) & noexcept;
 
 		~file_handle();
 

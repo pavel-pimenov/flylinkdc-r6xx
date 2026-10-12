@@ -26,6 +26,7 @@ see LICENSE file.
 #include "libtorrent/socks5_stream.hpp" // for socks_error
 #include "libtorrent/aux_/keepalive.hpp"
 #include "libtorrent/aux_/resolver_interface.hpp"
+#include "libtorrent/string_view.hpp"
 
 #include <cstdlib>
 #include <functional>
@@ -44,7 +45,7 @@ namespace libtorrent::aux {
 using namespace std::placeholders;
 
 // used to build SOCKS messages in
-std::size_t const tmp_buffer_size = 270;
+std::size_t const tmp_buffer_size = 3 + 255 + 255;
 
 // used for SOCKS5 UDP wrapper header
 std::size_t const max_header_size = 255;
@@ -215,7 +216,7 @@ int udp_socket::read(span<packet> pkts, error_code& ec)
 				// if the source IP doesn't match the proxy's, ignore the packet
 				if (p.from != m_socks5_connection->target()) continue;
 				// if we failed to unwrap, silently ignore the packet
-				if (!unwrap(p)) continue;
+				if (!aux::socks5_unwrap(p)) continue;
 			}
 			else
 			{
@@ -382,11 +383,12 @@ void udp_socket::wrap(char const* hostname, int const port, span<char const> p
 // buf is an in-out parameter. It will be updated
 // return false if the packet should be ignored. It's not a valid Socks5 UDP
 // forwarded packet
-bool udp_socket::unwrap(udp_socket::packet& pack)
+bool socks5_unwrap(udp_socket::packet& pack)
 {
 	using namespace libtorrent::aux;
 
-	// the minimum socks5 header size
+	// the minimum socks5 header size for an IPv4 forwarded packet:
+	// 2 bytes RSV + 1 byte FRAG + 1 byte ATYP + 4 bytes addr + 2 bytes port
 	auto const size = aux::numeric_cast<int>(pack.data.size());
 	if (size <= 10) return false;
 
@@ -404,13 +406,16 @@ bool udp_socket::unwrap(udp_socket::packet& pack)
 	}
 	else if (atyp == 4)
 	{
-		// IPv6
+		// IPv6: 4-byte header + 16-byte address + 2-byte port = 22 bytes
+		// minimum. The size <= 10 check above is for IPv4 only.
+		if (size <= 22) return false;
 		pack.from = read_v6_endpoint<udp::endpoint>(p);
 	}
 	else
 	{
 		std::uint8_t const len = read_uint8(p);
-		if (len > pack.data.end() - p) return false;
+		// reserve 2 trailing bytes for the port that follows the hostname
+		if (len + 2 > pack.data.end() - p) return false;
 		string_view hostname(p, len);
 		p += len;
 
@@ -501,17 +506,19 @@ void udp_socket::set_proxy_settings(aux::proxy_settings const& ps
 	}
 
 	m_proxy_settings = ps;
+	if (m_proxy_settings.username.size() > 255) m_proxy_settings.username.resize(255);
+	if (m_proxy_settings.password.size() > 255) m_proxy_settings.password.resize(255);
 
 	if (m_abort) return;
 
-	if (ps.type == settings_pack::socks5
-		|| ps.type == settings_pack::socks5_pw)
+	if (m_proxy_settings.type == settings_pack::socks5
+		|| m_proxy_settings.type == settings_pack::socks5_pw)
 	{
 		// connect to socks5 server and open up the UDP tunnel
 
 		m_socks5_connection = std::make_shared<socks5>(m_ioc
 			, m_listen_socket, alerts, resolver, send_local_ep);
-		m_socks5_connection->start(ps);
+		m_socks5_connection->start(m_proxy_settings);
 	}
 }
 

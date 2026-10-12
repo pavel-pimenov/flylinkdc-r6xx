@@ -1,5 +1,44 @@
-2.1.0 not released
+2.1.2 released
 
+	* add missing python binding for filenames class
+	* fix edge case in filename deduplication
+	* fix web seed coalesced requests for v2 torrents
+	* fix pre-allocation after enabling files with pread disk I/O
+	* fix race between stop torrent and hasher threads in pread_storage
+	* prevent pread disk I/O from overwriting files when renaming
+	* fix file priority updates being lost when issued in quick succession
+	* deprecate internal functions of file_storage
+	* optimize loading torrents
+	* fix mis-attribution of tracker source when loading a torrent file
+	* fix race between async_hash() and force_recheck()
+
+2.1.1 released
+
+	* fix merkle tree issue
+	* require webtorrent RTC offer IDs to be exactly 20 bytes
+	* fix point-to-point interfaces without a route to the internet being used for outgoing traffic
+	* apply IP filter to DHT node
+	* fix use of a stack buffer past its lifetime when sending i2p SAM commands
+	* optimize RC4
+	* fail validation of DHT mutable items whose salt exceeds the 64 byte limit
+	* improve dont-count-slow-torrents
+	* improve performance of checking files
+	* add ip_ban_alert for IPs banned internally by libtorrent
+	* fix peer DSCP marking on outgoing TCP connections
+
+2.1.0 release
+
+	* fix tracker force announce
+	* add max_directory_depth limit to load_torrent_limits to bound file path depth when loading torrents
+	* fix race in wait_for_alert(), and update its return value
+	* optimize torrent_handle::torrent_file()
+	* add option to not validate v1 hashes for hybrid torrents
+	* add post_file_status() to query them asynchronously
+	* add post_file_priorities() to query them asynchronously
+	* fix local service discovery not being correctly staggered
+	* add a multi-threaded, pread()-based, disk I/O backend (pread_disk_io)
+	* make the save path for part files configurable
+	* retry failed SAM connection (for i2p)
 	* deprecated remap_files(), and prevent it from breaking v2 torrents
 	* fix peer_info holding an i2p destination
 	* implement i2p_pex, peer exchange support for i2p torrents
@@ -17,9 +56,67 @@
 	* use std::string_view instead of boost counterpart
 	* libtorrent now requires C++17 to build
 	* added support for WebTorrent
+	* removed support for BEP 17 web seeds (in favor of BEP 19)
 
-2.0.12
+2.0.15 released
 
+	* fix inline asm for crc32 computation
+	* fix edge cases in hash picker
+	* fix shutdown issue with SSL torrents
+	* fix bug in hash-picker timeout
+	* fix DNS leak of i2p udp tracker hostnames
+	* fix DNS leak of hostnamed peers from trackers
+	* extend proxy_hostnames to HTTP proxies for web seeds
+	* fix ip_filter/ssrf_mitigation false positives on proxied web seeds
+
+2.0.14 released
+
+	* fix issue in merkle tree
+	* fix use of a stack buffer past its lifetime when sending i2p SAM commands
+	* fix issues with active_time, seeding_time and finished_time
+	* fix torrent updates for idle torrents
+	* improve dont-count-slow-torrents
+	* fix external_ip_alert not being posted under some conditions when UPnP/NAT-PMP is enabled
+	* fix issue with stuck trackers on session pause
+	* fix windows disk read, possibly causing short-read errors
+	* fix blocking UDP socket in LSD and NAT-PMP
+	* fix web seed requests for single-file torrents in multi-file mode
+	* fix duplicate filenames in magnet links
+	* fix blocking UDP socket in UPnP
+	* fix corruption bug in mmap_storage
+	* fix bug where torrent_status::total was not set for seeds
+
+2.0.13 released
+
+	* stricter basic auth handling for web seed
+	* fix bug in tracker announcements involving i2p trackers
+	* improve performance of disk job pool
+	* fix race when removing an auto managed torrent
+	* fix bug in post_download_queue() when a torrent complete
+	* in create_torrent, store symbolic links according to BEP 47
+	* strengthen peer encryption (obfuscation)
+	* improve HTTP response parsing
+	* optimize sanitization of symlinks when loading torrents
+	* stricter checking of tracker URLs
+	* fixed piece-picker accounting issue for filtered pieces
+	* add setting for NAT-PMP lease duration
+	* optimize v2 request sizes
+	* fix socks5 issues
+	* fix issue in loading v2 resume data merkle trees
+
+2.0.12 released
+
+	* fix issue where file priorities could be cleared by force recheck
+	* fix issue in XML parser
+	* when building against OpenSSL, require at least version 1.1.1
+	* add setting to set no-copy-on-write flag on new files
+	* add performance counters to file pool
+	* add high_priority flag to torrent_handle::force_reannounce()
+	* update default DSCP value and update docs
+	* fix python binding for set_notify_function()
+	* fix error handling in mmap disk I/O when hashing files
+	* improve copy_file_range() fallback
+	* don't overwrite existing files when renaming
 	* add option to send host header in HTTP proxy CONNECT command
 	* cache DNS failures for a shorter time
 	* file_renamed_alert is always posted, regardless of alert mask
@@ -29,6 +126,7 @@
 	* optimize tracker announcements
 	* fix handling of invalid filenames
 	* add support for I2CP inbound.lengthVariance and outbound.lengthVariance tunnel settings
+	* add natpmp_gateway setting to manually set the default gateway for the NAT-PMP protocol
 
 2.0.11 released
 
@@ -2264,4 +2362,3 @@ Initial release 0.9
 	* supports compact=1
 	* selective downloading
 	* ip filter
-

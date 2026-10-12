@@ -22,6 +22,7 @@ see LICENSE file.
 #include <string>
 #include <cstdint>
 #include <limits>
+#include <optional>
 #include <array> // for std::array
 
 namespace libtorrent::aux {
@@ -44,11 +45,19 @@ namespace libtorrent::aux {
 	// internal
 	TORRENT_EXTRA_EXPORT string_view strip_string(string_view in);
 
+	// parses the leading decimal digits of the string and returns the value.
+	// Returns an empty optional if the string doesn't start with a number, or
+	// if the number doesn't fit in an int. std::atoi() is undefined for
+	// out-of-range values, and in practice truncates them into the valid range,
+	// which defeats any range check made on the result. Unlike atoi(), a
+	// successful parse of a negative number is distinguishable from a failure.
+	TORRENT_EXTRA_EXPORT std::optional<int> parse_decimal(string_view str);
+
 	TORRENT_EXTRA_EXPORT bool is_print(char c);
 	TORRENT_EXTRA_EXPORT bool is_space(char c);
 	TORRENT_EXTRA_EXPORT char to_lower(char c);
 
-	TORRENT_EXTRA_EXPORT bool string_begins_no_case(char const* s1, char const* s2);
+	TORRENT_EXTRA_EXPORT bool string_begins_no_case(string_view s1, string_view s2);
 	TORRENT_EXTRA_EXPORT bool string_equal_no_case(string_view s1, string_view s2);
 
 	TORRENT_EXTRA_EXPORT void url_random(span<char> dest);
@@ -117,8 +126,24 @@ namespace libtorrent::aux {
 	TORRENT_EXTRA_EXPORT std::pair<string_view, string_view> split_string_quotes(
 		string_view last, char sep);
 
-	// removes whitespaces at the beginning of the string, in-place
-	TORRENT_EXTRA_EXPORT void ltrim(std::string& s);
+	// removes whitespaces at the beginning of the string_view
+	TORRENT_EXTRA_EXPORT string_view ltrim(string_view s);
+
+	// Format a hostname with port for HTTP CONNECT request per RFC 9110 Section 9.3.6.
+	// The authority component must be in the form "host:port" where IPv6 literals
+	// are enclosed in square brackets as defined in RFC 3986 Section 3.2.2.
+	// Assumes host parameter contains no port suffix.
+	// Rules:
+	// - if port == 0, return host unchanged
+	// - if host is already bracketed IPv6: [addr], append ":port"
+	// - if host contains colons (IPv6), bracket and append ":port" -> [host]:port
+	// - otherwise append ":port" for regular hostnames/IPv4
+	TORRENT_EXTRA_EXPORT std::string format_host_for_connect(std::string host, unsigned short port);
+
+	// Format a hostname for an HTTP Host header. IPv6 literals are bracketed,
+	// and the port is omitted when it is not positive or matches the default.
+	TORRENT_EXTRA_EXPORT std::string format_host_header(
+		std::string host, int port, int default_port);
 
 #if TORRENT_USE_I2P
 

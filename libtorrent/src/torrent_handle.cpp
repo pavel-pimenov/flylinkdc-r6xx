@@ -236,6 +236,10 @@ namespace libtorrent {
 
 	void torrent_handle::rename_file(file_index_t index, std::string const& new_name) const
 	{
+		TORRENT_ASSERT_PRECOND(!new_name.empty());
+		TORRENT_ASSERT_PRECOND(index >= file_index_t(0));
+		if (new_name.empty() || index < file_index_t(0))
+			return;
 		async_call(&aux::torrent::rename_file, index, new_name);
 	}
 
@@ -518,6 +522,13 @@ namespace libtorrent {
 	{
 		std::vector<std::pair<piece_index_t, download_priority_t>> p;
 		p.reserve(pieces.size());
+		for (auto const& piece : pieces)
+		{
+			if (piece.second < int(dont_download) || piece.second > int(top_priority)) continue;
+
+			p.emplace_back(
+				piece.first, download_priority_t(static_cast<std::uint8_t>(piece.second)));
+		}
 		async_call(&aux::torrent::prioritize_piece_list, std::move(p));
 	}
 
@@ -549,6 +560,11 @@ namespace libtorrent {
 	{
 		async_call(&aux::torrent::prioritize_files
 			, static_cast<aux::vector<download_priority_t, file_index_t> const&>(files));
+	}
+
+	void torrent_handle::post_file_priorities() const
+	{
+		async_call(&aux::torrent::post_file_priorities);
 	}
 
 	std::vector<download_priority_t> torrent_handle::get_file_priorities() const
@@ -721,8 +737,14 @@ namespace libtorrent {
 
 	std::shared_ptr<const torrent_info> torrent_handle::torrent_file() const
 	{
-		return sync_call_ret<std::shared_ptr<const torrent_info>>(
-			std::shared_ptr<const torrent_info>(), &aux::torrent::get_torrent_file);
+		auto t = m_torrent.lock();
+		if (!t) return {};
+		return t->get_torrent_file_external();
+	}
+
+	renamed_files torrent_handle::get_renamed_files() const
+	{
+		return sync_call_ret<renamed_files>(renamed_files{}, &aux::torrent::get_renamed_files);
 	}
 
 #if TORRENT_ABI_VERSION < 4
@@ -840,6 +862,11 @@ namespace libtorrent {
 		if (!t || !t->has_storage()) return {};
 		auto& ses = static_cast<session_impl&>(t->session());
 		return ses.disk_thread().get_status(t->storage());
+	}
+
+	void torrent_handle::post_file_status() const
+	{
+		async_call(&aux::torrent::post_file_status);
 	}
 
 	void torrent_handle::scrape_tracker(int idx) const

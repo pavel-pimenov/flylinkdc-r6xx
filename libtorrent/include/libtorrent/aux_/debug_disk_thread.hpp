@@ -18,12 +18,14 @@ see LICENSE file.
 #define DLOG(...) do {} while(false)
 #else
 
+#include <algorithm> // for min
 #include <cstdarg> // for va_list
 #include <sstream>
 #include <cstdio> // for vsnprintf
 #include <string>
 #include <sstream>
 #include <unordered_map>
+#include <thread>
 
 #include "libtorrent/aux_/disk_job.hpp"
 #include "libtorrent/disk_interface.hpp"
@@ -81,11 +83,11 @@ inline std::string print_job(aux::disk_job const& j)
 		}
 
 		void operator()(job::file_priority const& j) const {
-			m_ss << "file-priority( num-files:" << j.prio.size() << " )";
+			m_ss << "file-priority( num-files: " << j.prio.size() << " )";
 		}
 
 		void operator()(job::clear_piece const& j) const {
-			m_ss << "clear-piece( piece:" << j.piece << " )";
+			m_ss << "clear-piece( piece: " << j.piece << " )";
 		}
 
 		void operator()(job::partial_read const& j) const {
@@ -123,11 +125,20 @@ inline void debug_log(char const* fmt, ...)
 
 	char usr[2048];
 	int len = std::vsnprintf(usr, sizeof(usr), fmt, v);
+	if (len < 0)
+	{
+		usr[0] = '\0';
+		len = 0;
+	}
+	else
+	{
+		len = std::min(len, int(sizeof(usr)) - 1);
+	}
 
 	static bool prepend_time = true;
 	if (!prepend_time)
 	{
-		prepend_time = (usr[len-1] == '\n');
+		prepend_time = (len > 0 && usr[len - 1] == '\n');
 		fputs(usr, stderr);
 		return;
 	}
@@ -136,7 +147,7 @@ inline void debug_log(char const* fmt, ...)
 	int const t = int(total_milliseconds(clock_type::now() - start));
 	std::snprintf(buf, sizeof(buf), "\x1b[3%dm%05d: [%d] %s\x1b[0m"
 		, (it->second % 7) + 1, t, it->second, usr);
-	prepend_time = (usr[len-1] == '\n');
+	prepend_time = (len > 0 && usr[len - 1] == '\n');
 	fputs(buf, stderr);
 }
 

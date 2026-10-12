@@ -16,8 +16,13 @@ see LICENSE file.
 
 namespace libtorrent {
 
+	// identifies a single block within a torrent. ``piece_index`` is the
+	// piece the block is part of and ``block_index`` is the index of the
+	// block within the piece. Blocks are normally 16 KiB.
 	struct TORRENT_EXPORT piece_block
 	{
+		// sentinel value representing "no block". Compares unequal to any
+		// real block.
 		static const piece_block invalid;
 
 		piece_block() = default;

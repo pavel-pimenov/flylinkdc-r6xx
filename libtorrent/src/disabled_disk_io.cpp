@@ -59,8 +59,7 @@ struct TORRENT_EXTRA_EXPORT disabled_disk_io final
 		TORRENT_UNUSED(r);
 
 		post(m_ios, [this, h = std::move(handler)] {
-			h(disk_buffer_holder(*this, this->m_zero_buffer.get(), default_block_size)
-				, storage_error{});
+			h(disk_buffer_holder(*this, this->m_zero_buffer.get()), storage_error{});
 		});
 	}
 
@@ -156,6 +155,7 @@ struct TORRENT_EXTRA_EXPORT disabled_disk_io final
 	// since we just have a single zeroed buffer, we don't need to free anything
 	// here. The buffer is owned by the disabled_disk_io object itself
 	void free_disk_buffer(char*) override {}
+	void free_multiple_buffers(span<char*>) override {}
 #if TORRENT_DEBUG_BUFFER_POOL
 	void rename_buffer(char*, char const*) override {}
 #endif

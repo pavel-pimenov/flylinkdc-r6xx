@@ -56,6 +56,7 @@ see LICENSE file.
 
 #include "libtorrent/mmap_disk_io.hpp"
 #include "libtorrent/posix_disk_io.hpp"
+#include "libtorrent/pread_disk_io.hpp"
 #include "libtorrent/disabled_disk_io.hpp"
 
 #include "torrent_view.hpp"
@@ -187,7 +188,7 @@ bool print_peers = false;
 bool print_peers_legend = false;
 bool print_connecting_peers = false;
 bool print_log = false;
-bool print_downloads = false;
+int print_downloads = 0;
 bool print_matrix = false;
 bool print_file_progress = false;
 bool print_piece_availability = false;
@@ -298,7 +299,9 @@ std::string print_endpoint(lt::tcp::endpoint const& ep)
 
 using lt::torrent_status;
 
+auto const first_ts = lt::clock_type::now();
 FILE* g_log_file = nullptr;
+FILE* g_stats_log_file = nullptr;
 
 int peer_index(lt::tcp::endpoint addr, std::vector<lt::peer_info> const& peers)
 {
@@ -446,7 +449,7 @@ int print_peer_info(std::string& out
 			, color("i", (i->flags & peer_info::remote_interested)?col_white:col_blue).c_str()
 			, color("c", (i->flags & peer_info::remote_choked)?col_white:col_blue).c_str()
 			, color("x", (i->flags & peer_info::supports_extensions)?col_white:col_blue).c_str()
-			, color("o", (i->flags & peer_info::local_connection)?col_white:col_blue).c_str()
+			, color("o", (i->flags & peer_info::outgoing_connection)?col_white:col_blue).c_str()
 			, color("p", (i->flags & peer_info::on_parole)?col_white:col_blue).c_str()
 			, color("O", (i->flags & peer_info::optimistic_unchoke)?col_white:col_blue).c_str()
 			, color("S", (i->flags & peer_info::snubbed)?col_white:col_blue).c_str()
@@ -611,7 +614,6 @@ std::string monitor_dir;
 int poll_interval = 5;
 int max_connections_per_torrent = 50;
 bool seed_mode = false;
-bool stats_enabled = false;
 bool exit_on_finish = false;
 
 bool share_mode = false;
@@ -947,8 +949,6 @@ void print_alert(lt::alert const* a, std::string& str)
 	str += a->message();
 	str += esc("0");
 
-	static auto const first_ts = a->timestamp();
-
 	if (g_log_file)
 		std::fprintf(g_log_file, "[%" PRId64 "] %s\n"
 			, std::int64_t(duration_cast<std::chrono::milliseconds>(a->timestamp() - first_ts).count())
@@ -969,6 +969,8 @@ struct client_state_t
 	std::deque<std::string> events;
 	std::vector<lt::peer_info> peers;
 	std::vector<std::int64_t> file_progress;
+	std::vector<lt::download_priority_t> file_prio;
+	std::vector<lt::open_file_state> file_state;
 	std::vector<lt::partial_piece_info> download_queue;
 	std::vector<lt::block_info> download_queue_block_info;
 	std::vector<int> piece_availability;
@@ -978,6 +980,8 @@ struct client_state_t
 	{
 		peers.clear();
 		file_progress.clear();
+		file_prio.clear();
+		file_state.clear();
 		download_queue.clear();
 		download_queue_block_info.clear();
 		piece_availability.clear();
@@ -994,7 +998,18 @@ bool handle_alert(client_state_t& client_state, lt::alert* a)
 	if (session_stats_alert* s = alert_cast<session_stats_alert>(a))
 	{
 		client_state.ses_view.update_counters(s->counters(), s->timestamp());
-		return !stats_enabled;
+	}
+
+
+	if (alert_cast<session_stats_alert>(a) || alert_cast<session_stats_header_alert>(a))
+	{
+		if (g_stats_log_file != nullptr)
+		{
+			std::fprintf(g_stats_log_file, "[%" PRId64 "] %s\n"
+				, std::int64_t(duration_cast<std::chrono::milliseconds>(a->timestamp() - first_ts).count())
+				,  a->message().c_str());
+		}
+		return true;
 	}
 
 	if (auto* p = alert_cast<peer_info_alert>(a))
@@ -1008,6 +1023,20 @@ bool handle_alert(client_state_t& client_state, lt::alert* a)
 	{
 		if (client_state.view.get_active_torrent().handle == p->handle)
 			client_state.file_progress = std::move(p->files);
+		return true;
+	}
+
+	if (auto* p = alert_cast<file_priorities_alert>(a))
+	{
+		if (client_state.view.get_active_torrent().handle == p->handle)
+			client_state.file_prio = std::move(p->priorities);
+		return true;
+	}
+
+	if (auto* p = alert_cast<file_status_alert>(a))
+	{
+		if (client_state.view.get_active_torrent().handle == p->handle)
+			client_state.file_state = std::move(p->state);
 		return true;
 	}
 
@@ -1244,7 +1273,7 @@ void print_compact_piece(lt::partial_piece_info const& pp, std::string& out)
 	out += esc("32");
 	lt::bitfield blocks(num_blocks);
 	for (int j = 0; j < num_blocks; ++j)
-		if (pp.blocks[j].state == block_info::finished) blocks.set_bit(j);
+		if (pp.blocks[j].state >= block_info::writing) blocks.set_bit(j);
 	int height = 0;
 	out += piece_matrix(blocks, num_blocks / 8, &height);
 	out += esc("0");
@@ -1253,6 +1282,7 @@ void print_compact_piece(lt::partial_piece_info const& pp, std::string& out)
 
 void print_piece(lt::partial_piece_info const& pp
 	, std::vector<lt::peer_info> const& peers
+	, int const rows
 	, std::string& out)
 {
 	using namespace lt;
@@ -1264,12 +1294,24 @@ void print_piece(lt::partial_piece_info const& pp
 	std::snprintf(str, sizeof(str), "%5d:[", piece);
 	out += str;
 	string_view last_color;
+	int line_len = num_blocks / rows;
 	for (int j = 0; j < num_blocks; ++j)
 	{
+		char const* color = "";
+		if (line_len == 0)
+		{
+			line_len = num_blocks / rows;
+			color = esc("0");
+			if (last_color != color)
+			{
+				out += color;
+				last_color = color;
+			}
+			out += "]\n      [";
+		}
 		int const index = peer_index(pp.blocks[j].peer(), peers) % 36;
 		bool const snubbed = index >= 0 ? bool(peers[std::size_t(index)].flags & lt::peer_info::snubbed) : false;
 		char const* chr = " ";
-		char const* color = "";
 
 		if (pp.blocks[j].bytes_progress > 0
 				&& pp.blocks[j].state == block_info::requested)
@@ -1303,6 +1345,7 @@ void print_piece(lt::partial_piece_info const& pp
 			last_color = color;
 		}
 		out += chr;
+		line_len -= 1;
 	}
 	out += esc("0");
 	out += "]";
@@ -1344,10 +1387,10 @@ CLIENT OPTIONS
                         are present and check hashes on-demand)
   -e <loops>            exit client after the specified number of iterations
                         through the main loop
-  -O                    print session stats counters to the log
+  -O <log file>         print session stats counters to the specified log file
   -1                    exit on first torrent completing (useful for benchmarks)
   -i <disk-io>          specify which disk I/O back-end to use. One of:
-                        mmap, posix, disabled
+                        mmap, posix, pread, disabled
 )"
 #ifdef TORRENT_UTP_LOG_ENABLE
 R"(
@@ -1447,7 +1490,7 @@ int main(int argc, char* argv[])
 	bool rate_limit_locals = false;
 
 	client_state_t client_state{
-		view, ses_view, {}, {}, {}, {}, {}, {}, {}
+		view, ses_view, {}, {}, {}, {}, {}, {}, {}, {}, {}
 	};
 	int loop_limit = -1;
 
@@ -1495,7 +1538,6 @@ int main(int argc, char* argv[])
 		{
 			case 'k': settings = lt::high_performance_seed(); continue;
 			case 'G': seed_mode = true; continue;
-			case 'O': stats_enabled = true; continue;
 			case '1': exit_on_finish = true; continue;
 #ifdef TORRENT_UTP_LOG_ENABLE
 			case 'q':
@@ -1519,6 +1561,9 @@ int main(int argc, char* argv[])
 
 		switch (argv[i][1])
 		{
+			case 'O':
+				g_stats_log_file = std::fopen(arg, "w+");
+				break;
 			case 'f': g_log_file = std::fopen(arg, "w+"); break;
 			case 's': save_path = make_absolute_path(arg); break;
 			case 'U': torrent_upload_limit = atoi(arg) * 1000; break;
@@ -1561,6 +1606,10 @@ int main(int argc, char* argv[])
 #endif
 				if (arg == "posix"_sv)
 					params.disk_io_constructor = lt::posix_disk_io_constructor;
+#if TORRENT_HAVE_PREAD || defined TORRENT_WINDOWS
+				else if (arg == "pread"_sv)
+					params.disk_io_constructor = lt::pread_disk_io_constructor;
+#endif
 				else if (arg == "disabled"_sv)
 					params.disk_io_constructor = lt::disabled_disk_io_constructor;
 				else
@@ -1924,7 +1973,7 @@ int main(int argc, char* argv[])
 				if (c == 'i') print_peers = !print_peers;
 				if (c == 'I') print_peers_legend = !print_peers_legend;
 				if (c == 'l') print_log = !print_log;
-				if (c == 'd') print_downloads = !print_downloads;
+				if (c == 'd') print_downloads = (print_downloads + 1) % 3;
 				if (c == 'y') print_matrix = !print_matrix;
 				if (c == 'f') print_file_progress = !print_file_progress;
 				if (c == 'a') print_piece_availability = !print_piece_availability;
@@ -2068,7 +2117,7 @@ COLUMN OPTIONS
 				pos += 1;
 			}
 
-			if ((print_downloads && s.state != torrent_status::seeding)
+			if ((print_downloads > 0 && s.state != torrent_status::seeding)
 				|| print_peers)
 				h.post_peer_info();
 
@@ -2176,7 +2225,7 @@ done:
 				}
 			}
 
-			if (print_downloads)
+			if (print_downloads > 0)
 			{
 				h.post_download_queue();
 
@@ -2186,14 +2235,17 @@ done:
 					if (pos + 3 >= terminal_height) break;
 
 					int const num_blocks = i.blocks_in_piece;
-					p += num_blocks + 8;
-					if (8 + num_blocks > terminal_width)
+					if (print_downloads == 2)
 					{
+						p += num_blocks / 4 + 8;
 						print_compact_piece(i, out);
 					}
 					else
 					{
-						print_piece(i, peers, out);
+						p += num_blocks + 8;
+						int const width = std::max((terminal_width - 8), 8);
+						int const rows = std::max(1, (num_blocks + width - 1) / width);
+						print_piece(i, peers, rows, out);
 					}
 					if (p + num_blocks + 8 > terminal_width)
 					{
@@ -2221,14 +2273,17 @@ done:
 			if (print_file_progress && s.has_metadata && h.is_valid())
 			{
 				h.post_file_progress({});
-				std::vector<lt::open_file_state> file_status = h.file_status();
-				std::vector<lt::download_priority_t> file_prio = h.get_file_priorities();
-				auto f = file_status.begin();
+				h.post_file_priorities();
+				h.post_file_status();
 				std::shared_ptr<const lt::torrent_info> ti = s.torrent_file.lock();
 
 				// TODO: ti may be nullptr here, we should check
 
 				auto const& file_progress = client_state.file_progress;
+				auto const& file_prio = client_state.file_prio;
+				auto const& file_status = client_state.file_state;
+				auto f = file_status.begin();
+
 				// if there are a lot of files in the torrent, the less space we use to print each file
 				lt::file_storage const& fs = ti->layout();
 				int const num_files = fs.num_files();
@@ -2350,12 +2405,12 @@ done:
 
 	while (num_outstanding_resume_data > 0)
 	{
-		alert const* a = ses.wait_for_alert(seconds(10));
-		if (a == nullptr) continue;
+		if (!ses.wait_for_alert(seconds(10))) continue;
 		pop_alerts(client_state, ses);
 	}
 
 	if (g_log_file) std::fclose(g_log_file);
+	if (g_stats_log_file) std::fclose(g_stats_log_file);
 
 	// we're just saving the DHT state
 #ifndef TORRENT_DISABLE_DHT

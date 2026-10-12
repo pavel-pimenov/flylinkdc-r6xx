@@ -479,12 +479,8 @@ namespace libtorrent::aux {
 	{
 		TORRENT_ASSERT(is_single_thread());
 		TORRENT_ASSERT(p.in_use);
-		if (p.connection
-			|| p.banned
-			|| p.web_seed
-			|| !p.connectable
-			|| (p.seed && m_finished)
-			|| int(p.failcount) >= m_max_failcount)
+		if (p.connection || p.banned || p.web_seed || !p.connectable
+			|| ((p.seed || p.upload_only) && m_finished) || int(p.failcount) >= m_max_failcount)
 			return false;
 
 #if TORRENT_USE_RTC
@@ -985,6 +981,23 @@ namespace libtorrent::aux {
 		}
 	}
 
+	void peer_list::set_upload_only(torrent_peer* p, bool s)
+	{
+		TORRENT_ASSERT(is_single_thread());
+		if (p == nullptr) return;
+		TORRENT_ASSERT(p->in_use);
+		if (bool(p->upload_only) == s) return;
+		bool const was_conn_cand = is_connect_candidate(*p);
+		p->upload_only = s;
+		bool const is_conn_cand = is_connect_candidate(*p);
+		if (was_conn_cand && !is_conn_cand)
+			update_connect_candidates(-1);
+		else if (!was_conn_cand && is_conn_cand)
+			update_connect_candidates(1);
+		// unlike set_seed, do NOT touch m_num_seeds: a BEP-21 upload_only
+		// peer is not necessarily a full seed (partial seeds qualify too).
+	}
+
 	// this is an internal function
 	bool peer_list::insert_peer(torrent_peer* p, iterator iter
 		, pex_flags_t const flags
@@ -1143,8 +1156,8 @@ namespace libtorrent::aux {
 		TORRENT_ASSERT(is_single_thread());
 		INVARIANT_CHECK;
 
-		iterator const iter = std::lower_bound(m_peers.begin(), m_peers.end()
-				, remote.address(), peer_address_compare());
+		auto const iter = std::lower_bound(
+			m_peers.begin(), m_peers.end(), remote.address(), peer_address_compare());
 
 		if (!state->allow_multiple_connections_per_ip
 				&& iter != m_peers.end() && (*iter)->address() == remote.address())

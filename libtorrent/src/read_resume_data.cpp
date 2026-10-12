@@ -13,6 +13,8 @@ see LICENSE file.
 
 #include <cstdint>
 #include <algorithm>
+#include <limits>
+#include <climits> // for CHAR_BIT
 
 #include "libtorrent/bdecode.hpp"
 #include "libtorrent/read_resume_data.hpp"
@@ -40,6 +42,24 @@ namespace {
 		{
 			current_flags |= flag;
 		}
+	}
+
+	// resume-data bitfields are stored as byte strings, 8 bits per byte. reject
+	// a string whose bit count would exceed bit_limit, or overflow the signed
+	// int bit-count that bitfield uses (multiplying a ~512 MiB bdecode string
+	// by 8 is undefined and yields a negative size). a resume file large enough
+	// to hit either was not written by libtorrent, so it's corrupt at best and
+	// an attack at worst. fail the whole parse rather than silently truncate.
+	bitfield bitfield_from_resume(
+		string_view const str, std::int64_t const bit_limit, error_code& ec)
+	{
+		std::int64_t const cap = std::min(bit_limit, std::int64_t(std::numeric_limits<int>::max()));
+		if (std::int64_t(str.size()) > cap / CHAR_BIT)
+		{
+			ec = errors::too_many_pieces_in_torrent;
+			return {};
+		}
+		return {str.data(), int(str.size()) * CHAR_BIT};
 	}
 
 } // anonyous namespace
@@ -147,6 +167,7 @@ namespace {
 		{
 			ret.merkle_trees.reserve(trees.list_size());
 			ret.verified_leaf_hashes.reserve(trees.list_size());
+			ret.merkle_tree_mask.reserve(trees.list_size());
 			for (int i = 0; i < trees.list_size(); ++i)
 			{
 				auto de = trees.list_at(i);
@@ -177,8 +198,15 @@ namespace {
 					}
 					else
 					{
-						ret.verified_leaf_hashes.emplace_back(str.data(), int(str.size()) * 8);
+						ret.verified_leaf_hashes.push_back(
+							bitfield_from_resume(str, std::int64_t(piece_limit) * 2, ec));
+						if (ec)
+							return ret;
 					}
+				}
+				else
+				{
+					ret.verified_leaf_hashes.emplace_back();
 				}
 
 				if (bdecode_node const mask = de.dict_find_string("mask"))
@@ -195,10 +223,20 @@ namespace {
 					}
 					else
 					{
-						ret.merkle_tree_mask.emplace_back(str.data(), int(str.size()) * 8);
+						ret.merkle_tree_mask.push_back(
+							bitfield_from_resume(str, std::int64_t(piece_limit) * 2, ec));
+						if (ec)
+							return ret;
 					}
 				}
+				else
+				{
+					ret.merkle_tree_mask.emplace_back();
+				}
 			}
+
+			TORRENT_ASSERT(ret.merkle_trees.size() == ret.merkle_tree_mask.size());
+			TORRENT_ASSERT(ret.merkle_tree_mask.size() == ret.verified_leaf_hashes.size());
 		}
 
 		ret.total_uploaded = rd.dict_find_int_value("total_uploaded");
@@ -244,8 +282,11 @@ namespace {
 		apply_flag(ret.flags, rd, "disable_dht", torrent_flags::disable_dht);
 		apply_flag(ret.flags, rd, "disable_lsd", torrent_flags::disable_lsd);
 		apply_flag(ret.flags, rd, "disable_pex", torrent_flags::disable_pex);
+		apply_flag(ret.flags, rd, "disable_v1_hashes", torrent_flags::disable_v1_hashes);
 
 		ret.save_path = rd.dict_find_string_value("save_path");
+		ret.part_file_dir = rd.dict_find_string_value("part_file_dir");
+		ret.root_certificate = rd.dict_find_string_value("root_certificate");
 
 #if TORRENT_ABI_VERSION == 1
 		// deprecated in 1.2
@@ -346,7 +387,7 @@ namespace {
 				ret.have_pieces.resize(pieces_len);
 				ret.verified_pieces.resize(pieces_len);
 				bool any_verified = false;
-				for (piece_index_t i(0); i < ret.verified_pieces.end_index(); ++i)
+				for (piece_index_t i : ret.verified_pieces.range())
 				{
 					// being in seed mode and missing a piece is not compatible.
 					// Leave seed mode if that happens
@@ -367,15 +408,17 @@ namespace {
 			}
 			else if (file_version == 2)
 			{
-				string_view const str = pieces.string_value();
-				ret.have_pieces.assign(str.data(), int(str.size()) * 8);
+				ret.have_pieces = bitfield_from_resume(pieces.string_value(), piece_limit, ec);
+				if (ec)
+					return ret;
 			}
 		}
 
 		if (bdecode_node const verified = rd.dict_find_string("verified"))
 		{
-			string_view const str = verified.string_value();
-			ret.verified_pieces.assign(str.data(), int(str.size()) * 8);
+			ret.verified_pieces = bitfield_from_resume(verified.string_value(), piece_limit, ec);
+			if (ec)
+				return ret;
 		}
 
 		if (bdecode_node const piece_priority = rd.dict_find_string("piece_priority"))
@@ -411,7 +454,7 @@ namespace {
 		if (bdecode_node const peers_entry = rd.dict_find_string("banned_peers"))
 		{
 			char const* ptr = peers_entry.string_ptr();
-			for (int i = v4_size; i < peers_entry.string_length(); i += v4_size)
+			for (int i = v4_size - 1; i < peers_entry.string_length(); i += v4_size)
 				ret.banned_peers.push_back(read_v4_endpoint<tcp::endpoint>(ptr));
 		}
 
@@ -434,8 +477,12 @@ namespace {
 
 				bdecode_node const bitmask = e.dict_find_string("bitmask");
 				if (!bitmask || bitmask.string_length() == 0) continue;
-				ret.unfinished_pieces[piece].assign(
-					bitmask.string_ptr(), bitmask.string_length() * CHAR_BIT);
+				// each bit is a block within this piece, not a piece, so it's
+				// bounded only by what fits in the int bit-count.
+				ret.unfinished_pieces[piece] = bitfield_from_resume(
+					bitmask.string_value(), std::numeric_limits<int>::max(), ec);
+				if (ec)
+					return ret;
 			}
 		}
 

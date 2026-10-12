@@ -85,23 +85,26 @@ error_code translate_error(std::error_code const& err, bool const write)
 } // namespace
 
 
-	mmap_storage::mmap_storage(storage_params const& params
-		, aux::file_view_pool& pool)
-		: m_files(params.files)
-		, m_renamed_files(params.renamed_files)
-		, m_file_priority(params.priorities)
-		, m_save_path(complete(params.path))
-		, m_part_file_name("." + aux::to_hex(params.info_hash) + ".parts")
-		, m_pool(pool)
-		, m_allocate_files(params.mode == storage_mode_allocate)
-	{
-		TORRENT_ASSERT(files().num_files() > 0);
+mmap_storage::mmap_storage(storage_params const& params, aux::file_view_pool& pool)
+	: m_files(params.files)
+	, m_renamed_files(params.renamed_files)
+	, m_file_priority(params.priorities)
+	, m_save_path(complete(params.path))
+	, m_part_file_dir(params.part_file_dir)
+	, m_part_file_name("." + aux::to_hex(params.info_hash) + ".parts")
+	, m_pool(pool)
+	, m_allocate_files(params.mode == storage_mode_allocate)
+	, m_v1(params.v1)
+	, m_v2(params.v2)
+{
+	TORRENT_ASSERT(files().num_files() > 0);
+	TORRENT_ASSERT(m_v1 || m_v2);
 
 #if TORRENT_HAVE_MAP_VIEW_OF_FILE
 		m_file_open_unmap_lock.reset(new std::mutex[files().num_files()]
 			, [](std::mutex* o) { delete[] o; });
 #endif
-	}
+}
 
 	mmap_storage::~mmap_storage()
 	{
@@ -118,12 +121,37 @@ error_code translate_error(std::error_code const& err, bool const write)
 		return {m_files, m_renamed_files};
 	}
 
+	// these forward to the precomputed_block_hashes data structure, adding the
+	// storage's knowledge of the per-piece v2 block count.
+	void mmap_storage::store_precomputed_v2(
+		piece_index_t const piece, int const block, sha256_hash const& h)
+	{
+		m_precomputed_v2.store(piece, block, files().blocks_in_piece2(piece), h);
+	}
+
+	aux::vector<sha256_hash> mmap_storage::take_precomputed_v2(piece_index_t const piece)
+	{
+		return m_precomputed_v2.take(piece);
+	}
+
+	std::optional<sha256_hash> mmap_storage::take_precomputed_v2_block(
+		piece_index_t const piece, int const block)
+	{
+		return m_precomputed_v2.take_block(piece, block);
+	}
+
+	void mmap_storage::drop_precomputed_v2(piece_index_t const piece)
+	{
+		m_precomputed_v2.drop(piece);
+	}
+
 	void mmap_storage::need_partfile()
 	{
 		if (m_part_file) return;
 
 		m_part_file = std::make_unique<part_file>(
-			m_save_path, m_part_file_name
+			m_part_file_dir.empty() ? m_save_path : combine_path(m_save_path, m_part_file_dir)
+			, m_part_file_name
 			, files().num_pieces(), files().piece_length());
 	}
 
@@ -137,7 +165,7 @@ error_code translate_error(std::error_code const& err, bool const write)
 			m_file_priority.resize(prio.size(), default_priority);
 
 		filenames const fs = names();
-		for (file_index_t i(0); i < prio.end_index(); ++i)
+		for (file_index_t i : prio.range())
 		{
 			// pad files always have priority 0.
 			if (fs.pad_file_at(i)) continue;
@@ -201,6 +229,16 @@ error_code translate_error(std::error_code const& err, bool const write)
 						ec.file(i);
 						ec.operation = operation_t::partfile_write;
 						ec.ec = err.code();
+						return;
+					}
+					catch (std::exception const& e)
+					{
+						TORRENT_UNUSED(e);
+						// this is not expected
+						TORRENT_ASSERT_FAIL_VAL(e.what());
+						ec.file(i);
+						ec.operation = operation_t::partfile_write;
+						ec.ec = error_code(boost::system::errc::io_error, generic_category());
 						return;
 					}
 				}
@@ -311,7 +349,7 @@ error_code translate_error(std::error_code const& err, bool const write)
 		// filesystem, in which case we won't use a partfile for them.
 		// this is to be backwards compatible with previous versions of
 		// libtorrent, when part files were not supported.
-		for (file_index_t i(0); i < m_file_priority.end_index(); ++i)
+		for (file_index_t i : m_file_priority.range())
 		{
 			if (m_file_priority[i] != dont_download || fs.pad_file_at(i))
 				continue;
@@ -356,7 +394,9 @@ error_code translate_error(std::error_code const& err, bool const write)
 		if (ec) return false;
 
 		file_status s;
-		stat_file(combine_path(m_save_path, m_part_file_name), &s, ec.ec);
+		stat_file(combine_path(
+			m_part_file_dir.empty() ? m_save_path : combine_path(m_save_path, m_part_file_dir)
+			, m_part_file_name), &s, ec.ec);
 		if (!ec) return true;
 
 		// the part file not existing is expected
@@ -374,69 +414,10 @@ error_code translate_error(std::error_code const& err, bool const write)
 	void mmap_storage::rename_file(file_index_t const index, std::string const& new_filename
 		, storage_error& ec)
 	{
-		if (index < file_index_t(0) || index >= files().end_file()) return;
-		std::string const old_name = m_renamed_files.file_path(files(), index, m_save_path);
+		TORRENT_ASSERT(index >= file_index_t(0));
+		TORRENT_ASSERT(index < files().end_file());
 		m_pool.release(storage_index(), index);
-
-		// if the old file doesn't exist, just succeed and change the filename
-		// that will be created. This shortcut is important because the
-		// destination directory may not exist yet, which would cause a failure
-		// even though we're not moving a file (yet). It's better for it to
-		// fail later when we try to write to the file the first time, because
-		// the user then will have had a chance to make the destination directory
-		// valid.
-		if (exists(old_name, ec.ec))
-		{
-			std::string new_path;
-			if (is_complete(new_filename)) new_path = new_filename;
-			else new_path = combine_path(m_save_path, new_filename);
-			std::string new_dir = parent_path(new_path);
-
-			// create any missing directories that the new filename
-			// lands in
-			create_directories(new_dir, ec.ec);
-			if (ec.ec)
-			{
-				ec.file(index);
-				ec.operation = operation_t::mkdir;
-				return;
-			}
-
-			rename(old_name, new_path, ec.ec);
-
-			// if old_name doesn't exist, that's not an error
-			// here. Once we start writing to the file, it will
-			// be written to the new filename
-			if (ec.ec == boost::system::errc::no_such_file_or_directory)
-				ec.ec.clear();
-
-			if (ec)
-			{
-				ec.ec.clear();
-				aux::copy_file(old_name, new_path, ec);
-
-				if (ec)
-				{
-					ec.file(index);
-					return;
-				}
-
-				error_code ignore;
-				remove(old_name, ignore);
-			}
-		}
-		else if (ec.ec)
-		{
-			// if exists fails, report that error
-			ec.file(index);
-			ec.operation = operation_t::file_stat;
-			return;
-		}
-
-		// if old path doesn't exist, just rename the file
-		// in our file_storage, so that when it is created
-		// it will get the new name
-		m_renamed_files.rename_file(files(), index, new_filename);
+		aux::rename_file(files(), m_renamed_files, index, new_filename, m_save_path, ec);
 	}
 
 	void mmap_storage::release_files(storage_error&)
@@ -465,7 +446,15 @@ error_code translate_error(std::error_code const& err, bool const write)
 		// delete it
 		if (m_part_file) m_part_file.reset();
 
-		aux::delete_files(names(), m_save_path, m_part_file_name, options, ec);
+		std::string part_file = combine_path(
+			m_part_file_dir.empty() ? m_save_path : combine_path(m_save_path, m_part_file_dir)
+			, m_part_file_name);
+
+		aux::delete_files(names()
+			, m_save_path
+			, part_file
+			, options
+			, ec);
 	}
 
 	bool mmap_storage::verify_resume_data(add_torrent_params const& rd
@@ -485,10 +474,26 @@ error_code translate_error(std::error_code const& err, bool const write)
 		auto move_partfile = [&](std::string const& new_save_path, error_code& e)
 		{
 			if (!m_part_file) return;
-			m_part_file->move_partfile(new_save_path, e);
+			std::string new_part_file_dir;
+			if (!m_part_file_dir.empty())
+			{
+				new_part_file_dir = combine_path(new_save_path, m_part_file_dir);
+				create_directories(new_part_file_dir, e);
+				if (e) return;
+			}
+			else
+			{
+				new_part_file_dir = new_save_path;
+			}
+			m_part_file->move_partfile(new_part_file_dir, e);
 		};
-		std::tie(ret, m_save_path) = aux::move_storage(names(), m_save_path, std::move(save_path)
-			, std::move(move_partfile), flags, ec);
+		std::tie(ret, m_save_path) = aux::move_storage(
+			names()
+			, m_save_path
+			, std::move(save_path)
+			, std::move(move_partfile)
+			, flags
+			, ec);
 
 		// clear the stat cache in case the new location has new files
 		m_stat_cache.clear();
@@ -504,7 +509,7 @@ error_code translate_error(std::error_code const& err, bool const write)
 		, storage_error& error)
 	{
 #ifdef TORRENT_SIMULATE_SLOW_READ
-		std::this_thread::sleep_for(milliseconds(rand() % 2000));
+		std::this_thread::sleep_for(milliseconds(100));
 #endif
 		return readwrite(files(), buffer, piece, offset, error
 			, [this, mode, flags, &sett](file_index_t const file_index
@@ -579,6 +584,14 @@ error_code translate_error(std::error_code const& err, bool const write)
 				ec.ec = translate_error(err.code(), false);
 				return -1;
 			}
+			catch (std::exception const& e)
+			{
+				TORRENT_UNUSED(e);
+				// this is not expected
+				TORRENT_ASSERT_FAIL_VAL(e.what());
+				ec.ec = error_code(boost::system::errc::io_error, generic_category());
+				return -1;
+			}
 
 			return static_cast<int>(ret);
 		});
@@ -592,7 +605,7 @@ error_code translate_error(std::error_code const& err, bool const write)
 		, storage_error& error)
 	{
 #ifdef TORRENT_SIMULATE_SLOW_WRITE
-		std::this_thread::sleep_for(milliseconds(rand() % 800));
+		std::this_thread::sleep_for(milliseconds(100));
 #endif
 		return readwrite(files(), buffer, piece, offset, error
 			, [this, mode, flags, &sett](file_index_t const file_index
@@ -653,17 +666,25 @@ error_code translate_error(std::error_code const& err, bool const write)
 					std::memcpy(const_cast<char*>(file_range.data()), buf.data(), static_cast<std::size_t>(buf.size()));
 					});
 
-				file_range = file_range.subspan(buf.size());
-				ret += static_cast<int>(buf.size());
-
 				if (flags & disk_interface::volatile_read)
 					handle->dont_need(file_range.first(buf.size()));
 				if (flags & disk_interface::flush_piece)
 					handle->page_out(file_range.first(buf.size()));
+
+				ret = static_cast<int>(buf.size());
 			}
 			catch (std::system_error const& err)
 			{
 				ec.ec = translate_error(err.code(), true);
+				return -1;
+			}
+			catch (std::exception const& e)
+			{
+				TORRENT_UNUSED(e);
+				// this is not expected
+				TORRENT_ASSERT_FAIL_VAL(e.what());
+				ec.file(file_index);
+				ec.ec = error_code(boost::system::errc::io_error, generic_category());
 				return -1;
 			}
 
@@ -679,7 +700,7 @@ error_code translate_error(std::error_code const& err, bool const write)
 		, storage_error& error)
 	{
 #ifdef TORRENT_SIMULATE_SLOW_READ
-		std::this_thread::sleep_for(milliseconds(rand() % 2000));
+		std::this_thread::sleep_for(milliseconds(100));
 #endif
 
 		char dummy = 0;
@@ -730,14 +751,32 @@ error_code translate_error(std::error_code const& err, bool const write)
 				file_range = file_range.subspan(std::ptrdiff_t(file_offset)
 					, std::min(buf.size(), std::ptrdiff_t(file_range.size() - file_offset)));
 
-				sig::try_signal([&]{
-					ph.update({const_cast<char const*>(file_range.data()), file_range.size()});
-				});
-				ret += static_cast<int>(file_range.size());
-				if (flags & disk_interface::volatile_read)
-					handle->dont_need(file_range);
-				if (flags & disk_interface::flush_piece)
-					handle->page_out(file_range);
+				try
+				{
+					sig::try_signal([&]{
+						ph.update({const_cast<char const*>(file_range.data()), file_range.size()});
+					});
+					ret += static_cast<int>(file_range.size());
+					if (flags & disk_interface::volatile_read)
+						handle->dont_need(file_range);
+					if (flags & disk_interface::flush_piece)
+						handle->page_out(file_range);
+				}
+				catch (std::system_error const& err)
+				{
+					ec.ec = translate_error(err.code(), false);
+					ec.operation = operation_t::file_read;
+					return -1;
+				}
+				catch (std::exception const& e)
+				{
+					TORRENT_UNUSED(e);
+					// this is not expected
+					TORRENT_ASSERT_FAIL_VAL(e.what());
+					ec.ec = error_code(boost::system::errc::io_error, generic_category());
+					ec.operation = operation_t::file_read;
+					return -1;
+				}
 			}
 
 			return ret;
@@ -751,6 +790,9 @@ error_code translate_error(std::error_code const& err, bool const write)
 		, disk_job_flags_t const flags
 		, storage_error& error)
 	{
+#ifdef TORRENT_SIMULATE_SLOW_READ
+		std::this_thread::sleep_for(milliseconds(100));
+#endif
 		std::int64_t const start_offset = static_cast<int>(piece) * std::int64_t(files().piece_length()) + offset;
 		file_index_t const file_index = files().file_index_at_offset(start_offset);
 		std::int64_t const file_offset = start_offset - files().file_offset(file_index);
@@ -803,11 +845,31 @@ error_code translate_error(std::error_code const& err, bool const write)
 		}
 		file_range = file_range.subspan(std::ptrdiff_t(file_offset));
 		file_range = file_range.first(std::min(std::ptrdiff_t(len), file_range.size()));
-		ph.update(file_range);
-		if (flags & disk_interface::volatile_read)
-			handle->dont_need(file_range);
-		if (flags & disk_interface::flush_piece)
-			handle->page_out(file_range);
+		try
+		{
+			sig::try_signal([&]{
+				ph.update(file_range);
+			});
+			if (flags & disk_interface::volatile_read)
+				handle->dont_need(file_range);
+			if (flags & disk_interface::flush_piece)
+				handle->page_out(file_range);
+		}
+		catch (std::system_error const& err)
+		{
+			error.ec = translate_error(err.code(), false);
+			error.operation = operation_t::file_read;
+			return -1;
+		}
+		catch (std::exception const& e)
+		{
+			TORRENT_UNUSED(e);
+			// this is not expected
+			TORRENT_ASSERT_FAIL_VAL(e.what());
+			error.ec = error_code(boost::system::errc::io_error, generic_category());
+			error.operation = operation_t::file_read;
+			return -1;
+		}
 
 		return static_cast<int>(file_range.size());
 	}
@@ -878,6 +940,9 @@ error_code translate_error(std::error_code const& err, bool const write)
 
 		if (sett.get_bool(settings_pack::no_atime_storage))
 			mode |= aux::open_mode::no_atime;
+
+		if (sett.get_bool(settings_pack::disk_disable_copy_on_write))
+			mode |= aux::open_mode::no_cow;
 
 		if (files().file_size(file) / default_block_size
 			<= sett.get_int(settings_pack::mmap_file_size_cutoff))

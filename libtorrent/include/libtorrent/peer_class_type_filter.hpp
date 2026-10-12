@@ -32,10 +32,12 @@ namespace libtorrent {
 			m_peer_class_type.fill(0);
 		}
 
+		// the socket types that ``peer_class_type_filter`` distinguishes,
+		// used as the index into ``add()`` / ``remove()`` / ``apply()``.
+		// These match the socket types from socket_type.hpp, shifted one
+		// down.
 		enum socket_type_t : std::uint8_t
 		{
-			// these match the socket types from socket_type.hpp
-			// shifted one down
 			tcp_socket = 0,
 			utp_socket,
 			ssl_tcp_socket,
@@ -63,7 +65,7 @@ namespace libtorrent {
 
 			TORRENT_ASSERT(st < num_socket_types);
 			if (st >= num_socket_types) return;
-			m_peer_class_type[st] &= ~(1 << static_cast<std::uint32_t>(peer_class));
+			m_peer_class_type[st] &= static_cast<std::uint32_t>(~(1 << static_cast<std::uint32_t>(peer_class)));
 		}
 
 		// ``disallow()`` and ``allow()`` adds and removes a peer class to be
@@ -78,7 +80,7 @@ namespace libtorrent {
 
 			TORRENT_ASSERT(st < num_socket_types);
 			if (st >= num_socket_types) return;
-			m_peer_class_type_mask[st] &= ~(1 << static_cast<std::uint32_t>(peer_class));
+			m_peer_class_type_mask[st] &= static_cast<std::uint32_t>(~(1 << static_cast<std::uint32_t>(peer_class)));
 		}
 		void allow(socket_type_t const st, peer_class_t const peer_class)
 		{

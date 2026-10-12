@@ -13,7 +13,10 @@ see LICENSE file.
 
 #include "libtorrent/config.hpp"
 #include "libtorrent/assert.hpp"
+#include "libtorrent/span.hpp"
 #include <utility>
+#include <vector>
+#include <cstdlib>
 
 #ifndef TORRENT_DEBUG_BUFFER_POOL
 #define TORRENT_DEBUG_BUFFER_POOL 0
@@ -26,13 +29,23 @@ namespace libtorrent {
 	// to return disk buffers back to libtorrent
 	struct TORRENT_EXPORT buffer_allocator_interface
 	{
+		// returns one or more disk buffers (previously handed out by
+		// the disk subsystem) back to the allocator. The bulk
+		// overload, ``free_multiple_buffers()``, lets callers free a
+		// batch of buffers under a single mutex acquisition.
 		virtual void free_disk_buffer(char* b) = 0;
+		virtual void free_multiple_buffers(span<char*> bufs) = 0;
 #if TORRENT_DEBUG_BUFFER_POOL
 		virtual void rename_buffer(char* buf, char const* category) = 0;
 #endif
 	protected:
 		~buffer_allocator_interface() = default;
 	};
+
+	struct bulk_free_buffer;
+	struct disk_buffer_ref;
+
+	namespace aux { struct disk_cache; }
 
 	// The disk buffer holder acts like a ``unique_ptr`` that frees a disk buffer
 	// when it's destructed
@@ -50,8 +63,7 @@ namespace libtorrent {
 		// construct a buffer holder that will free the held buffer
 		// using a disk buffer pool directly (there's only one
 		// disk_buffer_pool per session)
-		disk_buffer_holder(buffer_allocator_interface& alloc
-			, char* buf, int sz) noexcept;
+		disk_buffer_holder(buffer_allocator_interface& alloc, char* buf) noexcept;
 
 		// default construct a holder that does not own any buffer
 		disk_buffer_holder() noexcept = default;
@@ -72,7 +84,6 @@ namespace libtorrent {
 			using std::swap;
 			swap(h.m_allocator, m_allocator);
 			swap(h.m_buf, m_buf);
-			swap(h.m_size, m_size);
 		}
 
 		// if this returns true, the buffer may not be modified in place
@@ -82,16 +93,75 @@ namespace libtorrent {
 		// buffer
 		explicit operator bool() const noexcept { return m_buf != nullptr; }
 
-		std::ptrdiff_t size() const { return m_size; }
-
 #if TORRENT_DEBUG_BUFFER_POOL
 		void rename(char const* category);
 #endif
 	private:
 
+		friend struct bulk_free_buffer;
+		friend struct disk_buffer_ref;
+		friend struct aux::disk_cache;
+
 		buffer_allocator_interface* m_allocator = nullptr;
 		char* m_buf = nullptr;
-		int m_size = 0;
+	};
+
+	// Pointer-only disk buffer reference. Holds a char* but neither the allocator
+	// nor the size. Has unique_ptr-like move semantics. The destructor asserts that
+	// the pointer is null. The buffer must be transferred to a bulk_free_buffer
+	// before this goes out of scope. Since it has no allocator, it cannot free the
+	// buffer itself.
+	struct TORRENT_EXPORT disk_buffer_ref
+	{
+		disk_buffer_ref() noexcept = default;
+		// take ownership of the buffer held by ``h``, leaving ``h``
+		// empty. The buffer must subsequently be transferred to a
+		// ``bulk_free_buffer`` for release; this type cannot free the
+		// buffer itself.
+		explicit disk_buffer_ref(disk_buffer_holder&& h) noexcept;
+
+		disk_buffer_ref(disk_buffer_ref&&) noexcept;
+		disk_buffer_ref& operator=(disk_buffer_ref&&) noexcept;
+		disk_buffer_ref(disk_buffer_ref const&) = delete;
+		disk_buffer_ref& operator=(disk_buffer_ref const&) = delete;
+		~disk_buffer_ref() { TORRENT_ASSERT(m_buf == nullptr); if (m_buf != nullptr) std::abort(); }
+
+		// returns a pointer to the held buffer, or nullptr if this
+		// reference is empty. ``operator bool()`` returns true iff a
+		// buffer is held.
+		char* data() const noexcept { return m_buf; }
+		explicit operator bool() const noexcept { return m_buf != nullptr; }
+
+	private:
+
+		friend struct bulk_free_buffer;
+
+		char* m_buf = nullptr;
+	};
+
+	// Accumulates disk buffers to be freed in a single batch call, reducing
+	// allocator mutex acquisitions from one per buffer to one per batch.
+	// All buffers added must share the same allocator.
+	// Freeing happens in the destructor.
+	struct TORRENT_EXPORT bulk_free_buffer
+	{
+		// construct an empty batch tied to the given allocator. All
+		// buffers added via ``add()`` must have come from this same
+		// allocator. The batch is freed in the destructor.
+		explicit bulk_free_buffer(buffer_allocator_interface& alloc) : m_allocator(&alloc) {}
+
+		// hidden
+		bulk_free_buffer(bulk_free_buffer const&) = delete;
+		bulk_free_buffer& operator=(bulk_free_buffer const&) = delete;
+
+		// transfer ownership of h's buffer into this batch.
+		void add(disk_buffer_ref r);
+		~bulk_free_buffer();
+
+	private:
+
+		buffer_allocator_interface* m_allocator = nullptr;
+		std::vector<char*> m_bufs;
 	};
 
 }

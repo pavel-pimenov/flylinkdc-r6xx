@@ -214,7 +214,8 @@ namespace {
 				int const blocks_in_piece = blocks_per_piece();
 				for (int b = 0; b < int(m_tree.size()); b += blocks_in_piece)
 				{
-					auto const leafs = span<sha256_hash const>(m_tree).subspan(b);
+					auto const leafs = span<sha256_hash const>(m_tree).subspan(
+						b, std::min(blocks_in_piece, int(m_tree.size()) - b));
 					ret.push_back(merkle_root_scratch(leafs, blocks_in_piece, sha256_hash{}, scratch_space));
 				}
 				break;
@@ -257,6 +258,11 @@ namespace {
 		// this file
 		m_mode = m_blocks_per_piece_log == 0 ? mode_t::block_layer : mode_t::piece_layer;
 		m_tree = std::move(pieces);
+		// piece_layer and block_layer modes both require m_block_verified
+		// to be empty (see check_invariant). The verified bitfield only
+		// has meaning when paired with the full_tree storage; the
+		// optimized modes derive verification from the mode itself.
+		m_block_verified.clear();
 
 		return true;
 	}
@@ -302,6 +308,16 @@ namespace {
 		// TODO: this can be optimized by using m_tree as storage to fill this
 		// tree into, and then clear it if the hashes fail
 		int const leaf_count = merkle_num_leafs(int(hashes.size()));
+
+		// hashes.size() (and so leaf_count, once rounded up to a power of 2)
+		// is not bounds-checked against the destination layer by the caller,
+		// only the un-rounded count is. Reject any request whose padded span
+		// would run past the end of the layer it's inserted into.
+		int const dest_layer_size = 1 << merkle_get_layer(dest_start_idx);
+		int const dest_layer_offset = merkle_get_layer_offset(dest_start_idx);
+		if (dest_layer_offset + leaf_count > dest_layer_size)
+			return {};
+
 		aux::vector<sha256_hash> tree(merkle_num_nodes(leaf_count));
 		std::copy(hashes.begin(), hashes.end(), tree.end() - leaf_count);
 
@@ -311,6 +327,12 @@ namespace {
 			int const leaf_layer_size = num_leafs();
 			// assuming uncle_hashes lead all the way to the root, they tell us
 			// how many layers down we are
+			// uncle_hashes.size() is caller-controlled; bound it before using it
+			// as a shift exponent below, it's otherwise unrelated to leaf_count
+			int const max_proof_layers =
+				merkle_num_layers(leaf_layer_size) - merkle_num_layers(leaf_count);
+			if (uncle_hashes.size() > max_proof_layers)
+				return {};
 			int const insert_layer_size = leaf_count << uncle_hashes.size();
 			if (leaf_layer_size != insert_layer_size)
 			{
@@ -329,13 +351,63 @@ namespace {
 		// is valid.
 		int const insert_root_idx = dest_start_idx >> base_num_layers;
 
+		// first fill in the subtree of known hashes from the base layer
+		auto const num_leafs = merkle_num_leafs(m_num_blocks);
+		auto const first_leaf = merkle_first_leaf(num_leafs);
+
+		// merkle_validate_and_insert_proofs() below writes insert_root_idx's
+		// slot, and its sibling's if it's a leaf, the first time either is
+		// seen, so has_node() can no longer tell "already known" from
+		// "just proven" afterward. Snapshot both first: only an
+		// already-known hash is backed by downloaded data (set_block()),
+		// and only that may be reported as passed below.
+		bool const insert_root_already_known = has_node(insert_root_idx);
+		// insert_root_idx > 0 since the root node has no sibling.
+		bool const sibling_already_known = !uncle_hashes.empty() && insert_root_idx >= first_leaf
+			&& insert_root_idx > 0 && insert_root_idx - first_leaf < m_num_blocks
+			&& has_node(merkle_get_sibling(insert_root_idx));
+
 		// start with validating the proofs, and inserting them as we go.
 		if (!merkle_validate_and_insert_proofs(m_tree, insert_root_idx, tree[0], uncle_hashes))
 			return {};
 
-		// first fill in the subtree of known hashes from the base layer
-		auto const num_leafs = merkle_num_leafs(m_num_blocks);
-		auto const first_leaf = merkle_first_leaf(num_leafs);
+		// if insert_root_idx is a leaf, the walk above may have just
+		// populated its sibling leaf too (the first uncle hash), which the
+		// main loop below won't see since it only walks "hashes". A
+		// successful return means anything touched is proven correct. With
+		// no uncle hashes there was no walk, so the sibling wasn't touched
+		// and nothing was learned about it.
+		if (!uncle_hashes.empty() && insert_root_idx > 0 && insert_root_idx >= first_leaf
+			&& insert_root_idx - first_leaf < m_num_blocks)
+		{
+			// the root node has no sibling.
+			TORRENT_ASSERT(insert_root_idx > 0);
+			int const sibling_idx = merkle_get_sibling(insert_root_idx);
+			int const sibling_block = sibling_idx - first_leaf;
+			if (sibling_block >= 0 && sibling_block < m_num_blocks)
+			{
+				// merkle_validate_and_insert_proofs() only returns true once
+				// it has hashed this sibling together with insert_root_idx
+				// into a proven ancestor, so m_tree[sibling_idx] is
+				// necessarily non-zero here.
+				TORRENT_ASSERT(!m_tree[sibling_idx].is_all_zeros());
+				bool const already_verified = m_block_verified.get_bit(sibling_block);
+				m_block_verified.set_bit(sibling_block);
+
+				// when a piece is a single block, a verified block is a
+				// verified piece. Otherwise, the piece can only pass once all
+				// of its blocks are known, which is handled below. Only
+				// report it the first time it becomes verified, since a
+				// later call may re-learn the same sibling hash via a
+				// different proof.
+				if (m_blocks_per_piece_log == 0 && !already_verified && sibling_already_known)
+				{
+					auto const piece = piece_index_t{sibling_block} + file_piece_offset;
+					if (ret.passed.empty() || ret.passed.back() != piece)
+						ret.passed.push_back(piece);
+				}
+			}
+		}
 
 		// this is the start of the leaf layer of "tree". We'll use this
 		// variable to step upwards towards the root
@@ -347,6 +419,29 @@ namespace {
 		// the same as the piece layer
 		int const base = piece_levels();
 
+		// hash_picker only ever requests whole, piece-aligned ranges at the
+		// block layer (either a single piece, or the entire block layer in
+		// one call), so an insertion here must never start or end in the
+		// middle of a piece. This is what makes the running
+		// current_piece_matched count below sound: a piece's blocks always
+		// arrive together in the same call.
+#if TORRENT_USE_ASSERTS
+		if (dest_start_idx >= first_leaf)
+		{
+			int const blocks_per_piece = 1 << base;
+			int const pos = dest_start_idx - first_leaf;
+			TORRENT_ASSERT(pos % blocks_per_piece == 0);
+			TORRENT_ASSERT(leaf_count % blocks_per_piece == 0 || pos + leaf_count == m_num_blocks);
+		}
+#endif
+
+		// count of the current piece's matched block hashes, needed because a
+		// single matching leaf does not prove a multi-block piece is valid.
+		// The leaf layer below is scanned once in increasing order, so pieces
+		// are never revisited and a running count reset per piece suffices.
+		auto current_piece = piece_index_t(-1);
+		int current_piece_matched = 0;
+
 		// TODO: a piece outside of this range may also fail, if one of the uncle
 		// hashes is at the layer right above the block hashes
 		for (int layer_size = leaf_count; layer_size != 0; layer_size /= 2)
@@ -355,7 +450,9 @@ namespace {
 			{
 				int const dst_idx = dest_cursor + i;
 				int const src_idx = source_cursor + i;
-				if (has_node(dst_idx))
+				// dst_idx == insert_root_idx was already written above by
+				// merkle_validate_and_insert_proofs()
+				if (dst_idx == insert_root_idx ? insert_root_already_known : has_node(dst_idx))
 				{
 					if (m_tree[dst_idx] != tree[src_idx])
 					{
@@ -363,12 +460,12 @@ namespace {
 						// they can be verified. This assert ensures we're at the
 						// leaf layer of the file tree
 						TORRENT_ASSERT(dst_idx >= first_leaf);
-
 						int const pos = dst_idx - first_leaf;
-						auto const piece = piece_index_t{pos >> m_blocks_per_piece_log} + file_piece_offset;
 						int const block = pos & ((1 << m_blocks_per_piece_log) - 1);
-
+						auto const piece =
+							piece_index_t{pos >> m_blocks_per_piece_log} + file_piece_offset;
 						TORRENT_ASSERT(pos < m_num_blocks);
+
 						if (!ret.failed.empty() && ret.failed.back().first == piece)
 							ret.failed.back().second.push_back(block);
 						else
@@ -381,12 +478,32 @@ namespace {
 					}
 					else if (dst_idx >= first_leaf)
 					{
-						// this covers the case where pieces are a single block.
-						// The common case is covered below
-						auto const piece = piece_index_t{(dst_idx - first_leaf) >> m_blocks_per_piece_log} + file_piece_offset;
+						int const pos = dst_idx - first_leaf;
+						int const block = pos & ((1 << m_blocks_per_piece_log) - 1);
+						auto const piece =
+							piece_index_t{pos >> m_blocks_per_piece_log} + file_piece_offset;
 
-						if (ret.passed.empty() || ret.passed.back() != piece)
+						// padding leaves are always zero (see check_invariant()),
+						// so they never reach this branch
+						TORRENT_ASSERT(pos < m_num_blocks);
+
+						if (piece != current_piece)
+						{
+							current_piece = piece;
+							current_piece_matched = 0;
+						}
+
+						int const piece_block_start = pos - block;
+						int const piece_blocks =
+							std::min(blocks_per_piece(), m_num_blocks - piece_block_start);
+
+						if (++current_piece_matched == piece_blocks)
+						{
+							// piece order is strictly increasing, so this can
+							// only trigger once per piece
+							TORRENT_ASSERT(ret.passed.empty() || ret.passed.back() != piece);
 							ret.passed.push_back(piece);
+						}
 					}
 				}
 
@@ -510,6 +627,10 @@ namespace {
 			// hash failure, clear all the internal nodes
 			// the whole piece failed the hash check. Clear all block hashes
 			// in this piece and report a hash failure
+			//
+			// we can't tell which block in the subtree is wrong, only that
+			// their combined hash no longer matches, so none of them can
+			// still be vouched for individually
 			merkle_clear_tree(m_tree, leafs_size, first_leaf + leafs_start);
 			m_tree[root_index] = root;
 			return std::make_tuple(set_block_result::hash_failed, leafs_start, leafs_size);
@@ -830,6 +951,11 @@ namespace {
 		m_tree = aux::vector<sha256_hash>(build_vector());
 		m_mode = mode_t::full_tree;
 		m_block_verified.resize(m_num_blocks, false);
+
+		// a single block equals the root hash, so it's implicitly verified,
+		// an invariant check_invariant() relies on.
+		if (m_num_blocks == 1)
+			m_block_verified.set_bit(0);
 	}
 
 	void merkle_tree::optimize_storage()
@@ -919,27 +1045,54 @@ namespace {
 			}
 		}
 
-		// the number of layers up the tree which can be computed from the base layer hashes
-		// subtract one because the base layer doesn't count
-		int const base_tree_layers = merkle_num_layers(merkle_num_leafs(count)) - 1;
+		// proof_idx climbs one layer per iteration, starting at
+		// layer_start_idx (i == 0). Whether *its* sibling at that layer
+		// needs to be sent depends on how tall a subtree the count leaves,
+		// already gathered above, form on their own: every node of that
+		// subtree, at every one of its layers, is implied by those leaves.
+		// Example with count == 4 (implied_layers == 2: the subtree is 2
+		// layers tall):
+		//
+		//    i    proof_idx's sibling
+		//   ---   ----------------------------------------------------
+		//    2    not implied, must be pushed (first hash sent to peer)
+		//    1    implied: still inside the 4-leaf subtree, both
+		//         children already sit in `ret`
+		//    0    implied: layer_start_idx's sibling is itself one of
+		//         the other 3 requested leaves, already in `ret`
+		//
+		// pushed whenever i >= implied_layers. count == 1 has no subtree
+		// at all (implied_layers == 0), so even the leaf's own sibling at
+		// i == 0 isn't implied, and gets pushed too
+		int const implied_layers = merkle_num_layers(merkle_num_leafs(count));
 
 		int proof_idx = layer_start_idx;
-		for (int i = 0; i < proof_layers; ++i)
+		for (int i = 0; i < implied_layers; ++i, proof_idx = merkle_get_parent(proof_idx))
 		{
-			proof_idx = merkle_get_parent(proof_idx);
+			// if this assert fires, the requester set proof_layers too high
+			// and it wasn't correctly validated
+			TORRENT_ASSERT(proof_idx > 0);
+		}
 
-			// if this assert fire, the requester set proof_layers too high
+		for (int i = implied_layers; i <= proof_layers;
+			 ++i, proof_idx = merkle_get_parent(proof_idx))
+		{
+			// if this assert fires, the requester set proof_layers too high
 			// and it wasn't correctly validated
 			TORRENT_ASSERT(proof_idx > 0);
 
-			if (i >= base_tree_layers)
-			{
-				int const sibling = merkle_get_sibling(proof_idx);
-				if (!has_node(proof_idx) || !has_node(sibling))
-					return {};
+			int const sibling = merkle_get_sibling(proof_idx);
 
-				ret.push_back(get_impl(sibling, scratch_space));
-			}
+			// a sibling past the last real block is a padding leaf; its
+			// value is always the well-known all-zero leaf pad, never a
+			// stored node. padding only exists at the leaf layer
+			bool const sibling_is_real =
+				i > 0 || base != 0 || sibling < m_num_blocks + layer_start_idx - index;
+
+			if (!has_node(proof_idx) || (sibling_is_real && !has_node(sibling)))
+				return {};
+
+			ret.push_back(sibling_is_real ? get_impl(sibling, scratch_space) : sha256_hash{});
 		}
 
 		return ret;

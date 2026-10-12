@@ -98,6 +98,8 @@ void lsd::start(error_code& ec)
 
 	m_socket.bind(udp::endpoint(v4 ? address(address_v4::any()) : address(address_v6::any()), lsd_port), ec);
 	if (ec) return;
+	m_socket.non_blocking(true, ec);
+	if (ec) return;
 	if (v4)
 		m_socket.set_option(join_group(lsd_multicast_addr4, m_listen_address.to_v4()), ec);
 	else
@@ -150,11 +152,16 @@ void lsd::announce_impl(sha1_hash const& ih, int const listen_port
 			, listen_port, m_listen_address.to_string().c_str());
 #endif
 
+		if (msg_len < 0)
+			return;
+
 		m_socket.send_to(boost::asio::buffer(msg, static_cast<std::size_t>(msg_len))
 			, to, {}, ec);
 		if (ec)
 		{
-			m_disabled = true;
+			bool const dropped =
+				ec == boost::asio::error::would_block || ec == boost::asio::error::try_again;
+			if (!dropped) m_disabled = true;
 #ifndef TORRENT_DISABLE_LOGGING
 			if (should_log())
 			{
@@ -206,6 +213,11 @@ void lsd::on_announce(error_code const& ec, std::size_t len)
 			, std::bind(&lsd::on_announce, self(), _1, _2));
 	});
 
+	process_packet(span<char const>{m_buffer.data(), std::ptrdiff_t(len)}, from);
+}
+
+void lsd::process_packet(span<char const> packet, udp::endpoint const& from)
+{
 	if (!aux::match_addr_mask(from.address(), m_listen_address, m_netmask))
 	{
 		// we don't care about this network. Ignore this packet
@@ -219,7 +231,7 @@ void lsd::on_announce(error_code const& ec, std::size_t len)
 	aux::http_parser p;
 
 	bool error = false;
-	p.incoming(span<char const>{m_buffer.data(), std::ptrdiff_t(len)}, error);
+	p.incoming(packet, error);
 
 	if (!p.header_finished() || error)
 	{

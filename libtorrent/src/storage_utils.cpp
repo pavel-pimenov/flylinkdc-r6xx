@@ -56,7 +56,8 @@ namespace libtorrent { namespace aux {
 					// files moved out to absolute paths are ignored
 					if (f.file_absolute_path(i)) continue;
 
-					stat_file(f.file_path(i, new_save_path), &s, err);
+					// a dangling symlink still counts as existing
+					stat_file(f.file_path(i, new_save_path), &s, err, dont_follow_links);
 					if (err != boost::system::errc::no_such_file_or_directory)
 					{
 						ec.ec = err;
@@ -114,7 +115,8 @@ namespace libtorrent { namespace aux {
 			std::string const new_path = combine_path(new_save_path, f.file_path(i));
 
 			error_code ignore;
-			if (flags == move_flags_t::dont_replace && exists(new_path, ignore))
+			// a dangling symlink still counts as existing
+			if (flags == move_flags_t::dont_replace && exists(new_path, ignore, dont_follow_links))
 			{
 				ret |= disk_status::need_full_check;
 				continue;
@@ -137,7 +139,32 @@ namespace libtorrent { namespace aux {
 				// on OSX, the error when trying to rename a file across different
 				// volumes is EXDEV, which will make it fall back to copying.
 				ec.ec.clear();
-				copy_file(old_path, new_path, ec);
+#if TORRENT_HAS_SYMLINK
+				bool const declared_symlink = bool(f.file_flags(i) & file_storage::flag_symlink);
+				file_status old_stat;
+				error_code stat_ec;
+				stat_file(old_path, &old_stat, stat_ec, dont_follow_links);
+				bool const actual_symlink = !stat_ec && bool(old_stat.mode & file_status::symlink);
+				if (declared_symlink != actual_symlink)
+				{
+					// what's on disk does not match what the torrent expects;
+					// it's not safe to assume ownership of this file
+					ec.ec = errors::mismatching_file_type;
+					ec.operation = operation_t::file_stat;
+				}
+				else if (declared_symlink)
+				{
+					// copy_file() would follow the symlink and copy whatever
+					// it points to, instead of moving the link itself
+					std::string const target =
+						lexically_relative(parent_path(f.file_path(i)), f.symlink(i));
+					create_symlink(target, new_path, ec);
+				}
+				else
+#endif
+				{
+					copy_file(old_path, new_path, ec);
+				}
 				if (!ec) copied_files[i] = true;
 			}
 
@@ -240,7 +267,7 @@ namespace libtorrent { namespace aux {
 	}
 
 	void delete_files(filenames const& fs, std::string const& save_path
-		, std::string const& part_file_name, remove_flags_t const options, storage_error& ec)
+		, std::string const& part_file, remove_flags_t const options, storage_error& ec)
 	{
 		if (options & session::delete_files)
 		{
@@ -289,7 +316,7 @@ namespace libtorrent { namespace aux {
 			|| (options & session::delete_files))
 		{
 			error_code error;
-			remove(combine_path(save_path, part_file_name), error);
+			remove(part_file, error);
 			if (error && error != boost::system::errc::no_such_file_or_directory)
 			{
 				ec.file(file_index_t(-1));
@@ -297,6 +324,130 @@ namespace libtorrent { namespace aux {
 				ec.operation = operation_t::file_remove;
 			}
 		}
+	}
+
+	void rename_file(file_storage const& fs,
+		renamed_files& renamed,
+		file_index_t const index,
+		std::string const& new_filename,
+		std::string const& save_path,
+		storage_error& ec)
+	{
+		TORRENT_ASSERT(index >= file_index_t(0));
+		TORRENT_ASSERT(index < fs.end_file());
+		if (index < file_index_t(0) || index >= fs.end_file())
+			return;
+		std::string const old_name = renamed.file_path(fs, index, save_path);
+
+		// this also tells us whether old_name is itself a symlink, which
+		// is needed later in case the cross-filesystem fallback has to
+		// recreate it instead of copying its content
+		file_status old_stat;
+		stat_file(old_name, &old_stat, ec.ec, dont_follow_links);
+		if (ec.ec == boost::system::errc::no_such_file_or_directory
+			|| ec.ec == boost::system::errc::filename_too_long)
+		{
+			// if the old file doesn't exist, just succeed and change the
+			// filename that will be created. This shortcut is important
+			// because the destination directory may not exist yet, which
+			// would cause a failure even though we're not moving a file
+			// (yet). It's better for it to fail later when we try to write
+			// to the file the first time, because the user then will have
+			// had a chance to make the destination directory valid.
+			ec.ec.clear();
+			renamed.rename_file(fs, index, new_filename);
+			return;
+		}
+		if (ec.ec)
+		{
+			ec.file(index);
+			ec.operation = operation_t::file_stat;
+			return;
+		}
+
+#if TORRENT_HAS_SYMLINK
+		bool const old_is_symlink = bool(old_stat.mode & file_status::symlink);
+		bool const declared_symlink = bool(fs.file_flags(index) & file_storage::flag_symlink);
+#endif
+
+		std::string const new_path =
+			is_complete(new_filename) ? new_filename : combine_path(save_path, new_filename);
+		std::string const new_dir = parent_path(new_path);
+
+		error_code best_effort;
+		if (exists(new_path, best_effort, dont_follow_links))
+		{
+			// We don't want to overwrite an existing file
+			ec.ec = error_code(boost::system::errc::file_exists, generic_category());
+			ec.file(index);
+			ec.operation = operation_t::file_rename;
+			return;
+		}
+
+		create_directories(new_dir, ec.ec);
+		if (ec.ec)
+		{
+			ec.file(index);
+			ec.operation = operation_t::mkdir;
+			return;
+		}
+
+		rename(old_name, new_path, ec.ec);
+
+		// if old_name doesn't exist, that's not an error
+		// here. Once we start writing to the file, it will
+		// be written to the new filename
+		if (ec.ec == boost::system::errc::no_such_file_or_directory)
+		{
+			ec.ec.clear();
+		}
+		else if (ec.ec == boost::system::errc::invalid_argument
+			|| ec.ec == boost::system::errc::permission_denied)
+		{
+			ec.operation = operation_t::file_rename;
+		}
+		else if (ec)
+		{
+			// the rename failed, for a reason other than the two above,
+			// which are unlikely to be fixed by copying instead (e.g.
+			// EXDEV, when old_name and new_path are on different volumes)
+			ec.ec.clear();
+#if TORRENT_HAS_SYMLINK
+			if (old_is_symlink != declared_symlink)
+			{
+				// what's on disk does not match what the torrent expects;
+				// it's not safe to assume ownership of this file
+				ec.ec = errors::mismatching_file_type;
+				ec.operation = operation_t::file_stat;
+			}
+			else if (old_is_symlink)
+			{
+				// copy_file() would dereference the link; new_filename may
+				// sit at an unrelated depth or be absolute, so the target
+				// is anchored to save_path, not to new_dir directly
+				std::string const target =
+					lexically_relative(new_dir, combine_path(save_path, fs.symlink(index)));
+				create_symlink(target, new_path, ec);
+			}
+			else
+#endif
+			{
+				copy_file(old_name, new_path, ec);
+			}
+			if (!ec)
+			{
+				error_code ignore;
+				remove(old_name, ignore);
+			}
+		}
+
+		if (ec)
+		{
+			ec.file(index);
+			return;
+		}
+
+		renamed.rename_file(fs, index, new_filename);
 	}
 
 namespace {
@@ -434,18 +585,10 @@ std::int64_t get_filesize(stat_cache& stat, file_index_t const file_index
 		if (added_files) return false;
 #endif
 
-		// parse have bitmask. Verify that the files we expect to have
-		// actually do exist
-		piece_index_t const end_piece = std::min(rd.have_pieces.end_index(), fs.end_piece());
-		for (piece_index_t i(0); i < end_piece; ++i)
+		// parse have bitmask. Verify that files touched by completed pieces
+		// actually exist. A completed piece may span multiple files.
+		for (file_index_t const file_index : fs.file_range())
 		{
-			if (rd.have_pieces.get_bit(i) == false) continue;
-
-			std::vector<file_slice> f = fs.map_block(i, 0, 1);
-			TORRENT_ASSERT(!f.empty());
-
-			file_index_t const file_index = f[0].file_index;
-
 			// files with priority zero may not have been saved to disk at their
 			// expected location, but is likely to be in a partfile. Just exempt it
 			// from checking
@@ -454,16 +597,24 @@ std::int64_t get_filesize(stat_cache& stat, file_index_t const file_index
 				continue;
 
 			if (fs.pad_file_at(file_index)) continue;
+			if (fs.file_size(file_index) == 0) continue;
 
-			if (get_filesize(stat, file_index, fs, save_path, ec) < 0)
-				return false;
+			auto const piece_range = aux::file_piece_range_inclusive(fs, file_index);
+			piece_index_t const start_piece = piece_range._begin;
 
-			// OK, this file existed, good. Now, skip all remaining pieces in
-			// this file. We're just sanity-checking whether the files exist
-			// or not.
-			peer_request const pr = fs.map_file(file_index
-				, fs.file_size(file_index) + 1, 0);
-			i = std::max(next(i), pr.piece);
+			piece_index_t const end_piece = std::min(piece_range._end, rd.have_pieces.end_index());
+
+			bool has_completed_resume_piece = false;
+			for (piece_index_t piece = start_piece; piece < end_piece; ++piece)
+			{
+				if (!rd.have_pieces.get_bit(piece)) continue;
+				has_completed_resume_piece = true;
+				break;
+			}
+
+			if (!has_completed_resume_piece) continue;
+
+			if (get_filesize(stat, file_index, fs, save_path, ec) < 0) return false;
 		}
 		return true;
 	}
@@ -636,8 +787,9 @@ std::int64_t get_filesize(stat_cache& stat, file_index_t const file_index
 	{
 		se.ec.clear();
 
+		// lstat: rename() moves the entry itself, regardless of what it resolves to
 		file_status s;
-		stat_file(inf, &s, se.ec);
+		stat_file(inf, &s, se.ec, dont_follow_links);
 		if (se)
 		{
 			se.operation = operation_t::file_stat;

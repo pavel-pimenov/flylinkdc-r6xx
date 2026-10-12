@@ -167,6 +167,30 @@
     <ClInclude Include="include\libtorrent\add_torrent_params.hpp">
       <Filter>Header Files\libtorrent</Filter>
     </ClInclude>
+    <ClInclude Include="include\libtorrent\aux_\back_pressure.hpp">
+      <Filter>Header Files\libtorrent\aux_</Filter>
+    </ClInclude>
+    <ClInclude Include="include\libtorrent\aux_\disk_cache.hpp">
+      <Filter>Header Files\libtorrent\aux_</Filter>
+    </ClInclude>
+    <ClInclude Include="include\libtorrent\aux_\merge_block_requests.hpp">
+      <Filter>Header Files\libtorrent\aux_</Filter>
+    </ClInclude>
+    <ClInclude Include="include\libtorrent\aux_\pread_disk_job.hpp">
+      <Filter>Header Files\libtorrent\aux_</Filter>
+    </ClInclude>
+    <ClInclude Include="include\libtorrent\aux_\pread_storage.hpp">
+      <Filter>Header Files\libtorrent\aux_</Filter>
+    </ClInclude>
+    <ClInclude Include="include\libtorrent\aux_\precomputed_block_hashes.hpp">
+      <Filter>Header Files\libtorrent\aux_</Filter>
+    </ClInclude>
+    <ClInclude Include="include\libtorrent\aux_\visit_block_iovecs.hpp">
+      <Filter>Header Files\libtorrent\aux_</Filter>
+    </ClInclude>
+    <ClInclude Include="include\libtorrent\pread_disk_io.hpp">
+      <Filter>Header Files\libtorrent</Filter>
+    </ClInclude>
     <ClInclude Include="include\libtorrent\address.hpp">
       <Filter>Header Files\libtorrent</Filter>
     </ClInclude>
@@ -1235,6 +1259,21 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\add_torrent_params.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\back_pressure.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\disk_cache.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pread_disk_io.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pread_storage.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\precomputed_block_hashes.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\kademlia\sample_infohashes.cpp">

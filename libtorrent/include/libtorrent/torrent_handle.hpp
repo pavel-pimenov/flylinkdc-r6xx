@@ -78,7 +78,7 @@ namespace aux {
 	struct TORRENT_EXPORT block_info
 	{
 		// this is the enum used for the block_info::state field.
-		enum block_state_t
+		enum block_state_t : std::uint8_t
 		{
 			// This block has not been downloaded or requested form any peer.
 			none,
@@ -100,28 +100,43 @@ namespace aux {
 		addr_t addr;
 
 		std::uint16_t port;
+
+		// the type of the addr union
+		// is_v6_addr:1 and num_peers:15 together fill exactly 16 bits (one uint16_t
+		// storage unit), so bytes_progress must start a new storage unit regardless
+		// of ABI. Clang's -Wms-bitfield-padding fires on any type transition between
+		// consecutive bit-fields without checking whether the prior unit is already
+		// full, making it a false positive here.
+#if defined __clang__ && defined __has_warning
+#  if __has_warning("-Wms-bitfield-padding")
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wms-bitfield-padding"
+#  endif
+#endif
+		std::uint16_t is_v6_addr:1;
 	public:
+		// the number of peers that is currently requesting this block. Typically
+		// this is 0 or 1, but at the end of the torrent blocks may be requested
+		// by more peers in parallel to speed things up.
+		std::uint16_t num_peers:15;
 
 		// The peer is the ip address of the peer this block was downloaded from.
 		void set_peer(tcp::endpoint const& ep);
 		tcp::endpoint peer() const;
 
 		// the number of bytes that have been received for this block
-		unsigned bytes_progress:15;
+		std::uint32_t bytes_progress:15;
 
 		// the total number of bytes in this block.
-		unsigned block_size:15;
+		std::uint32_t block_size:15;
 
 		// the state this block is in (see block_state_t)
-		unsigned state:2;
-
-		// the number of peers that is currently requesting this block. Typically
-		// this is 0 or 1, but at the end of the torrent blocks may be requested
-		// by more peers in parallel to speed things up.
-		unsigned num_peers:14;
-	private:
-		// the type of the addr union
-		bool is_v6_addr:1;
+		std::uint32_t state:2;
+#if defined __clang__ && defined __has_warning
+#if __has_warning("-Wms-bitfield-padding")
+#pragma clang diagnostic pop
+#endif
+#endif
 	};
 
 	// This class holds information about pieces that have outstanding requests
@@ -220,6 +235,10 @@ namespace aux {
 		friend struct aux::session_impl;
 		friend struct session_handle;
 		friend struct aux::torrent;
+
+		// ADL hook for ``boost::hash`` and the hash specialization for
+		// ``torrent_handle``. Two handles that refer to the same torrent
+		// hash to the same value.
 		TORRENT_EXPORT friend std::size_t hash_value(torrent_handle const& th);
 
 		// constructs a torrent handle that does not refer to a torrent.
@@ -267,11 +286,11 @@ namespace aux {
 		// The overload taking a raw pointer to the data is a blocking call. It
 		// won't return until the libtorrent thread has copied the data into its
 		// disk write buffer. ``data`` is expected to point to a buffer of as
-		// many bytes as the size of the specified piece. See
-		// file_storage::piece_size().
+		// many bytes as the size of the specified piece.
+		// For v2-only torrents, pieces at the end of files may not be full sized.
 		//
 		// The data in the buffer is copied and passed on to the disk IO thread
-		// to be written at a later point.
+		// to be written at some later point in time.
 		//
 		// The overload taking a ``std::vector<char>`` is not blocking, it will
 		// send the buffer to the main thread and return immediately.
@@ -286,8 +305,12 @@ namespace aux {
 		// alert, read_piece_alert. Since this alert is a response to an explicit
 		// call, it will always be posted, regardless of the alert mask.
 		//
-		// Note that if you read multiple pieces, the read operations are not
-		// guaranteed to finish in the same order as you initiated them.
+		// .. note:: that if you read multiple pieces, the read operations are not
+		//    guaranteed to finish in the same order as you initiated them.
+		//
+		// .. note:: the size of the buffer passed back in the alert is not
+		//    necessarily piece_length() long. The last piece or pieces at the end
+		//    of files (in v2 and hybrid torrents) are not full size.
 		void read_piece(piece_index_t piece) const;
 
 		// These functions set the first piece and the last piece of the range
@@ -349,6 +372,8 @@ namespace aux {
 		// includes ``save_path``, the path to the directory the files of the
 		// torrent are saved to.
 		static inline constexpr status_flags_t query_save_path = 7_bit;
+		// includes ``renamed_files``, a map of files that have been renamed in this torrent.
+		static inline constexpr status_flags_t query_renamed_files = 8_bit;
 
 		// ``status()`` will return a structure with information about the status
 		// of this torrent. If the torrent_handle is invalid, it will throw
@@ -378,6 +403,14 @@ namespace aux {
 		// with information about pieces that are partially downloaded or not
 		// downloaded but partially requested. See partial_piece_info for the
 		// fields in the returned vector.
+		//
+		// .. warning::
+		// 	``get_download_queue()`` is prone to threading errors. The
+		// 	block_info pointers its return value points to are owned by the
+		// 	session and will be cleared the next time ``get_download_queue()``
+		// 	is called. Therefore it's not safe to call this function from
+		// 	multiple threads. Using ``post_download_queue()`` is a safe
+		// 	alternative.
 		void post_download_queue() const;
 		std::vector<partial_piece_info> get_download_queue() const;
 		void get_download_queue(std::vector<partial_piece_info>& queue) const;
@@ -480,14 +513,18 @@ namespace aux {
 		std::vector<std::int64_t> file_progress(file_progress_flags_t flags = {}) const;
 		void post_file_progress(file_progress_flags_t flags) const;
 
-		// This function returns a vector with status about files
+		// ``file_status()`` returns a vector with status about files
 		// that are open for this torrent. Any file that is not open
 		// will not be reported in the vector, i.e. it's possible that
 		// the vector is empty when returning, if none of the files in the
 		// torrent are currently open.
 		//
+		// ``post_file_status()`` will trigger a file_status_alert to be posted,
+		// containing the open-file state of all currently open files in the torrent.
+		//
 		// See open_file_state
 		std::vector<open_file_state> file_status() const;
+		void post_file_status() const;
 
 		// If the torrent is in an error state (i.e. ``torrent_status::error`` is
 		// non-empty), this will clear the error and start the torrent again.
@@ -730,7 +767,7 @@ namespace aux {
 		// which pieces have been downloaded. It can also be used to save a
 		// .torrent file for a torrent_handle.
 		//
-		// ```get_resume_data()`` is synchronous and will block the calling
+		// ``get_resume_data()`` is synchronous and will block the calling
 		// thread until the resume data is ready and returned from the
 		// libtorrent main thread.
 		///
@@ -784,10 +821,8 @@ namespace aux {
 		//
 		//	while (outstanding_resume_data > 0)
 		//	{
-		//		alert const* a = ses.wait_for_alert(seconds(30));
-		//
 		//		// if we don't get an alert within 30 seconds, abort
-		//		if (a == nullptr) break;
+		//		if (!ses.wait_for_alert(seconds(30))) break;
 		//
 		//		std::vector<alert*> alerts;
 		//		ses.pop_alerts(&alerts);
@@ -940,6 +975,22 @@ namespace aux {
 		// torrent_handle::rename_file(), the new names will not be reflected
 		// in the returned torrent_info object.
 		std::shared_ptr<const torrent_info> torrent_file() const;
+
+		// Returns a copy of the renamed_files object for this torrent. This
+		// records all file renames applied via torrent_handle::rename_file().
+		// To get a complete view of the current file layout (original names
+		// plus any renames), combine this with the file_storage from
+		// torrent_file()->layout():
+		//
+		// .. code:: c++
+		//
+		//	auto tf = handle.torrent_file();
+		//	auto renames = handle.get_renamed_files();
+		//	lt::filenames fn(tf->layout(), renames);
+		//	for (auto i : fn.file_range())
+		//		std::cout << fn.file_path(i) << "\n";
+		//
+		renamed_files get_renamed_files() const;
 #if TORRENT_ABI_VERSION < 4
 		// torrent_file_with_hashes() returns a *copy* of the internal
 		// torrent_info and piece layer hashes (if it's a v2 torrent). The piece
@@ -1154,6 +1205,10 @@ namespace aux {
 		void prioritize_files(std::vector<download_priority_t> const& files) const;
 		std::vector<download_priority_t> get_file_priorities() const;
 
+		// ``post_file_priorities()`` will trigger a file_priorities_alert to be
+		// posted, containing the download priority of each file in the torrent.
+		void post_file_priorities() const;
+
 #if TORRENT_ABI_VERSION == 1
 		TORRENT_DEPRECATED
 		void prioritize_files(std::vector<int> const& files) const;
@@ -1165,6 +1220,11 @@ namespace aux {
 		// published by the tracker. If this flag is set, it will be ignored
 		// and the tracker is announced immediately.
 		static inline constexpr reannounce_flags_t ignore_min_interval = 0_bit;
+
+		// by default, force-reannounce will queue the announce normally.
+		// If this flag is set, the announce will be put at the front of the
+		// tracker queue for immediate processing.
+		static constexpr reannounce_flags_t high_priority = 1_bit;
 
 		// ``force_reannounce()`` will force this torrent to do another tracker
 		// request, to receive new peers. The ``seconds`` argument specifies how
@@ -1179,7 +1239,7 @@ namespace aux {
 		// If set to -1 (which is the default), all trackers are re-announce.
 		//
 		// The ``flags`` argument can be used to affect the re-announce. See
-		// ignore_min_interval.
+		// ignore_min_interval and high_priority.
 		//
 		// ``force_dht_announce`` will announce the torrent to the DHT
 		// immediately.
@@ -1348,7 +1408,7 @@ namespace aux {
 
 		// Renames the file with the given index asynchronously. The rename
 		// operation is complete when either a file_renamed_alert or
-		// file_rename_failed_alert is posted.
+		// file_rename_failed_alert is posted. ``new_name`` must not be empty.
 		void rename_file(file_index_t index, std::string const& new_name) const;
 
 #if TORRENT_ABI_VERSION == 1

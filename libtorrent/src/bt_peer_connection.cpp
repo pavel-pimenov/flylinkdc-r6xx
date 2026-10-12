@@ -47,6 +47,7 @@ see LICENSE file.
 #include "libtorrent/aux_/merkle.hpp"
 #include "libtorrent/performance_counters.hpp" // for counters
 #include "libtorrent/aux_/alert_manager.hpp" // for alert_manager
+#include "libtorrent/aux_/ip_helpers.hpp"
 #include "libtorrent/aux_/string_util.hpp" // for search
 #include "libtorrent/aux_/generate_peer_id.hpp"
 
@@ -66,8 +67,8 @@ namespace {
 	// stream key (info hash of attached torrent)
 	// secret is the DH shared secret
 	// initializes m_enc_handler
-	std::shared_ptr<rc4_handler> init_pe_rc4_handler(key_t const& secret
-		, sha1_hash const& stream_key, bool const outgoing)
+	std::shared_ptr<rc4_handler> init_pe_rc4_handler(
+		span<char const> secret_buf, sha1_hash const& stream_key, bool const outgoing)
 	{
 		hasher h;
 		static const char keyA[] = {'k', 'e', 'y', 'A'};
@@ -76,8 +77,6 @@ namespace {
 		// encryption rc4 longkeys
 		// outgoing connection : hash ('keyA',S,SKEY)
 		// incoming connection : hash ('keyB',S,SKEY)
-
-		std::array<char, dh_key_len> const secret_buf = export_key(secret);
 
 		if (outgoing) h.update(keyA); else h.update(keyB);
 		h.update(secret_buf);
@@ -207,10 +206,13 @@ namespace {
 				out_policy = settings_pack::pe_disabled;
 #endif
 #ifndef TORRENT_DISABLE_LOGGING
-		static char const* policy_name[] = {"forced", "enabled", "disabled", "invalid-setting"};
-		int const policy_name_idx = out_policy > 3 ? 3 : out_policy;
-		peer_log(peer_log_alert::info, peer_log_alert::encryption
-			, "outgoing encryption policy: %s", policy_name[policy_name_idx]);
+		// session_impl::sanitize_settings() guarantees this is one of
+		// pe_forced, pe_enabled or pe_disabled
+		static char const* policy_name[] = {"forced", "enabled", "disabled"};
+		peer_log(peer_log_alert::info,
+			peer_log_alert::encryption,
+			"outgoing encryption policy: %s",
+			policy_name[out_policy]);
 #endif
 
 		if (out_policy == settings_pack::pe_forced)
@@ -468,7 +470,7 @@ namespace {
 		if (is_peer_interested()) p.flags |= peer_info::remote_interested;
 		if (has_peer_choked()) p.flags |= peer_info::remote_choked;
 		if (support_extensions()) p.flags |= peer_info::supports_extensions;
-		if (is_outgoing()) p.flags |= peer_info::local_connection;
+		if (is_outgoing()) p.flags |= peer_info::outgoing_connection;
 #if TORRENT_USE_I2P
 		if (is_i2p(get_socket()))
 		{
@@ -535,12 +537,7 @@ namespace {
 			peer_log(peer_log_alert::info, peer_log_alert::encryption, "initiating encrypted handshake");
 #endif
 
-		m_dh_key_exchange.reset(new (std::nothrow) dh_key_exchange);
-		if (!m_dh_key_exchange)
-		{
-			disconnect(errors::no_memory, operation_t::encryption);
-			return;
-		}
+		m_dh_key_exchange.reset(new dh_key_exchange);
 
 		int const pad_size = int(random(512));
 
@@ -552,7 +549,7 @@ namespace {
 		char* ptr = msg;
 		int const buf_size = int(dh_key_len) + pad_size;
 
-		std::array<char, dh_key_len> const local_key = export_key(m_dh_key_exchange->get_local_key());
+		std::array<char, dh_key_len> const& local_key = m_dh_key_exchange->get_local_key();
 		std::memcpy(ptr, local_key.data(), dh_key_len);
 		ptr += dh_key_len;
 
@@ -575,8 +572,7 @@ namespace {
 
 		hasher h;
 		sha1_hash const& info_hash = associated_info_hash();
-		key_t const secret_key = m_dh_key_exchange->get_secret();
-		std::array<char, dh_key_len> const secret = export_key(secret_key);
+		std::array<char, dh_key_len> const& secret = m_dh_key_exchange->get_secret();
 
 		int const pad_size = int(random(512));
 
@@ -618,7 +614,7 @@ namespace {
 		ptr += 20;
 
 		// Discard DH key exchange data, setup RC4 keys
-		m_rc4 = init_pe_rc4_handler(secret_key, info_hash, is_outgoing());
+		m_rc4 = init_pe_rc4_handler(secret, info_hash, is_outgoing());
 #ifndef TORRENT_DISABLE_LOGGING
 		peer_log(peer_log_alert::info, peer_log_alert::encryption, "computed RC4 keys");
 #endif
@@ -627,11 +623,11 @@ namespace {
 		// write the verification constant and crypto field
 		int const encrypt_size = int(sizeof(msg)) - 512 + pad_size - 40;
 
-		// this is an invalid setting, but let's just make the best of the situation
+		// session_impl::sanitize_settings() guarantees this is one of
+		// pe_plaintext, pe_rc4 or pe_both
 		int const enc_level = m_settings.get_int(settings_pack::allowed_enc_level);
-		std::uint8_t const crypto_provide = ((enc_level & settings_pack::pe_both) == 0)
-			? std::uint8_t(settings_pack::pe_both)
-			: std::uint8_t(enc_level);
+		TORRENT_ASSERT_PRECOND(enc_level & settings_pack::pe_both);
+		auto const crypto_provide = std::uint8_t(enc_level);
 
 #ifndef TORRENT_DISABLE_LOGGING
 		static char const* level[] = {"plaintext", "rc4", "plaintext rc4"};
@@ -864,23 +860,7 @@ namespace {
 			TORRENT_ASSERT(t);
 			auto const dlq = download_queue();
 			for (pending_block const& pb : dlq)
-			{
-				peer_request r;
-				r.piece = pb.block.piece_index;
-				r.start = pb.block.block_index * t->block_size();
-				r.length = t->block_size();
-				// if it's the last piece, make sure to
-				// set the length of the request to not
-				// exceed the end of the torrent. This is
-				// necessary in order to maintain a correct
-				// m_outstanding_bytes
-				if (r.piece == t->torrent_file().last_piece())
-				{
-					r.length = std::min(t->torrent_file().piece_size(
-						r.piece) - r.start, r.length);
-				}
-				incoming_reject_request(r);
-			}
+				incoming_reject_request(t->to_req(pb.block));
 		}
 	}
 
@@ -1183,6 +1163,16 @@ namespace {
 		auto t = associated_torrent().lock();
 		TORRENT_ASSERT(t);
 
+		// there are no per-file merkle trees unless the torrent has a v2 info
+		// hash and the metadata (file layout) has actually been loaded. For a
+		// magnet link added with a v2 info hash, has_v2() can be true well
+		// before valid_metadata() is, since the info hash is known up front.
+		if (!t->info_hash().has_v2() || !t->valid_metadata())
+		{
+			disconnect(errors::invalid_message, operation_t::bittorrent, peer_error);
+			return;
+		}
+
 		auto const& files = t->torrent_file().layout();
 
 		span<char const> recv_buffer = m_recv_buffer.get();
@@ -1239,6 +1229,13 @@ namespace {
 		auto t = associated_torrent().lock();
 		TORRENT_ASSERT(t);
 
+		// see the comment in on_hash_request()
+		if (!t->info_hash().has_v2() || !t->valid_metadata())
+		{
+			disconnect(errors::invalid_message, operation_t::bittorrent, peer_error);
+			return;
+		}
+
 		auto const& files = t->torrent_file().layout();
 
 		span<char const> recv_buffer = m_recv_buffer.get();
@@ -1253,15 +1250,7 @@ namespace {
 		const char* ptr = recv_buffer.begin() + 1;
 
 		auto const file_root = sha256_hash(ptr);
-		file_index_t file_index{ -1 };
-		for (file_index_t i : files.file_range())
-		{
-			if (files.root(i) == file_root)
-			{
-				file_index = i;
-				break;
-			}
-		}
+		file_index_t const file_index = files.file_index_for_root(file_root);
 		ptr += sha256_hash::size();
 		int const base = aux::read_int32(ptr);
 		int const index = aux::read_int32(ptr);
@@ -1290,6 +1279,8 @@ namespace {
 		if (!m_recv_buffer.packet_finished()) return;
 
 		auto new_end = std::remove(m_hash_requests.begin(), m_hash_requests.end(), hr);
+		if (new_end == m_hash_requests.end())
+			return;
 		m_hash_requests.erase(new_end, m_hash_requests.end());
 
 		std::vector<sha256_hash> hashes;
@@ -1339,6 +1330,13 @@ namespace {
 
 		auto t = associated_torrent().lock();
 		TORRENT_ASSERT(t);
+
+		// see the comment in on_hash_request()
+		if (!t->info_hash().has_v2() || !t->valid_metadata())
+		{
+			disconnect(errors::invalid_message, operation_t::bittorrent, peer_error);
+			return;
+		}
 
 		span<char const> recv_buffer = m_recv_buffer.get();
 		const char* ptr = recv_buffer.begin() + 1;
@@ -1605,11 +1603,41 @@ namespace {
 					break;
 				}
 
+				// don't bridge local and non-local peers
+				if (aux::is_local(ep.address()) != aux::is_local(remote().address()))
+				{
+#ifndef TORRENT_DISABLE_LOGGING
+					if (should_log(peer_log_alert::incoming_message))
+					{
+						peer_log(peer_log_alert::incoming_message,
+							peer_log_alert::holepunch,
+							"msg:rendezvous to: %s ERROR: bridging local and non-local peer",
+							print_address(ep.address()).c_str());
+					}
+#endif
+					break;
+				}
+
 				write_holepunch_msg(hp_message::connect, ep);
 				p->write_holepunch_msg(hp_message::connect, remote());
 			} break;
 			case hp_message::connect:
 			{
+				// ignore local addresses unless the peer is local
+				if (aux::is_local(ep.address()) && !aux::is_local(remote().address()))
+				{
+#ifndef TORRENT_DISABLE_LOGGING
+					if (should_log(peer_log_alert::incoming_message))
+					{
+						peer_log(peer_log_alert::incoming_message,
+							peer_log_alert::holepunch,
+							"msg:connect to: %s ERROR: rejected local address from non-local peer",
+							print_address(ep.address()).c_str());
+					}
+#endif
+					break;
+				}
+
 				// add or find the peer with this endpoint
 				torrent_peer* p = t->add_peer(ep, peer_info::pex);
 				if (p == nullptr || p->connection)
@@ -1842,6 +1870,9 @@ namespace {
 		TORRENT_ASSERT(t);
 
 		if (!t->valid_metadata()) return;
+		// there are no per-file merkle trees unless the torrent has a v2 info hash
+		if (!t->info_hash().has_v2())
+			return;
 
 		auto req = t->pick_hashes(this);
 		if (req.count > 0) write_hash_request(req);
@@ -2804,8 +2835,12 @@ namespace {
 			if (is_disconnecting()) return;
 
 			// read dh key, generate shared secret
-			m_dh_key_exchange->compute_secret(
-				reinterpret_cast<std::uint8_t const*>(recv_buffer.data()));
+			if (!m_dh_key_exchange->compute_secret(
+					reinterpret_cast<std::uint8_t const*>(recv_buffer.data())))
+			{
+				disconnect(errors::invalid_encrypt_handshake, operation_t::encryption, peer_error);
+				return;
+			}
 
 #ifndef TORRENT_DISABLE_LOGGING
 			peer_log(peer_log_alert::info, peer_log_alert::encryption, "received DH key");
@@ -2869,7 +2904,7 @@ namespace {
 
 				static char const req1[4] = {'r', 'e', 'q', '1'};
 				// compute synchash (hash('req1',S))
-				std::array<char, dh_key_len> const buffer = export_key(m_dh_key_exchange->get_secret());
+				std::array<char, dh_key_len> const& buffer = m_dh_key_exchange->get_secret();
 				hasher h(req1);
 				h.update(buffer);
 				m_sync_hash = std::make_unique<sha1_hash>(h.final());
@@ -3519,25 +3554,28 @@ namespace {
 			std::copy(recv_buffer.begin(), recv_buffer.begin() + 20, pid.data());
 
 			// now, let's see if this connection should be closed
-			peer_connection* p = t->find_peer(pid);
-			if (p)
+			if (!t->settings().get_bool(settings_pack::allow_multiple_connections_per_pid))
 			{
-				TORRENT_ASSERT(p->pid() == pid);
-				// we found another connection with the same peer-id
-				// which connection should be closed in order to be
-				// sure that the other end closes the same connection?
-				// the peer with greatest peer-id is the one allowed to
-				// initiate connections. So, if our peer-id is greater than
-				// the others, we should close the incoming connection,
-				// if not, we should close the outgoing one.
-				if ((pid < m_our_peer_id) == is_outgoing())
+				peer_connection* p = t->find_peer(pid);
+				if (p)
 				{
-					p->disconnect(errors::duplicate_peer_id, operation_t::bittorrent);
-				}
-				else
-				{
-					disconnect(errors::duplicate_peer_id, operation_t::bittorrent);
-					return;
+					TORRENT_ASSERT(p->pid() == pid);
+					// we found another connection with the same peer-id
+					// which connection should be closed in order to be
+					// sure that the other end closes the same connection?
+					// the peer with greatest peer-id is the one allowed to
+					// initiate connections. So, if our peer-id is greater than
+					// the others, we should close the incoming connection,
+					// if not, we should close the outgoing one.
+					if ((pid < m_our_peer_id) == is_outgoing())
+					{
+						p->disconnect(errors::duplicate_peer_id, operation_t::bittorrent);
+					}
+					else
+					{
+						disconnect(errors::duplicate_peer_id, operation_t::bittorrent);
+						return;
+					}
 				}
 			}
 

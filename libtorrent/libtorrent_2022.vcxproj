@@ -13,6 +13,14 @@
   <ItemGroup>
     <ClInclude Include="include\libtorrent\address.hpp" />
     <ClInclude Include="include\libtorrent\add_torrent_params.hpp" />
+    <ClInclude Include="include\libtorrent\aux_\back_pressure.hpp" />
+    <ClInclude Include="include\libtorrent\aux_\disk_cache.hpp" />
+    <ClInclude Include="include\libtorrent\aux_\merge_block_requests.hpp" />
+    <ClInclude Include="include\libtorrent\aux_\pread_disk_job.hpp" />
+    <ClInclude Include="include\libtorrent\aux_\pread_storage.hpp" />
+    <ClInclude Include="include\libtorrent\aux_\precomputed_block_hashes.hpp" />
+    <ClInclude Include="include\libtorrent\aux_\visit_block_iovecs.hpp" />
+    <ClInclude Include="include\libtorrent\pread_disk_io.hpp" />
     <ClInclude Include="include\libtorrent\alert.hpp" />
     <ClInclude Include="include\libtorrent\alert_types.hpp" />
     <ClInclude Include="include\libtorrent\announce_entry.hpp" />
@@ -289,6 +297,11 @@
     <ClCompile Include="deps\try_signal\signal_error_code.cpp" />
     <ClCompile Include="deps\try_signal\try_signal.cpp" />
     <ClCompile Include="src\add_torrent_params.cpp" />
+    <ClCompile Include="src\back_pressure.cpp" />
+    <ClCompile Include="src\disk_cache.cpp" />
+    <ClCompile Include="src\pread_disk_io.cpp" />
+    <ClCompile Include="src\pread_storage.cpp" />
+    <ClCompile Include="src\precomputed_block_hashes.cpp" />
     <ClCompile Include="src\alert.cpp" />
     <ClCompile Include="src\alert_manager.cpp" />
     <ClCompile Include="src\announce_entry.cpp" />

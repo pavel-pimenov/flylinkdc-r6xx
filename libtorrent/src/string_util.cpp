@@ -19,8 +19,19 @@ see LICENSE file.
 #include "libtorrent/assert.hpp"
 
 #include <algorithm> // for search
+#include <charconv> // for from_chars
+#include <utility> // for move
 
 namespace libtorrent::aux {
+
+	std::optional<int> parse_decimal(string_view const str)
+	{
+		int ret = 0;
+		auto const r = std::from_chars(str.data(), str.data() + str.size(), ret);
+		if (r.ec != std::errc{})
+			return std::nullopt;
+		return ret;
+	}
 
 	// We need well defined results that don't depend on locale
 	std::array<char, 4 + std::numeric_limits<std::int64_t>::digits10>
@@ -64,18 +75,12 @@ namespace libtorrent::aux {
 		return (c >= 'A' && c <= 'Z') ? char(c - 'A' + 'a') : c;
 	}
 
-	bool string_begins_no_case(char const* s1, char const* s2)
+	bool string_begins_no_case(string_view s1, string_view s2)
 	{
-		TORRENT_ASSERT(s1 != nullptr);
-		TORRENT_ASSERT(s2 != nullptr);
-
-		while (*s1 != 0)
-		{
-			if (to_lower(*s1) != to_lower(*s2)) return false;
-			++s1;
-			++s2;
-		}
-		return true;
+		if (s2.size() < s1.size()) return false;
+		return std::equal(s1.begin(), s1.end(), s2.begin()
+			, [](char const c1, char const c2)
+			{ return to_lower(c1) == to_lower(c2); });
 	}
 
 	bool string_equal_no_case(string_view s1, string_view s2)
@@ -232,12 +237,13 @@ namespace libtorrent::aux {
 				continue;
 			}
 
-			iface.port = std::atoi(port_str.c_str());
-			if (iface.port < 0 || iface.port > 65535)
+			auto const port_num = parse_decimal(port_str);
+			if (!port_num || *port_num < 0 || *port_num > 65535)
 			{
 				err.emplace_back(element);
 				continue;
 			}
+			iface.port = *port_num;
 
 			port.remove_prefix(port_str.size());
 			port = strip_string(port);
@@ -284,7 +290,13 @@ namespace libtorrent::aux {
 
 			if (colon != std::string::npos && colon > start)
 			{
-				int port = std::atoi(in.substr(colon + 1, end - colon - 1).c_str());
+				auto const port =
+					parse_decimal(strip_string(string_view(in).substr(colon + 1, end - colon - 1)));
+				if (!port)
+				{
+					start = end + 1;
+					continue;
+				}
 
 				// skip trailing spaces
 				std::string::size_type soft_end = colon;
@@ -297,7 +309,7 @@ namespace libtorrent::aux {
 				if (in[start] == '[') ++start;
 				if (soft_end > start && in[soft_end-1] == ']') --soft_end;
 
-				out.emplace_back(in.substr(start, soft_end - start), port);
+				out.emplace_back(in.substr(start, soft_end - start), *port);
 			}
 
 			start = end + 1;
@@ -365,10 +377,55 @@ namespace libtorrent::aux {
 		return {last.substr(0, pos), last.substr(pos + found_sep)};
 	}
 
-	void ltrim(std::string& s)
+	string_view ltrim(string_view s)
 	{
 		while (!s.empty() && is_space(s.front()))
-			s.erase(s.begin());
+			s.remove_prefix(1);
+		return s;
+	}
+
+	namespace {
+		std::string format_host_authority(std::string host, int const port)
+		{
+			bool const has_port = port > 0;
+
+			if (!host.empty() && host.front() == '[' && host.back() == ']')
+			{
+				if (has_port)
+				{
+					host += ":";
+					host += to_string(port).data();
+				}
+				return host;
+			}
+
+			if (host.find(':') != std::string::npos)
+			{
+				host = "[" + host;
+				host += ']';
+			}
+
+			if (has_port)
+			{
+				host += ":";
+				host += to_string(port).data();
+			}
+			return host;
+		}
+	}
+
+	std::string format_host_for_connect(std::string host, unsigned short const port)
+	{
+		// Handle edge case: if no port specified, return host as-is
+		if (port == 0) return host;
+
+		return format_host_authority(std::move(host), port);
+	}
+
+	std::string format_host_header(std::string host, int const port, int const default_port)
+	{
+		return format_host_authority(
+			std::move(host), (port <= 0 || port == default_port) ? 0 : port);
 	}
 
 #if TORRENT_USE_I2P

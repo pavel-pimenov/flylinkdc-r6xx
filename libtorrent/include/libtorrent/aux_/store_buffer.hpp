@@ -14,6 +14,7 @@ see LICENSE file.
 #include <mutex>
 
 #include "libtorrent/storage_defs.hpp"
+#include "libtorrent/aux_/back_pressure.hpp"
 
 #include "libtorrent/aux_/disable_warnings_push.hpp"
 #include <boost/functional/hash.hpp>
@@ -67,6 +68,12 @@ namespace aux {
 
 struct store_buffer
 {
+	store_buffer(io_context& ios) : m_back_pressure(ios) {}
+
+	void set_max_size(int const max_size) {
+		m_back_pressure.set_max_size(max_size);
+	}
+
 	template <typename Fun>
 	bool get(torrent_location const loc, Fun f) const
 	{
@@ -74,6 +81,13 @@ struct store_buffer
 		auto const it = m_store_buffer.find(loc);
 		if (it != m_store_buffer.end())
 		{
+			// TODO: it would be nice if this could be called without holding
+			// the mutex. It would require a reference counter on the store
+			// buffer entries and that we potentially erases it after this call.
+			// it would also require the store buffer being able to take over
+			// ownership of the buffer when the owner erases it. Perhaps erase()
+			// could be made to take a buffer_holder, which is held onto if the
+			// refcount > 0
 			f(it->second);
 			return true;
 		}
@@ -95,10 +109,12 @@ struct store_buffer
 		return f(buf1, buf2);
 	}
 
-	void insert(torrent_location const loc, char const* buf)
+	// returns true if there's back-pressure
+	bool insert(torrent_location const loc, char const* buf, std::shared_ptr<disk_observer> o = nullptr)
 	{
 		std::lock_guard<std::mutex> l(m_mutex);
 		m_store_buffer.insert({loc, buf});
+		return m_back_pressure.has_back_pressure(static_cast<int>(m_store_buffer.size()), o);
 	}
 
 	void erase(torrent_location const loc)
@@ -107,17 +123,26 @@ struct store_buffer
 		auto it = m_store_buffer.find(loc);
 		TORRENT_ASSERT(it != m_store_buffer.end());
 		m_store_buffer.erase(it);
+		m_back_pressure.check_buffer_level(static_cast<int>(m_store_buffer.size()));
 	}
 
+#if TORRENT_USE_ASSERTS
 	std::size_t size() const
 	{
 		return m_store_buffer.size();
 	}
+#endif
 
 private:
 
 	mutable std::mutex m_mutex;
 	std::unordered_map<torrent_location, char const*> m_store_buffer;
+
+	// keep disk_observer objects (peers) that we've signalled back-pressure
+	// to. Once the store buffer drops below the low watermark, we need to notify
+	// them, so they can resume download.
+	aux::back_pressure m_back_pressure;
+
 };
 
 }

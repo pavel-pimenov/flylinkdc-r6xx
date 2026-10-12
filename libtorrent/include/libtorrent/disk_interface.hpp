@@ -60,10 +60,29 @@ namespace libtorrent {
 	using status_t = flags::bitfield_flag<std::uint8_t, struct disk_storage_status_tag>;
 
 namespace disk_status {
+	// the disk operation could not be completed because of an
+	// unrecoverable error (e.g. failed write). The torrent is paused
+	// and a ``file_error_alert`` is posted.
 	constexpr status_t fatal_disk_error = 0_bit;
+
+	// returned from check_fastresume to indicate that resume data
+	// failed validation and a full piece-hash check is required.
 	constexpr status_t need_full_check = 1_bit;
+
+	// returned from move_storage when the destination already exists
+	// and the ``dont_replace`` flag was set.
 	constexpr status_t file_exist = 2_bit;
+
+	// returned from check_fastresume when a file on disk is larger
+	// than the size recorded in the .torrent metadata.
+	// This triggers an alert to let the user decide whether to truncate the
+	// file or save the torrent in another directory.
 	constexpr status_t oversized_file = 3_bit;
+
+	// Returned by do_job(hash) when the job was hung on a cache piece.
+	// kick_hasher will post it to completed_jobs once hashing finishes.
+	// perform_job() checks this flag before writing j->ret.
+	constexpr status_t job_deferred = 4_bit;
 }
 
 	// internal
@@ -213,6 +232,10 @@ namespace file_open_mode {
 		// should not be computed. If v2 is non-empty it must be at least large
 		// enough to hold all v2 blocks in the piece, and this function will
 		// fill in the span with the SHA-256 block hashes of the piece.
+		//
+		// The contents of the `v2` span on entry are not read by the
+		// implementation; it is treated as output only. Callers may safely
+		// reuse the same buffer across pieces without clearing it.
 		virtual void async_hash(storage_index_t storage, piece_index_t piece, span<sha256_hash> v2
 			, disk_job_flags_t flags
 			, std::function<void(piece_index_t, sha1_hash const&, storage_error const&)> handler) = 0;
@@ -362,11 +385,15 @@ namespace file_open_mode {
 	// inform the disk object.
 	struct TORRENT_EXPORT storage_holder
 	{
-		storage_holder() = default;
+		// constructs a storage holder, for storage ``idx`` held at disk
+		// interface ``disk_io``. When the holder is destructed or reset,
+		// ``disk_io`` will be notified that the storage can be removed.
 		storage_holder(storage_index_t idx, disk_interface& disk_io)
 			: m_disk_io(&disk_io)
 			, m_idx(idx)
 		{}
+
+		storage_holder() = default;
 		~storage_holder()
 		{
 			if (m_disk_io) m_disk_io->remove_torrent(m_idx);
@@ -380,6 +407,9 @@ namespace file_open_mode {
 			return m_idx;
 		}
 
+		// release ownership of the storage, removing the torrent from
+		// the disk subsystem. After this call the holder is empty and
+		// ``operator bool()`` returns false.
 		void reset()
 		{
 			if (m_disk_io) m_disk_io->remove_torrent(m_idx);

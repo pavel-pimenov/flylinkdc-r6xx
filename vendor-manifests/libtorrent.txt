@@ -31,6 +31,7 @@ include/libtorrent/aux_/allocating_handler.hpp
 include/libtorrent/aux_/announce_entry.hpp
 include/libtorrent/aux_/apply_pad_files.hpp
 include/libtorrent/aux_/array.hpp
+include/libtorrent/aux_/back_pressure.hpp
 include/libtorrent/aux_/bandwidth_limit.hpp
 include/libtorrent/aux_/bandwidth_manager.hpp
 include/libtorrent/aux_/bandwidth_queue_entry.hpp
@@ -59,6 +60,7 @@ include/libtorrent/aux_/disable_deprecation_warnings_push.hpp
 include/libtorrent/aux_/disable_warnings_pop.hpp
 include/libtorrent/aux_/disable_warnings_push.hpp
 include/libtorrent/aux_/disk_buffer_pool.hpp
+include/libtorrent/aux_/disk_cache.hpp
 include/libtorrent/aux_/disk_completed_queue.hpp
 include/libtorrent/aux_/disk_io_thread_pool.hpp
 include/libtorrent/aux_/disk_job.hpp
@@ -97,6 +99,7 @@ include/libtorrent/aux_/keepalive.hpp
 include/libtorrent/aux_/link.hpp
 include/libtorrent/aux_/listen_socket_handle.hpp
 include/libtorrent/aux_/lsd.hpp
+include/libtorrent/aux_/merge_block_requests.hpp
 include/libtorrent/aux_/merkle.hpp
 include/libtorrent/aux_/merkle_tree.hpp
 include/libtorrent/aux_/mmap.hpp
@@ -125,6 +128,9 @@ include/libtorrent/aux_/pool.hpp
 include/libtorrent/aux_/portmap.hpp
 include/libtorrent/aux_/posix_part_file.hpp
 include/libtorrent/aux_/posix_storage.hpp
+include/libtorrent/aux_/pread_disk_job.hpp
+include/libtorrent/aux_/pread_storage.hpp
+include/libtorrent/aux_/precomputed_block_hashes.hpp
 include/libtorrent/aux_/proxy_base.hpp
 include/libtorrent/aux_/proxy_settings.hpp
 include/libtorrent/aux_/puff.hpp
@@ -187,6 +193,7 @@ include/libtorrent/aux_/utp_socket_manager.hpp
 include/libtorrent/aux_/utp_stream.hpp
 include/libtorrent/aux_/vector.hpp
 include/libtorrent/aux_/vector_utils.hpp
+include/libtorrent/aux_/visit_block_iovecs.hpp
 include/libtorrent/aux_/web_connection_base.hpp
 include/libtorrent/aux_/web_peer_connection.hpp
 include/libtorrent/aux_/websocket_stream.hpp
@@ -276,6 +283,8 @@ include/libtorrent/pex_flags.hpp
 include/libtorrent/piece_block.hpp
 include/libtorrent/portmap.hpp
 include/libtorrent/posix_disk_io.hpp
+include/libtorrent/pread_disk_io.hpp
+include/libtorrent/random.hpp
 include/libtorrent/read_resume_data.hpp
 include/libtorrent/session.hpp
 include/libtorrent/session_handle.hpp
@@ -310,6 +319,7 @@ src/alert.cpp
 src/alert_manager.cpp
 src/announce_entry.cpp
 src/assert.cpp
+src/back_pressure.cpp
 src/bandwidth_limit.cpp
 src/bandwidth_manager.cpp
 src/bandwidth_queue_entry.cpp
@@ -328,6 +338,7 @@ src/directory.cpp
 src/disabled_disk_io.cpp
 src/disk_buffer_holder.cpp
 src/disk_buffer_pool.cpp
+src/disk_cache.cpp
 src/disk_completed_queue.cpp
 src/disk_io_thread_pool.cpp
 src/disk_job.cpp
@@ -423,6 +434,9 @@ src/platform_util.cpp
 src/posix_disk_io.cpp
 src/posix_part_file.cpp
 src/posix_storage.cpp
+src/pread_disk_io.cpp
+src/pread_storage.cpp
+src/precomputed_block_hashes.cpp
 src/proxy_base.cpp
 src/proxy_settings.cpp
 src/puff.cpp

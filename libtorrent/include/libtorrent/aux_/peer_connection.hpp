@@ -93,12 +93,12 @@ namespace libtorrent::aux {
 		milliseconds32 m_time_diff;
 	};
 
-	template <typename T>
-	T clamp_assign(int const v)
+	template <typename T, typename U>
+	T clamp_assign(U const v)
 	{
 		auto const limit = std::numeric_limits<T>::max();
 		if (v < 0) return 0;
-		if (v > int(limit)) return limit;
+		if (v > U(limit)) return limit;
 		return static_cast<T>(v);
 	}
 
@@ -767,8 +767,10 @@ namespace libtorrent::aux {
 		void fill_send_buffer();
 		void on_disk_read_complete(disk_buffer_holder buffer
 			, storage_error const& error, peer_request const&, time_point issue_time);
-		void on_disk_write_complete(storage_error const& error
-			, peer_request const&, std::shared_ptr<aux::torrent>);
+		void on_disk_write_complete(storage_error const& error,
+			peer_request const&,
+			std::shared_ptr<aux::torrent>,
+			std::uint8_t picker_gen);
 		void on_seed_mode_hashed(piece_index_t piece
 			, sha1_hash const& piece_hash, aux::vector<sha256_hash> const& block_hashes
 			, storage_error const& error);

@@ -32,10 +32,6 @@ see LICENSE file.
 #define _GNU_SOURCE
 #endif
 
-#ifndef _XOPEN_SOURCE
-#define _XOPEN_SOURCE 600
-#endif
-
 #include <unistd.h>
 #include <sys/uio.h>
 #include <fcntl.h>
@@ -79,12 +75,10 @@ namespace libtorrent {
 		, std::string const& newf, error_code& ec);
 	TORRENT_EXTRA_EXPORT void create_directories(std::string const& f
 		, error_code& ec);
-	TORRENT_EXTRA_EXPORT void create_directory(std::string const& f
-		, error_code& ec);
-	TORRENT_EXTRA_EXPORT void remove_all(std::string const& f
-		, error_code& ec);
+	TORRENT_EXTRA_EXPORT void create_directory(std::string const& f, error_code& ec);
 	TORRENT_EXTRA_EXPORT void remove(std::string const& f, error_code& ec);
-	TORRENT_EXTRA_EXPORT bool exists(std::string const& f, error_code& ec);
+	TORRENT_EXTRA_EXPORT bool exists(
+		std::string const& f, error_code& ec, file_status_flag_t flags = {});
 	TORRENT_EXTRA_EXPORT bool is_directory(std::string const& f
 		, error_code& ec);
 
@@ -119,6 +113,13 @@ namespace libtorrent {
 		, string_view leaf);
 	TORRENT_EXTRA_EXPORT std::string lexically_relative(string_view base
 		, string_view target);
+
+	// Compute `target` relative to `base`, resolving "." and ".." in
+	// `target` on the fly (single pass, no intermediate string). Sets
+	// `ec` and returns "" if `target` lies outside `base` or if a ".."
+	// in `target` underflows. Both inputs should be absolute paths.
+	TORRENT_EXTRA_EXPORT std::string lexically_relative_normal(
+		string_view base, string_view target, error_code& ec);
 
 	// internal used by create_torrent.hpp
 	TORRENT_EXTRA_EXPORT std::string complete(string_view f);

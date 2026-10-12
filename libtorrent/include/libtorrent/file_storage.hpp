@@ -322,7 +322,6 @@ TORRENT_VERSION_NAMESPACE_4
 			, std::time_t mtime = 0, string_view symlink_path = string_view()
 			, char const* root_hash = nullptr);
 #endif // BOOST_NO_EXCEPTIONS
-
 #if TORRENT_ABI_VERSION < 4
 		TORRENT_DEPRECATED
 		void add_file_borrow(error_code& ec, string_view filename
@@ -331,6 +330,12 @@ TORRENT_VERSION_NAMESPACE_4
 			, std::int64_t mtime = 0, string_view symlink_path = string_view()
 			, char const* root_hash = nullptr);
 #endif
+		// these overloads report failures through the ``ec`` reference
+		// rather than throwing. ``add_file_borrow()`` does not copy the
+		// ``filename`` string; it is borrowed by reference and the caller
+		// must keep it alive for the lifetime of this ``file_storage``
+		// object. This is useful when constructing the file list from a
+		// memory-mapped .torrent file.
 		void add_file_borrow(error_code& ec, string_view filename
 			, std::string const& path, std::int64_t file_size
 			, file_flags_t file_flags = {}, std::int64_t mtime = 0
@@ -524,6 +529,9 @@ TORRENT_VERSION_NAMESPACE_4
 		// ``file_path()`` returns the path (inside the torrent file) with
 		// the filename appended.
 		//
+		// ``symlink()`` returns the path the file at ``index`` is a symlink
+		// to. If the file is not a symlink, the returned string is empty.
+		//
 		// ``file_offset()`` returns the byte offset within the torrent file
 		// where this file starts. It can be used to map the file to a piece
 		// index (given the piece size).
@@ -547,20 +555,25 @@ TORRENT_VERSION_NAMESPACE_4
 		int file_num_blocks(file_index_t index) const;
 		index_range<piece_index_t::diff_type> file_piece_range(file_index_t) const;
 
-		// index of first piece node in the merkle tree
-		int file_first_piece_node(file_index_t index) const;
-		int file_first_block_node(file_index_t index) const;
+		// index of first piece node in the merkle tree. There's no need for
+		// clients to call these.
+		TORRENT_DEPRECATED int file_first_piece_node(file_index_t index) const;
+		TORRENT_DEPRECATED int file_first_block_node(file_index_t index) const;
 
-		// returns the crc32 hash of file_path(index)
-		std::uint32_t file_path_hash(file_index_t index, std::string const& save_path) const;
+		// internal
+		// returns the crc32 hash of file_path(index). There's no need for
+		// clients to call it.
+		TORRENT_DEPRECATED std::uint32_t file_path_hash(
+			file_index_t index, std::string const& save_path) const;
 
+		// internal
 		// this will add the CRC32 hash of all directory entries to the table. No
 		// filename will be included, just directories. Every depth of directories
 		// are added separately to allow test for collisions with files at all
 		// levels. i.e. if one path in the torrent is ``foo/bar/baz``, the CRC32
 		// hashes for ``foo``, ``foo/bar`` and ``foo/bar/baz`` will be added to
-		// the set.
-		void all_path_hashes(std::unordered_set<std::uint32_t>& table) const;
+		// the set. There's no need for clients to call it.
+		TORRENT_DEPRECATED void all_path_hashes(std::unordered_set<std::uint32_t>& table) const;
 
 		// the file is a pad file. It's required to contain zeros
 		// at it will not be saved to disk. Its purpose is to make
@@ -582,7 +595,8 @@ TORRENT_VERSION_NAMESPACE_4
 		// returns all directories used in the torrent. Files in the torrent are
 		// located in one of these directories. This is not a tree, it's a flat
 		// list of all *leaf* directories. i.e. the union of the parent paths of
-		// all files.
+		// all files. There's no need for clients to call it.
+		TORRENT_DEPRECATED
 		aux::vector<std::string, aux::path_index_t> const& paths() const { return m_paths; }
 
 		// returns a bitmask of flags from file_flags_t that apply
@@ -648,8 +662,9 @@ TORRENT_VERSION_NAMESPACE_4
 
 		// validate any symlinks, to ensure they all point to
 		// other files or directories inside this storage. Any invalid symlinks
-		// are updated to point to themselves.
-		void sanitize_symlinks();
+		// are updated to point to themselves. There's no need for clients to
+		// call it.
+		TORRENT_DEPRECATED void sanitize_symlinks();
 
 		// returns true if this torrent contains v2 metadata.
 		bool v2() const { return m_v2; }
@@ -766,31 +781,61 @@ namespace aux {
 	// to mutate the file_storage object itself.
 	struct TORRENT_EXPORT renamed_files
 	{
+		// returns information about the file at ``index`` in ``fs``,
+		// honoring any rename recorded in this object.
+		// ``file_path()`` returns the full on-disk path (prepending
+		// ``save_path`` to relative paths). ``file_name()`` returns
+		// just the leaf filename. ``file_absolute_path()`` returns
+		// true if the recorded rename is an absolute path (in which
+		// case ``save_path`` is ignored).
 		std::string file_path(file_storage const& fs, file_index_t index, std::string const& save_path = "") const;
 		string_view file_name(file_storage const& fs, file_index_t index) const;
 		bool file_absolute_path(file_storage const& fs, file_index_t index) const;
 
+		// records that the file at ``index`` in ``fs`` should be
+		// renamed to ``new_filename`` on disk. The underlying
+		// ``file_storage`` is not modified.
 		void rename_file(file_storage const& fs, file_index_t index, std::string const& new_filename);
 
+		// bulk import or export the set of file renames recorded in
+		// this object. ``import_filenames()`` adds the given renames
+		// (dropping entries whose file index is out of range).
+		// ``export_filenames()`` returns the current renames as a map
+		// suitable for serializing and later passing back to
+		// ``import_filenames()``.
 		void import_filenames(file_storage const& fs, std::map<file_index_t, std::string> const& renamed_files);
-		std::map<file_index_t, std::string> export_filenames() const;
+		std::map<file_index_t, std::string> export_filenames(file_storage const& fs) const;
 	private:
 		std::unordered_map<file_index_t, aux::rename_entry> m_renamed_files;
 	};
 
+	// a lightweight view that pairs a ``file_storage`` with the rename
+	// overrides in a ``renamed_files``. It exposes the read-only subset
+	// of ``file_storage`` that downstream code (e.g. the disk I/O
+	// backends) needs, with file paths automatically resolved through
+	// the rename layer.
 	struct TORRENT_EXPORT filenames
 	{
+		// construct a view over ``fs`` with the renames recorded in
+		// ``rf`` applied. Both references must outlive the view.
 		filenames(file_storage const& fs, renamed_files const& rf)
 			: m_files(fs)
 			, m_renames(rf)
 		{}
 
+		// returns the file flags for the file at ``index``
 		file_flags_t file_flags(file_index_t const index) const
 		{ return m_files.file_flags(index); }
 
+		// one past-the-end file index
 		file_index_t end_file() const noexcept { return m_files.end_file(); }
 
+		// returns true if the file at ``index`` is a pad file
 		bool pad_file_at(file_index_t const index) const { return m_files.pad_file_at(index); }
+
+		// returns the file size or file offset for the file at ``index``. The
+		// file offset is in the torrent space, of all files in the torrent, in
+		// the order they are defined.
 		std::int64_t file_size(file_index_t const index) const
 		{
 			return m_files.file_size(index);
@@ -799,48 +844,78 @@ namespace aux {
 		{
 			return m_files.file_offset(index);
 		}
+
+		// returns the on-disk path for the file at ``index``, applying
+		// any rename recorded in the underlying ``renamed_files``. If
+		// ``save_path`` is non-empty it is prepended to relative
+		// paths. ``file_absolute_path()`` returns true if the recorded
+		// rename is an absolute path (in which case ``save_path`` is
+		// ignored).
+		// file_name() returns the filename (the leaf, not the full path) for
+		// the file at ``index``, applying any rename recorded in the
+		// underlying ``renamed_files``.
 		std::string file_path(file_index_t const index, std::string const& save_path = "") const
 		{
 			return m_renames.file_path(m_files, index, save_path);
+		}
+		string_view file_name(file_index_t const index) const
+		{
+			return m_renames.file_name(m_files, index);
 		}
 		bool file_absolute_path(file_index_t const index) const
 		{
 			return m_renames.file_absolute_path(m_files, index);
 		}
 
+		// If the file at ``index`` is a symbolic link, its link target is returned.
+		// otherwise an empty string.
+		std::string symlink(file_index_t const index) const { return m_files.symlink(index); }
+
+		// all file indices in the underlying file_storage. Convenient in
+		// range-for loops.
 		index_range<file_index_t> file_range() const noexcept
 		{
 			return m_files.file_range();
 		}
-		std::string symlink(file_index_t const index) const
-		{
-			return m_files.symlink(index);
-		}
-		int num_files() const noexcept
-		{
-			return m_files.num_files();
-		}
-		int num_pieces() const
-		{
-			return m_files.num_pieces();
-		}
+
+		// the number of files in the underlying file_storage, the
+		// number of pieces, and the one-past-the-end piece index.
+		int num_files() const noexcept { return m_files.num_files(); }
 		piece_index_t end_piece() const
 		{
 			return m_files.end_piece();
 		}
+		int num_pieces() const { return m_files.num_pieces(); }
+
+		// returns the list of file slices that make up the piece at
+		// ``piece``, starting at ``offset`` into the piece and
+		// covering ``size`` bytes. Each entry identifies one file and
+		// the byte range within it that contributes to the requested
+		// block.
 		std::vector<file_slice> map_block(piece_index_t const piece, std::int64_t const offset
 			, std::int64_t const size) const
 		{
 			return m_files.map_block(piece, offset, size);
 		}
+
+		// inverse of ``map_block()``: maps a byte range within the
+		// file at ``file`` (starting at ``offset``, of length
+		// ``size``) to a ``peer_request`` identifying the piece,
+		// piece-offset and length in torrent space.
 		peer_request map_file(file_index_t const file, std::int64_t const offset, int const size) const
 		{
 			return m_files.map_file(file, offset, size);
 		}
+
+		// returns the v2 merkle root (``pieces root``) for the file
+		// at ``index``. Returns a zero hash for v1-only torrents.
 		sha256_hash root(file_index_t const index) const
 		{
 			return m_files.root(index);
 		}
+
+		// the piece size, in bytes. All pieces have this size except
+		// the last, which may be shorter.
 		int piece_length() const
 		{
 			return m_files.piece_length();
@@ -864,16 +939,32 @@ namespace aux {
 
 	// returns the piece range that entirely falls within the specified file. the
 	// end piece is one-past the last piece that entirely falls within the file.
-	// i.e. They can conveniently be used as loop boundaries. No edge partial
-	// pieces will be included.
-	TORRENT_EXTRA_EXPORT std::tuple<piece_index_t, piece_index_t>
-	file_piece_range_exclusive(file_storage const& fs, file_index_t file);
+	// i.e. the range can conveniently be iterated over. No edge partial pieces
+	// will be included.
+	// these are templated on the file-layout type so they accept both a
+	// file_storage and a filenames view (which exposes the same map_file(),
+	// file_size(), piece_length(), num_files() and num_pieces() members). the
+	// rename layer in filenames only affects file paths, not the piece layout,
+	// so the result is identical for either. The instantiations are defined in
+	// file_storage.cpp.
+	template <typename FileStorage>
+	TORRENT_EXTRA_EXPORT index_range<piece_index_t> file_piece_range_exclusive(
+		FileStorage const& fs, file_index_t file);
 
 	// returns the piece range of pieces that overlaps with the specified file.
-	// the end piece is one-past the last piece. i.e. They can conveniently be
-	// used as loop boundaries.
-	TORRENT_EXTRA_EXPORT std::tuple<piece_index_t, piece_index_t>
-	file_piece_range_inclusive(file_storage const& fs, file_index_t file);
+	// the end piece is one-past the last piece. i.e. the range can conveniently
+	// be iterated over.
+	template <typename FileStorage>
+	TORRENT_EXTRA_EXPORT index_range<piece_index_t> file_piece_range_inclusive(
+		FileStorage const& fs, file_index_t file);
+
+	// only the instantiations explicitly defined in file_storage.cpp are used
+	extern template index_range<piece_index_t> file_piece_range_exclusive(
+		file_storage const&, file_index_t);
+	extern template index_range<piece_index_t> file_piece_range_inclusive(
+		file_storage const&, file_index_t);
+	extern template index_range<piece_index_t> file_piece_range_inclusive(
+		filenames const&, file_index_t);
 } // namespace aux
 } // namespace libtorrent
 

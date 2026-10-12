@@ -104,12 +104,17 @@ private:
 
 		// send CONNECT
 		std::back_insert_iterator<std::vector<char>> p(m_buffer);
-		std::string const endpoint = print_endpoint(m_remote_endpoint);
-		write_string("CONNECT " + endpoint + " HTTP/1.0\r\n", p);
-		if (!m_host.empty())
-		{
-			write_string("Host: " + m_host + "\r\n", p);
-		}
+		// if we were given the original host (domain or IP), prefer using it so
+		// the proxy can resolve domains; otherwise fall back to the resolved
+		// endpoint.
+		std::string const remote_host = m_host.empty()
+			? print_endpoint(m_remote_endpoint)
+			: format_host_for_connect(m_host, m_remote_endpoint.port());
+
+		write_string("CONNECT " + remote_host + " HTTP/1.0\r\n", p);
+		// Host header is required for HTTP/1.1 (RFC 9110 Section 7.2 / RFC 9112
+		// Section 3.2). For CONNECT it must match the request-target authority.
+		write_string("Host: " + remote_host + "\r\n", p);
 		if (!m_user.empty())
 		{
 			write_string("Proxy-Authorization: Basic " + base64encode(
@@ -172,8 +177,9 @@ private:
 			}
 
 			status++;
-			int const code = std::atoi(status);
-			if (code != 200)
+			auto const status_len = m_buffer.size() - std::size_t(status - m_buffer.data());
+			auto const code = parse_decimal({status, status_len});
+			if (!code || *code != 200)
 			{
 				h(boost::asio::error::operation_not_supported);
 				error_code ec;

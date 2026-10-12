@@ -165,6 +165,10 @@ namespace aux {
 		listen_socket_t& operator=(listen_socket_t const&) = delete;
 		listen_socket_t& operator=(listen_socket_t&&) = delete;
 
+		// unlike this object's address, never reused by a later, unrelated
+		// listen_socket_t once this one is destroyed.
+		std::uint32_t const id = next_id();
+
 		udp::endpoint get_local_endpoint() override
 		{
 			error_code ec;
@@ -253,6 +257,15 @@ namespace aux {
 		// set to true when we receive an incoming connection from this listen
 		// socket
 		bool incoming_connection = false;
+
+	private:
+		// non-atomic is fine: listen_socket_t is only ever constructed on
+		// the network thread.
+		static std::uint32_t next_id()
+		{
+			static std::uint32_t next = 0;
+			return ++next;
+		}
 	};
 
 		struct TORRENT_EXTRA_EXPORT listen_endpoint_t
@@ -348,6 +361,15 @@ namespace aux {
 
 			void call_abort()
 			{
+				// at this point we cannot call the notify function anymore, since the
+				// session will become invalid. We clear the notify function on the
+				// user's thread, since it will destruct the callback function object,
+				// which might hold objects belonging to the user.
+				// Most notably, this is important for the python binding, since the
+				// callback function object needs to hold the GIL.
+				// This is safe because alert_manager has an internal mutex
+				m_alerts.set_notify_function({});
+
 				auto ptr = shared_from_this();
 				dispatch(m_io_context, make_handler([ptr] { ptr->abort(); }
 					, m_abort_handler_storage, *this));
@@ -447,6 +469,10 @@ namespace aux {
 			void validate_setting(int const int_name, int const min, int const max);
 			void validate_settings();
 #endif
+			// clamps settings whose value must be restricted to a valid range
+			// for other code to be able to rely on that invariant, regardless
+			// of whether asserts or logging are enabled in this build
+			void sanitize_settings();
 			void apply_settings_pack(std::shared_ptr<settings_pack> pack) override;
 			void apply_settings_pack_impl(settings_pack const& pack);
 			session_settings const& settings() const override { return m_settings; }
@@ -584,7 +610,7 @@ namespace aux {
 			add_torrent_impl(add_torrent_params&& p, error_code& ec);
 			std::tuple<std::shared_ptr<torrent>, info_hash_t, bool>
 			add_torrent_impl(add_torrent_params const& p, error_code& ec) = delete;
-			void async_add_torrent(add_torrent_params* params);
+			void async_add_torrent(std::unique_ptr<add_torrent_params> params);
 
 			void remove_torrent(torrent_handle const& h, remove_flags_t options) override;
 			void remove_torrent_impl(std::shared_ptr<torrent> tptr, remove_flags_t options) override;
@@ -601,7 +627,22 @@ namespace aux {
 			std::vector<torrent_handle> get_torrents() const;
 
 			void pop_alerts(std::vector<alert*>* alerts);
-			alert* wait_for_alert(time_duration max_wait);
+			bool wait_for_alert(time_duration max_wait);
+
+#if TORRENT_ABI_VERSION < 4
+			// a placeholder alert returned by the legacy session_handle::wait_for_alert
+			// signature when an alert is pending. The pointer to the head of the
+			// alert queue can't be returned because the queue may grow and reallocate
+			// concurrently, invalidating the pointer.
+			struct legacy_dummy_alert : alert
+			{
+				int type() const noexcept override { return -1; }
+				char const* what() const noexcept override { return "dummy"; }
+				std::string message() const override { return {}; }
+				alert_category_t category() const noexcept override { return {}; }
+			};
+			legacy_dummy_alert m_legacy_dummy_alert;
+#endif
 
 #if TORRENT_ABI_VERSION == 1
 			TORRENT_DEPRECATED void pop_alerts();
@@ -690,6 +731,7 @@ namespace aux {
 			torrent_handle find_torrent_handle(info_hash_t const& info_hash);
 
 			void announce_lsd(sha1_hash const& ih, int port) override;
+			void prioritize_lsd(std::weak_ptr<torrent> t) override;
 
 #if TORRENT_ABI_VERSION <= 2
 			void save_state(entry* e, save_state_flags_t flags) const;
@@ -715,6 +757,8 @@ namespace aux {
 			void on_i2p_open(error_code const& ec);
 			void open_new_incoming_i2p_connection();
 			void on_i2p_accept(error_code const& e);
+			void schedule_i2p_reconnect();
+			void on_i2p_reconnect_timer(error_code const& ec);
 #endif
 
 			void start_ip_notifier();
@@ -760,6 +804,7 @@ namespace aux {
 
 			bool on_dht_request(string_view query
 				, dht::msg const& request, entry& response) override;
+			ip_filter const* get_dht_ip_filter() const override;
 
 			void set_external_address(tcp::endpoint const& local_endpoint
 				, address const& ip
@@ -775,8 +820,7 @@ namespace aux {
 			tcp::endpoint bind_outgoing_socket(socket_type& s
 				, address const& remote_address, error_code& ec) const override;
 			bool verify_incoming_interface(address const& addr) const;
-			bool verify_bound_address(address const& addr, bool utp
-				, error_code& ec) override;
+			bool verify_bound_address(address const& addr, bool utp) override;
 
 			bool has_lsd() const override;
 
@@ -833,6 +877,7 @@ namespace aux {
 
 			void update_socket_buffer_size();
 			void update_dht_announce_interval();
+			void update_lsd_announce_interval();
 			void update_download_rate();
 			void update_upload_rate();
 			void update_connections_limit();
@@ -1012,12 +1057,23 @@ namespace aux {
 			// we might need more than one listen socket
 			std::vector<std::shared_ptr<listen_socket_t>> m_listen_sockets;
 
+			// avoids a netlink round-trip in verify_bound_address() on every
+			// peer connection; only as fresh as the last reopen_listen_sockets().
+			std::vector<ip_interface> m_cached_interfaces;
+
 			// increment every time we change which sockets we're listening on
 			std::uint32_t m_listen_socket_version = 0;
 
 #if TORRENT_USE_I2P
 			i2p_connection m_i2p_conn;
 			std::optional<socket_type> m_i2p_listen_socket;
+
+			// Timer for I2P reconnection attempts
+			deadline_timer m_i2p_reconnect_timer;
+
+			// Exponential backoff state for I2P reconnection
+			seconds32 m_i2p_reconnect_delay{1};
+			bool m_i2p_reconnecting = false;
 #endif
 
 #if TORRENT_USE_SSL
@@ -1245,6 +1301,20 @@ namespace aux {
 			// within the LSD announce interval (which defaults to
 			// 5 minutes)
 			std::size_t m_next_lsd_torrent;
+
+			// torrents have recently been added to the session should be
+			// announced to LSD as soon as possible. Such torrents are
+			// put in this queue and get announced the next time the
+			// timer fires, instead of the next one in the round-robin
+			// sequence.
+			std::deque<std::weak_ptr<torrent>> m_lsd_torrents;
+
+			// the number of torrents there were when
+			// update_lsd_announce_interval() was last called.
+			// if the number of torrents changes significantly
+			// compared to this number, the LSD announce interval
+			// is updated again.
+			int m_lsd_interval_update_torrents = 0;
 
 #ifndef TORRENT_DISABLE_DHT
 			// torrents are announced on the DHT in a

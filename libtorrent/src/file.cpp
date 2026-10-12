@@ -46,6 +46,8 @@ see LICENSE file.
 #include "libtorrent/aux_/file.hpp"
 #include "libtorrent/aux_/path.hpp" // for convert_to_native_path_string
 #include "libtorrent/aux_/string_util.hpp"
+#include <algorithm> // for std::min
+#include <climits> // for IOV_MAX
 #include <cstring>
 
 #include "libtorrent/assert.hpp"
@@ -82,6 +84,7 @@ see LICENSE file.
 #ifdef TORRENT_LINUX
 // linux specifics
 
+#include <linux/fs.h>
 #include <sys/ioctl.h>
 #ifdef TORRENT_ANDROID
 #include <sys/syscall.h>
@@ -91,46 +94,171 @@ see LICENSE file.
 
 #endif // posix part
 
+#if TORRENT_USE_PWRITEV && (defined TORRENT_BSD || defined TORRENT_ANDROID)
+#include <unistd.h>
+#include <sys/uio.h> // for pwritev() and iovec
+#include <sys/types.h> // for pwritev() and iovec
+#endif
+
+#if TORRENT_USE_SYNC_FILE_RANGE
+#include <fcntl.h> // for sync_file_range
+#elif defined TORRENT_WINDOWS
+#include "libtorrent/aux_/windows.hpp" // for FlushFileBuffers
+#elif TORRENT_HAS_FSYNC_RANGE
+#include <unistd.h> // for fsync_range
+#else
+#include <unistd.h> // for fsync
+#endif
+
 #include "libtorrent/aux_/disable_warnings_pop.hpp"
+
+#include "libtorrent/aux_/alloca.hpp"
 
 namespace libtorrent::aux {
 
+#if TORRENT_USE_PWRITEV
+namespace {
+	span<iovec> advance_iovec(span<iovec> bufs, ssize_t advance_bytes)
+	{
+		while (advance_bytes > 0)
+		{
+			if (static_cast<ssize_t>(bufs.front().iov_len) <= advance_bytes)
+			{
+				advance_bytes -= bufs.front().iov_len;
+				bufs = bufs.subspan(1);
+				continue;
+			}
+
+			bufs.front().iov_base = static_cast<char*>(bufs.front().iov_base) + advance_bytes;
+			bufs.front().iov_len -= static_cast<size_t>(advance_bytes);
+			return bufs;
+		}
+		return bufs;
+	}
+}
+
+	int pwritev_all(handle_type const handle
+		, span<span<char const> const> bufs
+		, std::int64_t file_offset
+		, error_code& ec)
+	{
+		int ret = 0;
+		TORRENT_ALLOCA(vec, iovec, bufs.size());
+		for (int i = 0; i < bufs.size(); ++i)
+		{
+			vec[i].iov_base = const_cast<char*>(bufs[i].data());
+			vec[i].iov_len = static_cast<size_t>(bufs[i].size());
+		}
+
+		do {
+			int const iovcnt = static_cast<int>(std::min<std::ptrdiff_t>(IOV_MAX, vec.size()));
+			ssize_t const r = ::pwritev(handle, vec.data(), iovcnt, file_offset);
+			if (r == 0)
+			{
+				ec = boost::asio::error::eof;
+				return ret;
+			}
+			if (r < 0)
+			{
+				ec = error_code(errno, system_category());
+				return -1;
+			}
+			ret += r;
+			file_offset += r;
+			vec = advance_iovec(vec, r);
+		} while (vec.size() > 0);
+		return ret;
+	}
+#else
+	int pwritev_all(handle_type const handle
+		, span<span<char const> const> bufs
+		, std::int64_t file_offset
+		, error_code& ec)
+	{
+		TORRENT_ASSERT(bufs.size() > 0);
+		if (bufs.size() == 1)
+			return pwrite_all(handle, bufs[0], file_offset, ec);
+
+		int ret = 0;
+		// TODO: if we have more than 1 buffer, coalesce into a single buffer
+		// and a single call
+		for (auto const& b : bufs)
+		{
+			int r = pwrite_all(handle, b, file_offset, ec);
+			if (ec) return -1;
+			TORRENT_ASSERT(r > 0);
+			file_offset += r;
+			ret += r;
+		}
+		return ret;
+	}
+#endif
+
 #ifdef TORRENT_WINDOWS
-	int pread_all(handle_type const fd
-		, span<char> const buf
-		, std::int64_t const offset
-		, error_code& ec)
+	int pread_all(handle_type const fd, span<char> buf, std::int64_t offset, error_code& ec)
 	{
+		int ret = 0;
 		OVERLAPPED ol{};
-		ol.Offset = offset & 0xffffffff;
-		ol.OffsetHigh = offset >> 32;
-		DWORD bytes_read = 0;
-		if (ReadFile(fd, buf.data(), DWORD(buf.size()), &bytes_read, &ol) == FALSE)
+		while (buf.size() > 0)
 		{
-			ec = error_code(::GetLastError(), system_category());
-			return -1;
-		}
+			ol.Offset = offset & 0xffffffff;
+			ol.OffsetHigh = offset >> 32;
+			DWORD const bytes_to_read = DWORD(buf.size());
+			DWORD bytes_read = 0;
+			if (ReadFile(fd, buf.data(), bytes_to_read, &bytes_read, &ol) == FALSE)
+			{
+				// when the read position is at or beyond the end of the
+				// file, ReadFile() fails with ERROR_HANDLE_EOF instead of
+				// succeeding with 0 bytes read
+				DWORD const last_error = ::GetLastError();
+				if (last_error == ERROR_HANDLE_EOF)
+					ec.assign(errors::file_too_short, libtorrent_category());
+				else
+					ec = error_code(last_error, system_category());
+				return -1;
+			}
 
-		return int(bytes_read);
+			if (bytes_read == 0)
+			{
+				ec.assign(errors::file_too_short, libtorrent_category());
+				return -1;
+			}
+
+			ret += int(bytes_read);
+			offset += bytes_read;
+			buf = buf.subspan(bytes_read);
+		}
+		return ret;
 	}
 
-	int pwrite_all(handle_type const fd
-		, span<char const> const buf
-		, std::int64_t const offset
-		, error_code& ec)
+	int pwrite_all(handle_type const fd, span<char const> buf, std::int64_t offset, error_code& ec)
 	{
+		int ret = 0;
 		OVERLAPPED ol{};
-		ol.Offset = offset & 0xffffffff;
-		ol.OffsetHigh = offset >> 32;
-		DWORD bytes_written = 0;
-		if (WriteFile(fd, buf.data(), DWORD(buf.size()), &bytes_written, &ol) == FALSE)
+		while (buf.size() > 0)
 		{
-			ec = error_code(::GetLastError(), system_category());
-			return -1;
-		}
+			ol.Offset = offset & 0xffffffff;
+			ol.OffsetHigh = offset >> 32;
+			DWORD bytes_written = 0;
+			if (WriteFile(fd, buf.data(), DWORD(buf.size()), &bytes_written, &ol) == FALSE)
+			{
+				ec = error_code(::GetLastError(), system_category());
+				return -1;
+			}
 
-		return int(bytes_written);
+			if (bytes_written == 0)
+			{
+				ec.assign(errors::file_too_short, libtorrent_category());
+				return -1;
+			}
+
+			ret += int(bytes_written);
+			offset += bytes_written;
+			buf = buf.subspan(bytes_written);
+		}
+		return ret;
 	}
+
 #else
 
 	int pread_all(handle_type const handle
@@ -143,13 +271,13 @@ namespace libtorrent::aux {
 			auto const r = ::pread(handle, buf.data(), std::size_t(buf.size()), file_offset);
 			if (r == 0)
 			{
-				ec = boost::asio::error::eof;
-				return ret;
+				ec.assign(errors::file_too_short, libtorrent_category());
+				return -1;
 			}
 			if (r < 0)
 			{
 				ec = error_code(errno, system_category());
-				return ret;
+				return -1;
 			}
 			ret += r;
 			file_offset += r;
@@ -174,7 +302,7 @@ namespace libtorrent::aux {
 			if (r < 0)
 			{
 				ec = error_code(errno, system_category());
-				return -1;
+				return ret;
 			}
 			ret += r;
 			file_offset += r;
@@ -183,6 +311,34 @@ namespace libtorrent::aux {
 		return ret;
 	}
 #endif
+
+	void advise_dont_need(handle_type handle, std::int64_t offset, std::int64_t len)
+	{
+#if (TORRENT_HAS_FADVISE && defined POSIX_FADV_DONTNEED)
+		::posix_fadvise(handle, offset, len, POSIX_FADV_DONTNEED);
+#else
+		TORRENT_UNUSED(handle);
+		TORRENT_UNUSED(offset);
+		TORRENT_UNUSED(len);
+#endif
+	}
+
+	void sync_file(handle_type handle, std::int64_t offset, std::int64_t len)
+	{
+#if TORRENT_USE_SYNC_FILE_RANGE
+		::sync_file_range(handle, offset, len, SYNC_FILE_RANGE_WRITE);
+#elif defined TORRENT_WINDOWS
+		::FlushFileBuffers(handle);
+		TORRENT_UNUSED(offset);
+		TORRENT_UNUSED(len);
+#elif TORRENT_HAS_FSYNC_RANGE
+		::fsync_range(handle, FDATASYNC, offset, len);
+#else
+		::fsync(handle);
+		TORRENT_UNUSED(offset);
+		TORRENT_UNUSED(len);
+#endif
+	}
 
 namespace {
 #ifdef TORRENT_WINDOWS
@@ -460,6 +616,21 @@ file_handle::file_handle(string_view name, std::int64_t const size
 
 	if (mode & open_mode::truncate)
 	{
+#ifdef TORRENT_LINUX
+		// This flag can only be set on a 0-size file. It's important to make
+		// this call before ftruncate() below.
+		if (mode & open_mode::no_cow)
+		{
+			int attr;
+			if (ioctl(m_fd, FS_IOC_GETFLAGS, &attr) != -1)
+			{
+				attr |= FS_NOCOW_FL;
+				// best effort, ignore errors
+				ioctl(m_fd, FS_IOC_SETFLAGS, &attr);
+			}
+		}
+#endif
+
 		static_assert(sizeof(off_t) >= sizeof(size), "There seems to be a large-file issue in truncate()");
 		if (ftruncate(m_fd, static_cast<off_t>(size)) < 0)
 		{
@@ -588,7 +759,7 @@ void file_handle::close()
 
 file_handle::~file_handle() { close(); }
 
-file_handle& file_handle::operator=(file_handle&& rhs) &
+file_handle& file_handle::operator=(file_handle&& rhs) & noexcept
 {
 	if (&rhs == this) return *this;
 	close();

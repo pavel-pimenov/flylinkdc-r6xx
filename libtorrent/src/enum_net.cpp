@@ -27,6 +27,8 @@ see LICENSE file.
 #include <functional>
 #include <cstdlib> // for wcstombscstombs
 #include <optional>
+#include <cerrno>
+#include <vector>
 
 #include "libtorrent/aux_/disable_warnings_push.hpp"
 
@@ -118,9 +120,7 @@ enum : int {
 #endif
 
 #if TORRENT_USE_IFADDRS || TORRENT_USE_IFCONF || TORRENT_USE_NETLINK || TORRENT_USE_SYSCTL
-#ifdef TORRENT_BEOS
-// TODO: in C++17, use __has_include for this. Other operating systems are
-// likely to require this as well
+#if __has_include (<sys/sockio.h>)
 #include <sys/sockio.h>
 #endif
 // capture this here where warnings are disabled (the macro generates warnings)
@@ -234,11 +234,40 @@ namespace {
 	int read_nl_sock(int sock, std::uint32_t const seq, std::uint32_t const pid
 		, std::function<void(nlmsghdr const*)> on_msg)
 	{
-		std::array<char, 4096> buf;
+		std::vector<char> buf;
 		for (;;)
 		{
-			int const read_len = int(recv(sock, buf.data(), buf.size(), 0));
+			ssize_t packet_size;
+			do
+			{
+				packet_size = recv(sock, nullptr, 0, MSG_PEEK | MSG_TRUNC);
+			}
+			while (packet_size < 0 && errno == EINTR);
+			if (packet_size < 0)
+				return -1;
+			if (packet_size == 0)
+			{
+				errno = EIO;
+				return -1;
+			}
+			if (packet_size > 16 * 1024)
+			{
+				errno = EMSGSIZE;
+				return -1;
+			}
+			buf.resize(static_cast<std::size_t>(packet_size));
+			int read_len;
+			do
+			{
+				read_len = int(recv(sock, buf.data(), buf.size(), MSG_TRUNC));
+			}
+			while (read_len < 0 && errno == EINTR);
 			if (read_len < 0) return -1;
+			if (read_len != packet_size)
+			{
+				errno = EMSGSIZE;
+				return -1;
+			}
 
 			auto const* nl_hdr = reinterpret_cast<nlmsghdr const*>(buf.data());
 			int len = read_len;
@@ -654,7 +683,7 @@ int _System __libsocket_sysctl(int* mib, u_int namelen, void *oldp, size_t *oldl
 			struct ifinfomsg msg;
 		} link_req{};
 
-		link_req.hdr.nlmsg_len = std::uint32_t(NLMSG_LENGTH(sizeof(link_req.msg)));
+		link_req.hdr.nlmsg_len = aux::nlmsg_length(sizeof(link_req.msg));
 		link_req.hdr.nlmsg_type = RTM_GETLINK;
 		link_req.msg.ifi_family = AF_PACKET;
 		link_req.msg.ifi_change = 0xFFFFFFFF;
@@ -678,7 +707,7 @@ int _System __libsocket_sysctl(int* mib, u_int namelen, void *oldp, size_t *oldl
 			struct ifaddrmsg msg;
 		} request{};
 
-		request.hdr.nlmsg_len = std::uint32_t(NLMSG_LENGTH(sizeof(request.msg)));
+		request.hdr.nlmsg_len = aux::nlmsg_length(sizeof(request.msg));
 		request.hdr.nlmsg_type = RTM_GETADDR;
 		request.msg.ifa_family = AF_PACKET;
 
@@ -1384,7 +1413,7 @@ int _System __libsocket_sysctl(int* mib, u_int namelen, void *oldp, size_t *oldl
 			struct nlmsghdr hdr;
 			struct rtmsg msg;
 		} request{};
-		request.hdr.nlmsg_len = std::uint32_t(NLMSG_LENGTH(sizeof(request.msg)));
+		request.hdr.nlmsg_len = aux::nlmsg_length(sizeof(request.msg));
 		request.hdr.nlmsg_type = RTM_GETROUTE;
 		request.msg.rtm_family = AF_UNSPEC;
 

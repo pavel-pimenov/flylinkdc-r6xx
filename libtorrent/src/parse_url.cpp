@@ -28,6 +28,7 @@ namespace libtorrent::aux {
 		string_view::iterator at;
 		string_view::iterator colon;
 		string_view::iterator port_pos;
+		bool ipv6_literal = false;
 
 		// PARSE URL
 		auto start = url.begin();
@@ -87,12 +88,31 @@ namespace libtorrent::aux {
 			// strip the brackets
 			hostname.assign(start + 1, port_pos);
 			port_pos = std::find(port_pos, url.end(), ':');
+			ipv6_literal = true;
 		}
 		else
 		{
 			port_pos = std::find(start, url.end(), ':');
 			if (port_pos < end) hostname.assign(start, port_pos);
 			else hostname.assign(start, end);
+		}
+
+		if (hostname.empty())
+		{
+			ec = errors::invalid_hostname;
+			goto exit;
+		}
+		// LDH from RFC 952/1123 for DNS hostnames; IPv6 literals additionally
+		// allow ':', '%' (RFC 6874 zone separator '%25' parses as '%' + hex)
+		// and '_' / '~' for zone-ID characters
+		for (char const c : hostname)
+		{
+			if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')
+				|| c == '-' || c == '.')
+				continue;
+			if (ipv6_literal && (c == ':' || c == '%' || c == '_' || c == '~')) continue;
+			ec = errors::invalid_hostname;
+			goto exit;
 		}
 
 		if (port_pos < end)
@@ -104,7 +124,14 @@ namespace libtorrent::aux {
 				ec = errors::invalid_port;
 				goto exit;
 			}
-			port = std::atoi(std::string(port_pos, end).c_str());
+			auto const port_num = parse_decimal(
+				url.substr(std::size_t(port_pos - url.begin()), std::size_t(end - port_pos)));
+			if (!port_num)
+			{
+				ec = errors::invalid_port;
+				goto exit;
+			}
+			port = *port_num;
 		}
 
 		start = end;
@@ -188,6 +215,58 @@ exit:
 			}
 		}
 		return false;
+	}
+
+	bool same_origin(std::string const& a, std::string const& b)
+	{
+		// the origin is the (scheme, host, port) triple. Scheme and host are
+		// compared case-insensitively. This is meant for http/https URLs: a
+		// missing port is replaced by 443 for "https" and 80 otherwise.
+		// userinfo, path and query are not part of the origin.
+		auto const origin = [](std::string const& u) {
+			error_code ec;
+			std::string protocol, host, ignore;
+			int port;
+			std::tie(protocol, ignore, host, port, ignore) = parse_url_components(u, ec);
+			if (ec) host.clear();
+			if (port == -1) port = string_equal_no_case(protocol, "https") ? 443 : 80;
+			return std::make_tuple(std::move(protocol), std::move(host), port);
+		};
+		auto const oa = origin(a);
+		auto const ob = origin(b);
+		return !std::get<1>(oa).empty() // parsed successfully (host non-empty)
+			&& string_equal_no_case(std::get<0>(oa), std::get<0>(ob))
+			&& string_equal_no_case(std::get<1>(oa), std::get<1>(ob))
+			&& std::get<2>(oa) == std::get<2>(ob);
+	}
+
+	bool is_valid_tracker_url(string_view const url)
+	{
+		if (url.empty())
+		{
+			return false;
+		}
+
+		// reject control characters and space. RFC 3986 requires both to be
+		// percent-encoded; control chars also enable header/CRLF injection
+		for (char const c : url)
+		{
+			auto const uc = static_cast<unsigned char>(c);
+			if (uc <= 0x20 || uc == 0x7f) return false;
+		}
+
+		if (!string_begins_no_case("http://", url) && !string_begins_no_case("https://", url)
+#if TORRENT_USE_RTC
+			&& !string_begins_no_case("wss://", url) && !string_begins_no_case("ws://", url)
+#endif
+			&& !string_begins_no_case("udp://", url))
+		{
+			return false;
+		}
+
+		error_code ec;
+		parse_url_components(url, ec);
+		return !ec;
 	}
 
 }

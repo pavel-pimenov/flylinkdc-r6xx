@@ -45,10 +45,10 @@ see LICENSE file.
 #include "libtorrent/config.hpp"
 #include "libtorrent/aux_/alloca.hpp"
 #include "libtorrent/aux_/path.hpp"
-#include "libtorrent/aux_/directory.hpp"
 #include "libtorrent/aux_/string_util.hpp"
 #include <cstring>
 #include <algorithm> // for std::replace
+#include <vector>
 
 #include "libtorrent/aux_/escape_string.hpp" // for convert_to_native
 #include "libtorrent/assert.hpp"
@@ -85,6 +85,12 @@ see LICENSE file.
 
 #include "libtorrent/aux_/disable_warnings_pop.hpp"
 #include "libtorrent/aux_/storage_utils.hpp" // copy_file
+
+#if defined(TORRENT_WINDOWS) || defined(TORRENT_OS2)
+#define TORRENT_SEPARATOR "\\"
+#else
+#define TORRENT_SEPARATOR "/"
+#endif
 
 namespace libtorrent {
 
@@ -441,7 +447,7 @@ namespace {
 		{
 			auto const idx = static_cast<std::size_t>(i);
 			if (f[idx] == '/') break;
-#ifdef TORRENT_WINDOWS
+#if defined(TORRENT_WINDOWS) || defined(TORRENT_OS2)
 			if (f[idx] == '\\') break;
 #endif
 			if (f[idx] != '.') continue;
@@ -453,7 +459,7 @@ namespace {
 	std::string remove_extension(std::string const& f)
 	{
 		char const* slash = std::strrchr(f.c_str(), '/');
-#ifdef TORRENT_WINDOWS
+#if defined(TORRENT_WINDOWS) || defined(TORRENT_OS2)
 		slash = std::max((char const*)std::strrchr(f.c_str(), '\\'), slash);
 #endif
 		char const* ext = std::strrchr(f.c_str(), '.');
@@ -560,7 +566,7 @@ namespace {
 	{
 		if (f.empty()) return f;
 
-#ifdef TORRENT_WINDOWS
+#if defined(TORRENT_WINDOWS) || defined(TORRENT_OS2)
 		if (f == "\\\\") return "";
 #endif
 		if (f == "/") return "";
@@ -571,8 +577,11 @@ namespace {
 		while (len > 0)
 		{
 			--len;
-			if (f[std::size_t(len)] == '/' || f[std::size_t(len)] == '\\')
-				break;
+#if defined(TORRENT_WINDOWS) || defined(TORRENT_OS2)
+			if (f[std::size_t(len)] == '/' || f[std::size_t(len)] == '\\') break;
+#else
+			if (f[std::size_t(len)] == '/') break;
+#endif
 		}
 
 		if (f[std::size_t(len)] == '/' || f[std::size_t(len)] == '\\') ++len;
@@ -642,20 +651,15 @@ namespace {
 		if (rhs.empty() || rhs == ".") return std::string(lhs);
 
 #if defined(TORRENT_WINDOWS) || defined(TORRENT_OS2)
-#define TORRENT_SEPARATOR "\\"
-		bool const need_sep = lhs[lhs.size() - 1] != '\\' && lhs[lhs.size() - 1] != '/';
+		bool const need_sep = lhs.back() != '\\' && lhs.back() != '/';
 #else
-#define TORRENT_SEPARATOR "/"
-		bool const need_sep = lhs[lhs.size() - 1] != '/';
+		bool const need_sep = lhs.back() != '/';
 #endif
 		std::string ret;
-		std::size_t target_size = lhs.size() + rhs.size() + 2;
-		ret.resize(target_size);
-		target_size = aux::numeric_cast<std::size_t>(std::snprintf(&ret[0], target_size, "%*s%s%*s"
-			, int(lhs.size()), lhs.data()
-			, (need_sep ? TORRENT_SEPARATOR : "")
-			, int(rhs.size()), rhs.data()));
-		ret.resize(target_size);
+		ret.reserve(lhs.size() + rhs.size() + (need_sep ? 1 : 0));
+		ret.append(lhs.data(), lhs.size());
+		if (need_sep) ret += TORRENT_SEPARATOR_CHAR;
+		ret.append(rhs.data(), rhs.size());
 		return ret;
 	}
 
@@ -697,6 +701,52 @@ namespace {
 			ret += ".." TORRENT_SEPARATOR;
 
 		ret += target;
+		return ret;
+	}
+
+	std::string lexically_relative_normal(string_view base, string_view target, error_code& ec)
+	{
+		// strip shared leading components from base and target
+		auto b = lsplit_path(base);
+		auto t = lsplit_path(target);
+		while (!b.first.empty() && b.first == t.first)
+		{
+			b = lsplit_path(b.second);
+			t = lsplit_path(t.second);
+		}
+
+		// any leftover in base means target lies outside base (sibling,
+		// ancestor, or different root)
+		if (!b.first.empty())
+		{
+			ec = make_error_code(boost::system::errc::invalid_argument);
+			return {};
+		}
+
+		// resolve the remainder of target into a component stack
+		std::vector<string_view> components;
+		for (; !t.first.empty(); t = lsplit_path(t.second))
+		{
+			if (t.first == ".") continue;
+			if (t.first == "..")
+			{
+				if (components.empty())
+				{
+					ec = make_error_code(boost::system::errc::invalid_argument);
+					return {};
+				}
+				components.pop_back();
+				continue;
+			}
+			components.push_back(t.first);
+		}
+
+		std::string ret;
+		for (auto const& c : components)
+		{
+			if (!ret.empty()) ret += TORRENT_SEPARATOR_CHAR;
+			ret.append(c.data(), c.size());
+		}
 		return ret;
 	}
 
@@ -777,10 +827,10 @@ namespace {
 		return ret;
 	}
 #endif
-	bool exists(std::string const& f, error_code& ec)
+	bool exists(std::string const& f, error_code& ec, file_status_flag_t const flags)
 	{
 		file_status s;
-		stat_file(f, &s, ec);
+		stat_file(f, &s, ec, flags);
 		if (ec)
 		{
 			// if the filename is too long, the file also cannot exist
@@ -822,28 +872,6 @@ namespace {
 			return;
 		}
 #endif // TORRENT_WINDOWS
-	}
-
-	void remove_all(std::string const& f, error_code& ec)
-	{
-		ec.clear();
-
-		file_status s;
-		stat_file(f, &s, ec);
-		if (ec) return;
-
-		if (s.mode & file_status::directory)
-		{
-			for (aux::directory i(f, ec); !i.done(); i.next(ec))
-			{
-				if (ec) return;
-				std::string p = i.file();
-				if (p == "." || p == "..") continue;
-				remove_all(combine_path(f, p), ec);
-				if (ec) return;
-			}
-		}
-		remove(f, ec);
 	}
 
 	std::pair<string_view, string_view> rsplit_path(string_view p)
@@ -910,19 +938,17 @@ namespace {
 	{
 		if (f.empty()) return false;
 #if defined(TORRENT_WINDOWS) || defined(TORRENT_OS2)
-		int i = 0;
+		std::size_t i = 0;
 		// match the xx:\ or xx:/ form
-		while (i < int(f.size()) && aux::is_alpha(f[i])) ++i;
-		if (i < int(f.size()-1) && f[i] == ':' && (f[i+1] == '\\' || f[i+1] == '/'))
-			return true;
+		while (i < f.size() && aux::is_alpha(f[i]))
+			++i;
+		if (i + 1 < f.size() && f[i] == ':' && (f[i + 1] == '\\' || f[i + 1] == '/')) return true;
 
 		// match the \\ form
-		if (int(f.size()) >= 2 && f[0] == '\\' && f[1] == '\\')
-			return true;
+		if (f.size() >= 2 && f[0] == '\\' && f[1] == '\\') return true;
 		return false;
 #else
-		if (f[0] == '/') return true;
-		return false;
+		return f[0] == '/';
 #endif
 	}
 }

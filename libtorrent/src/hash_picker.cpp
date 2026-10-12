@@ -15,6 +15,10 @@ see LICENSE file.
 #include "libtorrent/aux_/peer_connection.hpp"
 #include "libtorrent/aux_/numeric_cast.hpp"
 
+// file_storage::file_first_piece_node() and file_first_block_node() are
+// deprecated as public API but are still called internally here.
+#include "libtorrent/aux_/disable_deprecation_warnings_push.hpp"
+
 namespace libtorrent::aux
 {
 	namespace
@@ -52,6 +56,8 @@ bool validate_hash_request(hash_request const& hr, file_storage const& fs)
 		|| hr.proof_layers < 0)
 		return false;
 
+	if (fs.pad_file_at(hr.file) || fs.file_size(hr.file) == 0) return false;
+
 	int const num_leafs = merkle_num_leafs(fs.file_num_blocks(hr.file));
 	int const num_layers = merkle_num_layers(num_leafs);
 
@@ -78,7 +84,8 @@ bool validate_hash_request(hash_request const& hr, file_storage const& fs)
 		, m_piece_tree_root_layer(m_piece_layer + merkle_num_layers(512))
 	{
 		m_piece_hash_requested.resize(trees.size());
-		for (file_index_t f(0); f != m_files.end_file(); ++f)
+		// m_merkle_trees is empty for a v1-only torrent, unlike m_files
+		for (file_index_t f : m_merkle_trees.range())
 		{
 			if (m_files.pad_file_at(f)) continue;
 
@@ -137,21 +144,22 @@ bool validate_hash_request(hash_request const& hr, file_storage const& fs)
 
 		if (!m_piece_block_requests.empty())
 		{
-			auto const req = std::find_if(m_piece_block_requests.begin(), m_piece_block_requests.end()
-				, [now](piece_block_request const& e)
-					{ return e.last_request == min_time() || e.last_request - now > min_request_interval; });
+			auto const req = std::find_if(m_piece_block_requests.begin(),
+				m_piece_block_requests.end(),
+				[now](piece_block_request const& e) {
+					return e.last_request == min_time()
+						|| now - e.last_request > min_request_interval;
+				});
 			if (req != m_piece_block_requests.end())
 			{
 				int const blocks_per_piece = m_files.piece_length() / default_block_size;
 
 				// number of blocks from the start of the file
 				int const first_block = static_cast<int>(req->piece) * blocks_per_piece;
-				node_index const nidx(req->file, m_files.file_first_block_node(req->file) + first_block);
-				hash_request hash_req(req->file
-					, 0
-					, first_block
-					, blocks_per_piece
-					, layers_to_verify(nidx) + merkle_num_layers(blocks_per_piece));
+				node_index const nidx(
+					req->file, m_files.file_first_block_node(req->file) + first_block);
+				hash_request hash_req(
+					req->file, 0, first_block, blocks_per_piece, layers_to_verify(nidx));
 				req->num_requests++;
 				req->last_request = now;
 				std::sort(m_piece_block_requests.begin(), m_piece_block_requests.end());
@@ -210,11 +218,29 @@ bool validate_hash_request(hash_request const& hr, file_storage const& fs)
 		return {};
 	}
 
+	bool hash_picker::matches_piece_layer_request(hash_request const& req) const
+	{
+		int const unpadded_count =
+			std::min(req.count, m_files.file_num_pieces(req.file) - req.index);
+		return req.base == m_piece_layer && req.index % 512 == 0
+			&& req.index < m_files.file_num_pieces(req.file)
+			&& !m_piece_hash_requested[req.file].empty()
+			&& (req.count == 512
+				|| (req.count <= 512
+					&& unpadded_count == m_files.file_num_pieces(req.file) - req.index));
+	}
+
+	bool hash_picker::matches_block_request(hash_request const& req) const
+	{
+		int const blocks_per_piece = m_files.piece_length() / default_block_size;
+		return req.base == 0 && req.index % blocks_per_piece == 0
+			&& req.index < m_files.file_num_blocks(req.file) && req.count == blocks_per_piece;
+	}
+
 	add_hashes_result hash_picker::add_hashes(hash_request const& req, span<sha256_hash const> hashes)
 	{
 		TORRENT_ASSERT(validate_hash_request(req, m_files));
 
-		int const unpadded_count = std::min(req.count, m_files.file_num_pieces(req.file) - req.index);
 		int const leaf_count = merkle_num_leafs(req.count);
 		int const base_num_layers = merkle_num_layers(leaf_count);
 		int const num_uncle_hashes = std::max(0, req.proof_layers - base_num_layers + 1);
@@ -222,14 +248,15 @@ bool validate_hash_request(hash_request const& hr, file_storage const& fs)
 		if (req.count + num_uncle_hashes != hashes.size())
 			return add_hashes_result(false);
 
-		// for now we rely on only requesting piece hashes in 512 chunks
-		if (req.base == m_piece_layer
-			&& req.count != 512
-			&& (req.count > 512 || unpadded_count != m_files.file_num_pieces(req.file) - req.index))
-			return add_hashes_result(false);
+		int const blocks_per_piece = m_files.piece_length() / default_block_size;
 
-		// for now we only support receiving hashes at the piece and leaf layers
-		if (req.base != m_piece_layer && req.base != 0)
+		// m_piece_hash_requested/m_piece_block_requests below index by
+		// req.index / 512 and req.index / blocks_per_piece, assuming the
+		// request matches one of the two shapes checked here.
+		bool const valid_piece_layer_request = matches_piece_layer_request(req);
+		bool const valid_block_request = matches_block_request(req);
+
+		if (!valid_piece_layer_request && !valid_block_request)
 			return add_hashes_result(false);
 
 		// the incoming list of hashes is really two separate lists, the lowest
@@ -252,6 +279,9 @@ bool validate_hash_request(hash_request const& hr, file_storage const& fs)
 		auto& dst_tree = m_merkle_trees[req.file];
 		int const dest_start_idx = merkle_to_flat_index(base_layer_idx, req.index);
 		auto const file_piece_offset = m_files.piece_index_at_file(req.file) - piece_index_t{0};
+		if (dst_tree.size() <= 0 || dest_start_idx >= int(dst_tree.size()))
+			return add_hashes_result(false);
+
 		auto results = dst_tree.add_hashes(dest_start_idx, file_piece_offset, hashes, uncle_hashes);
 
 		if (!results)
@@ -260,9 +290,41 @@ bool validate_hash_request(hash_request const& hr, file_storage const& fs)
 		ret.hash_failed = std::move(results->failed);
 		ret.hash_passed = std::move(results->passed);
 
+		// mark the resolved entries as "have" so we won't request them again.
+		// dispatch on valid_piece_layer_request, not req.base, since both
+		// request shapes have req.base == 0 when m_piece_layer == 0.
+		if (valid_piece_layer_request)
+		{
+			// req.base == m_piece_layer implies the file's merkle tree has more
+			// than m_piece_layer layers above its leaves, which is only true when
+			// file_size > piece_length. That is exactly the condition under
+			// which the constructor resizes m_piece_hash_requested[req.file],
+			// so the vector is guaranteed to be non-empty here.
+			// validate_hash_request() enforces this invariant for incoming requests.
+			TORRENT_ASSERT(!m_piece_hash_requested[req.file].empty());
+			for (int i = req.index; i < req.index + req.count; i += 512)
+				m_piece_hash_requested[req.file][i / 512].have = true;
+		}
+		// stop re-requesting this piece's block hashes now that we have them;
+		// entries are only ever removed here. This is independent of
+		// valid_piece_layer_request because, when m_piece_layer == 0 (i.e.
+		// blocks_per_piece == 1), the piece layer and the block layer are
+		// the same layer and a single request can satisfy both at once.
+		if (valid_block_request)
+		{
+			piece_block_request const resolved(
+				req.file, piece_index_t::diff_type{req.index / blocks_per_piece});
+			auto const it =
+				std::find(m_piece_block_requests.begin(), m_piece_block_requests.end(), resolved);
+			if (it != m_piece_block_requests.end())
+				m_piece_block_requests.erase(it);
+		}
+
 		return ret;
 	}
 
+	// h must be the hash of data already written to disk; add_hashes() later
+	// trusts it when reconciling against the network-proven hash
 	set_block_hash_result hash_picker::set_block_hash(piece_index_t const piece
 		, int const offset, sha256_hash const& h)
 	{
@@ -304,12 +366,34 @@ bool validate_hash_request(hash_request const& hr, file_storage const& fs)
 
 	void hash_picker::hashes_rejected(hash_request const& req)
 	{
-		TORRENT_ASSERT(req.base == m_piece_layer && req.index % 512 == 0);
+		int const blocks_per_piece = m_files.piece_length() / default_block_size;
 
-		for (int i = req.index; i < req.index + req.count; i += 512)
+		// req may match both shapes below when blocks_per_piece == 1; resolve it
+		// the same way pick_hashes() would, preferring the block-request queue.
+		// The queue entry can already be gone if another copy of this request
+		// was resolved by a different peer first, so clamp rather than assert.
+		if (matches_block_request(req))
 		{
-			m_piece_hash_requested[req.file][i / 512].last_request = min_time();
-			--m_piece_hash_requested[req.file][i / 512].num_requests;
+			piece_block_request const resolved(
+				req.file, piece_index_t::diff_type{req.index / blocks_per_piece});
+			auto const it =
+				std::find(m_piece_block_requests.begin(), m_piece_block_requests.end(), resolved);
+			if (it != m_piece_block_requests.end())
+			{
+				it->last_request = min_time();
+				it->num_requests = std::max(0, it->num_requests - 1);
+				return;
+			}
+		}
+
+		if (matches_piece_layer_request(req))
+		{
+			for (int i = req.index; i < req.index + req.count; i += 512)
+			{
+				auto& piece_req = m_piece_hash_requested[req.file][i / 512];
+				piece_req.last_request = min_time();
+				piece_req.num_requests = std::max(0, piece_req.num_requests - 1);
+			}
 		}
 
 		// this is for a future per-block request feature
@@ -349,7 +433,8 @@ bool validate_hash_request(hash_request const& hr, file_storage const& fs)
 		file_index_t const f = m_files.file_index_at_piece(index);
 		if (m_files.file_size(f) <= m_files.piece_length()) return true;
 		piece_index_t const file_first_piece(int(m_files.file_offset(f) / m_files.piece_length()));
-		return m_merkle_trees[f].has_node(m_files.file_first_piece_node(f) + int(index - file_first_piece));
+		return m_merkle_trees[f].has_node(
+			m_files.file_first_piece_node(f) + int(index - file_first_piece));
 	}
 
 	bool hash_picker::have_all(file_index_t const file) const
@@ -359,7 +444,8 @@ bool validate_hash_request(hash_request const& hr, file_storage const& fs)
 
 	bool hash_picker::have_all() const
 	{
-		for (file_index_t f : m_files.file_range())
+		// m_merkle_trees is empty for a v1-only torrent, unlike m_files
+		for (file_index_t f : m_merkle_trees.range())
 			if (!have_all(f)) return false;
 		return true;
 	}

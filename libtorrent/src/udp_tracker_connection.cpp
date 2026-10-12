@@ -28,6 +28,7 @@ see LICENSE file.
 #include "libtorrent/aux_/ip_helpers.hpp" // for is_v6
 #include "libtorrent/aux_/peer.hpp"
 #include "libtorrent/error_code.hpp"
+#include "libtorrent/aux_/string_util.hpp" // for is_i2p_url
 
 #ifndef TORRENT_DISABLE_LOGGING
 #include "libtorrent/aux_/socket_io.hpp"
@@ -71,6 +72,19 @@ namespace libtorrent::aux {
 			tracker_connection::fail(ec, operation_t::parse_address);
 			return;
 		}
+
+#if TORRENT_USE_I2P
+		// TODO: the UDP tracker protocol cannot be carried over I2P here: I2P
+		// only exposes SAM STREAM (TCP-like) sessions in this codebase, not
+		// SAM DATAGRAM sessions, which would be required. Fail immediately,
+		// rather than leaking the .i2p hostname to the regular resolver.
+		if (is_i2p_url(tracker_req().url))
+		{
+			tracker_connection::fail(
+				error_code(errors::unsupported_url_protocol), operation_t::hostname_lookup);
+			return;
+		}
+#endif
 
 		aux::session_settings const& settings = m_man.settings();
 
@@ -119,9 +133,10 @@ namespace libtorrent::aux {
 
 		if (i != m_endpoints.end()) m_endpoints.erase(i);
 
-		// if that was the last one, or the listen socket was closed
-		// fail the whole announce
-		if (m_endpoints.empty() || !tracker_req().outgoing_socket)
+		// if we were explicitly told to give up (as opposed to this
+		// particular endpoint failing), if that was the last endpoint, or
+		// if the listen socket was closed, fail the whole announce
+		if (ec == errors::announce_skipped || m_endpoints.empty() || !tracker_req().outgoing_socket)
 		{
 			tracker_connection::fail(ec, op, msg, interval, min_interval);
 			return;
@@ -578,6 +593,7 @@ namespace libtorrent::aux {
 
 		if (!cb)
 		{
+			m_req_pending = false;
 			close();
 			return true;
 		}
@@ -612,6 +628,11 @@ namespace libtorrent::aux {
 		std::transform(m_endpoints.begin(), m_endpoints.end(), std::back_inserter(ip_list)
 			, [](tcp::endpoint const& ep) { return ep.address(); } );
 
+		// about to report the response below; mark it as no longer pending
+		// first, so a fail() already posted (e.g. by
+		// tracker_manager::abort_all_requests() racing this response) finds
+		// nothing left to report when it runs.
+		m_req_pending = false;
 		cb->tracker_response(tracker_req(), m_target.address(), ip_list, resp);
 
 		close();
@@ -656,10 +677,13 @@ namespace libtorrent::aux {
 		std::shared_ptr<request_callback> cb = requester();
 		if (!cb)
 		{
+			m_req_pending = false;
 			close();
 			return true;
 		}
 
+		// see the equivalent comment in on_announce_response()
+		m_req_pending = false;
 		cb->tracker_scrape_response(tracker_req()
 			, complete, incomplete, downloaded, -1);
 

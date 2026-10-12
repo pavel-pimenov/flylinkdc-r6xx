@@ -19,6 +19,7 @@ see LICENSE file.
 #include "libtorrent/magnet_uri.hpp"
 #include "libtorrent/aux_/string_util.hpp" // for is_i2p_url, ltrim, ensure_trailing_slash
 #include "libtorrent/aux_/resolve_duplicate_filenames.hpp"
+#include "libtorrent/aux_/parse_url.hpp" // for is_valid_tracker_url
 
 namespace libtorrent {
 
@@ -73,6 +74,10 @@ namespace {
 			ec.assign(errno, generic_category());
 		}
 	}
+
+} // anonymous namespace
+
+namespace aux {
 
 	void parse_piece_layers(bdecode_node const& e, file_storage const& fs, error_code& ec, add_torrent_params& out)
 	{
@@ -141,10 +146,7 @@ namespace {
 			all_file_roots.erase(file_index);
 		}
 	}
-}
 
-namespace aux
-{
 	std::shared_ptr<torrent_info> parse_torrent_file(bdecode_node const& torrent_file
 		, error_code& ec, load_torrent_limits const& cfg, add_torrent_params& out)
 	{
@@ -233,14 +235,12 @@ namespace aux
 				if (tier.type() != bdecode_node::list_t) continue;
 				for (int k = 0, end2(tier.list_size()); k < end2; ++k)
 				{
-					string_view const url = tier.list_string_value_at(k);
-					if (url.empty()) continue;
+					string_view const url = aux::ltrim(tier.list_string_value_at(k));
+					if (!aux::is_valid_tracker_url(url)) continue;
 #if TORRENT_USE_I2P
 					if (aux::is_i2p_url(url)) out.flags |= torrent_flags::i2p_torrent;
 #endif
-					std::string u(url);
-					aux::ltrim(u);
-					out.trackers.push_back(std::move(u));
+					out.trackers.emplace_back(url);
 					out.tracker_tiers.push_back(j);
 				}
 			}
@@ -248,15 +248,13 @@ namespace aux
 
 		if (out.trackers.empty())
 		{
-			string_view const url = torrent_file.dict_find_string_value("announce");
-#if TORRENT_USE_I2P
-			if (aux::is_i2p_url(url)) out.flags |= torrent_flags::i2p_torrent;
-#endif
-			if (!url.empty())
+			string_view const url = aux::ltrim(torrent_file.dict_find_string_value("announce"));
+			if (aux::is_valid_tracker_url(url))
 			{
-				std::string u(url);
-				aux::ltrim(u);
-				out.trackers.push_back(std::move(u));
+#if TORRENT_USE_I2P
+				if (aux::is_i2p_url(url)) out.flags |= torrent_flags::i2p_torrent;
+#endif
+				out.trackers.emplace_back(url);
 				out.tracker_tiers.push_back(0);
 			}
 		}

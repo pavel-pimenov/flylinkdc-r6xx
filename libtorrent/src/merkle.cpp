@@ -109,13 +109,16 @@ namespace libtorrent {
 		TORRENT_ASSERT(level_start >= 0);
 		TORRENT_ASSERT(num_leafs >= 1);
 
+		// reused across all node hashes, to avoid re-allocating a crypto
+		// context (e.g. EVP_MD_CTX) per hash
+		hasher256 h;
 		int level_size = num_leafs;
 		while (level_size > 1)
 		{
 			int parent = merkle_get_parent(level_start);
 			for (int i = level_start; i < level_start + level_size; i += 2, ++parent)
 			{
-				hasher256 h;
+				h.reset();
 				h.update(tree[i]);
 				h.update(tree[i + 1]);
 				tree[parent] = h.final();
@@ -139,6 +142,7 @@ namespace libtorrent {
 		int const num_leafs = (num_nodes + 1) / 2;
 		int level_size = num_leafs;
 		int level_start = merkle_first_leaf(num_leafs);
+		hasher256 h;
 		while (level_size > 1)
 		{
 			level_start = merkle_get_parent(level_start);
@@ -150,7 +154,7 @@ namespace libtorrent {
 				bool const zeros_left = tree[child].is_all_zeros();
 				bool const zeros_right = tree[child + 1].is_all_zeros();
 				if (zeros_left || zeros_right) continue;
-				hasher256 h;
+				h.reset();
 				h.update(tree[child]);
 				h.update(tree[child + 1]);
 				tree[i] = h.final();
@@ -224,35 +228,38 @@ namespace libtorrent {
 
 		if (num_leafs == 1) return leaves[0];
 
+		hasher256 h;
 		while (num_leafs > 1)
 		{
 			int i = 0;
 			for (; i < int(leaves.size()) / 2; ++i)
 			{
-				scratch_space[std::size_t(i)] = hasher256()
-					.update(leaves[i * 2])
-					.update(leaves[i * 2 + 1])
-					.final();
+				h.reset();
+				scratch_space[std::size_t(i)] =
+					h.update(leaves[i * 2]).update(leaves[i * 2 + 1]).final();
 			}
 			if (leaves.size() & 1)
 			{
 				// if we have an odd number of leaves, compute the boundary hash
 				// here, that spans both a payload-hash and a pad hash
-				scratch_space[std::size_t(i)] = hasher256()
-					.update(leaves[i * 2])
-					.update(pad)
-					.final();
+				h.reset();
+				scratch_space[std::size_t(i)] = h.update(leaves[i * 2]).update(pad).final();
 				++i;
 			}
 			// we don't have to copy any pad hashes into memory, they are implied
 			// just keep track of the current layer's pad hash
-			pad = hasher256().update(pad).update(pad).final();
+			h.reset();
+			pad = h.update(pad).update(pad).final();
 
 			// step one level up
 			leaves = span<sha256_hash const>(scratch_space.data(), i);
 			num_leafs /= 2;
 		}
 
+		// if this fires, leaves was larger than num_leafs, i.e. the caller
+		// passed in more leaves than it claimed, and they were silently
+		// hashed in anyway instead of being ignored
+		TORRENT_ASSERT(leaves.size() == 1);
 		return scratch_space[0];
 	}
 
@@ -279,9 +286,10 @@ namespace libtorrent {
 	{
 		TORRENT_ASSERT(blocks >= pieces);
 		sha256_hash ret{};
+		hasher256 h;
 		while (pieces < blocks)
 		{
-			hasher256 h;
+			h.reset();
 			h.update(ret);
 			h.update(ret);
 			ret = h.final();
@@ -293,42 +301,110 @@ namespace libtorrent {
 	bool merkle_validate_and_insert_proofs(span<sha256_hash> target_tree
 		, int const target_node_idx, sha256_hash const& node, span<sha256_hash const> uncle_hashes)
 	{
-		if (target_tree[target_node_idx] == node)
-			return true;
-
-		if (!target_tree[target_node_idx].is_all_zeros())
+		// all-zeros is the sentinel for a node we don't know yet. it is never a
+		// valid node hash, and it compares equal to the empty target slot
+		// below, which would return success without looking at a single proof
+		if (node.is_all_zeros())
 			return false;
 
+		// a proof for the root is meaningless, there's nothing above it to
+		// anchor into. reject rather than assume callers never pass one.
+		if (target_node_idx == 0 && !uncle_hashes.empty())
+			return false;
+
+		bool const target_matches = target_tree[target_node_idx] == node;
+
+		if (!target_matches && !target_tree[target_node_idx].is_all_zeros())
+			return false;
+
+		// with no proof, a match against the existing tree is all there is
+		// to go on; there's no sibling information to walk or miss.
 		if (uncle_hashes.empty())
-			return false;
+			return target_matches;
 
+		// a leaf can already match "node" while its sibling remains
+		// unproven; walk the proof regardless, since that's the only way
+		// to validate it.
 		int cursor = target_node_idx;
 		target_tree[cursor] = node;
+
+		// One bit per iteration: did we write into that iteration's
+		// sibling slot, or was the slot already populated with the
+		// matching proof value? The cleanup skips clearing slots we
+		// didn't write so a pre-existing leaf hash (e.g. one
+		// merkle_tree::set_block stored speculatively) survives a
+		// failed proof. The walk length is bounded by the tree depth,
+		// which is well under 32 for any tree this library can build.
+		std::uint32_t wrote_sibling = 0;
+		int iter = 0;
+		hasher256 h;
+
 		for (auto const& proof : uncle_hashes)
 		{
+			TORRENT_ASSERT(iter < 32);
 			int const proof_idx = merkle_get_sibling(cursor);
-			TORRENT_ASSERT(target_tree[proof_idx].is_all_zeros());
-			target_tree[proof_idx] = proof;
-			int const left = std::min(proof_idx, cursor);
-			auto const hash = hasher256().update(target_tree[left]).update(target_tree[left + 1]).final();
-			cursor = merkle_get_parent(cursor);
-			if (target_tree[cursor] == hash) return true;
-			if (!target_tree[cursor].is_all_zeros())
+			int const parent = merkle_get_parent(cursor);
+
+			if (target_tree[proof_idx].is_all_zeros())
+			{
+				target_tree[proof_idx] = proof;
+				wrote_sibling |= std::uint32_t(1) << iter;
+			}
+			else if (target_tree[proof_idx] != proof)
+			{
+				// pre-existing sibling contradicts the proof, fail
 				break;
+			}
+			// else: sibling already holds the proof value; leave it
+			// in place and walk on
+
+			int const left = std::min(proof_idx, cursor);
+			h.reset();
+			h.update(target_tree[left]);
+			h.update(target_tree[left + 1]);
+			auto const hash = h.final();
+			// success: the computed pair-hash matches a known parent,
+			// anchoring the chain from `node` up to a trusted node in
+			// the tree
+			if (target_tree[parent] == hash) return true;
+			if (!target_tree[parent].is_all_zeros())
+			{
+				// mismatched known parent. undo this iteration's
+				// sibling write so the cleanup below has a uniform
+				// shape
+				if (wrote_sibling & (std::uint32_t(1) << iter))
+				{
+					target_tree[proof_idx].clear();
+					wrote_sibling &= ~(std::uint32_t(1) << iter);
+				}
+				break;
+			}
+			cursor = parent;
 			target_tree[cursor] = hash;
+			++iter;
 		}
 
 		// we get here if we never reached a known hash in the tree, i.e. the
 		// uncle_hashes failed to prove the specified node hash.
-		// we now need to clear up all the hashes we've inserted into the tree
+		// we now need to clear up the hashes we inserted while walking up.
+		// target_node_idx itself is only ours to clear if target_matches was
+		// false, i.e. we're the ones who wrote it; every other slot visited
+		// here was necessarily written by this call, since the walk only
+		// ever advances into slots it already confirmed were all-zero.
 		int clear_cursor = target_node_idx;
+		int undo_iter = 0;
 		while (clear_cursor > cursor)
 		{
 			int const proof_idx = merkle_get_sibling(clear_cursor);
-			target_tree[clear_cursor].clear();
-			target_tree[proof_idx].clear();
+			if (clear_cursor != target_node_idx || !target_matches)
+				target_tree[clear_cursor].clear();
+			if (wrote_sibling & (std::uint32_t(1) << undo_iter))
+				target_tree[proof_idx].clear();
 			clear_cursor = merkle_get_parent(clear_cursor);
+			++undo_iter;
 		}
+		if (cursor != target_node_idx || !target_matches)
+			target_tree[cursor].clear();
 		return false;
 	}
 
@@ -336,6 +412,13 @@ namespace libtorrent {
 		, sha256_hash const& parent)
 	{
 		hasher256 h;
+		return merkle_validate_node(h, left, right, parent);
+	}
+
+	bool merkle_validate_node(
+		hasher256& h, sha256_hash const& left, sha256_hash const& right, sha256_hash const& parent)
+	{
+		h.reset();
 		h.update(left);
 		h.update(right);
 		return (h.final() == parent);
@@ -351,12 +434,13 @@ namespace libtorrent {
 		if (src[0] != root) return;
 		dst[0] = src[0];
 		int const leaf_layer_start = int(src.size() - num_leafs);
+		hasher256 h;
 		for (int i = 0; i < leaf_layer_start; ++i)
 		{
 			if (dst[i].is_all_zeros()) continue;
 			int const left_child = merkle_get_first_child(i);
 			int const right_child = left_child + 1;
-			if (merkle_validate_node(src[left_child], src[right_child], dst[i]))
+			if (merkle_validate_node(h, src[left_child], src[right_child], dst[i]))
 			{
 				dst[left_child] = src[left_child];
 				dst[right_child] = src[right_child];
@@ -384,9 +468,10 @@ namespace libtorrent {
 		int idx = merkle_first_leaf(num_leafs);
 		TORRENT_ASSERT(idx >= 1);
 
+		hasher256 h;
 		while (idx < end)
 		{
-			if (!merkle_validate_node(tree[idx], tree[idx + 1], tree[merkle_get_parent(idx)]))
+			if (!merkle_validate_node(h, tree[idx], tree[idx + 1], tree[merkle_get_parent(idx)]))
 				return false;
 			idx += 2;
 		}

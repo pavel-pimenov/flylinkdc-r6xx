@@ -78,13 +78,36 @@ struct alloca_destructor
 
 #endif
 
+#if defined __GNUC__ && __GNUC__ >= 14 && !defined __clang__
+// GCC incorrectly warns about calling alloca() with 0 bytes, failing to notice
+// the check that n > 0.
+#define TORRENT_ALLOCA_PUSH_ALLOC_SIZE_SUPPRESS \
+	_Pragma("GCC diagnostic push") \
+	_Pragma("GCC diagnostic ignored \"-Walloc-size\"")
+#define TORRENT_ALLOCA_POP_ALLOC_SIZE_SUPPRESS \
+	_Pragma("GCC diagnostic pop")
+#else
+#define TORRENT_ALLOCA_PUSH_ALLOC_SIZE_SUPPRESS
+#define TORRENT_ALLOCA_POP_ALLOC_SIZE_SUPPRESS
+#endif
+
+#if defined __clang__ && __clang_major__ >= 18
+// clang-analyzer incorrectly warns about calling alloca() with 0 bytes, failing
+// to notice the check that n > 0.
+#define TORRENT_ALLOCA_SUPPRESS [[clang::suppress]]
+#else
+#define TORRENT_ALLOCA_SUPPRESS
+#endif
+
 #define TORRENT_ALLOCA(v, t, n) ::libtorrent::span<t> v; { \
 	auto TORRENT_ALLOCA_size = ::libtorrent::aux::numeric_cast<std::ptrdiff_t>(n); \
 	if (TORRENT_ALLOCA_size > ::libtorrent::aux::alloca_destructor<t>::cutoff) {\
 		v = ::libtorrent::span<t>(new t[::libtorrent::aux::numeric_cast<std::size_t>(n)], TORRENT_ALLOCA_size); \
 	} \
 	else if (n > 0) { \
-		auto* TORRENT_ALLOCA_tmp = static_cast<t*>(TORRENT_ALLOCA_FUN(sizeof(t) * static_cast<std::size_t>(n))); \
+		TORRENT_ALLOCA_PUSH_ALLOC_SIZE_SUPPRESS \
+		TORRENT_ALLOCA_SUPPRESS auto* TORRENT_ALLOCA_tmp = static_cast<t*>(TORRENT_ALLOCA_FUN(sizeof(t) * static_cast<std::size_t>(n))); \
+		TORRENT_ALLOCA_POP_ALLOC_SIZE_SUPPRESS \
 		v = ::libtorrent::span<t>(TORRENT_ALLOCA_tmp, TORRENT_ALLOCA_size); \
 		::libtorrent::aux::uninitialized_default_construct(v.begin(), v.end()); \
 	} \

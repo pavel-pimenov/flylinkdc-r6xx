@@ -140,8 +140,12 @@ TORRENT_EXPORT void print_backtrace(char* out, int len, int max_depth, void*)
 	for (int i = 1; i < size && len > 0; ++i)
 	{
 		int ret = std::snprintf(out, std::size_t(len), "%d: %s\n", i, demangle(symbols[i]).c_str());
-		out += ret;
-		len -= ret;
+		ret = std::min(ret, len);
+		if (ret > 0)
+		{
+			out += ret;
+			len -= ret;
+		}
 		if (i - 1 == max_depth && max_depth > 0) break;
 	}
 
@@ -248,26 +252,51 @@ TORRENT_EXPORT void print_backtrace(char* out, int len, int max_depth
 			&line_displacement, &line);
 
 		int ret = std::snprintf(out, len, "%2d: %p", i, stack[i]);
-		out += ret; len -= ret; if (len <= 0) break;
+		ret = std::min(ret, len);
+		if (ret > 0)
+		{
+			out += ret;
+			len -= ret;
+		}
+		if (len <= 0)
+			break;
 
 		if (has_symbol)
 		{
 			ret = std::snprintf(out, len, " %s +%-4" PRId64
 				, demangle(symbol.Name).c_str(), displacement);
-			out += ret; len -= ret; if (len <= 0) break;
+			ret = std::min(ret, len);
+			if (ret > 0)
+			{
+				out += ret;
+				len -= ret;
+			}
+			if (len <= 0)
+				break;
 		}
 
 		if (has_line)
 		{
 			ret = std::snprintf(out, len, " %s:%d"
 				, line.FileName, int(line.LineNumber));
-			out += ret; len -= ret; if (len <= 0) break;
+			ret = std::min(ret, len);
+			if (ret > 0)
+			{
+				out += ret;
+				len -= ret;
+			}
+			if (len <= 0)
+				break;
 		}
 
 
 		ret = std::snprintf(out, len, "\n");
-		out += ret;
-		len -= ret;
+		ret = std::min(ret, len);
+		if (ret > 0)
+		{
+			out += ret;
+			len -= ret;
+		}
 
 		if (i == max_depth && max_depth > 0) break;
 	}
@@ -280,8 +309,7 @@ namespace libtorrent {
 
 TORRENT_EXPORT void print_backtrace(char* out, int len, int /*max_depth*/, void* /* ctx */)
 {
-	out[0] = 0;
-	std::strncat(out, "<not supported>", std::size_t(len));
+	std::snprintf(out, std::size_t(len), "<not supported>");
 }
 
 }
@@ -318,6 +346,7 @@ TORRENT_EXPORT void assert_print(char const* fmt, ...)
 	va_start(va, fmt);
 	std::vfprintf(out, fmt, va);
 	va_end(va);
+	std::fflush(out);
 
 #ifdef TORRENT_PRODUCTION_ASSERTS
 	if (out != stderr) fclose(out);
@@ -355,7 +384,8 @@ TORRENT_EXPORT void assert_fail(char const* expr, int line
 				"This indicates a bug in the client application using libtorrent\n";
 	}
 
-	assert_print("%s\n"
+	assert_print("::error file=%s,line=%d,titla=Assertion error::%s\n\n"
+		"%s\n"
 #ifdef TORRENT_PRODUCTION_ASSERTS
 		"#: %d\n"
 #endif
@@ -364,8 +394,13 @@ TORRENT_EXPORT void assert_fail(char const* expr, int line
 		"function: %s\n"
 		"expression: %s\n"
 		"%s%s\n"
+		"::group::call stack\n"
 		"stack:\n"
 		"%s\n"
+		"::endgroup::\n"
+		, file
+		, line
+		, message
 		, message
 #ifdef TORRENT_PRODUCTION_ASSERTS
 		, assert_counter.load()

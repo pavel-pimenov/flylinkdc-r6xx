@@ -20,6 +20,10 @@ see LICENSE file.
 #include "libtorrent/aux_/storage_utils.hpp" // for read_zeroes, move_storage
 #include "libtorrent/aux_/readwrite.hpp"
 
+#if defined TORRENT_SIMULATE_SLOW_READ || defined TORRENT_SIMULATE_SLOW_WRITE
+#include <thread>
+#endif
+
 using namespace libtorrent::flags; // for flag operators
 
 #ifndef TORRENT_WINDOWS
@@ -39,6 +43,7 @@ namespace aux {
 		: m_files(p.files)
 		, m_renamed_files(std::move(p.renamed_files))
 		, m_save_path(p.path)
+		, m_part_file_dir(p.part_file_dir)
 		, m_file_priority(p.priorities)
 		, m_part_file_name("." + to_hex(p.info_hash) + ".parts")
 	{}
@@ -59,7 +64,8 @@ namespace aux {
 		if (m_part_file) return;
 
 		m_part_file = std::make_unique<posix_part_file>(
-			m_save_path, m_part_file_name
+			m_part_file_dir.empty() ? m_save_path : combine_path(m_save_path, m_part_file_dir)
+			, m_part_file_name
 			, files().num_pieces(), files().piece_length());
 	}
 
@@ -73,7 +79,7 @@ namespace aux {
 			m_file_priority.resize(prio.size(), default_priority);
 
 		filenames const fs = names();
-		for (file_index_t i(0); i < prio.end_index(); ++i)
+		for (file_index_t i : prio.range())
 		{
 			// pad files always have priority 0.
 			if (fs.pad_file_at(i)) continue;
@@ -147,7 +153,7 @@ namespace aux {
 		, storage_error& error)
 	{
 #ifdef TORRENT_SIMULATE_SLOW_READ
-		std::this_thread::sleep_for(milliseconds(rand() % 2000));
+		std::this_thread::sleep_for(milliseconds(100));
 #endif
 		return readwrite(files(), buffer, piece, offset, error
 			, [this](file_index_t const file_index
@@ -207,7 +213,7 @@ namespace aux {
 		, storage_error& error)
 	{
 #ifdef TORRENT_SIMULATE_SLOW_WRITE
-		std::this_thread::sleep_for(milliseconds(rand() % 800));
+		std::this_thread::sleep_for(milliseconds(100));
 #endif
 		return readwrite(files(), buffer, piece, offset, error
 			, [this](file_index_t const file_index
@@ -294,7 +300,15 @@ namespace aux {
 		// release the underlying part file. Otherwise we may not be able to
 		// delete it
 		if (m_part_file) m_part_file.reset();
-		aux::delete_files(names(), m_save_path, m_part_file_name, options, error);
+		std::string part_file = combine_path(
+			m_part_file_dir.empty() ? m_save_path : combine_path(m_save_path, m_part_file_dir)
+			, m_part_file_name);
+
+		aux::delete_files(names()
+			, m_save_path
+			, part_file
+			, options
+			, error);
 	}
 
 	std::pair<status_t, std::string> posix_storage::move_storage(std::string const& sp
@@ -304,10 +318,26 @@ namespace aux {
 		auto move_partfile = [&](std::string const& new_save_path, error_code& e)
 		{
 			if (!m_part_file) return;
-			m_part_file->move_partfile(new_save_path, e);
+			std::string new_part_file_dir;
+			if (!m_part_file_dir.empty())
+			{
+				new_part_file_dir = combine_path(new_save_path, m_part_file_dir);
+				create_directories(new_part_file_dir, e);
+				if (e) return;
+			}
+			else
+			{
+				new_part_file_dir = new_save_path;
+			}
+			m_part_file->move_partfile(new_part_file_dir, e);
 		};
-		std::tie(ret, m_save_path) = aux::move_storage(names(), m_save_path, sp
-			, std::move(move_partfile), flags, ec);
+		std::tie(ret, m_save_path) = aux::move_storage(
+			names()
+			, m_save_path
+			, sp
+			, std::move(move_partfile)
+			, flags
+			, ec);
 
 		// clear the stat cache in case the new location has new files
 		m_stat_cache.clear();
@@ -317,47 +347,9 @@ namespace aux {
 
 	void posix_storage::rename_file(file_index_t const index, std::string const& new_filename, storage_error& ec)
 	{
-		if (index < file_index_t(0) || index >= files().end_file()) return;
-		std::string const old_name = m_renamed_files.file_path(m_files, index, m_save_path);
-
-		if (exists(old_name, ec.ec))
-		{
-			std::string new_path;
-			if (is_complete(new_filename)) new_path = new_filename;
-			else new_path = combine_path(m_save_path, new_filename);
-			std::string new_dir = parent_path(new_path);
-
-			// create any missing directories that the new filename
-			// lands in
-			create_directories(new_dir, ec.ec);
-			if (ec.ec)
-			{
-				ec.file(index);
-				ec.operation = operation_t::file_rename;
-				return;
-			}
-
-			rename(old_name, new_path, ec.ec);
-
-			if (ec.ec == boost::system::errc::no_such_file_or_directory)
-				ec.ec.clear();
-
-			if (ec)
-			{
-				ec.file(index);
-				ec.operation = operation_t::file_rename;
-				return;
-			}
-		}
-		else if (ec.ec)
-		{
-			// if exists fails, report that error
-			ec.file(index);
-			ec.operation = operation_t::file_rename;
-			return;
-		}
-
-		m_renamed_files.rename_file(files(), index, new_filename);
+		TORRENT_ASSERT(index >= file_index_t(0));
+		TORRENT_ASSERT(index < files().end_file());
+		aux::rename_file(files(), m_renamed_files, index, new_filename, m_save_path, ec);
 	}
 
 	status_t posix_storage::initialize(settings_interface const&, storage_error& ec)
@@ -370,7 +362,7 @@ namespace aux {
 		// this is to be backwards compatible with previous versions of
 		// libtorrent, when part files were not supported.
 		status_t ret{};
-		for (file_index_t i(0); i < m_file_priority.end_index(); ++i)
+		for (file_index_t i : m_file_priority.range())
 		{
 			if (m_file_priority[i] != dont_download || fs.pad_file_at(i))
 				continue;

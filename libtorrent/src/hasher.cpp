@@ -20,7 +20,41 @@ see LICENSE file.
 #include <openssl/opensslv.h> // for OPENSSL_VERSION_NUMBER
 #endif
 
+#ifdef TORRENT_SIMULATE_SLOW_HASH
+#include <thread>
+#include "libtorrent/aux_/time.hpp"
+#endif
+
 namespace libtorrent {
+
+#if defined TORRENT_USE_LIBCRYPTO
+namespace {
+
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+// EVP_sha1()/EVP_sha256() return a legacy method table; passing it to
+// EVP_DigestInit_ex() makes OpenSSL's provider machinery fetch a
+// matching implementation on every call (evp_md_init_internal in
+// profiles). Fetching once and reusing the EVP_MD avoids that per-call
+// fetch.
+// see: https://docs.openssl.org/3.0/man7/crypto/#explicit-fetching
+EVP_MD const* sha1_md()
+{
+	static EVP_MD* const md = EVP_MD_fetch(nullptr, "SHA1", nullptr);
+	return md ? md : EVP_sha1();
+}
+
+EVP_MD const* sha256_md()
+{
+	static EVP_MD* const md = EVP_MD_fetch(nullptr, "SHA256", nullptr);
+	return md ? md : EVP_sha256();
+}
+#else
+EVP_MD const* sha1_md() { return EVP_sha1(); }
+EVP_MD const* sha256_md() { return EVP_sha256(); }
+#endif
+
+}
+#endif
 
 TORRENT_CRYPTO_NAMESPACE
 
@@ -34,7 +68,7 @@ TORRENT_CRYPTO_NAMESPACE
 #elif TORRENT_USE_CRYPTOAPI
 #elif defined TORRENT_USE_LIBCRYPTO
 		m_context = EVP_MD_CTX_new();
-		EVP_DigestInit_ex(m_context, EVP_sha1(), nullptr);
+		EVP_DigestInit_ex(m_context, sha1_md(), nullptr);
 #else
 		aux::SHA1_init(&m_context);
 #endif
@@ -85,20 +119,20 @@ TORRENT_CRYPTO_NAMESPACE
 #endif
 
 #if defined TORRENT_USE_LIBCRYPTO
-	hasher::hasher(hasher&& h)
+	hasher::hasher(hasher&& h) noexcept
 	{
 		std::swap(m_context, h.m_context);
 	}
 
-	hasher& hasher::operator=(hasher&& h) &
+	hasher& hasher::operator=(hasher&& h) & noexcept
 	{
 		if (this == &h) return *this;
 		std::swap(m_context, h.m_context);
 		return *this;
 	}
 #else
-	hasher::hasher(hasher&&) = default;
-	hasher& hasher::operator=(hasher&&) & = default;
+	hasher::hasher(hasher&&) noexcept = default;
+	hasher& hasher::operator=(hasher&&) & noexcept = default;
 #endif
 
 	hasher& hasher::update(char const* data, int len)
@@ -108,6 +142,9 @@ TORRENT_CRYPTO_NAMESPACE
 
 	hasher& hasher::update(span<char const> data)
 	{
+#ifdef TORRENT_SIMULATE_SLOW_HASH
+		std::this_thread::sleep_for(milliseconds(10 + data.size() / 10));
+#endif
 		TORRENT_ASSERT(data.size() > 0);
 #ifdef TORRENT_USE_LIBGCRYPT
 		gcry_md_write(m_context, data.data(), static_cast<std::size_t>(data.size()));
@@ -158,7 +195,7 @@ TORRENT_CRYPTO_NAMESPACE
 #elif TORRENT_USE_CRYPTOAPI
 		m_context.reset();
 #elif defined TORRENT_USE_LIBCRYPTO
-		EVP_DigestInit_ex(m_context, EVP_sha1(), nullptr);
+		EVP_DigestInit_ex(m_context, sha1_md(), nullptr);
 #else
 		aux::SHA1_init(&m_context);
 #endif
@@ -183,7 +220,7 @@ TORRENT_CRYPTO_NAMESPACE
 #elif TORRENT_USE_CRYPTOAPI_SHA_512
 #elif defined TORRENT_USE_LIBCRYPTO
 		m_context = EVP_MD_CTX_new();
-		EVP_DigestInit_ex(m_context, EVP_sha256(), nullptr);
+		EVP_DigestInit_ex(m_context, sha256_md(), nullptr);
 #else
 		aux::SHA256_init(m_context);
 #endif
@@ -234,20 +271,20 @@ TORRENT_CRYPTO_NAMESPACE
 #endif
 
 #if defined TORRENT_USE_LIBCRYPTO
-	hasher256::hasher256(hasher256&& h)
+	hasher256::hasher256(hasher256&& h) noexcept
 	{
 		std::swap(m_context, h.m_context);
 	}
 
-	hasher256& hasher256::operator=(hasher256&& h) &
+	hasher256& hasher256::operator=(hasher256&& h) & noexcept
 	{
 		if (this == &h) return *this;
 		std::swap(m_context, h.m_context);
 		return *this;
 	}
 #else
-	hasher256::hasher256(hasher256&&) = default;
-	hasher256& hasher256::operator=(hasher256&&) & = default;
+	hasher256::hasher256(hasher256&&) noexcept = default;
+	hasher256& hasher256::operator=(hasher256&&) & noexcept = default;
 #endif
 
 	hasher256& hasher256::update(char const* data, int len)
@@ -257,6 +294,9 @@ TORRENT_CRYPTO_NAMESPACE
 
 	hasher256& hasher256::update(span<char const> data)
 	{
+#ifdef TORRENT_SIMULATE_SLOW_HASH
+		std::this_thread::sleep_for(milliseconds(10 + data.size() / 10));
+#endif
 		TORRENT_ASSERT(!data.empty());
 #ifdef TORRENT_USE_LIBGCRYPT
 		gcry_md_write(m_context, data.data(), data.size());
@@ -307,7 +347,7 @@ TORRENT_CRYPTO_NAMESPACE
 #elif TORRENT_USE_CRYPTOAPI_SHA_512
 		m_context.reset();
 #elif defined TORRENT_USE_LIBCRYPTO
-		EVP_DigestInit_ex(m_context, EVP_sha256(), nullptr);
+		EVP_DigestInit_ex(m_context, sha256_md(), nullptr);
 #else
 		aux::SHA256_init(m_context);
 #endif

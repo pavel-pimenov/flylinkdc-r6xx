@@ -67,9 +67,9 @@ struct TORRENT_EXPORT session_params
 
 	// hidden
 	session_params(session_params const&);
-	session_params(session_params&&);
+	session_params(session_params&&) noexcept;
 	session_params& operator=(session_params const&) &;
-	session_params& operator=(session_params&&) &;
+	session_params& operator=(session_params&&) & noexcept;
 
 	// The settings to configure the session with
 	settings_pack settings;
@@ -88,7 +88,16 @@ struct TORRENT_EXPORT session_params
 	dht::dht_storage_constructor_type dht_storage_constructor;
 
 	// function object to create the disk I/O subsystem. Defaults to
-	// default_disk_io_constructor.
+	// default_disk_io_constructor, which is implied by leaving the field default
+	// initialized. Built-in options are:
+	//
+	// * ``mmap_disk_io_constructor``. Multi-threaded disk I/O using memory mapped files
+	// * ``posix_disk_io_constructor``. Single-threaded simple portable disk I/O
+	// * ``disabled_disk_io_constructor``. Throws away all data and reads garbage.
+	//     Useful for testing and benchmarking.
+	// * ``pread_disk_io_constructor`` (experimental). Multi-threaded disk I/O
+	//   using preadv/pwritev with a write cache.
+	//
 	disk_io_constructor_type disk_io_constructor;
 
 	// this container can be used by extensions/plugins to store settings. It's

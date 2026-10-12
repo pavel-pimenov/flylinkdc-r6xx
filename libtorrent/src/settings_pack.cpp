@@ -15,6 +15,7 @@ see LICENSE file.
 #include "libtorrent/config.hpp"
 #include "libtorrent/assert.hpp"
 #include "libtorrent/settings_pack.hpp"
+#include "libtorrent/string_view.hpp"
 #include "libtorrent/aux_/session_impl.hpp"
 #include "libtorrent/aux_/array.hpp"
 #include "libtorrent/aux_/session_settings.hpp"
@@ -106,6 +107,8 @@ constexpr int DISK_WRITE_MODE = settings_pack::enable_os_cache;
 
 namespace {
 
+	// the documentation generation parser requires one line per setting
+	// clang-format off
 	using aux::session_impl;
 
 	// std::string is not a literal, so this can't be constexpr
@@ -121,8 +124,9 @@ namespace {
 		SET(proxy_username, "", &session_impl::update_proxy),
 		SET(proxy_password, "", &session_impl::update_proxy),
 		SET(i2p_hostname, "", &session_impl::update_i2p_bridge),
-		SET(peer_fingerprint, "-LT2100-", nullptr),
+		SET(peer_fingerprint, "-LT2120-", nullptr),
 		SET(dht_bootstrap_nodes, "dht.libtorrent.org:25401", &session_impl::update_dht_bootstrap_nodes),
+		SET(natpmp_gateway, "", nullptr),
 		SET(webtorrent_stun_server, "stun.l.google.com:19302", nullptr)
 	}});
 
@@ -214,6 +218,9 @@ namespace {
 		SET(enable_set_file_valid_data, false, nullptr),
 		SET(socks5_udp_send_local_ep, false, nullptr),
 		SET(proxy_send_host_in_connect, false, nullptr),
+		SET(disk_disable_copy_on_write, false, nullptr),
+		SET(allow_multiple_connections_per_pid, false, nullptr),
+		SET(apply_filter_to_dht, true, nullptr),
 	}});
 
 	CONSTEXPR_SETTINGS
@@ -245,7 +252,7 @@ namespace {
 		SET(initial_picker_threshold, 4, nullptr),
 		SET(allowed_fast_set_size, 5, nullptr),
 		SET(suggest_mode, settings_pack::no_piece_suggestions, nullptr),
-		SET(max_queued_disk_bytes, 1024 * 1024, nullptr),
+		SET(max_queued_disk_bytes, 100 * 1024 * 1024, nullptr),
 		SET(handshake_timeout, 10, nullptr),
 		SET(send_buffer_low_watermark, 10 * 1024, nullptr),
 		SET(send_buffer_watermark, 500 * 1024, nullptr),
@@ -259,7 +266,7 @@ namespace {
 		SET(disk_io_read_mode, settings_pack::enable_os_cache, nullptr),
 		SET(outgoing_port, 0, nullptr),
 		SET(num_outgoing_ports, 0, nullptr),
-		SET(peer_dscp, 0x04, &session_impl::update_peer_dscp),
+		SET(peer_dscp, 0x01, &session_impl::update_peer_dscp),
 		SET(active_downloads, 3, &session_impl::trigger_auto_manage),
 		SET(active_seeds, 5, &session_impl::trigger_auto_manage),
 		SET(active_checking, 1, &session_impl::trigger_auto_manage),
@@ -320,7 +327,7 @@ namespace {
 		SET(listen_queue_size, 5, nullptr),
 		SET(torrent_connect_boost, 30, nullptr),
 		SET(alert_queue_size, 2000, &session_impl::update_alert_queue_size),
-		SET(max_metadata_size, 3 * 1024 * 10240, nullptr),
+		SET(max_metadata_size, 30 * 1024 * 1024, nullptr),
 		SET(hashing_threads, 1, &session_impl::update_disk_threads),
 		SET(checking_mem_usage, 256, nullptr),
 		SET(predictive_piece_announce, 0, nullptr),
@@ -371,7 +378,7 @@ namespace {
 		SET(dht_max_infohashes_sample_count, 20, nullptr),
 		SET(max_piece_count, 0x200000, nullptr),
 		SET(metadata_token_limit, 2500000, nullptr),
-		SET(disk_write_mode, settings_pack::mmap_write_mode_t::auto_mmap_write, nullptr),
+		SET(disk_write_mode, settings_pack::mmap_write_mode_t::always_mmap_write, nullptr),
 		SET(mmap_file_size_cutoff, 40, nullptr),
 		SET(i2p_inbound_quantity, 3, nullptr),
 		SET(i2p_outbound_quantity, 3, nullptr),
@@ -380,9 +387,12 @@ namespace {
 		SET(announce_port, 0, nullptr),
 		SET(i2p_inbound_length_variance, 0, nullptr),
 		SET(i2p_outbound_length_variance, 0, nullptr),
+		SET(natpmp_lease_duration, 3600, nullptr),
 		SET(min_websocket_announce_interval, 1 * 60, nullptr),
-		SET(webtorrent_connection_timeout, 2 * 60, nullptr)
+		SET(webtorrent_connection_timeout, 2 * 60, nullptr),
+		SET(max_webtorrent_offers, 10, nullptr)
 	}});
+	// clang-format on
 
 #undef SET
 #undef DEPRECATED_SET

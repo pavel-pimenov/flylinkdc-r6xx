@@ -42,6 +42,7 @@ see LICENSE file.
 #include <locale>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <vector>
 
 namespace libtorrent::aux {
@@ -59,15 +60,25 @@ std::string utf8_latin1(json::string const& sv)
 	return aux::utf8_latin1(std::string_view{sv.data(), sv.size()});
 }
 
+void report_error(std::weak_ptr<request_callback> const& cb,
+	tracker_request const& req,
+	error_code const& ec,
+	operation_t const op)
+{
+	if (auto c = cb.lock())
+		c->tracker_request_error(req, ec, op, ec.message(), seconds32(120));
+}
 }
 
-websocket_tracker_connection::websocket_tracker_connection(io_context& ios
-		, tracker_manager& man
-		, tracker_request const& req
-		, std::weak_ptr<request_callback> cb)
+websocket_tracker_connection::websocket_tracker_connection(
+	io_context& ios,
+	tracker_manager& man,
+	tracker_request const& req,
+	std::weak_ptr<request_callback> cb
+)
 	: tracker_connection(man, req, ios, cb)
-	  , m_io_context(ios)
-	  , m_ssl_context(ssl::context::tlsv12_client)
+	, m_io_context(ios)
+	, m_ssl_context(req.ssl_ctx)
 {
 	queue_request(req, std::move(cb));
 }
@@ -78,7 +89,8 @@ void websocket_tracker_connection::start()
 
 	auto const& settings = m_man.settings();
 	auto const& req = tracker_req();
-	m_websocket = std::make_shared<aux::websocket_stream>(m_io_context, m_man.host_resolver(), &m_ssl_context);
+	m_websocket =
+		std::make_shared<aux::websocket_stream>(m_io_context, m_man.host_resolver(), m_ssl_context);
 
 	// in anonymous mode we omit the user agent to mitigate fingerprinting of
 	// the client. Private torrents is an exception because some private
@@ -99,28 +111,50 @@ void websocket_tracker_connection::start()
 
 void websocket_tracker_connection::close()
 {
+	// no specific failure triggered this (e.g. session shutdown)
+	close(error::operation_aborted, operation_t::unknown);
+}
+
+void websocket_tracker_connection::close(error_code const& ec, operation_t const op)
+{
 	if (m_websocket)
 	{
 		m_websocket->close();
 		m_websocket.reset();
 	}
 
-	error_code const ec = error::operation_aborted;
 	while (!m_pending.empty())
 	{
 		auto [msg, callback] = std::move(m_pending.front());
-		TORRENT_UNUSED(msg);
-		m_pending.pop();
-		if (auto cb = callback.lock())
-			cb->tracker_request_error(
-					tracker_req()
-					, ec
-					, operation_t::unknown
-					, ec.message()
-					, seconds32(120));
+		m_pending.pop_front();
+		if (callback.lock())
+		{
+			// only tracker_request messages ever carry a non-empty
+			// callback (queue_answer() always passes an empty one). These
+			// were never sent, so they were aborted rather than failed,
+			// regardless of what ec/op close() was called with.
+			auto const* req = std::get_if<tracker_request>(&msg);
+			TORRENT_ASSERT(req);
+			report_error(callback, *req, error::operation_aborted, operation_t::unknown);
+		}
+	}
+
+	// any request still marked pending here never got a response. This is
+	// the only place that reports it, whether it's the connection's
+	// current request or another torrent multiplexed onto this same
+	// connection. Unlike m_pending above, these were actually sent, so
+	// they genuinely experienced ec/op (the reason this connection is
+	// closing) rather than merely being aborted.
+	for (auto& e : m_callbacks)
+	{
+		if (!e.second.pending)
+			continue;
+		e.second.pending = false;
+		report_error(e.second.cb, e.second.req, ec, op);
 	}
 
 	m_callbacks.clear();
+	m_offer_quota.clear();
 	m_man.remove_request(this);
 }
 
@@ -134,15 +168,59 @@ bool websocket_tracker_connection::is_open() const
 	return m_websocket && m_websocket->is_open();
 }
 
+bool websocket_tracker_connection::prune_non_stopped_requests()
+{
+	error_code const ec = errors::announce_skipped;
+	bool has_stopped = false;
+
+	// erasing is the common case, so do it in one pass rather than paying
+	// for an O(n) shift on every deque::erase() of a single element.
+	auto const pending_end =
+		std::remove_if(m_pending.begin(), m_pending.end(), [&](auto const& item) {
+			auto const* req = std::get_if<tracker_request>(&std::get<0>(item));
+			if (!req)
+				return false;
+			if (req->event == event_t::stopped)
+			{
+				has_stopped = true;
+				return false;
+			}
+
+			report_error(std::get<1>(item), *req, ec, operation_t::bittorrent);
+			return true;
+		});
+	m_pending.erase(pending_end, m_pending.end());
+
+	for (auto it = m_callbacks.begin(); it != m_callbacks.end();)
+	{
+		if (!it->second.pending)
+		{
+			++it;
+			continue;
+		}
+		if (it->second.req.event == event_t::stopped)
+		{
+			has_stopped = true;
+			++it;
+			continue;
+		}
+
+		report_error(it->second.cb, it->second.req, ec, operation_t::bittorrent);
+		it = m_callbacks.erase(it);
+	}
+
+	return has_stopped;
+}
+
 void websocket_tracker_connection::queue_request(tracker_request req, std::weak_ptr<request_callback> cb)
 {
-	m_pending.emplace(tracker_message{std::move(req)}, cb);
+	m_pending.emplace_back(tracker_message{std::move(req)}, cb);
 	if (is_open()) send_pending();
 }
 
 void websocket_tracker_connection::queue_answer(tracker_answer ans)
 {
-	m_pending.emplace(tracker_message{std::move(ans)}, std::weak_ptr<request_callback>{});
+	m_pending.emplace_back(tracker_message{std::move(ans)}, std::weak_ptr<request_callback>{});
 	if (is_open()) send_pending();
 }
 
@@ -153,26 +231,39 @@ void websocket_tracker_connection::send_pending()
 	m_sending = true;
 
 	auto [msg, callback] = std::move(m_pending.front());
-	m_pending.pop();
+	m_pending.pop_front();
 
-	std::visit([this, cb = callback](auto const& m)
-		{
-			// Update requester and store callback
-			if (cb.lock())
+	std::visit(
+		[this, cb = callback](auto const& m) {
+			// record every sent request, even ones whose callback has
+			// already expired, so m_callbacks always reflects whether the
+			// connection's current request is still pending (used by
+			// prune_non_stopped_requests()); a dead callback just means
+			// nothing is invoked when its outcome is reported.
+			if constexpr (std::is_same_v<std::decay_t<decltype(m)>, tracker_request>)
 			{
-				m_requester = cb;
-				m_callbacks[m.info_hash] = std::move(cb);
+			// torrent invariants ensure at most one request per info_hash
+			// is ever in flight at a time, so this must never overwrite a
+			// still-pending entry
+#if TORRENT_USE_ASSERTS
+				auto const existing = m_callbacks.find(m.info_hash);
+				TORRENT_ASSERT(existing == m_callbacks.end() || !existing->second.pending);
+#endif
+				m_callbacks[m.info_hash] = callback_entry{cb, m};
 			}
 
+			if (cb.lock())
+				m_requester = cb;
+
 			do_send(m);
-		}
-		, msg);
+		},
+		msg);
 }
 
 void websocket_tracker_connection::do_send(tracker_request const& req)
 {
-	// Update request
 	m_req = req;
+	m_offer_quota[req.info_hash] = req.num_want;
 
 	json::object payload;
 	payload["action"] = "announce";
@@ -266,7 +357,7 @@ void websocket_tracker_connection::on_timeout(error_code const& ec)
 	// No async
 	if (ec)
 	{
-		fail(operation_t::sock_read, ec);
+		fail(ec, operation_t::sock_read);
 		return;
 	}
 
@@ -275,8 +366,8 @@ void websocket_tracker_connection::on_timeout(error_code const& ec)
 		cb->debug_log("*** WEBSOCKET_TRACKER_TIMEOUT [ url: %s ]", tracker_req().url.c_str());
 #endif
 
-	fail(operation_t::sock_read, error_code(error::timed_out));
-	close();
+	fail(error_code(error::timed_out), operation_t::sock_read);
+	close(error_code(error::timed_out), operation_t::sock_read);
 }
 
 void websocket_tracker_connection::on_connect(error_code const& ec)
@@ -284,8 +375,8 @@ void websocket_tracker_connection::on_connect(error_code const& ec)
 	COMPLETE_ASYNC("websocket_tracker_connection::on_connect");
 	if (ec)
 	{
-		fail(operation_t::connect, ec);
-		close();
+		fail(ec, operation_t::connect);
+		close(ec, operation_t::connect);
 		return;
 	}
 
@@ -298,9 +389,15 @@ void websocket_tracker_connection::on_read(error_code ec, std::size_t /* bytes_r
 	COMPLETE_ASYNC("websocket_tracker_connection::on_read");
 	if (ec)
 	{
-		if(ec != websocket::error::closed)
-			fail(operation_t::sock_read, ec);
-		close();
+		if (ec != websocket::error::closed)
+		{
+			fail(ec, operation_t::sock_read);
+			close(ec, operation_t::sock_read);
+		}
+		else
+		{
+			close();
+		}
 		return;
 	}
 
@@ -313,7 +410,7 @@ void websocket_tracker_connection::on_read(error_code ec, std::size_t /* bytes_r
 #endif
 
 	auto ret = parse_websocket_tracker_response({static_cast<char const*>(buf.data()), long(buf.size())}, ec);
-	if(ec)
+	if (ec)
 	{
 #ifndef TORRENT_DISABLE_LOGGING
 		if (auto cb = requester())
@@ -322,8 +419,8 @@ void websocket_tracker_connection::on_read(error_code ec, std::size_t /* bytes_r
 			cb->debug_log("*** WEBSOCKET_TRACKER_READ [ ERROR: %s ]", std::get<std::string>(ret).c_str());
 		}
 #endif
-		fail(operation_t::handshake, ec);
-		close();
+		fail(ec, operation_t::handshake);
+		close(ec, operation_t::handshake);
 		return;
 	}
 
@@ -331,26 +428,32 @@ void websocket_tracker_connection::on_read(error_code ec, std::size_t /* bytes_r
 	auto response = std::move(std::get<websocket_tracker_response>(ret));
 
 	std::shared_ptr<request_callback> cb;
-	if (auto cit = m_callbacks.find(response.info_hash); cit != m_callbacks.end())
-		cb = cit->second.lock();
+	auto const cit = m_callbacks.find(response.info_hash);
+	if (cit != m_callbacks.end())
+		cb = cit->second.cb.lock();
 
 	if (cb)
 	{
 		if (response.offer)
 		{
-			response.offer->answer_callback =
-				[info_hash = response.info_hash
-					, self = shared_from_this()
-					, id = response.offer->id
-					, pid = response.offer->pid]
-				(peer_id const& local_pid
-					, aux::rtc_answer const& answer)
-				{
-					self->queue_answer({std::move(info_hash), std::move(local_pid), std::move(answer)});
+			auto const quota = m_offer_quota.find(response.info_hash);
+			if (quota != m_offer_quota.end() && quota->second > 0)
+			{
+				--quota->second;
+
+				response.offer->answer_callback = [info_hash = response.info_hash,
+													  self = shared_from_this(),
+													  id = response.offer->id,
+													  pid = response.offer->pid](
+													  peer_id const& local_pid,
+													  aux::rtc_answer const& answer) {
+					self->queue_answer(
+						{std::move(info_hash), std::move(local_pid), std::move(answer)});
 					self->start();
 				};
 
-			cb->on_rtc_offer(*response.offer);
+				cb->on_rtc_offer(*response.offer);
+			}
 		}
 
 		if(response.answer)
@@ -363,7 +466,12 @@ void websocket_tracker_connection::on_read(error_code ec, std::size_t /* bytes_r
 			response.resp->interval = std::max(response.resp->interval
 				, seconds32{m_man.settings().get_int(settings_pack::min_websocket_announce_interval)});
 
-			cb->tracker_response(tracker_req(), {}, {}, *response.resp);
+			// this request's outcome has just been reported to its
+			// requester; mark it so close() won't also report an error
+			// for it.
+			cit->second.pending = false;
+
+			cb->tracker_response(cit->second.req, {}, {}, *response.resp);
 		}
 	}
 	else
@@ -373,6 +481,7 @@ void websocket_tracker_connection::on_read(error_code ec, std::size_t /* bytes_r
 			cb_->debug_log("*** WEBSOCKET_TRACKER_READ [ warning: no callback for info_hash ]");
 #endif
 		m_callbacks.erase(response.info_hash);
+		m_offer_quota.erase(response.info_hash);
 	}
 
 	do_read();
@@ -385,8 +494,8 @@ void websocket_tracker_connection::on_write(error_code const& ec, std::size_t /*
 	m_sending = false;
 	if (ec)
 	{
-		fail(operation_t::sock_write, ec);
-		close();
+		fail(ec, operation_t::sock_write);
+		close(ec, operation_t::sock_write);
 		return;
 	}
 
@@ -394,23 +503,38 @@ void websocket_tracker_connection::on_write(error_code const& ec, std::size_t /*
 	send_pending();
 }
 
-void websocket_tracker_connection::fail(operation_t op, error_code const& ec)
+void websocket_tracker_connection::fail(error_code const& ec, operation_t const op)
 {
+	// suppress tracker_connection::fail_impl()'s own report: it would
+	// report m_req to requester(), but this connection multiplexes several
+	// torrents' requests, so m_req may not even belong to the torrent whose
+	// outcome this is. Callers follow fail() with close(ec, op), which
+	// reports every still-pending m_callbacks entry using each request's
+	// own stored data and the real ec/op, superseding fail_impl()'s report
+	// (and its generic, no-args close()) entirely.
+	m_req_pending = false;
+
 	tracker_connection::fail(ec, op, ec.message().c_str(), seconds32{120}, seconds32{120});
 }
 
 TORRENT_EXTRA_EXPORT std::variant<websocket_tracker_response, std::string>
-	parse_websocket_tracker_response(span<char const> message, error_code& ec)
-try {
+parse_websocket_tracker_response(span<char const> message, error_code& ec) try
+{
 	json::object payload = json::parse({message.data(), size_t(message.size())}).as_object();
 
 	auto it_info_hash = payload.find("info_hash");
 	if (it_info_hash == payload.end())
-		throw std::invalid_argument("no info hash in message");
+	{
+		ec = error_code(errors::invalid_tracker_response);
+		return "no info hash in message";
+	}
 
 	auto const raw_info_hash = utf8_latin1(it_info_hash->value().as_string());
 	if (raw_info_hash.size() != 20)
-		throw std::invalid_argument("invalid info hash size " + std::to_string(raw_info_hash.size()));
+	{
+		ec = error_code(errors::invalid_tracker_response);
+		return "invalid info hash size " + std::to_string(raw_info_hash.size());
+	}
 
 	websocket_tracker_response response;
 	response.info_hash = sha1_hash(span<char const>{raw_info_hash.data(), 20});
@@ -418,26 +542,54 @@ try {
 	if (auto it = payload.find("offer"); it != payload.end())
 	{
 		json::object& payload_offer = it->value().as_object();
-		auto sdp = payload_offer["sdp"].as_string();
+		auto const& sdp = payload_offer["sdp"].as_string();
+		if (sdp.size() > aux::RTC_MAX_SDP_SIZE)
+		{
+			ec = error_code(errors::invalid_tracker_response);
+			return "offer SDP too large";
+		}
 		auto id = utf8_latin1(payload["offer_id"].as_string());
 		auto pid = utf8_latin1(payload["peer_id"].as_string());
+		if (id.size() != aux::RTC_OFFER_ID_LEN)
+		{
+			ec = error_code(errors::invalid_tracker_response);
+			return "invalid offer_id size " + std::to_string(id.size());
+		}
 		if (pid.size() != 20)
-			throw std::invalid_argument("invalid peer_id size " + std::to_string(pid.size()));
+		{
+			ec = error_code(errors::invalid_tracker_response);
+			return "invalid peer_id size " + std::to_string(pid.size());
+		}
 
-		aux::rtc_offer_id oid{span<char const>(id)};
+		aux::rtc_offer_id oid;
+		std::copy(id.begin(), id.end(), oid.begin());
 		response.offer.emplace(aux::rtc_offer{std::move(oid), peer_id(pid), {sdp.data(), sdp.size()}, nullptr});
 	}
 
 	if (auto it = payload.find("answer"); it != payload.end())
 	{
 		json::object& payload_answer = it->value().as_object();
-		auto sdp = payload_answer["sdp"].as_string();
+		auto const& sdp = payload_answer["sdp"].as_string();
+		if (sdp.size() > aux::RTC_MAX_SDP_SIZE)
+		{
+			ec = error_code(errors::invalid_tracker_response);
+			return "answer SDP too large";
+		}
 		auto id = utf8_latin1(payload["offer_id"].as_string());
 		auto pid = utf8_latin1(payload["peer_id"].as_string());
+		if (id.size() != aux::RTC_OFFER_ID_LEN)
+		{
+			ec = error_code(errors::invalid_tracker_response);
+			return "invalid offer_id size " + std::to_string(id.size());
+		}
 		if (pid.size() != 20)
-			throw std::invalid_argument("invalid peer_id size " + std::to_string(pid.size()));
+		{
+			ec = error_code(errors::invalid_tracker_response);
+			return "invalid peer_id size " + std::to_string(pid.size());
+		}
 
-		aux::rtc_offer_id oid{span<char const>(id)};
+		aux::rtc_offer_id oid;
+		std::copy(id.begin(), id.end(), oid.begin());
 		response.answer.emplace(aux::rtc_answer{std::move(oid), peer_id(pid), {sdp.data(), sdp.size()}});
 	}
 
@@ -473,14 +625,19 @@ try {
 
 	return response;
 }
-catch(std::invalid_argument const& e)
+catch(boost::system::system_error const& e)
 {
-	ec = errc::make_error_code(errc::invalid_argument);
-	return std::string(e.what());
+	ec = error_code(errors::invalid_tracker_response);
+	return e.code().message();
+}
+catch(std::system_error const& e)
+{
+	ec = error_code(errors::invalid_tracker_response);
+	return e.code().message();
 }
 catch(std::exception const& e)
 {
-	ec = errc::make_error_code(errc::bad_message);
+	ec = error_code(errors::invalid_tracker_response);
 	return std::string(e.what());
 }
 

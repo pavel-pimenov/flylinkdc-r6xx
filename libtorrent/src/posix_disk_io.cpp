@@ -40,17 +40,13 @@ namespace {
 	{
 		posix_disk_io(io_context& ios, settings_interface const& sett, counters& cnt)
 			: m_settings(sett)
-			, m_buffer_pool(ios)
 			, m_stats_counters(cnt)
 			, m_ios(ios)
 		{
 			settings_updated();
 		}
 
-		void settings_updated() override
-		{
-			m_buffer_pool.set_settings(m_settings);
-		}
+		void settings_updated() override {}
 
 		storage_holder new_torrent(storage_params const& params
 			, std::shared_ptr<void> const&) override
@@ -76,15 +72,16 @@ namespace {
 			, std::function<void(disk_buffer_holder block, storage_error const& se)> handler
 			, disk_job_flags_t) override
 		{
-			disk_buffer_holder buffer = disk_buffer_holder(m_buffer_pool
-				, m_buffer_pool.allocate_buffer("send buffer")
-				, default_block_size);
+			disk_buffer_holder buffer =
+				disk_buffer_holder(m_buffer_pool, m_buffer_pool.allocate_buffer("send buffer"));
 			storage_error error;
 			if (!buffer)
 			{
 				error.ec = errors::no_memory;
 				error.operation = operation_t::alloc_cache_piece;
-				post(m_ios, [this, error, h = std::move(handler)]{ h(disk_buffer_holder(m_buffer_pool, nullptr, 0), error); });
+				post(m_ios, [this, error, h = std::move(handler)] {
+					h(disk_buffer_holder(m_buffer_pool, nullptr), error);
+				});
 				return;
 			}
 
@@ -143,7 +140,8 @@ namespace {
 			bool const v1 = bool(flags & disk_interface::v1_hash);
 			bool const v2 = !block_hashes.empty();
 
-			disk_buffer_holder buffer = disk_buffer_holder(m_buffer_pool, m_buffer_pool.allocate_buffer("hash buffer"), default_block_size);
+			disk_buffer_holder buffer =
+				disk_buffer_holder(m_buffer_pool, m_buffer_pool.allocate_buffer("hash buffer"));
 			storage_error error;
 			if (!buffer)
 			{
@@ -153,6 +151,7 @@ namespace {
 				return;
 			}
 			hasher ph;
+			hasher256 h2;
 
 			posix_storage* st = m_torrents[storage].get();
 
@@ -179,7 +178,10 @@ namespace {
 				if (v1)
 					ph.update(b.first(std::min(ret, len)));
 				if (v2_block)
-					block_hashes[i] = hasher256(b.first(std::min(ret, len2))).final();
+				{
+					h2.reset();
+					block_hashes[i] = h2.update(b.first(std::min(ret, len2))).final();
+				}
 			}
 
 			sha1_hash const hash = v1 ? ph.final() : sha1_hash();
@@ -203,7 +205,8 @@ namespace {
 		{
 			time_point const start_time = clock_type::now();
 
-			disk_buffer_holder buffer = disk_buffer_holder(m_buffer_pool, m_buffer_pool.allocate_buffer("hash buffer"), 0x4000);
+			disk_buffer_holder buffer =
+				disk_buffer_holder(m_buffer_pool, m_buffer_pool.allocate_buffer("hash buffer"));
 			storage_error error;
 			if (!buffer)
 			{

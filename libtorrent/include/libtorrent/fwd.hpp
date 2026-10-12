@@ -127,6 +127,9 @@ struct file_progress_alert;
 struct piece_info_alert;
 struct piece_availability_alert;
 struct tracker_list_alert;
+struct file_priorities_alert;
+struct file_status_alert;
+struct ip_ban_alert;
 
 // include/libtorrent/announce_entry.hpp
 TORRENT_VERSION_NAMESPACE_2
@@ -153,6 +156,8 @@ TORRENT_VERSION_NAMESPACE_4_END
 // include/libtorrent/disk_buffer_holder.hpp
 struct buffer_allocator_interface;
 struct disk_buffer_holder;
+struct disk_buffer_ref;
+struct bulk_free_buffer;
 
 // include/libtorrent/disk_interface.hpp
 struct open_file_state;

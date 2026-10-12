@@ -24,10 +24,11 @@ see LICENSE file.
 namespace libtorrent {
 
 namespace errors {
-	// libtorrent uses boost.system's ``error_code`` class to represent
-	// errors. libtorrent has its own error category
-	// libtorrent_category() with the error codes defined by
-	// error_code_enum.
+// libtorrent uses boost.system's ``error_code`` class to represent
+// errors. libtorrent has its own error category
+// libtorrent_category() with the error codes defined by
+// error_code_enum.
+// clang-format off
 	enum error_code_enum
 	{
 		// Not an error
@@ -374,6 +375,10 @@ namespace errors {
 		// configured limit.
 		too_many_duplicate_filenames,
 
+		// A file on disk is a symlink where the torrent declares a regular
+		// file, or vice versa, so it's not safe to assume ownership of it
+		mismatching_file_type,
+
 
 		// The HTTP header was not correctly formatted
 		http_parse_error = 150,
@@ -383,7 +388,6 @@ namespace errors {
 		// The HTTP response was encoded with gzip or deflate but
 		// decompressing it failed
 		http_failed_decompress,
-
 
 
 		// The URL specified an i2p address, but no i2p router is configured
@@ -459,6 +463,9 @@ namespace errors {
 		torrent_inconsistent_hashes,
 		// a file in the v2 metadata has the pad attribute set
 		torrent_invalid_pad_file,
+		// the directory structure of files in the torrent exceeds the
+		// configured maximum depth (see load_torrent_limits)
+		torrent_directory_too_deep,
 
 		// the number of error codes
 		error_code_max
@@ -486,6 +493,8 @@ namespace errors {
 		bad_gateway = 502,
 		service_unavailable = 503
 	};
+
+	// clang-format on
 
 	// hidden
 	TORRENT_EXPORT boost::system::error_code make_error_code(error_code_enum e);
