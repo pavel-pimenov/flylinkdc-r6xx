@@ -1607,8 +1607,8 @@ public :
         string              BuildConformanceName(const string& ParserName, const char* Prefix, const char* Suffix) { return {}; }
         void                IsTruncated(int64u ExpectedSize = (int64u)-1, bool MoreThan = false, const char* = nullptr) {}
         void                DurationIssue(int64u ActualDuration, int64u ExpectedDuration = (int64u)-1, bool MoreThan = false, const char* Prefix = nullptr) {}
-        void                RanOutOfData(const char* = nullptr) { Trusted_IsNot(); }
-        void                SynchLost(const char* = nullptr, int64u CountOfBytes = 0, bool AreZero = false) { Trusted_IsNot(); }
+        void                RanOutOfData(const char* = nullptr) { Trusted_IsNot("RanOutOfData"); }
+        void                SynchLost(const char* = nullptr, int64u CountOfBytes = 0, bool AreZero = false) { Trusted_IsNot("SynchLost"); }
     #endif //MEDIAINFO_CONFORMANCE
 
     #if MEDIAINFO_SEEK

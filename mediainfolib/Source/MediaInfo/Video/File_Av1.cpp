@@ -23,6 +23,7 @@
 //---------------------------------------------------------------------------
 #include "MediaInfo/Video/File_Av1.h"
 #include "MediaInfo/MediaInfo_Config_MediaInfo.h"
+#define FMT_UNICODE 0
 #include "ThirdParty/fmt/format.h"
 //---------------------------------------------------------------------------
 

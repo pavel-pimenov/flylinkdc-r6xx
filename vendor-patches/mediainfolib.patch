@@ -702,7 +702,7 @@ index 820b035..8d02c48 100644
  
      //Handling of File_GoTo with already buffered data
 diff --git a/Source/MediaInfo/File__Analyze.h b/Source/MediaInfo/File__Analyze.h
-index 00ccdd2..205faf6 100644
+index 00ccdd2..0cd6254 100644
 --- a/Source/MediaInfo/File__Analyze.h
 +++ b/Source/MediaInfo/File__Analyze.h
 @@ -88,6 +88,37 @@ static inline int8u ReverseBits(int8u c)
@@ -743,6 +743,17 @@ index 00ccdd2..205faf6 100644
  string uint128toString(uint128 Value, int radix);
  
  enum conformance_type {
+@@ -1576,8 +1607,8 @@ public :
+         string              BuildConformanceName(const string& ParserName, const char* Prefix, const char* Suffix) { return {}; }
+         void                IsTruncated(int64u ExpectedSize = (int64u)-1, bool MoreThan = false, const char* = nullptr) {}
+         void                DurationIssue(int64u ActualDuration, int64u ExpectedDuration = (int64u)-1, bool MoreThan = false, const char* Prefix = nullptr) {}
+-        void                RanOutOfData(const char* = nullptr) { Trusted_IsNot(); }
+-        void                SynchLost(const char* = nullptr, int64u CountOfBytes = 0, bool AreZero = false) { Trusted_IsNot(); }
++        void                RanOutOfData(const char* = nullptr) { Trusted_IsNot("RanOutOfData"); }
++        void                SynchLost(const char* = nullptr, int64u CountOfBytes = 0, bool AreZero = false) { Trusted_IsNot("SynchLost"); }
+     #endif //MEDIAINFO_CONFORMANCE
+ 
+     #if MEDIAINFO_SEEK
 diff --git a/Source/MediaInfo/File__Analyze_Element.h b/Source/MediaInfo/File__Analyze_Element.h
 index 7e06c37..715f578 100644
 --- a/Source/MediaInfo/File__Analyze_Element.h
@@ -928,10 +939,18 @@ index 21c45c9..b9bce4b 100644
  #endif //MEDIAINFO_MD5
  #if MEDIAINFO_SHA1
 diff --git a/Source/MediaInfo/Image/File_Jpeg.cpp b/Source/MediaInfo/Image/File_Jpeg.cpp
-index a24c6c9..3a3a805 100644
+index a24c6c9..0ebea47 100644
 --- a/Source/MediaInfo/Image/File_Jpeg.cpp
 +++ b/Source/MediaInfo/Image/File_Jpeg.cpp
-@@ -292,6 +292,9 @@ File_Jpeg::File_Jpeg()
+@@ -55,6 +55,7 @@
+     #include "MediaInfo/Multiple/File_Mpeg4.h"
+ #endif
+ #include "MediaInfo/MediaInfo_Config_MediaInfo.h"
++#define FMT_UNICODE 0
+ #include "ThirdParty/fmt/format.h"
+ #include "ZenLib/Utils.h"
+ #include <vector>
+@@ -292,6 +293,9 @@ File_Jpeg::File_Jpeg()
      #if MEDIAINFO_DEMUX
      FrameRate=0;
      #endif //MEDIAINFO_DEMUX
@@ -941,7 +960,7 @@ index a24c6c9..3a3a805 100644
  }
  
  //***************************************************************************
-@@ -1058,7 +1061,7 @@ void File_Jpeg::SIZ()
+@@ -1058,7 +1062,7 @@ void File_Jpeg::SIZ()
      for (int16u Pos=0; Pos<Count; Pos++)
      {
          Element_Begin1("Initialize related array");
@@ -968,7 +987,7 @@ index e121271..bd4e2b3 100644
      void DHT () { Data_Common(); };
      void SOF5() {SOF_(0x5);}
 diff --git a/Source/MediaInfo/Image/File_Png.cpp b/Source/MediaInfo/Image/File_Png.cpp
-index 5f67e33..429d61f 100644
+index 5f67e33..747cd0c 100644
 --- a/Source/MediaInfo/Image/File_Png.cpp
 +++ b/Source/MediaInfo/Image/File_Png.cpp
 @@ -32,6 +32,8 @@
@@ -1016,41 +1035,16 @@ index 5f67e33..429d61f 100644
              if (inflate_Result<0)
                  break;
  
-@@ -785,20 +787,19 @@ void File_Png::iCCP()
+@@ -785,7 +787,7 @@ void File_Png::iCCP()
          }
          auto Buffer=(const char*)strm.next_out-strm.total_out;
          auto Buffer_Size=(size_t)strm.total_out;
 -        inflateEnd(&strm);
--
--        File_Icc ICC_Parser;
--        ICC_Parser.StreamKind=StreamKind_Last;
--        ICC_Parser.IsAdditional=true;
--        Open_Buffer_Init(&ICC_Parser);
--        Open_Buffer_Continue(&ICC_Parser, (const int8u*)Buffer, Buffer_Size);
--        Open_Buffer_Finalize(&ICC_Parser);
--        Merge(ICC_Parser, StreamKind_Last, 0, 0);
--
--        delete[] Buffer;
--    #else
--        Skip_XX(Element_Size-Element_Offset,                    "ICC profile");
--    #endif
 +        zng_inflateEnd(&strm);
-+        #if defined(MEDIAINFO_ICC_YES)
-+            File_Icc ICC_Parser;
-+            ICC_Parser.StreamKind=StreamKind_Last;
-+            ICC_Parser.IsAdditional=true;
-+            Open_Buffer_Init(&ICC_Parser);
-+            Open_Buffer_Continue(&ICC_Parser, (const int8u*)Buffer, Buffer_Size);
-+            Open_Buffer_Finalize(&ICC_Parser);
-+            Merge(ICC_Parser, StreamKind_Last, 0, 0);
-+            delete[] Buffer;
-+        #else
-+            Skip_XX(Element_Size-Element_Offset,                "ICC profile");
-+        #endif
-     }
-     else
-         Skip_XX(Element_Size-Element_Offset,                    "ICC profile");
-@@ -976,7 +977,7 @@ void File_Png::Textual(bitset8 Method)
+ 
+         File_Icc ICC_Parser;
+         ICC_Parser.StreamKind=StreamKind_Last;
+@@ -976,7 +978,7 @@ void File_Png::Textual(bitset8 Method)
          if (!Compression)
          {
              //Uncompress init
@@ -1059,7 +1053,7 @@ index 5f67e33..429d61f 100644
              strm.next_in=(Bytef*)Buffer+Buffer_Offset+(size_t)Element_Offset;
              strm.avail_in=(int)(Element_Size-Element_Offset);
              strm.next_out=NULL;
-@@ -984,7 +985,7 @@ void File_Png::Textual(bitset8 Method)
+@@ -984,7 +986,7 @@ void File_Png::Textual(bitset8 Method)
              strm.total_out=0;
              strm.zalloc=Z_NULL;
              strm.zfree=Z_NULL;
@@ -1068,7 +1062,7 @@ index 5f67e33..429d61f 100644
  
              //Prepare out
              strm.avail_out=0x10000; //Blocks of 64 KiB, arbitrary chosen, as a begin
-@@ -994,7 +995,7 @@ void File_Png::Textual(bitset8 Method)
+@@ -994,7 +996,7 @@ void File_Png::Textual(bitset8 Method)
              for (;;)
              {
                  //inflate
@@ -1077,7 +1071,7 @@ index 5f67e33..429d61f 100644
                  if (inflate_Result<0)
                      break;
  
-@@ -1012,12 +1013,12 @@ void File_Png::Textual(bitset8 Method)
+@@ -1012,12 +1014,12 @@ void File_Png::Textual(bitset8 Method)
              }
              auto Buffer=(const char*)strm.next_out-strm.total_out;
              auto Buffer_Size=(size_t)strm.total_out;
@@ -2005,7 +1999,7 @@ index 68a2ccb..f3535d6 100644
      Skip_C8(                                                    "Signature");
      Get_L4 (Version,                                            "Version"); //0=start and duration are in field, 1=in 27 MHz values
 diff --git a/Source/MediaInfo/Multiple/File_Mk.cpp b/Source/MediaInfo/Multiple/File_Mk.cpp
-index 0b15093..3f9c2b5 100644
+index 0b15093..21704cd 100644
 --- a/Source/MediaInfo/Multiple/File_Mk.cpp
 +++ b/Source/MediaInfo/Multiple/File_Mk.cpp
 @@ -15,7 +15,7 @@
@@ -2050,6 +2044,15 @@ index 0b15093..3f9c2b5 100644
              //Format specific
              #if defined(MEDIAINFO_DVDIF_YES)
                  if (StreamKind_Last==Stream_Video && Retrieve(Stream_Video, StreamPos_Last, Video_Format)==__T("DV"))
+@@ -1427,7 +1428,7 @@ void File_Mk::Streams_Finish()
+             Merge(*Add->second.Parser);
+             if (StreamKind_Last!=StreamKind_Last_Sav || StreamPos_Last!=StreamPos_Last_Sav)
+             {
+-                Fill(StreamKind_Last, StreamPos_Last, Other_ID, to_string(Temp->first)+"-Add-"+to_string(Add->first));
++                Fill(StreamKind_Last, StreamPos_Last, Other_ID, std::to_string(Temp->first)+"-Add-"+std::to_string(Add->first));
+                 Fill(StreamKind_Last, StreamPos_Last, Other_MuxingMode, "BlockAddition");
+ 
+                 //Tags (BlockID)
 @@ -1486,7 +1487,7 @@ void File_Mk::Streams_Finish()
                          PerLanguage+=EditionEntries[EditionEntries_Pos].ChapterAtoms[ChapterAtoms_Pos].ChapterDisplays[ChapterDisplays_Pos].ChapString;
                          Text+=PerLanguage+__T(" - ");
@@ -3294,10 +3297,18 @@ index fb93b0e..2d9987c 100644
  #include <limits>
  //---------------------------------------------------------------------------
 diff --git a/Source/MediaInfo/Video/File_Av1.cpp b/Source/MediaInfo/Video/File_Av1.cpp
-index cf18fd7..6615f86 100644
+index cf18fd7..970e4b2 100644
 --- a/Source/MediaInfo/Video/File_Av1.cpp
 +++ b/Source/MediaInfo/Video/File_Av1.cpp
-@@ -683,6 +683,7 @@ void File_Av1::frame_header_uncompressed_header()
+@@ -23,6 +23,7 @@
+ //---------------------------------------------------------------------------
+ #include "MediaInfo/Video/File_Av1.h"
+ #include "MediaInfo/MediaInfo_Config_MediaInfo.h"
++#define FMT_UNICODE 0
+ #include "ThirdParty/fmt/format.h"
+ //---------------------------------------------------------------------------
+ 
+@@ -683,6 +684,7 @@ void File_Av1::frame_header_uncompressed_header()
          TEST_SB_GET (show_existing_frame,                       "show_existing_frame");
              Skip_BS(Data_BS_Remain(),                           "(Not parsed)");
              BS_End();

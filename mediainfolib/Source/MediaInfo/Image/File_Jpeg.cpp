@@ -55,6 +55,7 @@
     #include "MediaInfo/Multiple/File_Mpeg4.h"
 #endif
 #include "MediaInfo/MediaInfo_Config_MediaInfo.h"
+#define FMT_UNICODE 0
 #include "ThirdParty/fmt/format.h"
 #include "ZenLib/Utils.h"
 #include <vector>

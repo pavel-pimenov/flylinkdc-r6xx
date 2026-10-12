@@ -1428,7 +1428,7 @@ void File_Mk::Streams_Finish()
             Merge(*Add->second.Parser);
             if (StreamKind_Last!=StreamKind_Last_Sav || StreamPos_Last!=StreamPos_Last_Sav)
             {
-                Fill(StreamKind_Last, StreamPos_Last, Other_ID, to_string(Temp->first)+"-Add-"+to_string(Add->first));
+                Fill(StreamKind_Last, StreamPos_Last, Other_ID, std::to_string(Temp->first)+"-Add-"+std::to_string(Add->first));
                 Fill(StreamKind_Last, StreamPos_Last, Other_MuxingMode, "BlockAddition");
 
                 //Tags (BlockID)

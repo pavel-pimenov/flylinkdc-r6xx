@@ -788,18 +788,19 @@ void File_Png::iCCP()
         auto Buffer=(const char*)strm.next_out-strm.total_out;
         auto Buffer_Size=(size_t)strm.total_out;
         zng_inflateEnd(&strm);
-        #if defined(MEDIAINFO_ICC_YES)
-            File_Icc ICC_Parser;
-            ICC_Parser.StreamKind=StreamKind_Last;
-            ICC_Parser.IsAdditional=true;
-            Open_Buffer_Init(&ICC_Parser);
-            Open_Buffer_Continue(&ICC_Parser, (const int8u*)Buffer, Buffer_Size);
-            Open_Buffer_Finalize(&ICC_Parser);
-            Merge(ICC_Parser, StreamKind_Last, 0, 0);
-            delete[] Buffer;
-        #else
-            Skip_XX(Element_Size-Element_Offset,                "ICC profile");
-        #endif
+
+        File_Icc ICC_Parser;
+        ICC_Parser.StreamKind=StreamKind_Last;
+        ICC_Parser.IsAdditional=true;
+        Open_Buffer_Init(&ICC_Parser);
+        Open_Buffer_Continue(&ICC_Parser, (const int8u*)Buffer, Buffer_Size);
+        Open_Buffer_Finalize(&ICC_Parser);
+        Merge(ICC_Parser, StreamKind_Last, 0, 0);
+
+        delete[] Buffer;
+    #else
+        Skip_XX(Element_Size-Element_Offset,                    "ICC profile");
+    #endif
     }
     else
         Skip_XX(Element_Size-Element_Offset,                    "ICC profile");
