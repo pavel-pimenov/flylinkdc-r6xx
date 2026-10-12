@@ -1,5 +1,13 @@
 # История изменений FlylinkDC++
 
+## 2026-10-12
+### Скрипт обновления вендорных библиотек vendor-update.py
+- Реализован `vendor-update.py`: скачивает вендорные исходники с upstream-URL, синхронизирует их в дерево проекта, заново накладывает локальные патчи и делает git-commit. Конфиг — таблица `VENDORS` (url/pin, локальная директория, режим импорта файлов, список патчей, маркер версии). Режимы: `--list`, `--dry-run`, `--no-commit`, `--vendor NAME`. Артефакты архивируются в `build-win/vendor-cache` (в .gitignore).
+- SQLite: `client/sqlite` обновлён с 3.50.4 до 3.54.0 (амолгамация `sqlite-amalgamation-3540000.zip`), закоммичено `45872dc1`. Локальные патчи проекта (в sqlite3.c: `#include "sqlite_fly.h"` и `#pragma warning(disable: 4127/4244/4100)`; в sqlite3.h: `#pragma once` и `#include "sqlite_fly.h"`) описаны в конфиге и заново применены к новой версии.
+- WTL: выверено, что ветка 10.0.10320 с 5 локальными патчами (atlcrack.h — инициализация `m_bMsgHandled`; atldlgs.h — default-аргумент `0U` у `CPropertyPageImpl`/`CPropertyPage`; atlmisc.h — `_T("file://")`; atlribbon.h — include через кавычки; atlsplit.h — `m_nPropMax = 10000` и разбиение расчёта позиции) даёт 1:1 воспроизведение дерева, коммит не требуется.
+- zlib-ng: пинирован на develop HEAD `f18efb822a2fc24a1209a836d51bb217476fc08e` (в конфиге, dry-run: 326 новых / 84 изменённых / 14 удалённых файлов). Коммит отложен: upstream перестроил дерево (zlib-ng.h/zconf-ng.h стали генерируемыми `.in`, переименованы crc32.h/insert_string_roll.c и др.), требуется правка zlib-ng_2022.vcxproj и контрольная сборка — см. TODO.md.
+- В AGENTS.md добавлено правило фиксировать задачи и план сессии в TODO.md для восстановления контекста после разрыва сессии.
+
 ## 2026-10-11
 ### Release|x64 warning-clean и чистые компиляторные предупреждения Debug|x64
 - Release|x64 собран из FlylinkDC_2022.sln: 0 предупреждений и 0 ошибок; EXE линкуется, импорты — только системные DLL Windows, дымовой запуск на Windows успешен (процесс стартует и живёт).
