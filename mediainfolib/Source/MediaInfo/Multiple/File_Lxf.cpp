@@ -749,7 +749,7 @@ void File_Lxf::Header_Parse()
                     Audio_Sizes.resize(Channels_Count);
                     for (size_t Pos=0; Pos<Audio_Sizes.size(); Pos++)
                         Audio_Sizes[Pos]=Size;
-                    BlockSize=Size*Channels_Count;
+                    BlockSize=(int64u)Size*Channels_Count;
                     }
                     break;
         case 2  :   //Header
@@ -779,7 +779,7 @@ void File_Lxf::Header_Parse()
         Skip_L4(                                                "Zero");
 
     if (Element_Offset<HeaderSize)
-        Skip_XX(Header_Size-Element_Offset,                     "Unknown");
+        Skip_XX(HeaderSize-Element_Offset,                      "Unknown");
 
     //Filling
     Header_Fill_Code(Type, Ztring::ToZtring(Type));
@@ -1646,7 +1646,7 @@ void File_Lxf::Video_Stream_1()
     Get_L1 (Lines_Allocated,                            "Lines allocated");
     Get_L1 (Lines_Used,                                 "Lines used");
 
-    if (Lines_Allocated==0 || Lines_Used>Lines_Allocated || Video_Sizes[1]<(int32u)2+Lines_Used)
+    if (Lines_Allocated==0 || Lines_Used>Lines_Allocated || Video_Sizes[1]<(int32u)2+Lines_Allocated)
     {
         Skip_XX(Video_Sizes[1]-2,                       "Unknown");
         return;
@@ -1658,7 +1658,7 @@ void File_Lxf::Video_Stream_1()
     std::vector<int8u> FieldNumbers;
     std::vector<bool>  FieldNumbers_IsSecondField;
     BS_Begin_LE();
-    for (int8u Pos=0; Pos<Lines_Allocated; Pos++)
+    for (int8u Pos=0; Pos<Lines_Used; Pos++)
     {
         int8u FieldNumber;
         bool  FieldNumber_IsSecondField;
@@ -1672,6 +1672,7 @@ void File_Lxf::Video_Stream_1()
         }
     }
     BS_End_LE();
+    Skip_XX(Lines_Allocated-Lines_Used,                         "Padding");
 
     for (int8u Pos=0; Pos<Lines_Used; Pos++)
     {
@@ -1703,7 +1704,7 @@ void File_Lxf::Video_Stream_1()
             Skip_XX(BytesPerLine,                               "VBI/VANC data");
         #endif
     }
-    Skip_XX((Lines_Allocated-Lines_Used)*BytesPerLine,          "Unused lines");
+    Skip_XX((Lines_Allocated-Lines_Used)*BytesPerLine,          "Padding");
 
     if (Element_Offset<Element_Size)
         Skip_XX(Element_Size-Element_Offset,                    "Unknown");

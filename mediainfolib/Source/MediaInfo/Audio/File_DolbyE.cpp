@@ -1112,6 +1112,22 @@ void File_DolbyE::Streams_Fill_ED2()
         Fill(Stream_Audio, StreamPos_Last, Audio_Channel_s_, ChannelCount);
     Streams_Fill_PerProgram(StreamPos_Last);
 
+    if (BedInstances.size()>nonstd_bed_channel_assignment_masks.size()
+     || DynObjects.size()>substream_mappings.size()
+     || BedInstances.size()>substream_mappings.size()-DynObjects.size())
+        return; //Incomplete metadata
+    size_t BedObjects=0;
+    for (size_t p=0; p<BedInstances.size(); p++)
+    {
+        size_t Count=BedChannelConfiguration_ChannelCount(nonstd_bed_channel_assignment_masks[p]);
+        if (Count>ObjectElements.size()-BedObjects)
+            return; //Incomplete metadata
+        for (size_t o=0; o<Count; o++)
+            if (ObjectElements[BedObjects+o].Alts.empty())
+                return; //Incomplete metadata
+        BedObjects+=Count;
+    }
+
     if (!Presets.empty())
     {
         Fill(Stream_Audio, 0, "NumberOfPresentations", Presets.size());
@@ -2000,10 +2016,7 @@ void File_DolbyE::metadata_segment()
 void File_DolbyE::guard_band()
 {
     int8u* NewBuffer=NULL;
-    size_t Buffer_Offset_Save=0;
-    size_t Buffer_Size_Save=0;
-    int64u Element_Offset_Save=0;
-    int64u Element_Size_Save=0;
+
 
     Element_Begin1("guard_band (with data)");
     int16u element_length;
@@ -2043,25 +2056,28 @@ void File_DolbyE::guard_band()
                 NewBuffer[i+1-Element_Offset]=0x78;
             }
         }
-        if (NewBuffer)
-        {
-            Buffer=NewBuffer;
-            Buffer_Offset_Save=Buffer_Offset;
-            Buffer_Size_Save=Buffer_Offset;
-            Element_Offset_Save=Element_Offset;
-            Element_Size_Save=Element_Size;
-            File_Offset+=Buffer_Offset+Element_Offset;
-            Buffer_Offset=0;
-            Buffer_Size=Element_Size-Element_Offset;
-            Element_Offset=0;
-            Element_Size=Buffer_Size;
-        }
     }
     else
     {
         Skip_S2(12,                                             "escape_code");
         BS_End();
     }
+    const int8u* Buffer_Save=Buffer;
+    size_t Buffer_Offset_Save=Buffer_Offset;
+    size_t Buffer_Size_Save=Buffer_Size;
+    int64u File_Offset_Save=File_Offset;
+    int64u Element_Offset_Save=Element_Offset;
+    int64u Element_Size_Save=Element_Size;
+    if (NewBuffer)
+    {
+        Buffer=NewBuffer;
+        File_Offset+=Buffer_Offset+Element_Offset;
+        Buffer_Offset=0;
+        Buffer_Size=Element_Size-Element_Offset;
+        Element_Offset=0;
+        Element_Size=Buffer_Size;
+    }
+
     Get_B1 (    element_id,                                     "element_id");
     Get_B2 (    element_length,                                 "element_length");
     int64u After=Element_Offset+element_length;
@@ -2108,12 +2124,13 @@ void File_DolbyE::guard_band()
 
     if (NewBuffer)
     {
-        delete[] Buffer;
+        Buffer=Buffer_Save;
         Buffer_Offset=Buffer_Offset_Save;
-        Buffer_Size=Buffer_Offset_Save;
+        Buffer_Size=Buffer_Size_Save;
+        File_Offset=File_Offset_Save;
         Element_Offset=Element_Offset_Save;
         Element_Size=Element_Size_Save;
-        File_Offset-=Buffer_Offset+Element_Offset;
+        delete[] NewBuffer;
     }
 }
 
@@ -2618,7 +2635,7 @@ void File_DolbyE::object_basic_info(int8u object_basic_info_array, int8u blk)
                     }
                     break;
             default:
-                    if (ObjectElements.size()>=2)
+                    if (ObjectElements.size()>=2 && blk<ObjectElements[ObjectElements.size()-2].Alts.size())
                         A.obj_gain_db=ObjectElements[ObjectElements.size()-2].Alts[blk].obj_gain_db;
                     else
                         A.obj_gain_db=0;
@@ -2876,13 +2893,21 @@ void File_DolbyE::mgi_payload()
         int32u num_target_device_configs_m1;
         Get_V4 (2, num_target_device_configs_m1,                "num_target_device_configs_m1");
         Get_V4 (2, P.default_target_device_config,              "default_target_device_config"); Param_Info1(default_target_device_config_Value(P.default_target_device_config));
+        if (num_target_device_configs_m1>=Data_BS_Remain()/4)
+        {
+            Trusted_IsNot("Too many target device configurations");
+            Skip_BS(Data_BS_Remain(),                           "Invalid data");
+            Element_End0();
+            Element_End0();
+            return;
+        }
         P.target_device_configs.resize(num_target_device_configs_m1+1);
-        for (int32u j=0; j<=num_target_device_configs_m1; j++)
+        for (size_t j=0; j<P.target_device_configs.size(); j++)
         {
             preset::target_device_config& T=P.target_device_configs[j];
             Element_Begin1("target_device_config");
             Get_V4 (3, T.target_devices_mask,                   "target_devices_mask"); Param_Info1(default_target_device_config_Value(T.target_devices_mask));
-            for (int32u k=0; k<num_dyn_objects+num_bed_instances; k++)
+            for (int32u k=0; k<(int32u)num_dyn_objects+num_bed_instances; k++)
             {
                 Element_Begin1(k<num_dyn_objects?"object":"bed");
                 bool active;
@@ -3275,10 +3300,11 @@ void File_DolbyE::metadata_extension_segment()
                 break;
             }
             Get_S2 (12, metadata_extension_subsegment_length,   "metadata_extension_subsegment_length");
-            switch (metadata_extension_subsegment_id)
-            {
-                default: Skip_BS(metadata_extension_subsegment_length,"metadata_extension_subsegment (unknown)");
-            }
+            //switch (metadata_extension_subsegment_id)
+            //{
+            //    default: 
+                    Skip_BS(metadata_extension_subsegment_length,"metadata_extension_subsegment (unknown)");
+            //}
             Element_End0();
         }
         Param_Info1(metadata_extension_segment_BitCountAfter);

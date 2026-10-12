@@ -227,8 +227,10 @@ bool File_Wvpk::Synchronize()
         if (Buffer_Offset+4<=Buffer_Size)//Testing if size is coherant
         {
             //Testing next start, to be sure
-            size_t Size=LittleEndian2int32u(Buffer+Buffer_Offset+4)+8;
-            if (Buffer_Offset+Size+4>Buffer_Size)
+            if (Buffer_Size-Buffer_Offset<8)
+                return false; //Need more data
+            int64u Size=(int64u)LittleEndian2int32u(Buffer+Buffer_Offset+4)+8;
+            if (Size>Buffer_Size-Buffer_Offset-4)
                 return false; //Need more data
 
             //Testing
@@ -270,7 +272,7 @@ bool File_Wvpk::Synched_Test()
         return false;
 
     //Must have enough buffer for having header
-    if (Buffer_Offset+3>Buffer_Size)
+    if (Buffer_Offset>Buffer_Size || Buffer_Size-Buffer_Offset<4)
         return false;
 
     //Quick test of synchro
@@ -348,11 +350,12 @@ void File_Wvpk::Data_Parse()
         while (Element_Offset<Element_Size)
         {
             int32u total_samples=(int32u)-1, block_index=(int32u)-1, block_samples=0, flags, blocksize=(int32u)-1;
+            int8u block_index_u8=0, total_samples_u8=0;
             bool initial_block=true, final_block=true;
             if (!FromMKV)
             {
-                Skip_L1(                                            "track_no");
-                Skip_L1(                                            "index_no");
+                Get_L1 (block_index_u8,                             "block_index_u8");
+                Get_L1 (total_samples_u8,                           "total_samples_u8");
                 Get_L4 (total_samples,                              "total_samples");
                 Get_L4 (block_index,                                "block_index");
             }
@@ -363,10 +366,10 @@ void File_Wvpk::Data_Parse()
                 if (!FromMKV)
                 {
                     if (block_index==0) //Only the frame with block_index==0
-                        total_samples_FirstFrame=total_samples; //Note: total_samples is not trustable for a cutted file
+                        total_samples_FirstFrame=((int64u)total_samples_u8<<32)-total_samples_u8+total_samples; //Note: total_samples is not trustable for a cutted file
+                    block_index_LastFrame=((int64u)block_index_u8<<32)+block_index;
                     if (Frame_Count==1)
-                        block_index_FirstFrame=block_index; //Save the block_index of the first block
-                    block_index_LastFrame=block_index;
+                        block_index_FirstFrame=block_index_LastFrame; //Save the block_index of the first block
                     block_samples_LastFrame=block_samples;
                 }
                 Get_L4 (flags,                                      "flags");

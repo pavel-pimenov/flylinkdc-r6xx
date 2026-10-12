@@ -141,6 +141,30 @@ void File_Eia708::Streams_Fill()
 //---------------------------------------------------------------------------
 void File_Eia708::Streams_Finish()
 {
+    for (size_t Pos=1; Pos<Streams.size(); Pos++)
+    {
+        stream* Stream=Streams[Pos];
+        if (Stream && Stream->HasContent)
+        {
+            size_t StreamPos_Last=Count_Get(Stream_Text);
+            for (size_t i=0; i<StreamPos_Last; i++)
+            {
+                if (Retrieve(Stream_Text, i, Text_ID).To_int32u()==Pos)
+                {
+                    Fill(Stream_Text, i, Text_Events_Total, Stream->Events_Total);
+                    if (Stream->Events_Total) {
+                        Fill(Stream_Text, i, Text_Lines_Count, Stream->LineCount);
+                        if (Stream->LineCount)
+                        {
+                            Fill(Stream_Text, i, Text_Lines_MaxCountPerEvent, Stream->MaxCountOfLinesPerFrame);
+                            Fill(Stream_Text, i, Text_Lines_MaxCharacterCount, Stream->MaxCountOfCharsPerLine);
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+    }
 }
 
 //***************************************************************************
@@ -151,7 +175,10 @@ void File_Eia708::Streams_Finish()
 bool File_Eia708::Synchronize()
 {
     if (IsSub && cc_type!=3)
+    {
+        Buffer_Offset=Buffer_Size;
         return false; //Waiting for sync from underlying layer
+    }
 
     if (!Status[IsAccepted])
         Accept("EIA-708");
@@ -1486,8 +1513,7 @@ void File_Eia708::Character_Fill(wchar_t Character)
         Window->Minimal.x=x;
     }
 
-    if (!HasContent)
-        HasContent=true;
+    HasContent=true;
     if (!Streams[service_number]->HasContent)
         Streams[service_number]->HasContent=true;
 }
@@ -1528,6 +1554,37 @@ void File_Eia708::Window_HasChanged()
 //---------------------------------------------------------------------------
 void File_Eia708::HasChanged()
 {
+    // Count lines and characters for stats
+    stream* Stream=Streams[service_number];
+    if (Stream)
+    {
+        Stream->Events_Total++;  // Count this as an event
+
+        size_t LinesPerFrame=0;
+        for (size_t Pos_Y=0; Pos_Y<Stream->Minimal.CC.size(); Pos_Y++)
+        {
+            bool HasContent=false;
+            size_t CharCountPerLine=0;
+            for (size_t Pos_X=0; Pos_X<Stream->Minimal.CC[Pos_Y].size(); Pos_X++)
+            {
+                if (Stream->Minimal.CC[Pos_Y][Pos_X].Value && Stream->Minimal.CC[Pos_Y][Pos_X].Value!=L' ')
+                {
+                    HasContent=true;
+                    CharCountPerLine++;
+                }
+            }
+            if (HasContent)
+            {
+                LinesPerFrame++;
+                if (Stream->MaxCountOfCharsPerLine<CharCountPerLine)
+                    Stream->MaxCountOfCharsPerLine=CharCountPerLine;
+            }
+        }
+        Stream->LineCount+=LinesPerFrame;
+        if (Stream->MaxCountOfLinesPerFrame<LinesPerFrame)
+            Stream->MaxCountOfLinesPerFrame=LinesPerFrame;
+    }
+
     #if MEDIAINFO_EVENTS
         EVENT_BEGIN (DtvccCaption, Content_Minimal, 0)
             Event.MuxingMode=MuxingMode;

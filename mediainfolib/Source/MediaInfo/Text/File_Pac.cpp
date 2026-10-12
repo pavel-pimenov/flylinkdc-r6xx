@@ -133,12 +133,12 @@ void File_Pac::Streams_Finish()
         Offset.SetSeconds(0);
         Offset.SetFrames(0);
     }
-    int64s Duration = (Time_End_Command - Time_Start_Command).ToMilliseconds();
+    int64s Duration = (Time_End_Command - Offset).ToMilliseconds();
     Fill(Stream_General, 0, General_Duration, Duration);
     Fill(Stream_Text, 0, Text_Duration, Duration);
-    Fill(Stream_Text, 0, Text_Duration_Start_Command, (int64s)(Time_Start_Command - Offset).ToMilliseconds());
+    Fill(Stream_Text, 0, Text_Duration_Start_Command, (int64s)(Time_Start_Command).ToMilliseconds());
     Fill(Stream_Text, 0, Text_TimeCode_FirstFrame, Time_Start_Command.ToString());
-    Fill(Stream_Text, 0, Text_Duration_End_Command, (int64s)(Time_End_Command - Offset).ToMilliseconds());
+    Fill(Stream_Text, 0, Text_Duration_End_Command, (int64s)(Time_End_Command).ToMilliseconds());
     TimeCode LastFrame = Time_End_Command;
     --LastFrame;
     Fill(Stream_Text, 0, Text_TimeCode_LastFrame, LastFrame.ToString());
@@ -158,21 +158,15 @@ void File_Pac::Streams_Finish()
         auto Start2End = (int64s)(Time_End - Time_Start).ToMilliseconds();
         Fill(Stream_Text, 0, Text_Duration_Start2End, Start2End);
     }
-    if (Delay_TC.IsValid()) {
-        Fill(Stream_Text, 0, Text_Delay, (int64s)Delay_TC.ToMilliseconds());
-    }
-
-    if (Frame_Count) {
-        Fill(Stream_Text, 0, Text_Events_Total, Frame_Count - EmptyCount);
-    }
-    if (LineCount) {
+    Fill(Stream_Text, 0, Text_Delay, (int64s)(Delay_TC.IsValid()?Delay_TC:Offset).ToMilliseconds());
+    const auto Events_Total = Frame_Count - EmptyCount;
+    Fill(Stream_Text, 0, Text_Events_Total, Events_Total);
+    if (Events_Total) {
         Fill(Stream_Text, 0, Text_Lines_Count, LineCount);
-    }
-    if (LineCount) {
-        Fill(Stream_Text, 0, Text_Lines_MaxCountPerEvent, MaxCountOfLinesPerFrame);
-    }
-    if (MaxCountOfCharsPerLine) {
-        Fill(Stream_Text, 0, Text_Lines_MaxCharacterCount, MaxCountOfCharsPerLine);
+        if (LineCount) {
+            Fill(Stream_Text, 0, Text_Lines_MaxCountPerEvent, MaxCountOfLinesPerFrame);
+            Fill(Stream_Text, 0, Text_Lines_MaxCharacterCount, MaxCountOfCharsPerLine);
+        }
     }
     if (Count_UTF8) {
         Fill(Stream_Text, 0, "CharacterSet", "UTF-8");
@@ -351,6 +345,14 @@ void File_Pac::Data_Parse()
         switch (Format) {
         case Format_8bit: {
             Ztring Value;
+            if (Size) {
+                int8u Probe;
+                Peek_B1(Probe);
+                if (!Probe) {
+                    Skip_B1(                                    "Null?");
+                    Size--;
+                }
+            }
             Get_ISO_8859_1(Size, Value,                         "Content");
             bool Is8bit = false;
             for (const auto& Character : Value) {
@@ -565,7 +567,7 @@ void File_Pac::Data_Parse()
                             if (Value == '<') {
                                 ItalicBeginFound = true;
                             }
-                            if (Value == '<') {
+                            if (ItalicBeginFound && Value == '>') {
                                 CountOfCharsPerLine -= 2; // < and > are markers of italic
                                 ItalicBeginFound = false;
                             }

@@ -186,7 +186,9 @@ Source/MediaInfo/File__MultipleParsing.cpp
 Source/MediaInfo/File__MultipleParsing.h
 Source/MediaInfo/HashWrapper.cpp
 Source/MediaInfo/HashWrapper.h
+Source/MediaInfo/Image/File_AmigaIcon.cpp
 Source/MediaInfo/Image/File_ArriRaw.cpp
+Source/MediaInfo/Image/File_AmigaIcon.h
 Source/MediaInfo/Image/File_ArriRaw.h
 Source/MediaInfo/Image/File_Bmp.cpp
 Source/MediaInfo/Image/File_Bmp.h
@@ -441,8 +443,12 @@ Source/MediaInfo/Video/File_AfdBarData.cpp
 Source/MediaInfo/Video/File_AfdBarData.h
 Source/MediaInfo/Video/File_Aic.cpp
 Source/MediaInfo/Video/File_Aic.h
+Source/MediaInfo/Video/File_Apv.cpp
 Source/MediaInfo/Video/File_Av1.cpp
+Source/MediaInfo/Video/File_Av2.cpp
+Source/MediaInfo/Video/File_Apv.h
 Source/MediaInfo/Video/File_Av1.h
+Source/MediaInfo/Video/File_Av2.h
 Source/MediaInfo/Video/File_Avc.cpp
 Source/MediaInfo/Video/File_Avc.h
 Source/MediaInfo/Video/File_Avc_Duplicate.cpp

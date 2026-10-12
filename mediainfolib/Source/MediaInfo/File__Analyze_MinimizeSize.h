@@ -265,6 +265,7 @@ protected :
     //Header - Info
     void Header_Fill_Code (int64u Code);
     inline void Header_Fill_Code (int64u Code, const Ztring &) {Header_Fill_Code(Code);};
+    inline void Header_Fill_Code (int64u Code, const char*) {Header_Fill_Code(Code);};
     #define Header_Fill_Code2(A,B) Header_Fill_Code(A)
     void Header_Fill_Size (int64u Size);
 
@@ -338,6 +339,7 @@ protected :
 
 protected :
     //Element - Common
+    bool   Element_Begin_Common();
     void   Element_End_Common_Flush();
 public :
 
@@ -693,6 +695,7 @@ public :
     void Get_C6 (int64u &Info);
     void Get_C7 (int64u &Info);
     void Get_C8 (int64u &Info);
+    void Get_C12(int128u &Info);
     inline void Get_C1 (int8u  &Info, const char*) {Get_C1(Info);}
     inline void Get_C2 (int16u &Info, const char*) {Get_C2(Info);}
     inline void Get_C3 (int32u &Info, const char*) {Get_C3(Info);}
@@ -701,6 +704,7 @@ public :
     inline void Get_C6 (int64u &Info, const char*) {Get_C6(Info);}
     inline void Get_C7 (int64u &Info, const char*) {Get_C7(Info);}
     inline void Get_C8 (int64u &Info, const char*) {Get_C8(Info);}
+    inline void Get_C12(int128u& Info, const char*) {Get_C12(Info);}
     inline void Skip_C1(              const char*) {if (Element_Offset+1>Element_Size) {Trusted_IsNot(); return;} Element_Offset+=1;}
     inline void Skip_C2(              const char*) {if (Element_Offset+2>Element_Size) {Trusted_IsNot(); return;} Element_Offset+=2;}
     inline void Skip_C3(              const char*) {if (Element_Offset+3>Element_Size) {Trusted_IsNot(); return;} Element_Offset+=3;}
@@ -709,6 +713,7 @@ public :
     inline void Skip_C6(              const char*) {if (Element_Offset+6>Element_Size) {Trusted_IsNot(); return;} Element_Offset+=6;}
     inline void Skip_C7(              const char*) {if (Element_Offset+7>Element_Size) {Trusted_IsNot(); return;} Element_Offset+=7;}
     inline void Skip_C8(              const char*) {if (Element_Offset+8>Element_Size) {Trusted_IsNot(); return;} Element_Offset+=8;}
+    inline void Skip_C12(             const char*) {if (Element_Offset+12>Element_Size) {Trusted_IsNot(); return;} Element_Offset+=12;}
     #define Info_C1(_INFO, _NAME) int8u  _INFO; Get_C1(_INFO, _NAME)
     #define Info_C2(_INFO, _NAME) int16u _INFO; Get_C2(_INFO, _NAME)
     #define Info_C3(_INFO, _NAME) int32u _INFO; Get_C3(_INFO, _NAME)
@@ -717,6 +722,7 @@ public :
     #define Info_C6(_INFO, _NAME) int64u _INFO; Get_C6(_INFO, _NAME)
     #define Info_C7(_INFO, _NAME) int64u _INFO; Get_C7(_INFO, _NAME)
     #define Info_C8(_INFO, _NAME) int64u _INFO; Get_C8(_INFO, _NAME)
+    #define Info_C12(_INFO, _NAME) int64u _INFO; Get_C12(_INFO, _NAME)
 
     //***************************************************************************
     // Text
@@ -1258,6 +1264,7 @@ protected :
 
     //Elements
     size_t Element_Level;           //Current level
+    size_t Element_Level_Overflow;  //Begins beyond the element stack capacity
     bool   Element_WantNextLevel;   //Want to go to the next leavel instead of the same level
 
     //Element
@@ -1306,7 +1313,7 @@ protected :
 
     bool FileHeader_Begin_0x000001();
     bool FileHeader_Begin_XML(tinyxml2::XMLDocument &Document);
-    bool Synchronize_0x000001();
+    bool Synchronize_0x000001(bool NeedFour = false);
 public:
     #if defined(MEDIAINFO_FILE_YES)
     void TestContinuousFileNames(size_t CountOfFiles=24, Ztring FileExtension=Ztring(), bool SkipComputeDelay=false);
@@ -1458,21 +1465,25 @@ public :
         void                Fill_Conformance(const char* Field, const string& Value, uint8_t Flags = {}, conformance_type Level = Conformance_Error) { Fill_Conformance(Field, Value.c_str(), Flags, Level); }
         void                Clear_Conformance();
         void                Merge_Conformance(bool FromConfig = false);
-        void                Streams_Finish_Conformance();
+        void                Streams_Finish_Conformance(stream_t StreamKind = Stream_Max, size_t StreamPos = (size_t)-1);
         virtual string      CreateElementName();
+        string              BuildConformanceName(const string& ParserName, const char* Prefix, const char* Suffix);
         void                IsTruncated(int64u ExpectedSize = (int64u)-1, bool MoreThan = false, const char* Prefix = nullptr);
+        void                DurationIssue(int64u ActualDuration, int64u ExpectedDuration = (int64u)-1, bool MoreThan = false, const char* Prefix = nullptr);
         void                RanOutOfData(const char* Prefix = nullptr);
-        void                SynchLost(const char* Prefix = nullptr);
+        void                SynchLost(const char* Prefix = nullptr, int64u CountOfBytes = 0, bool AreZero = false);
     #else //MEDIAINFO_CONFORMANCE
         void                Fill_Conformance(const char* Field, const char* Value, uint8_t Flags = {}, conformance_type Level = Conformance_Error, stream_t StreamKind = Stream_General, size_t StreamPos = 0) {}
         void                Fill_Conformance(const char* Field, const string& Value, uint8_t Flags = {}, conformance_type Level = Conformance_Error) { Fill_Conformance(Field, Value.c_str(), Flags, Level); }
         void                Clear_Conformance() {}
         void                Merge_Conformance(bool FromConfig = false) {}
-        void                Streams_Finish_Conformance() {}
+        void                Streams_Finish_Conformance(stream_t = Stream_Max, size_t = (size_t)-1) {}
         string              CreateElementName() { return {}; }
+        string              BuildConformanceName(const string& ParserName, const char* Prefix, const char* Suffix) { return {}; }
         void                IsTruncated(int64u ExpectedSize = (int64u)-1, bool MoreThan = false, const char* = nullptr) {}
+        void                DurationIssue(int64u ActualDuration, int64u ExpectedDuration = (int64u)-1, bool MoreThan = false, const char* Prefix = nullptr) {}
         void                RanOutOfData(const char* = nullptr) { Trusted_IsNot(); }
-        void                SynchLost(const char* = nullptr) { Trusted_IsNot(); }
+        void                SynchLost(const char* = nullptr, int64u CountOfBytes = 0, bool AreZero = false) { Trusted_IsNot(); }
     #endif //MEDIAINFO_CONFORMANCE
 
     #if MEDIAINFO_SEEK

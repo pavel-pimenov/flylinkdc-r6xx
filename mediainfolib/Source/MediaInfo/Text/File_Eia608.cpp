@@ -213,11 +213,17 @@ void File_Eia608::Streams_Finish()
                     Stream.Count_PaintOn++;
                 if (Stream.Count_PaintOn)
                     Fill(Stream_Text, i, Text_Events_PaintOn, Stream.Count_PaintOn);
-                if (size_t Events_Total=Stream.Count_PopOn+Stream.Count_RollUp+Stream.Count_PaintOn)
-                    Fill(Stream_Text, i, Text_Events_Total, Events_Total);
-                Fill(Stream_Text, i, Text_Lines_Count, Stream.LineCount);
-                if (Stream.LineCount)
-                    Fill(Stream_Text, i, Text_Lines_MaxCountPerEvent, Stream.LineMaxCountPerEvent);
+                const auto Events_Total = Stream.Count_PopOn + Stream.Count_RollUp + Stream.Count_PaintOn;
+                Fill(Stream_Text, i, Text_Events_Total, Events_Total);
+                if (Events_Total)
+                {
+                    Fill(Stream_Text, i, Text_Lines_Count, Stream.LineCount);
+                    if (Stream.LineCount)
+                    {
+                        Fill(Stream_Text, i, Text_Lines_MaxCountPerEvent, Stream.LineMaxCountPerEvent);
+                        Fill(Stream_Text, i, Text_Lines_MaxCharacterCount, Stream.MaxCountOfCharsPerLine);
+                    }
+                }
             }
             i++;
         }
@@ -387,7 +393,7 @@ void File_Eia608::Read_Buffer_Continue()
             cc_data_1_Old=0x00;
             cc_data_2_Old=0x00;
             size_t StreamPos=TextMode*2+DataChannelMode; // From previous parsing
-            if (StreamPos<Streams.size() && Streams[StreamPos] && Streams[StreamPos]->Duration_End_Command_WasJustUpdated && FrameInfo.DTS!=(int64u)-1 && FrameInfo.DUR!=(int64u)-1 )
+            if (StreamPos<Streams.size() && Streams[StreamPos] && Streams[StreamPos]->Duration_End_Command_WasJustUpdated && FrameInfo.DTS!=(int64u)-1)
             {
                 Streams[StreamPos]->Duration_End_Command=(FrameInfo.DTS)/1000000.0;
                 Streams[StreamPos]->Duration_End_Command_WasJustUpdated=false;
@@ -1093,16 +1099,19 @@ void File_Eia608::Special_14(int8u cc_data_2)
                     {
                         bool HasContent=false;
                         vector<character>& Line=CC_Displayed[Pos_Y];
+                        size_t CharCountPerLine=0;
                         for (int8u Pos_X=0; Pos_X<Eia608_Columns; Pos_X++)
                             if (Line[Pos_X].Value)
                             {
                                 HasContent=true;
-                                break;
+                                CharCountPerLine++;
                             }
                         if (HasContent)
                         {
                             Stream.LineCount++;
                             LineMaxCountPerEvent_Temp++;
+                            if (Stream.MaxCountOfCharsPerLine<CharCountPerLine)
+                                Stream.MaxCountOfCharsPerLine=CharCountPerLine;
                         }
                     }
                     if (Stream.LineMaxCountPerEvent<LineMaxCountPerEvent_Temp)
@@ -1119,9 +1128,9 @@ void File_Eia608::Special_14(int8u cc_data_2)
                     break; //EOC - End of Caption
         default   : Illegal(0x14, cc_data_2);
     }
-    if (FrameInfo.DTS!=(int64u)-1 && FrameInfo.DUR!=(int64u)-1)
+    if (FrameInfo.DTS!=(int64u)-1)
     {
-        Stream.Duration_End_Command=(FrameInfo.DTS)/1000000.0;
+        Stream.Duration_End_Command=(FrameInfo.DTS+FrameInfo.DUR)/1000000.0;
         Stream.Duration_End_Command_WasJustUpdated=true;
     }
 }
@@ -1302,11 +1311,21 @@ void File_Eia608::Character_Fill(wchar_t Character)
         {
             bool HasContent=false;
             vector<character>& Line=CC_Displayed[Pos_Y];
+            size_t CharCountPerLine=0;
             for (int8u Pos_X=0; Pos_X<Eia608_Columns; Pos_X++)
+            {
                 if (Line[Pos_X].Value)
+                {
                     HasContent=true;
+                    CharCountPerLine++;
+                }
+            }
             if (HasContent)
+            {
                 LineMaxCountPerEvent_Temp++;
+                if (Stream.MaxCountOfCharsPerLine<CharCountPerLine)
+                    Stream.MaxCountOfCharsPerLine=CharCountPerLine;
+            }
         }
         if (Stream.LineMaxCountPerEvent<LineMaxCountPerEvent_Temp)
             Stream.LineMaxCountPerEvent=LineMaxCountPerEvent_Temp;
@@ -1317,8 +1336,7 @@ void File_Eia608::Character_Fill(wchar_t Character)
     if (TextMode || !Stream.InBack)
         HasChanged();
 
-    if (!HasContent)
-        HasContent=true;
+    HasContent=true;
 }
 
 //---------------------------------------------------------------------------

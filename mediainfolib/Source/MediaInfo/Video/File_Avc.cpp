@@ -759,10 +759,10 @@ File_Avc::avcintra_header File_Avc::AVC_Intra_Headers_Data(int32u CodecID)
 }
 
 //---------------------------------------------------------------------------
-int32u File_Avc::AVC_Intra_CodecID_FromMeta(int32u Width, int32u Height, int32u Fields, int32u SampleDuration, int32u TimeScale, int32u SizePerFrame)
+int32u File_Avc::AVC_Intra_CodecID_FromMeta(int32u Width, int32u Height, int32u Fields, int32u SampleDuration, int32u TimeScale, int64u SizePerFrame)
 {
     // Computing bitrate
-    int64u BitRate=SampleDuration?(((int64u)SizePerFrame)*8*TimeScale/SampleDuration):0;
+    int64u BitRate=SampleDuration?((SizePerFrame)*8*TimeScale/SampleDuration):0;
     int64u SampleRate=SampleDuration?(float64_int64s(((float64)TimeScale)/SampleDuration)):0;
     int32u Class;
     switch (Width)
@@ -868,6 +868,17 @@ int32u File_Avc::AVC_Intra_CodecID_FromMeta(int32u Width, int32u Height, int32u 
 //***************************************************************************
 // Streams management
 //***************************************************************************
+
+//---------------------------------------------------------------------------
+void File_Avc::Fill_BitRate_Mode(File__Analyze* Instance, bool cbr_flag, bool cbr_flag_IsSet, bool cbr_flag_IsValid, int64u bit_rate_value, bool bit_rate_value_IsValid)
+{
+    if (cbr_flag_IsSet && cbr_flag_IsValid)
+    {
+        Instance->Fill(Stream_Video, 0, Video_BitRate_Mode, cbr_flag?"CBR":"VBR");
+        if (bit_rate_value!=(int64u)-1 && bit_rate_value_IsValid)
+            Instance->Fill(Stream_Video, 0, cbr_flag?Video_BitRate_Nominal:Video_BitRate_Maximum, bit_rate_value);
+    }
+}
 
 //---------------------------------------------------------------------------
 void File_Avc::Streams_Fill()
@@ -1006,12 +1017,7 @@ void File_Avc::Streams_Fill(std::vector<seq_parameter_set_struct*>::iterator seq
                     cbr_flag_IsSet=true;
                 }
             }
-        if (cbr_flag_IsSet && cbr_flag_IsValid)
-        {
-            Fill(Stream_Video, 0, Video_BitRate_Mode, cbr_flag?"CBR":"VBR");
-            if (bit_rate_value!=(int64u)-1 && bit_rate_value_IsValid)
-                Fill(Stream_Video, 0, cbr_flag?Video_BitRate_Nominal:Video_BitRate_Maximum, bit_rate_value);
-        }
+        Fill_BitRate_Mode(this, cbr_flag, cbr_flag_IsSet, cbr_flag_IsValid, bit_rate_value, bit_rate_value_IsValid);
     }
 
     auto Profile=Avc_profile_level_string(seq_parameter_set_Item->profile_idc, seq_parameter_set_Item->level_idc, seq_parameter_set_Item->constraint_set_flags);
@@ -1073,10 +1079,10 @@ void File_Avc::Streams_Fill(std::vector<seq_parameter_set_struct*>::iterator seq
     PictureTypes.reserve(TemporalReferences_Size);
     //TODO: check specs for catching when even reference numbers are used in progressive streams
     auto HasOddNumbers=false;
-    for (size_t Pos=1; Pos<TemporalReferences_Size; Pos+=2)
+    for (size_t Pos=1; Pos<(size_t)TemporalReferences_Size; Pos+=2)
         if (TemporalReferences[Pos])
             HasOddNumbers=true;
-    for (size_t Pos=0; Pos<TemporalReferences_Size; Pos++)
+    for (size_t Pos=0; Pos<(size_t)TemporalReferences_Size; Pos++)
         if (TemporalReferences[Pos])
         {
             ScanOrders+=TemporalReferences[Pos]->IsTop?'T':'B';
@@ -1086,12 +1092,12 @@ void File_Avc::Streams_Fill(std::vector<seq_parameter_set_struct*>::iterator seq
         else if (!PictureTypes.empty()) //Only if stream already started
         {
             auto IsBeforeI=false;
-            for (size_t Pos2=Pos; Pos2<TemporalReferences_Size; Pos2++)
+            for (size_t Pos2=Pos; Pos2<(size_t)TemporalReferences_Size; Pos2++)
             {
                 auto TemporalReference=TemporalReferences[Pos2];
                 if (TemporalReference)
                 {
-                    for (; Pos2<TemporalReferences_Size; Pos2++)
+                    for (; Pos2<(size_t)TemporalReferences_Size; Pos2++)
                     {
                         TemporalReference=TemporalReferences[Pos2];
                         if (!TemporalReference || (TemporalReference->slice_type!=1 && TemporalReference->slice_type!=6))
@@ -1294,71 +1300,8 @@ void File_Avc::Streams_Finish()
 }
 
 //***************************************************************************
-// Buffer - File header
-//***************************************************************************
-
-//---------------------------------------------------------------------------
-bool File_Avc::FileHeader_Begin()
-{
-    if (!File__Analyze::FileHeader_Begin_0x000001())
-        return false;
-
-    if (!MustSynchronize)
-    {
-        Synched_Init();
-        Buffer_TotalBytes_FirstSynched=0;
-        File_Offset_FirstSynched=File_Offset;
-    }
-
-    //All should be OK
-    return true;
-}
-
-//***************************************************************************
 // Buffer - Synchro
 //***************************************************************************
-
-//---------------------------------------------------------------------------
-bool File_Avc::Synchronize()
-{
-    //Synchronizing
-    size_t Buffer_Offset_Min=Buffer_Offset;
-    while(Buffer_Offset+4<=Buffer_Size && (Buffer[Buffer_Offset  ]!=0x00
-                                        || Buffer[Buffer_Offset+1]!=0x00
-                                        || Buffer[Buffer_Offset+2]!=0x01))
-    {
-        Buffer_Offset+=2;
-        while(Buffer_Offset<Buffer_Size && Buffer[Buffer_Offset]!=0x00)
-            Buffer_Offset+=2;
-        if (Buffer_Offset>=Buffer_Size || Buffer[Buffer_Offset-1]==0x00)
-            Buffer_Offset--;
-    }
-    if (Buffer_Offset>Buffer_Offset_Min && Buffer[Buffer_Offset-1]==0x00)
-        Buffer_Offset--;
-
-    //Parsing last bytes if needed
-    if (Buffer_Offset+4==Buffer_Size && (Buffer[Buffer_Offset  ]!=0x00
-                                      || Buffer[Buffer_Offset+1]!=0x00
-                                      || Buffer[Buffer_Offset+2]!=0x00
-                                      || Buffer[Buffer_Offset+3]!=0x01))
-        Buffer_Offset++;
-    if (Buffer_Offset+3==Buffer_Size && (Buffer[Buffer_Offset  ]!=0x00
-                                      || Buffer[Buffer_Offset+1]!=0x00
-                                      || Buffer[Buffer_Offset+2]!=0x01))
-        Buffer_Offset++;
-    if (Buffer_Offset+2==Buffer_Size && (Buffer[Buffer_Offset  ]!=0x00
-                                      || Buffer[Buffer_Offset+1]!=0x00))
-        Buffer_Offset++;
-    if (Buffer_Offset+1==Buffer_Size &&  Buffer[Buffer_Offset  ]!=0x00)
-        Buffer_Offset++;
-
-    if (Buffer_Offset+4>Buffer_Size)
-        return false;
-
-    //Synched is OK
-    Synched=true;
-    return true;
-}
 
 //---------------------------------------------------------------------------
 bool File_Avc::Synched_Test()
@@ -1836,8 +1779,11 @@ void File_Avc::Read_Buffer_Unsynched()
                     default: Trusted_IsNot("Not supported"); return;
                 }
 
-                TemporalReferences.resize(4*MaxNumber);
-                TemporalReferences_Reserved=MaxNumber;
+                if (MaxNumber>TemporalReferences_Reserved)
+                {
+                    TemporalReferences.resize(4*MaxNumber);
+                    TemporalReferences_Reserved=MaxNumber;
+                }
             }
     }
     else
@@ -2006,9 +1952,9 @@ bool File_Avc::Header_Parser_QuickSearch()
 
         //Synchronizing
         Buffer_Offset+=4;
-        Synched=false;
         if (!Synchronize())
         {
+            Synched=false;
             UnSynched_IsNotJunk=true;
             return false;
         }
@@ -2020,7 +1966,7 @@ bool File_Avc::Header_Parser_QuickSearch()
         }
     }
 
-    Trusted_IsNot("AVC, Synchronisation lost");
+    Trusted_IsNot("AVC, Synchronization lost");
     return Synchronize();
 }
 
@@ -2606,7 +2552,7 @@ void File_Avc::slice_header()
                     auto PictureTypes_PreviousFrames_InitialSize=PictureTypes_PreviousFrames.size();
                     //TODO: check specs for catching when even reference numbers are used in progressive streams
                     auto HasOddNumbers=false;
-                    for (size_t Pos=1; Pos<TemporalReferences_Size; Pos+=2)
+                    for (size_t Pos=1; Pos<(size_t)TemporalReferences_Size; Pos+=2)
                         if (TemporalReferences[Pos])
                             HasOddNumbers=true;
                     bool IsStarted=false;
@@ -2622,12 +2568,12 @@ void File_Avc::slice_header()
                         else if (PictureTypes_PreviousFrames.size()!=PictureTypes_PreviousFrames_InitialSize) //Only if stream already started
                         {
                             auto IsBeforeI=false;
-                            for (size_t Pos2=Pos; Pos2<TemporalReferences_Size; Pos2++)
+                            for (size_t Pos2=Pos; Pos2<(size_t)TemporalReferences_Size; Pos2++)
                             {
                                 auto TemporalReference=TemporalReferences[Pos2];
                                 if (TemporalReference)
                                 {
-                                    for (; Pos2<TemporalReferences_Size; Pos2++)
+                                    for (; Pos2<(size_t)TemporalReferences_Size; Pos2++)
                                     {
                                         TemporalReference=TemporalReferences[Pos2];
                                         if (!TemporalReference || (TemporalReference->slice_type!=1 && TemporalReference->slice_type!=6))
@@ -2713,7 +2659,13 @@ void File_Avc::slice_header()
                     {
                         if (!pic_order_cnt_lsb || pic_order_cnt_Displayed==numeric_limits<decltype(pic_order_cnt_Displayed)>::max())
                         {
-                            pic_order_cnt_Displayed=pic_order_cnt+pic_order_cnt_Delta;
+                            pic_order_cnt_Displayed=pic_order_cnt;
+                            // At IDR frames, frame reordering resets and the
+                            // delta is no longer relevant. In general, IDRs
+                            // should be decodable without considering any
+                            // prior frame's POC metadata.
+                            if (Element_Code!=0x05)
+                                pic_order_cnt_Displayed+=pic_order_cnt_Delta;
                             pic_order_cnt_Delta=0;
                             FrameInfo.PTS=PTS_End;
                         }
@@ -2789,10 +2741,10 @@ void File_Avc::slice_header()
                     PictureTypes.reserve(TemporalReferences_Size);
                     //TODO: check specs for catching when even reference numbers are used in progressive streams
                     auto HasOddNumbers=false;
-                    for (size_t Pos=1; Pos<TemporalReferences_Size; Pos+=2)
+                    for (size_t Pos=1; Pos<(size_t)TemporalReferences_Size; Pos+=2)
                         if (TemporalReferences[Pos])
                             HasOddNumbers=true;
-                    for (size_t Pos=0; Pos<TemporalReferences_Size; Pos++)
+                    for (size_t Pos=0; Pos<(size_t)TemporalReferences_Size; Pos++)
                         if (TemporalReferences[Pos])
                         {
                             if ((HasOddNumbers && (*seq_parameter_set_Item)->frame_mbs_only_flag) || (Pos%2)==0)
@@ -2801,12 +2753,12 @@ void File_Avc::slice_header()
                         else if (!PictureTypes.empty()) //Only if stream already started
                         {
                             auto IsBeforeI=false;
-                            for (size_t Pos2=Pos; Pos2<TemporalReferences_Size; Pos2++)
+                            for (size_t Pos2=Pos; Pos2<(size_t)TemporalReferences_Size; Pos2++)
                             {
                                 auto TemporalReference=TemporalReferences[Pos2];
                                 if (TemporalReference)
                                 {
-                                    for (; Pos2<TemporalReferences_Size; Pos2++)
+                                    for (; Pos2<(size_t)TemporalReferences_Size; Pos2++)
                                     {
                                         TemporalReference=TemporalReferences[Pos2];
                                         if (!TemporalReference || (TemporalReference->slice_type!=1 && TemporalReference->slice_type!=6))
@@ -4368,7 +4320,7 @@ File_Avc::seq_parameter_set_struct* File_Avc::seq_parameter_set_data(int32u &Dat
     seq_parameter_set_struct::vui_parameters_struct* vui_parameters_Item=NULL;
     int32u  chroma_format_idc=1, bit_depth_luma_minus8=0, bit_depth_chroma_minus8=0, log2_max_frame_num_minus4, pic_order_cnt_type, log2_max_pic_order_cnt_lsb_minus4=(int32u)-1, max_num_ref_frames, pic_width_in_mbs_minus1, pic_height_in_map_units_minus1, frame_crop_left_offset=0, frame_crop_right_offset=0, frame_crop_top_offset=0, frame_crop_bottom_offset=0;
     int8u   profile_idc, constraint_set_flags, level_idc;
-    bool    constraint_set1_flag=false, constraint_set3_flag=false, separate_colour_plane_flag=false, delta_pic_order_always_zero_flag=false, frame_mbs_only_flag, mb_adaptive_frame_field_flag=false;
+    bool    separate_colour_plane_flag=false, delta_pic_order_always_zero_flag=false, frame_mbs_only_flag, mb_adaptive_frame_field_flag=false;
     Get_B1 (profile_idc,                                        "profile_idc");
     Get_B1 (constraint_set_flags,                               "constraint_sett_flags");
         Skip_Flags(constraint_set_flags, 7,                     "constraint_sett0_flag");

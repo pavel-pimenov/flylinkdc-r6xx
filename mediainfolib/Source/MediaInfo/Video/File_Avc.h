@@ -55,7 +55,10 @@ public :
         {}
     };
     static avcintra_header AVC_Intra_Headers_Data(int32u CodecID);
-    static int32u AVC_Intra_CodecID_FromMeta(int32u Width, int32u Height, int32u Fields, int32u SampleDuration, int32u TimeScale, int32u SizePerFrame);
+    static int32u AVC_Intra_CodecID_FromMeta(int32u Width, int32u Height, int32u Fields, int32u SampleDuration, int32u TimeScale, int64u SizePerFrame);
+
+    //Helper for BitRate_Mode
+    static void Fill_BitRate_Mode(File__Analyze* Instance, bool cbr_flag, bool cbr_flag_IsSet, bool cbr_flag_IsValid, int64u bit_rate_value, bool bit_rate_value_IsValid);
 
 private :
     File_Avc(const File_Avc &File_Avc); //No copy
@@ -357,10 +360,10 @@ private :
     void Streams_Finish();
 
     //Buffer - File header
-    bool FileHeader_Begin();
+    bool FileHeader_Begin() { return FileHeader_Begin_0x000001(); }
 
     //Buffer - Synchro
-    bool Synchronize();
+    bool Synchronize() {return Synchronize_0x000001(true);}
     bool Synched_Test();
     void Synched_Init();
 

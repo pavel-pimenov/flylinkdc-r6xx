@@ -310,6 +310,14 @@ File_Mpega::File_Mpega()
     CalculateDelay=false;
 
     //Temp - BitStream info
+    ID=0;
+    layer=0;
+    bitrate_index=0;
+    sampling_frequency=0;
+    padding_bit=false;
+    mode=0;
+    mode_extension=0;
+    emphasis=0;
     Surround_Frames=0;
     Block_Count[0]=0;
     Block_Count[1]=0;
@@ -333,7 +341,10 @@ File_Mpega::File_Mpega()
     VBR_FileSize=0;
     VBR_Frames=0;
     Reservoir_Max=0;
+    Xing_Info_Found = false; 
     Xing_Scale=0;
+    Encoder_Delay = 0;
+    Encoder_Padding = 0;
     BitRate=0;
     MpegPsPattern_Count=0;
     VBR_Frames_IsCbr=false;
@@ -435,6 +446,12 @@ void File_Mpega::Streams_Finish()
     //size_t Ch=Mpega_Channels[Channels];
     //Fill("Scalefactors", Ztring::ToZtring(Scalefac*100/(Granules*Ch*Frame_Count))+__T('%'));
 
+    if (LastSync_Offset != (int64u)-1 && File_Offset + Buffer_Size > LastSync_Offset)
+    {
+        Buffer_Offset = Buffer_Size;
+        SynchLost("MPEG-Audio", File_Offset + Buffer_Size - LastSync_Offset, !LastSync_Offset_AreNotZero);
+    }
+
     //VBR_FileSize calculation
     if (!IsSub && (File_Size!=(int64u)-1 || LastSync_Offset!=(int64u)-1) && VBR_FileSize==0)
     {
@@ -452,23 +469,42 @@ void File_Mpega::Streams_Finish()
         }
     }
 
+    //VBR detection without header
+    //BitRate_Count may have changed after Streams_Fill() sampled the first frames.
+    if (VBR_Frames==0)
+    {
+        if (BitRate_Count.size()>1)
+            BitRate_Mode=__T("VBR");
+    }
+
     //Bitrate calculation if VBR
     int64u FrameCount=0;
     if (VBR_Frames>0)
     {
         FrameCount=VBR_Frames;
-        float32 FrameLength=((float32)(VBR_FileSize?VBR_FileSize:File_Size-File_EndTagSize-File_BeginTagSize))/VBR_Frames;
-        size_t Divider;
-        if (ID==3 && layer==3) //MPEG 1 layer 1
-             Divider=384/8;
-        else if ((ID==2 || ID==0) && layer==3) ///MPEG 2 or 2.5 layer 1
-             Divider=192/8;
-        else if ((ID==2 || ID==0) && layer==1) //MPEG 2 or 2.5 layer 3
-            Divider=576/8;
+
+        //For CBR files with Info tag, use bitrate from frame header instead of calculating from file size
+        //Calculating from file size gives inaccurate results due to padding
+        if (VBR_Frames_IsCbr && ID<4 && layer<4 && bitrate_index<16)
+        {
+            BitRate=Mpega_BitRate[ID][layer][bitrate_index]*1000;
+        }
         else
-            Divider=1152/8;
-        if (ID<4 && sampling_frequency<4)
-            BitRate=float32_int32s(FrameLength*Mpega_SamplingRate[ID][sampling_frequency]/Divider);
+        {
+            //VBR files: calculate average bitrate from file size
+            float32 FrameLength=((float32)(VBR_FileSize?VBR_FileSize:File_Size-File_EndTagSize-File_BeginTagSize))/VBR_Frames;
+            size_t Divider;
+            if (ID==3 && layer==3) //MPEG 1 layer 1
+                Divider=384/8;
+            else if ((ID==2 || ID==0) && layer==3) ///MPEG 2 or 2.5 layer 1
+                Divider=192/8;
+            else if ((ID==2 || ID==0) && layer==1) //MPEG 2 or 2.5 layer 3
+                Divider=576/8;
+            else
+                Divider=1152/8;
+            if (ID<4 && sampling_frequency<4)
+                BitRate=float32_int32s(FrameLength*Mpega_SamplingRate[ID][sampling_frequency]/Divider);
+        }
         BitRate_Mode=(VBR_Frames_IsCbr?__T("CBR"):__T("VBR"));
     }
     //if (BitRate_Count.size()>1)
@@ -520,8 +556,16 @@ void File_Mpega::Streams_Finish()
 
     if (FrameInfo.PTS!=(int64u)-1 && FrameInfo.PTS>PTS_Begin)
     {
-        Fill(Stream_Audio, 0, Audio_Duration, float64_int64s(((float64)(FrameInfo.PTS-PTS_Begin))/1000000));
-        if (Retrieve(Stream_Audio, 0, Audio_BitRate_Mode)==__T("CBR") && ID<4 && sampling_frequency<4)
+        auto Duration = ((float64)(FrameInfo.PTS - PTS_Begin)) / 1000000;
+        const auto& ExpectedDurationS = Retrieve_Const(Stream_Audio, 0, Audio_Duration);
+        if (!ExpectedDurationS.empty()) {
+            DurationIssue(float64_int64s(Duration), ExpectedDurationS.To_int64u(), false, "MPEG-Audio");
+        }
+        Fill(Stream_Audio, 0, Audio_Duration, Duration, 0, true);
+        // Only use PTS-based frame count calculation if FrameCount is not already known 
+        // (e.g., from VBR_Frames/Info tag). Overwriting a valid VBR_Frames count with PTS 
+        // calculation causes an off-by-one error (includes the Xing/Info frame).
+        if (FrameCount==0 && Retrieve(Stream_Audio, 0, Audio_BitRate_Mode)==__T("CBR") && ID<4 && sampling_frequency<4)
         {
             int16u Samples;
             if (ID==3 && layer==3) //MPEG 1 layer 1
@@ -541,6 +585,10 @@ void File_Mpega::Streams_Finish()
         float64 Size=((float64)Mpega_Coefficient[ID][layer]*Mpega_BitRate[ID][layer][bitrate_index]*1000/Mpega_SamplingRate[ID][sampling_frequency])*Mpega_SlotSize[layer];
         if (Size)
             FrameCount=float64_int64s(VBR_FileSize/Size);
+
+        //Subtract the Xing/Info tag frame from CBR file-size-based estimation
+        if (Xing_Info_Found && FrameCount > 0)
+            FrameCount--;
     }
 
     if (FrameCount)
@@ -552,8 +600,41 @@ void File_Mpega::Streams_Finish()
             Samples=576;
         else
             Samples=1152;
+
+        //Gapless: subtract encoder delay and padding from total sample count
+        int64u SamplingCount = FrameCount * (int64u)Samples;
+        int64u SamplingCount_Source = SamplingCount + Xing_Info_Found * Samples;
+        if (Encoder_Delay > 0 || Encoder_Padding > 0)
+        {
+            int64u DelayPadding = (int64u)Encoder_Delay + (int64u)Encoder_Padding;
+            if (SamplingCount >= DelayPadding)
+                SamplingCount -= DelayPadding;
+            else
+                SamplingCount = 0;
+        }
+
         Fill(Stream_Audio, 0, Audio_FrameCount, FrameCount, 10, true);
-        Fill(Stream_Audio, 0, Audio_SamplingCount, FrameCount*Samples, 10, true);
+        Fill(Stream_Audio, 0, Audio_SamplingCount, SamplingCount, 10, true);
+
+        //Recalculate duration from actual (gapless) sample count
+        if (ID<4 && sampling_frequency<4 && Mpega_SamplingRate[ID][sampling_frequency]>0)
+        {
+            int64u Duration = float64_int64s(((float64)SamplingCount) * 1000 / Mpega_SamplingRate[ID][sampling_frequency]);
+            Fill(Stream_Audio, 0, Audio_Duration, Duration, 10, true);
+            Fill(Stream_General, 0, General_Duration, Duration, 10, true);
+            if (SamplingCount_Source != SamplingCount)
+            {
+                int64u Duration = float64_int64s(((float64)SamplingCount_Source) * 1000 / Mpega_SamplingRate[ID][sampling_frequency]);
+                Fill(Stream_Audio, 0, Audio_Source_Duration, Duration, 10, true);
+            }
+
+            //Update OverallBitRate after duration recalculation for CBR files
+            //This ensures OverallBitRate matches Audio_BitRate for CBR files
+            if (Retrieve(Stream_Audio, 0, Audio_BitRate_Mode)==__T("CBR") && BitRate>0)
+            {
+                Fill(Stream_General, 0, General_OverallBitRate, BitRate, 10, true);
+            }
+        }
         float64 audio_fps = (float64)((float64)Mpega_SamplingRate[ID][sampling_frequency] / (float64)Samples);
         Fill(Stream_Audio, 0, Audio_FrameRate, audio_fps, 3, true);
     }
@@ -602,6 +683,10 @@ bool File_Mpega::Synchronize()
     if (Tag_Found_Begin)
         return true;
 
+    //Padding
+    while (Buffer_Offset<Buffer_Size && Buffer[Buffer_Offset]==0x00)
+        Buffer_Offset++;
+
     //Synchro
     if (Buffer_Offset+3>Buffer_Size)
         return false;
@@ -615,6 +700,8 @@ bool File_Mpega::Synchronize()
     }
 
     //Synchronizing
+    auto Buffer_Offset_BeforeZero = Buffer_Offset;
+    LastSync_Offset_AreNotZero = true; // In case there is a return during check
     while (Buffer_Offset+4<=Buffer_Size)
     {
         while (Buffer_Offset+4<=Buffer_Size)
@@ -818,7 +905,17 @@ bool File_Mpega::Synchronize()
         return false;
     }
 
+    if (Frame_Count == 0 && !IsSub) {
+        FrameInfo.PTS = 0;
+    }
+
     //Synched is OK
+    if (LastSync_Offset != (int64u)-1 && File_Offset + Buffer_Offset > LastSync_Offset) {
+        LastSync_Offset_AreNotZero = Buffer_Offset_BeforeZero != Buffer_Offset;
+        SynchLost("MPEG-Audio", File_Offset + Buffer_Offset - LastSync_Offset, !LastSync_Offset_AreNotZero);
+    }
+    LastSync_Offset = File_Offset + Buffer_Offset;
+    LastSync_Offset_AreNotZero = false;
     return true;
 }
 
@@ -826,12 +923,10 @@ bool File_Mpega::Synchronize()
 bool File_Mpega::Synched_Test()
 {
     //Tags
-    if (!File__Tags_Helper::Synched_Test())
+    if (!File__Tags_Helper::Synched_Test() && File_Offset+Buffer_Size<File_Size)
         return false;
 
-    //Padding
-    while (Buffer_Offset<Buffer_Size && Buffer[Buffer_Offset]==0x00)
-        Buffer_Offset++;
+    LastSync_Offset=File_Offset+Buffer_Offset+Element_Offset;
 
     //Must have enough buffer for having header
     if (Buffer_Offset+3>Buffer_Size)
@@ -843,7 +938,7 @@ bool File_Mpega::Synched_Test()
      || (Buffer[Buffer_Offset+2]&0xF0)==0xF0
      || (Buffer[Buffer_Offset+2]&0x0C)==0x0C)
     {
-        SynchLost("MPEG-Audio");
+        Synched=false;
         return true;
     }
 
@@ -854,7 +949,7 @@ bool File_Mpega::Synched_Test()
     int8u sampling_frequency0=(CC1(Buffer+Buffer_Offset+2)>>2)&0x03;
     if (Mpega_SamplingRate[ID0][sampling_frequency0]==0 || Mpega_Coefficient[ID0][layer0]==0 || Mpega_BitRate[ID0][layer0][bitrate_index0]==0 || Mpega_SlotSize[layer0]==0)
     {
-        SynchLost("MPEG Audio");
+        Synched=false;
         return true;
     }
 
@@ -870,6 +965,8 @@ bool File_Mpega::Synched_Test()
 #if MEDIAINFO_DEMUX
 bool File_Mpega::Demux_UnpacketizeContainer_Test()
 {
+    if (Buffer_Offset>Buffer_Size || Buffer_Size-Buffer_Offset<4)
+        return false;
     //Retrieving some info
     int8u ID0                =(CC1(Buffer+Buffer_Offset+1)>>3)&0x03;
     int8u layer0             =(CC1(Buffer+Buffer_Offset+1)>>1)&0x03;
@@ -877,7 +974,7 @@ bool File_Mpega::Demux_UnpacketizeContainer_Test()
     int8u sampling_frequency0=(CC1(Buffer+Buffer_Offset+2)>>2)&0x03;
     int8u padding_bit0       =(CC1(Buffer+Buffer_Offset+2)>>1)&0x01;
 
-    if (Mpega_SamplingRate[ID][sampling_frequency]==0 || Mpega_Coefficient[ID][layer]==0 || Mpega_BitRate[ID][layer][bitrate_index]==0 || Mpega_SlotSize[layer]==0)
+    if (Mpega_SamplingRate[ID0][sampling_frequency0]==0 || Mpega_Coefficient[ID0][layer0]==0 || Mpega_BitRate[ID0][layer0][bitrate_index0]==0 || Mpega_SlotSize[layer0]==0)
         return true; //Synhro issue
 
     #if MEDIAINFO_ADVANCED
@@ -901,6 +998,28 @@ bool File_Mpega::Demux_UnpacketizeContainer_Test()
     return true;
 }
 #endif //MEDIAINFO_DEMUX
+
+//***************************************************************************
+// Buffer - Globzl
+//***************************************************************************
+
+//---------------------------------------------------------------------------
+void File_Mpega::Read_Buffer_Unsynched()
+{
+    FrameInfo.PTS = (int64u)-1;
+    LastSync_Offset = (int64u)-1;
+    LastSync_Offset_AreNotZero = false;
+}
+
+//---------------------------------------------------------------------------
+void File_Mpega::Read_Buffer_Continue()
+{
+    if (IsSub)
+    {
+        LastSync_Offset = (int64u)-1;
+        LastSync_Offset_AreNotZero = false;
+    }
+}
 
 //***************************************************************************
 // Buffer - Per element
@@ -981,22 +1100,8 @@ void File_Mpega::Data_Parse()
         return;
     }
 
-    //Partial frame
-    auto FrameSize = ((int64u)Mpega_Coefficient[ID][layer] * (int64u)Mpega_BitRate[ID][layer][bitrate_index] * 1000 / (int64u)Mpega_SamplingRate[ID][sampling_frequency] + (padding_bit ? 1 : 0))* (int64u)Mpega_SlotSize[layer];
-    auto RealFrameSize = Header_Size + Element_Size;
-    if (RealFrameSize < FrameSize)
-    {
-        IsTruncated(File_Offset+Buffer_Offset+RealFrameSize, true, "MPEG-Audio");
-        Element_Name("Partial frame");
-        Skip_XX(Element_Size,                                   "Data");
-        return;
-    }
-
-    //PTS
-    Element_Info1C((FrameInfo.PTS!=(int64u)-1), __T("PTS ")+Ztring().Duration_From_Milliseconds(float64_int64s(((float64)FrameInfo.PTS)/1000000)));
-
-    //Name
-    Element_Info1(__T("Frame ")+Ztring::ToZtring(Frame_Count));
+    LastSync_Offset = File_Offset + Buffer_Offset + Element_Size;
+    LastSync_Offset_AreNotZero = false;
 
     //VBR and library headers
     if (Frame_Count<3) //No need to do it too much
@@ -1010,7 +1115,6 @@ void File_Mpega::Data_Parse()
         Frame_Count_Valid=Frame_Count; //Finish MPEG Audio frames in case of there are less than Frame_Count_Valid frames
     if (Frame_Count==0 && Frame_Count_NotParsedIncluded==0)
         PTS_Begin=FrameInfo.PTS;
-    LastSync_Offset=File_Offset+Buffer_Offset+Element_Size;
     {
         int16u Samples;
         if (ID==3 && layer==3) //MPEG 1 layer 1
@@ -1033,6 +1137,21 @@ void File_Mpega::Data_Parse()
     Channels_Count[mode]++;
     Extension_Count[mode_extension]++;
     Emphasis_Count[emphasis]++;
+
+    //Partial frame
+    auto FrameSize = ((int64u)Mpega_Coefficient[ID][layer] * (int64u)Mpega_BitRate[ID][layer][bitrate_index] * 1000 / (int64u)Mpega_SamplingRate[ID][sampling_frequency] + (padding_bit ? 1 : 0))* (int64u)Mpega_SlotSize[layer];
+    auto RealFrameSize = Header_Size + Element_Size;
+    if (padding_bit && FrameSize - RealFrameSize == 1)
+    {
+        Fill_Conformance(BuildConformanceName(ParserName, "MPEG-Audio", "PaddingBit").c_str(), string("Padding bit is wrong") + (!IsSub && File_Offset + Buffer_Offset + Element_Size == File_Size ? " at end of the file" : "") + " (actual 1, expected 0)", {}, Conformance_Warning);
+    }
+    else if (RealFrameSize < FrameSize)
+    {
+        IsTruncated(File_Offset+Buffer_Offset+FrameSize-Header_Size, true, "MPEG-Audio");
+        Element_Info1("Partial frame");
+        Skip_XX(Element_Size,                                   "Data");
+        return;
+    }
 
     if (Status[IsFilled])
     {
@@ -1129,6 +1248,8 @@ void File_Mpega::Data_Parse()
             File__Analyze::Data_GoTo(File_Size-File_EndTagSize, "Tags inside a frame, parsing the tags");
         }
     FILLING_END();
+
+    Merge_Conformance();
 }
 
 //---------------------------------------------------------------------------
@@ -1259,6 +1380,7 @@ bool File_Mpega::Header_Xing()
         {
             //This is a "tag"
             Element_Info1("Tag (Xing)");
+            Xing_Info_Found = true;
 
             //Parsing
             Element_Begin1("Xing");
@@ -1301,10 +1423,8 @@ bool File_Mpega::Header_Xing()
                 Skip_XX(100,                                    "TOC");
             if (Scale)
                 Get_B4 (Xing_Scale,                             "Scale");
-            string Lib;
             Element_End0();
-            Peek_String(4, Lib);
-            if (Lame || Lib=="LAME" || Lib=="GOGO" || Lib=="L3.9")
+            if (Element_Offset + 36 <= Element_Size) //Universal: attempt to read extension tag regardless of encoder name
                 Header_Encoders_Lame();
 
             //Clearing Error detection
@@ -1373,12 +1493,15 @@ bool File_Mpega::Header_VBRI()
 //---------------------------------------------------------------------------
 bool File_Mpega::Header_Encoders()
 {
+    if (Buffer_Offset>Buffer_Size || Element_Size>Buffer_Size-Buffer_Offset)
+        return false;
+
     std::string BufferS((const char*)(Buffer+Buffer_Offset), (size_t)Element_Size);
     size_t Buffer_Pos;
 
     //Lame
     Buffer_Pos=BufferS.find("LAME");
-    if (Buffer_Pos!=std::string::npos && Buffer_Pos<=Element_Size-8)
+    if (Buffer_Pos!=std::string::npos && Element_Size>=8 && Buffer_Pos<=Element_Size-8)
     {
         Element_Info1("With tag (Lame)");
         Element_Offset=Buffer_Pos;
@@ -1386,28 +1509,40 @@ bool File_Mpega::Header_Encoders()
             Get_String (20, Encoded_Library,                    "Encoded_Library");
         else
             Get_String ( 8, Encoded_Library,                    "Encoded_Library");
-        Encoded_Library.erase(Encoded_Library.find_last_not_of("AU\xAA")+1);
+        // Keep only leading printable ASCII part
+        size_t End=0;
+        while (End<Encoded_Library.size())
+        {
+            const unsigned char C=(unsigned char)(Encoded_Library[End]);
+            if (C>=0x20 && C<=0x7E)
+                ++End;
+            else
+                break;
+        }
+        Encoded_Library.resize(End);
+        Encoded_Library.erase(Encoded_Library.find_last_not_of("AU")+1); // Clean LAME3.100AAAA...UUU
+
         Element_Offset=0; //Reseting it
         return true;
     }
 
     //RCA
     Buffer_Pos=BufferS.find("RCA mp3PRO Encoder");
-    if (Buffer_Pos!=std::string::npos && Buffer_Pos<Element_Size-23)
+    if (Buffer_Pos!=std::string::npos && Element_Size>=23 && Buffer_Pos<=Element_Size-23)
     {
         Element_Info1("With tag (RCA)");
         Encoded_Library="RCA ";
-        Encoded_Library+=string((const char*)(Buffer+Buffer_Offset+18), 5);
+        Encoded_Library+=string((const char*)(Buffer+Buffer_Offset+Buffer_Pos+18), 5);
         return true;
     }
 
     //Thomson
     Buffer_Pos=BufferS.find("THOMSON mp3PRO Encoder");
-    if (Buffer_Pos!=std::string::npos && Buffer_Pos<Element_Size-29)
+    if (Buffer_Pos!=std::string::npos && Element_Size>=28 && Buffer_Pos<=Element_Size-28)
     {
         Element_Info1("With tag (Thomson)");
         Encoded_Library="Thomson ";
-        Encoded_Library+=string((const char*)(Buffer+Buffer_Offset+22), 6);
+        Encoded_Library+=string((const char*)(Buffer+Buffer_Offset+Buffer_Pos+22), 6);
         return true;
     }
 
@@ -1434,39 +1569,29 @@ bool File_Mpega::Header_Encoders()
 
 void File_Mpega::Header_Encoders_Lame()
 {
-    bool HasInfoTag=false;
-    if (Element_Offset+9<=Element_Size)
-    {
-        const int8u* Tag=Buffer+Buffer_Offset+(size_t)Element_Offset;
-        int32u Name=BigEndian2int32u(Tag);
-        if (Name==0x4C414D45   // "LAME"
-         && Tag[5]=='.')
-        {
-            //Needs addtional tests, as v3.89 and less have no Lame Info tag, but v3.100 exists too
-            if ( Tag[4]> '3'                                                                                    // v4 or more
-             || (Tag[4]=='3' && Tag[6]=='9')                                                                    // v3.9yz-v3.9yz
-             ||  Tag[4]=='3' && Tag[8]>='0' && Tag[8]<='9')                                                     // v3.xy0-v3.xy9
-                HasInfoTag=true;
-        }
-        if (Name==0x4C414D45 && Tag[4]=='H') // "LAMEH", Helix MP3 encoder
-            HasInfoTag=true;
-        if (Name==0x4C332E39   // "L3.9"
-         && Tag[4]=='9')
-            HasInfoTag=true; //Form old code, to be confirmed: Ugly version string in Lame 3.99.1 "L3.99r1\0".
-    }
-    if (HasInfoTag)
-    {
+    if (Element_Offset + 36 > Element_Size)
+        return;
+
         int8u Flags, lowpass, EncodingFlags, BitRate, StereoMode;
-        Param_Info1(Ztring(__T("V "))+Ztring::ToZtring((100-Xing_Scale)/10));
-        Param_Info1(Ztring(__T("q "))+Ztring::ToZtring((100-Xing_Scale)%10));
+        int16u PresetAndSurround;
         Get_String (9, Encoded_Library,                         "Encoded_Library");
         Get_B1 (Flags,                                          "Flags");
         if ((Flags&0xF0)<=0x20) //Rev. 0 or 1, http://gabriel.mp3-tech.org/mp3infotag.html and Rev. 2 was seen.
         {
             Param_Info1(Lame_Method[Flags&0x0F]);
             BitRate_Mode=Lame_BitRate_Mode[Flags&0x0F];
-            if ((Flags&0x0F)==1 || (Flags&0x0F)==8) //2 possible values for CBR
-                VBR_Frames=0;
+            // FIX: Do NOT reset VBR_Frames for LAME CBR files.
+            // The Info tag contains the correct frame count (excluding the Info frame itself).
+            // If we reset it to 0, MediaInfo falls back to PTS-based calculation, which incorrectly 
+            // includes the Info frame, resulting in an off-by-one error (e.g., 24 frames instead of 23).
+
+            //if ((Flags&0x0F)==1 || (Flags&0x0F)==8) //2 possible values for CBR
+            //{
+            //    //LAME CBR: reset VBR_Frames (original behavior, may be needed for accurate bitrate calculation)
+            //    //Helix CBR: keep VBR_Frames (Helix writes accurate frame count in Info tag)
+            //    if (Encoded_Library.find("LAME")==0 && Encoded_Library.find("LAMEH")!=0)
+            //        VBR_Frames=0;
+            //}
         }
         Get_B1 (lowpass,                                        "Lowpass filter value"); Param_Info2(lowpass*100, " Hz");
         Skip_B4(                                                "Peak signal amplitude");
@@ -1478,7 +1603,22 @@ void File_Mpega::Header_Encoders_Lame()
             Skip_Flags(EncodingFlags, 6,                        "nogap (after)");
             Skip_Flags(EncodingFlags, 7,                        "nogap (before)");
         Get_B1 (BitRate,                                        "BitRate");
-        Skip_B3(                                                "Encoder delays");
+
+        int8u DelayPadding_1, DelayPadding_2, DelayPadding_3;
+        Get_B1(DelayPadding_1, "Encoder delay/padding (1/3)");
+        Get_B1(DelayPadding_2, "Encoder delay/padding (2/3)");
+        Get_B1(DelayPadding_3, "Encoder delay/padding (3/3)");
+        if ((Flags & 0xF0) <= 0x20) //Only trust delay/padding for known tag revisions
+        {
+            Encoder_Delay = ((int32u)DelayPadding_1 << 4) | ((int32u)DelayPadding_2 >> 4);
+            Encoder_Padding = (((int32u)DelayPadding_2 & 0x0F) << 8) | DelayPadding_3;
+        }
+        else
+        {
+            Encoder_Delay = 0;
+            Encoder_Padding = 0;
+        }
+
         BS_Begin();
         Skip_S1(2,                                              "Source sample frequency");
         Skip_SB(                                                "unwise settings used");
@@ -1486,12 +1626,18 @@ void File_Mpega::Header_Encoders_Lame()
         Skip_S1(2,                                              "noise shapings");
         BS_End();
         Skip_B1(                                                "MP3 Gain");
-        Skip_B2(                                                "Preset and surround info");
+        Get_B2 (PresetAndSurround,                              "Preset and surround info");
         Skip_B4(                                                "MusicLength");
         Skip_B2(                                                "MusicCRC");
         Skip_B2(                                                "CRC-16 of Info Tag");
 
+        //LAME-specific: format Encoded_Library_Settings only for genuine LAME encoders
+        if ((Encoded_Library.find("LAME")==0 && Encoded_Library.find("LAMEH")!=0)
+            || Encoded_Library.find("L3.9")==0)
+        {
         FILLING_BEGIN();
+        Param_Info1(Ztring(__T("V "))+Ztring::ToZtring((100-Xing_Scale)/10));
+        Param_Info1(Ztring(__T("q "))+Ztring::ToZtring((100-Xing_Scale)%10));
             Encoded_Library_Settings+=__T("-m ");
             switch(StereoMode)
             {
@@ -1506,11 +1652,12 @@ void File_Mpega::Header_Encoders_Lame()
             }
             if (Xing_Scale<=100) //Xing_Scale is used for LAME quality
             {
-                Encoded_Library_Settings+=__T( " -V ")+Ztring::ToZtring((100-Xing_Scale)/10);
+                if ((Flags&0x0F)==3 || (Flags&0x0F)==4 || (Flags&0x0F)==5 || (Flags&0x0F)==6) //VBR modes only
+                    Encoded_Library_Settings+=__T( " -V ")+Ztring::ToZtring((100-Xing_Scale)/10);
                 Encoded_Library_Settings+=__T( " -q ")+Ztring::ToZtring((100-Xing_Scale)%10);
             }
             if (lowpass)
-                Encoded_Library_Settings+=(Encoded_Library_Settings.empty()?__T("-lowpass "):__T(" -lowpass "))+((lowpass%10)?Ztring::ToZtring(((float)lowpass)/10, 1):Ztring::ToZtring(lowpass/10));
+                Encoded_Library_Settings+=(Encoded_Library_Settings.empty()?__T("--lowpass "):__T(" --lowpass "))+((lowpass%10)?Ztring::ToZtring(((float)lowpass)/10, 1):Ztring::ToZtring(lowpass/10));
             switch (Flags&0x0F)
             {
                 case  2 :
@@ -1546,10 +1693,42 @@ void File_Mpega::Header_Encoders_Lame()
                     default : ;
                 }
             }
+            else if (BitRate==0xFF) //Fallback for CBR and ABR bitrates that do not fit in the LAME tag byte (e.g. 256/320)
+            {
+                if ((Flags&0x0F)==1 || (Flags&0x0F)==8) //CBR modes only
+                {
+                    if (ID<4 && layer<4 && bitrate_index<16 && Mpega_BitRate[ID][layer][bitrate_index]!=0)
+                    {
+                        int16u FrameBitRate=Mpega_BitRate[ID][layer][bitrate_index];
+                        Encoded_Library_Settings+=__T(" -b ")+Ztring::ToZtring(FrameBitRate);
+                    }
+                }
+                else if ((Flags&0x0F)==2 || (Flags&0x0F)==9) // ABR modes only
+                {
+                    int16u PresetBitRate = PresetAndSurround&0x7FF;
+                    if (PresetBitRate>=8 && PresetBitRate<=320)
+                    {
+                        BitRate_Nominal.From_Number(PresetBitRate*1000);
+                        Encoded_Library_Settings+=__T(" ")+Ztring::ToZtring(PresetBitRate);
+                    }
+                }
+            }
         FILLING_END();
     }
-    else
-        Get_String (20, Encoded_Library,                        "Encoded_Library");
+        //Helix-specific
+        else if (Encoded_Library.find("LAMEH")==0)
+        {
+            FILLING_BEGIN();
+            if (mode<4)
+                Encoded_Library_Settings+=__T("-M")+Ztring::ToZtring(mode);
+            if (Xing_Scale<=150) //Valid VBR scale range; CBR files have 0xFFFFFFFF
+            {
+                if (!Encoded_Library_Settings.empty())
+                    Encoded_Library_Settings+=__T(" ");
+                Encoded_Library_Settings+=__T("-V")+Ztring::ToZtring(Xing_Scale);
+            }
+            FILLING_END();
+        }
 }
 
 void File_Mpega::Encoded_Library_Guess()

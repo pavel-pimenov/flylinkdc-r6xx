@@ -1215,6 +1215,12 @@ void File_Flv::video_VP6(bool WithAlpha)
 //---------------------------------------------------------------------------
 void File_Flv::video_AVC(int8u PacketType_plus1)
 {
+    size_t Header_Size=(!PacketType_plus1?1:0)+((!PacketType_plus1 || PacketType_plus1==CodedFrames-1)?3:0);
+    if (Element_Offset>Element_Size || Header_Size>Element_Size-Element_Offset)
+    {
+        Trusted_IsNot("Truncated video header");
+        return;
+    }
     int8u AVCPacketType;
     if (PacketType_plus1)
     {
@@ -1314,6 +1320,12 @@ void File_Flv::video_AVC(int8u PacketType_plus1)
 //---------------------------------------------------------------------------
 void File_Flv::video_HEVC(int8u PacketType_plus1)
 {
+    size_t Header_Size=(!PacketType_plus1?1:0)+((!PacketType_plus1 || PacketType_plus1==CodedFrames-1)?3:0);
+    if (Element_Offset>Element_Size || Header_Size>Element_Size-Element_Offset)
+    {
+        Trusted_IsNot("Truncated video header");
+        return;
+    }
     int8u AVCPacketType;
     if (PacketType_plus1)
     {
@@ -1450,7 +1462,7 @@ void File_Flv::audio()
 
     if (codec!=10) // AAC has an header
     {
-        Demux(Buffer+Buffer_Offset+(size_t)(Element_Offset+1), (size_t)(Element_Size-Element_Offset-1), ContentType_MainStream);
+        Demux(Buffer+Buffer_Offset+(size_t)Element_Offset, (size_t)(Element_Size-Element_Offset), ContentType_MainStream);
     }
 
     FILLING_BEGIN();
@@ -1520,6 +1532,11 @@ void File_Flv::audio_MPEG()
 //---------------------------------------------------------------------------
 void File_Flv::audio_AAC()
 {
+    if (Element_Offset>=Element_Size)
+    {
+        Trusted_IsNot("Truncated AAC header");
+        return;
+    }
     int8u AACPacketType;
     Get_B1 (AACPacketType,                                      "AACPacketType"); Param_Info1(Flv_AACPacketType(AACPacketType));
 

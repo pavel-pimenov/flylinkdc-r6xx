@@ -1,4 +1,4 @@
-/*  Copyright (c) MediaArea.net SARL. All Rights Reserved.
+﻿/*  Copyright (c) MediaArea.net SARL. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license that can
  *  be found in the License.html file in the root of the source tree.
@@ -456,33 +456,50 @@ void File_Dirac::Streams_Finish()
 //---------------------------------------------------------------------------
 bool File_Dirac::Synchronize()
 {
+    static const int8u Sync_Pattern[5] = { 'B', 'B', 'C', 'D', 0x00 };
+
     //Synchronizing
-    while(Buffer_Offset+4<=Buffer_Size && (Buffer[Buffer_Offset  ]!=0x42
-                                        || Buffer[Buffer_Offset+1]!=0x42
-                                        || Buffer[Buffer_Offset+2]!=0x43
-                                        || Buffer[Buffer_Offset+3]!=0x44)) //"BBCD"
+    while (Buffer_Size - Buffer_Offset >= 5)
     {
-        Buffer_Offset+=2;
-        while(Buffer_Offset<Buffer_Size && Buffer[Buffer_Offset]!=0x42)
-            Buffer_Offset+=2;
-        if (Buffer_Offset>=Buffer_Size || Buffer[Buffer_Offset-1]==0x42)
-            Buffer_Offset--;
+        const size_t Candidate_End = Buffer_Size - 4;
+        const int8u* Sync = (const int8u*)memchr(Buffer + Buffer_Offset, Sync_Pattern[0], Candidate_End - Buffer_Offset);
+        if (!Sync)
+        {
+            Buffer_Offset = Candidate_End;
+            break;
+        }
+        Buffer_Offset = (size_t)(Sync - Buffer);
+
+        if (!memcmp(Sync + 1, Sync_Pattern + 1, 4))
+        {
+            // Checking the next frame start
+            if (Buffer_Size - Buffer_Offset <= 9)
+                return false; //Need more data
+            const auto Size = BigEndian2int32u(Buffer + Buffer_Offset + 5);
+            if (Size >= 13 && Size <= 1024)
+            {
+                if (Buffer_Size - Buffer_Offset <= Size)
+                    return false; //Need more data
+                if (!memcmp(Sync + Size, Sync_Pattern, 4))
+                {
+                    auto previous_size2 = BigEndian2int32u(Buffer + Buffer_Offset + Size + 9);
+                    if (previous_size2 == Size)
+                        return true; //Synched is OK
+                }
+            }
+        }
+
+        Buffer_Offset++;
     }
 
     //Parsing last bytes if needed
-    if (Buffer_Offset+4>Buffer_Size)
+    while (Buffer_Offset < Buffer_Size
+        && memcmp(Buffer + Buffer_Offset, Sync_Pattern, Buffer_Size - Buffer_Offset))
     {
-        if (Buffer_Offset+3==Buffer_Size && CC3(Buffer+Buffer_Offset)!=0x424243)    //"BBC"
-            Buffer_Offset++;
-        if (Buffer_Offset+2==Buffer_Size && CC2(Buffer+Buffer_Offset)!=0x4242)      //"BB"
-            Buffer_Offset++;
-        if (Buffer_Offset+1==Buffer_Size && CC1(Buffer+Buffer_Offset)!=0x42)        //"B"
-            Buffer_Offset++;
-        return false;
+        Buffer_Offset++;
     }
 
-    //Synched is OK
-    return true;
+    return false;
 }
 
 //---------------------------------------------------------------------------
@@ -540,27 +557,28 @@ void File_Dirac::Header_Parse()
 //---------------------------------------------------------------------------
 bool File_Dirac::Header_Parser_QuickSearch()
 {
-    while (       Buffer_Offset+5<=Buffer_Size
-      &&   Buffer[Buffer_Offset  ]==0x42
-      &&   Buffer[Buffer_Offset+1]==0x42
-      &&   Buffer[Buffer_Offset+2]==0x43
-      &&   Buffer[Buffer_Offset+3]==0x44) //"BBCD"
+    for (;;) 
     {
+        if (Buffer_Size - Buffer_Offset <= 8)
+            return false;
+
         //Getting start_code
-        int8u start_code=CC1(Buffer+Buffer_Offset+4);
+        auto prefix_and_start_code = BigEndian2int40u(Buffer + Buffer_Offset);
+        auto prefix = prefix_and_start_code >> 8;
+        if (prefix != 0x42424344) break; //"BBCD"
+        auto start_code = prefix_and_start_code & 0xFF;
 
         //Searching start
         if (Streams[start_code].Searching_Payload)
             return true;
 
         //Getting size
-        Buffer_Offset+=BigEndian2int32u(Buffer+Buffer_Offset+5);
+        auto Size = BigEndian2int32u(Buffer + Buffer_Offset + 5);
+        if (Size <= 8) break;
+        if (Size > Buffer_Size - Buffer_Offset) return false;
+        Buffer_Offset += Size;
     }
 
-    if (Buffer_Offset+4==Buffer_Size)
-        return false; //Sync is OK, but start_code is not available
-    if (Buffer_Offset+5<=Buffer_Size)
-        Trusted_IsNot("Dirac, Synchronisation lost");
     Synched=false;
     return Synchronize();
 }

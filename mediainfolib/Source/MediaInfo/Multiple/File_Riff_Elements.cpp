@@ -234,6 +234,9 @@ std::string ExtensibleWave_ChannelMask_ChannelLayout(int32u ChannelMask)
     #include "MediaInfo/Audio/File_SmpteSt0337.h"
     #include "MediaInfo/Audio/File_ChannelSplitting.h"
 #endif
+#if defined(MEDIAINFO_C2PA_YES)
+    #include "MediaInfo/Tag/File_C2pa.h"
+#endif
 #if defined(MEDIAINFO_ID3_YES)
     #include "MediaInfo/Tag/File_Id3.h"
 #endif
@@ -437,6 +440,7 @@ namespace Elements
     const int32u WAVE_axml=0x61786D6C;
     const int32u WAVE_bext=0x62657874;
     const int32u WAVE_bxml=0x62786D6C;
+    const int32u WAVE_C2PA=0x43325041;
     const int32u WAVE_chna=0x63686E61;
     const int32u WAVE_cue_=0x63756520;
     const int32u WAVE_CSET=0x43534554;
@@ -659,6 +663,7 @@ void File_Riff::Data_Parse()
         ATOM(WAVE_bext)
         LIST(WAVE_bxml)
             break;
+        ATOM(WAVE_C2PA)
         ATOM(WAVE_chna)
         LIST(WAVE_data)
             break;
@@ -1439,6 +1444,8 @@ void File_Riff::AVI__hdlr_strl_strf_auds()
         }
         else if (Codec==__T("AAC") || Codec==__T("FF") || Codec==__T("8180"))
             AVI__hdlr_strl_strf_auds_Aac();
+        else if (FormatTag==0x1610) // HEAACWAVEFORMAT
+            AVI__hdlr_strl_strf_auds_Aac(true);
         else if (FormatTag==0x566F) //Vorbis with Config in this chunk
             AVI__hdlr_strl_strf_auds_Vorbis();
         else if (FormatTag==0x6750) //Vorbis with Config in this chunk
@@ -1479,18 +1486,16 @@ void File_Riff::AVI__hdlr_strl_strf_auds_Mpega()
 }
 
 //---------------------------------------------------------------------------
-void File_Riff::AVI__hdlr_strl_strf_auds_Aac()
+void File_Riff::AVI__hdlr_strl_strf_auds_Aac(bool IsHEAACWAVEFORMAT)
 {
     //Parsing
     Element_Begin1("AAC options");
     #if defined(MEDIAINFO_AAC_YES)
         File_Aac* MI=new File_Aac();
-        MI->Mode=File_Aac::Mode_AudioSpecificConfig;
+        MI->Mode=IsHEAACWAVEFORMAT?File_Aac::Mode_HEAACWAVEFORMAT:File_Aac::Mode_AudioSpecificConfig;
         Open_Buffer_Init(MI);
         Open_Buffer_Continue(MI);
-        Finish(MI);
-        Merge(*MI, StreamKind_Last, 0, StreamPos_Last);
-        delete MI; //MI=NULL;
+        Stream[Stream_ID].Parsers.push_back(MI);
     #else //MEDIAINFO_MPEG4_YES
         Skip_XX(Element_Size-Element_Offset,                    "(AudioSpecificConfig)");
     #endif
@@ -2429,19 +2434,16 @@ void File_Riff::AVI__JUNK()
     else if (CC8(Buffer+Buffer_Offset)==CC8("odmldmlh"))
         dmlh_TotalFrame=0; //this is not normal to have this string in a JUNK block!!! and in files tested, in this case TotalFrame is broken too
     //VirtualDubMod
-    else if (CC8(Buffer+Buffer_Offset)==CC8("INFOISFT"))
+    else if (CC8(Buffer+Buffer_Offset)==CC8("INFOISFT")
+          || CC8(Buffer+Buffer_Offset)==CC8("INFOIENG"))
     {
-        int32u Size=LittleEndian2int32u(Buffer+Buffer_Offset+8);
-        if (Size>Element_Size-12)
-            Size=(int32u)Element_Size-12;
-        Fill(Stream_General, 0, General_Encoded_Library, (const char*)(Buffer+Buffer_Offset+12), Size);
-    }
-    else if (CC8(Buffer+Buffer_Offset)==CC8("INFOIENG"))
-    {
-        int32u Size=LittleEndian2int32u(Buffer+Buffer_Offset+8);
-        if (Size>Element_Size-12)
-            Size=(int32u)Element_Size-12;
-        Fill(Stream_General, 0, General_Encoded_Library, (const char*)(Buffer+Buffer_Offset+12), Size);
+        if (Element_Size>=12)
+        {
+            int32u Size=LittleEndian2int32u(Buffer+Buffer_Offset+8);
+            if (Size>Element_Size-12)
+                Size=(int32u)Element_Size-12;
+            Fill(Stream_General, 0, General_Encoded_Library, (const char*)(Buffer+Buffer_Offset+12), Size);
+        }
     }
     //Other libraries?
     else if (CC1(Buffer+Buffer_Offset)>=CC1("A") && CC1(Buffer+Buffer_Offset)<=CC1("z") && Retrieve(Stream_General, 0, General_Encoded_Library).empty())
@@ -3639,9 +3641,6 @@ struct profile_info
                         ToReturn+=',';
                         ToReturn+=' ';
                     }
-                }
-                if (i>=2)
-                {
                     ToReturn+=profile_names[i];
                     ToReturn+='=';
                 }
@@ -3925,6 +3924,20 @@ void File_Riff::WAVE_bext()
                 Fill(Stream_Audio, StreamPos_Last, "MaxShortTermLoudness", (float)((int16s)MaxShortTermLoudness)/100, 2);
         }
     FILLING_END();
+}
+
+//---------------------------------------------------------------------------
+void File_Riff::WAVE_C2PA()
+{
+    //Parsing
+    #if defined(MEDIAINFO_C2PA_YES)
+        File_C2pa MI;
+        Open_Buffer_Init(&MI);
+        Open_Buffer_Continue(&MI);
+        Open_Buffer_Finalize(&MI);
+        Merge(MI, Stream_General, 0, 0, false);
+        Merge(MI);
+    #endif
 }
 
 //---------------------------------------------------------------------------

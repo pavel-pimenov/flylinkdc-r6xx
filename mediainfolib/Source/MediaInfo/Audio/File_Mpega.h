@@ -45,6 +45,10 @@ private :
     //Buffer - Demux
     bool Demux_UnpacketizeContainer_Test();
 
+    //Buffer - Global
+    void Read_Buffer_Unsynched();
+    void Read_Buffer_Continue();
+
     //Buffer - Per element
     void Header_Parse();
     void Data_Parse();
@@ -80,6 +84,8 @@ private :
     int32u VBR_Frames;
     int32u Reservoir_Max;
     int32u Xing_Scale;
+    int32u Encoder_Delay;
+    int32u Encoder_Padding;
     int32u BitRate; //Average
     int8u  ID;
     int8u  layer;
@@ -93,6 +99,8 @@ private :
     bool   copyright;
     bool   original_home;
     bool   VBR_Frames_IsCbr;
+    bool   LastSync_Offset_AreNotZero;
+    bool   Xing_Info_Found; 
     size_t MpegPsPattern_Count;
 
     //Helpers

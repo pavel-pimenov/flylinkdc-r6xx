@@ -57,14 +57,14 @@ extern MediaInfo_Config Config;
     } \
 
 #define INTEGRITY_SIZE_ATLEAST(_BYTES) \
-    if (Element_Offset+_BYTES>Element_Size) \
+    if (Element_Offset>Element_Size || _BYTES>Element_Size-Element_Offset) \
     { \
         Trusted_IsNot(); \
         return; \
     } \
 
 #define INTEGRITY_SIZE_ATLEAST_STRING(_BYTES) \
-    if (Element_Offset+_BYTES>Element_Size) \
+    if (Element_Offset>Element_Size || _BYTES>Element_Size-Element_Offset) \
     { \
         Trusted_IsNot(); \
         Info.clear(); \
@@ -72,7 +72,7 @@ extern MediaInfo_Config Config;
     } \
 
 #define INTEGRITY_SIZE_ATLEAST_INT(_BYTES) \
-    if (Element_Offset+_BYTES>Element_Size) \
+    if (Element_Offset>Element_Size || _BYTES>Element_Size-Element_Offset) \
     { \
         Trusted_IsNot(); \
         Info=0; \
@@ -674,12 +674,6 @@ void File__Analyze::Get_EB(int64u &Info)
 {
     //Element size
     INTEGRITY_SIZE_ATLEAST_INT(1);
-    if (Buffer[Buffer_Offset+Element_Offset]==0xFF)
-    {
-        Info=File_Size-(File_Offset+Buffer_Offset+Element_Offset);
-        Element_Offset++;
-        return;
-    }
     int8u  Size=0;
     int8u  Size_Mark=0;
     BS_Begin();
@@ -1171,6 +1165,16 @@ void File__Analyze::Get_C8(int64u &Info)
     INTEGRITY_SIZE_ATLEAST_INT(8);
     Info=CC8(Buffer+Buffer_Offset+(size_t)Element_Offset);
     Element_Offset+=8;
+}
+
+
+//---------------------------------------------------------------------------
+void File__Analyze::Get_C12(int128u& Info)
+{
+    INTEGRITY_SIZE_ATLEAST_INT(12);
+    Info.hi=CC4(Buffer+Buffer_Offset+(size_t)Element_Offset);
+    Info.lo=CC8(Buffer+Buffer_Offset+(size_t)Element_Offset+4);
+    Element_Offset+=12;
 }
 
 //***************************************************************************

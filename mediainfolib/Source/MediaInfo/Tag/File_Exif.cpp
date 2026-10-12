@@ -1243,25 +1243,25 @@ static const char* Exif_ExifIFD_Tag_LightSource_Name(int16u value) {
 //---------------------------------------------------------------------------
 static string Exif_IFDExif_Flash_Name(int8u value) {
     string flash;
-    switch (value & 0b00011000) {
-    case 0b00000000: flash += "Unknown"; break;
-    case 0b00001000: flash += "On"; break;
-    case 0b00010000: flash += "Off"; break;
-    case 0b00011000: flash += "Auto"; break;
+    switch (value & 0x18) {
+    case 0x00: flash += "Unknown"; break;
+    case 0x08: flash += "On"; break;
+    case 0x10: flash += "Off"; break;
+    case 0x18: flash += "Auto"; break;
     }
-    switch (value & 0b00000001) {
-    case 0b00000000: flash += ", Did not fire"; break;
-    case 0b00000001: flash += ", Fired"; break;
+    switch (value & 0x01) {
+    case 0x00: flash += ", Did not fire"; break;
+    case 0x01: flash += ", Fired"; break;
     }
-    switch (value & 0b00100000) {
-    case 0b00100000: flash += ", No flash function"; break;
+    switch (value & 0x20) {
+    case 0x20: flash += ", No flash function"; break;
     }
-    switch (value & 0b01000000) {
-    case 0b01000000: flash += ", Red-eye reduction"; break;
+    switch (value & 0x40) {
+    case 0x40: flash += ", Red-eye reduction"; break;
     }
-    switch (value & 0b00000110) {
-    case 0b00000100: flash += ", Return not detected"; break;
-    case 0b00000110: flash += ", Return detected"; break;
+    switch (value & 0x06) {
+    case 0x04: flash += ", Return not detected"; break;
+    case 0x06: flash += ", Return detected"; break;
     }
     return flash;
 }
@@ -1698,7 +1698,7 @@ void File_Exif::Streams_Finish()
             switch (Item.first) {
             case IFDExif::ExposureTime: {
                 ParameterC = "ShutterSpeed_Time";
-                const auto exposure_time{ Item.second.Read().To_float64() };
+                const float64 exposure_time{ Item.second.Read().To_float64() };
                 string ShutterSpeed_Time;
                 if (exposure_time < 0.25001 && exposure_time > 0) {
                     ShutterSpeed_Time = "1/" + std::to_string(static_cast<int>(round(1 / exposure_time)));
@@ -1937,7 +1937,7 @@ void File_Exif::Streams_Finish()
             case IFDMakernoteNikon::Quality:
                 ParameterC = "Quality";
                 Value = Item.second.Read();
-                while (Value.back() == __T(' ')) Value.pop_back();
+                while (!Value.empty() && Value.back() == __T(' ')) Value.pop_back();
                 break;
             }
             FillMetadata(Value, Item, Parameter, ParameterC, ParameterS);
@@ -1970,8 +1970,7 @@ void File_Exif::Streams_Finish()
             Ztring Value;
             const char* ParameterC = nullptr;
             string ParameterS;
-            switch (Item.first) {
-            }
+
             FillMetadata(Value, Item, Parameter, ParameterC, ParameterS);
         }
     }
@@ -2007,7 +2006,7 @@ void File_Exif::FileHeader_Parse()
 
     //Exif Makernotes
     if (IsMakernote) {
-        if (Buffer_Size >= 10 && !strncmp((const char*)Buffer, "Apple iOS", 10)) { // the char* contains a terminating \0
+        if (Buffer_Size >= 10 && !strncmp(reinterpret_cast<const char*>(Buffer), "Apple iOS", 10)) { // the char* contains a terminating \0
             int16u alignment;
             Skip_String(10,                                     "Identifier");
             Skip_XX(2,                                          "(Unknown)");
@@ -2020,9 +2019,9 @@ void File_Exif::FileHeader_Parse()
             }
             currentIFD = Kind_MakernoteApple;
             SkipHeader = true;
-            IFD_Offsets[Element_Offset] = currentIFD;
+            IFD_Offsets[static_cast<int32u>(Element_Offset)] = currentIFD;
         }
-        else if (Buffer_Size >= 6 && !strncmp((const char*)Buffer, "Nikon", 6)) { // the char* contains a terminating \0
+        else if (Buffer_Size >= 6 && !strncmp(reinterpret_cast<const char*>(Buffer), "Nikon", 6)) { // the char* contains a terminating \0
             Skip_String(6,                                      "Identifier");
             Skip_B2(                                            "Version");
             Skip_XX(2,                                          "(Unknown)");
@@ -2030,19 +2029,19 @@ void File_Exif::FileHeader_Parse()
             OffsetFromContainer = 10;
         }
         else if (Buffer_Size >= 12 &&
-            (!strncmp((const char*)Buffer, "SONY DSC \0\0", 12)) || // the char* contains another terminating \0
-            (!strncmp((const char*)Buffer, "SONY CAM \0\0", 12)) || // the char* contains another terminating \0
-            (!strncmp((const char*)Buffer, "SONY MOBILE", 12))      // the char* contains a terminating \0
+            (!strncmp(reinterpret_cast<const char*>(Buffer), "SONY DSC \0\0", 12)) || // the char* contains another terminating \0
+            (!strncmp(reinterpret_cast<const char*>(Buffer), "SONY CAM \0\0", 12)) || // the char* contains another terminating \0
+            (!strncmp(reinterpret_cast<const char*>(Buffer), "SONY MOBILE", 12))      // the char* contains a terminating \0
             ) {
             Skip_String(12,                                     "Identifier");
             currentIFD = Kind_MakernoteSony;
             OffsetFromContainer = -static_cast<int64s>(MakernoteOffset);
             SkipHeader = true;
-            IFD_Offsets[MakernoteOffset + Element_Offset] = currentIFD;
+            IFD_Offsets[MakernoteOffset + static_cast<int32u>(Element_Offset)] = currentIFD;
         }
         else if (Buffer_Size > 26 && 
-            (!strncmp((const char*)Buffer + Buffer_Size - 8, "\x49\x49\x2A\x00", 4)) || // Canon Makernote footer
-            (!strncmp((const char*)Buffer + Buffer_Size - 8, "\x4D\x4D\x00\x2A", 4))
+            (!strncmp(reinterpret_cast<const char*>(Buffer) + Buffer_Size - 8, "\x49\x49\x2A\x00", 4)) || // Canon Makernote footer
+            (!strncmp(reinterpret_cast<const char*>(Buffer) + Buffer_Size - 8, "\x4D\x4D\x00\x2A", 4))
             ) {
             Element_Offset = Buffer_Size - 8;
             int32u makernote_offset;
@@ -2130,7 +2129,7 @@ void File_Exif::Header_Parse()
         Header_Fill_Code(IfdItems.begin()->second.Tag);
         #endif //MEDIAINFO_TRACE
         auto SizePerBlock = Exif_Type_Size(IfdItems.begin()->second.Type);
-        auto Size = static_cast<int64u>(SizePerBlock) * IfdItems.begin()->second.Count;
+        auto Size = static_cast<int32u>(SizePerBlock) * IfdItems.begin()->second.Count;
         if (IfdItems.size() > 1) {
             // Found buggy IFD with 2 items having the right size but the second item has a buggy offset
             auto Next = IfdItems.begin();
@@ -2139,7 +2138,7 @@ void File_Exif::Header_Parse()
             if (Size > MaxSize) {
                 bool IsCurated = false;
                 if (IfdItems.size() > 2) {
-                    auto Size1 = static_cast<int64u>(Exif_Type_Size(Next->second.Type)) * Next->second.Count;
+                    auto Size1 = static_cast<int32u>(Exif_Type_Size(Next->second.Type)) * Next->second.Count;
                     auto Next2 = Next;
                     ++Next2;
                     auto MaxSize2 = Next2->first - IfdItems.begin()->first;
@@ -2431,7 +2430,7 @@ void File_Exif::Makernote()
 {
     auto Buffer_Offset_Save = Buffer_Offset;
     auto Element_Size_Save = Element_Size;
-    if (Buffer_Offset > 12 && !strncmp((const char*)Buffer + Buffer_Offset - 12, "SONY DSC \0\0", 12)) {
+    if (Buffer_Offset > 12 && !strncmp(reinterpret_cast<const char*>(Buffer) + Buffer_Offset - 12, "SONY DSC \0\0", 12)) {
         Buffer_Offset -= 12;
         Element_Size += 12;
     }
@@ -2439,7 +2438,7 @@ void File_Exif::Makernote()
     File_Exif MI{};
     MI.IsMakernote = true;
     MI.LittleEndian = LittleEndian;
-    MI.MakernoteOffset = Buffer_Offset;
+    MI.MakernoteOffset = static_cast<int32u>(Buffer_Offset);
     Open_Buffer_Init(&MI);
     Open_Buffer_Continue(&MI);
     Open_Buffer_Finalize(&MI);
@@ -2459,11 +2458,13 @@ void File_Exif::ICC_Profile()
 {
     #if defined(MEDIAINFO_ICC_YES)
     ICC_Parser.reset(new File_Icc());
-    ((File_Icc*)ICC_Parser.get())->StreamKind = Stream_Image;
-    ((File_Icc*)ICC_Parser.get())->IsAdditional = true;
+    static_cast<File_Icc*>(ICC_Parser.get())->StreamKind = Stream_Image;
+    static_cast<File_Icc*>(ICC_Parser.get())->IsAdditional = true;
     Open_Buffer_Init(ICC_Parser.get());
     Open_Buffer_Continue(ICC_Parser.get());
     Open_Buffer_Finalize(ICC_Parser.get());
+    #else
+    Skip_XX(Element_Size - Element_Offset,                      "ICC Profile");
     #endif
 }
 
@@ -2473,14 +2474,12 @@ void File_Exif::XMP()
     #if defined(MEDIAINFO_XMP_YES)
     File_Xmp MI{};
     Open_Buffer_Init(&MI);
-    auto Element_Offset_Sav = Element_Offset;
     Open_Buffer_Continue(&MI);
-    Element_Offset = Element_Offset_Sav;
     Open_Buffer_Finalize(&MI);
-    Element_Show(); //TODO: why is it needed?
     Merge(MI, Stream_General, 0, 0, false);
-    #endif
+    #else
     Skip_UTF8(Element_Size - Element_Offset,                    "XMP metadata");
+    #endif
 }
 
 //---------------------------------------------------------------------------
@@ -2494,7 +2493,7 @@ void File_Exif::PhotoshopImageResources()
     Open_Buffer_Finalize(&MI);
     Merge(MI, Stream_General, 0, 0, false);
     #else
-    Skip_UTF8(Element_Size - Element_Offset,                    "Photoshop Tags");
+    Skip_XX(Element_Size - Element_Offset,                      "Photoshop Tags");
     #endif
 }
 
@@ -2509,7 +2508,7 @@ void File_Exif::IPTC_NAA()
     Open_Buffer_Finalize(&MI);
     Merge(MI, Stream_General, 0, 0, false);
     #else
-    Skip_UTF8(Element_Size - Element_Offset,                    "IPTC-NAA data");
+    Skip_XX(Element_Size - Element_Offset,                      "IPTC-NAA data");
     #endif
 }
 
@@ -2654,11 +2653,7 @@ void File_Exif::GetValueOffsetu(ifditem &IfdItem)
             int16u Ret16;
             #if MEDIAINFO_TRACE
                 Get_X2 (Ret16,                                  "Data");
-                switch (IfdItem.Tag)
-                {
-                            
-                    default : Element_Info1(Ztring::ToZtring(Ret16));
-                }
+                Element_Info1(Ztring::ToZtring(Ret16));
             #else //MEDIAINFO_TRACE
                 if (Element_Offset+2>Element_Size)
                 {
@@ -2674,7 +2669,7 @@ void File_Exif::GetValueOffsetu(ifditem &IfdItem)
             Param_Info1C((currentIFD == Kind_IFD0 || currentIFD == Kind_IFD1) && IfdItem.Tag == IFD0::Orientation, Exif_IFD0_Orientation_Name(Ret16));
             Param_Info1C((currentIFD == Kind_IFD0 || currentIFD == Kind_IFD1 || currentIFD == Kind_IFD2 || currentIFD == Kind_SubIFD0 || currentIFD == Kind_SubIFD1 || currentIFD == Kind_SubIFD2) && IfdItem.Tag == IFD0::Compression, Tiff_Compression_Name(Ret16));
             Param_Info1C(currentIFD == Kind_Exif && IfdItem.Tag == IFDExif::LightSource, Exif_ExifIFD_Tag_LightSource_Name(Ret16));
-            Param_Info1C(currentIFD == Kind_Exif && IfdItem.Tag == IFDExif::Flash, Exif_IFDExif_Flash_Name(Ret16));
+            Param_Info1C(currentIFD == Kind_Exif && IfdItem.Tag == IFDExif::Flash, Exif_IFDExif_Flash_Name(static_cast<int8u>(Ret16)));
             Param_Info1C(currentIFD == Kind_Exif && IfdItem.Tag == IFDExif::ColorSpace, Exif_IFDExif_ColorSpace_Name(Ret16));
             Param_Info1C(currentIFD == Kind_Exif && IfdItem.Tag == IFDExif::CompositeImage, Exif_IFDExif_CompositeImage_Name(Ret16));
             Param_Info1C(currentIFD == Kind_MakernoteNikon && IfdItem.Tag == IFDMakernoteNikon::CropHiSpeed, Exif_IFDMakernoteNikon_CropHiSpeed_Name(Ret16));
@@ -2683,7 +2678,7 @@ void File_Exif::GetValueOffsetu(ifditem &IfdItem)
             Info.push_back(Ztring::ToZtring(Ret16));
         }
         if (Count != IfdItem.Count) {
-            Skip_XX((IfdItem.Count - Count) * 2,                "(Not parsed)");
+            Skip_XX((IfdItem.Count - static_cast<int64u>(Count)) * 2, "(Not parsed)");
         }
         }
         break;
@@ -2734,14 +2729,14 @@ void File_Exif::GetValueOffsetu(ifditem &IfdItem)
                 Info.push_back(Ztring::ToZtring(Ret32));
             }
             if (Count != IfdItem.Count) {
-                Skip_XX((IfdItem.Count - Count) * 4,            "(Not parsed)");
+                Skip_XX((IfdItem.Count - static_cast<int64u>(Count)) * 4, "(Not parsed)");
             }
         }
         break;
     case Exif_Type::RATIONAL:                                   /* 2x32-bit (2x4-byte) unsigned integers */
         {
         auto Count = IfdItem.Count > 16 ? 16 : IfdItem.Count;
-        for (int16u Pos=0; Pos<IfdItem.Count; Pos++)
+        for (int16u Pos=0; Pos<Count; Pos++)
         {
             int32u N, D;
             #if MEDIAINFO_TRACE
@@ -2773,14 +2768,14 @@ void File_Exif::GetValueOffsetu(ifditem &IfdItem)
                 Info.push_back(Ztring()); // Division by zero, undefined
         }
         if (Count != IfdItem.Count) {
-            Skip_XX((IfdItem.Count - Count) * 8,                "(Not parsed)");
+            Skip_XX((IfdItem.Count - static_cast<int64u>(Count)) * 8, "(Not parsed)");
         }
         }
         break;
     case Exif_Type::SSHORT:                                     /* 16-bit (2-byte) signed integer. */
         {
         auto Count = IfdItem.Count > 16 ? 16 : IfdItem.Count;
-        for (int16u Pos=0; Pos<IfdItem.Count; Pos++)
+        for (int16u Pos=0; Pos<Count; Pos++)
         {
             int16u Ret16u;
             int16s Ret16;
@@ -2803,14 +2798,14 @@ void File_Exif::GetValueOffsetu(ifditem &IfdItem)
             Info.push_back(Ztring::ToZtring(Ret16));
         }
         if (Count != IfdItem.Count) {
-            Skip_XX((IfdItem.Count - Count) * 2,                "(Not parsed)");
+            Skip_XX((IfdItem.Count - static_cast<int64u>(Count)) * 2, "(Not parsed)");
         }
         }
         break;
     case Exif_Type::SLONG:                                      /* 32-bit (4-byte) signed integer */
         {
         auto Count = IfdItem.Count > 16 ? 16 : IfdItem.Count;
-        for (int16u Pos=0; Pos<IfdItem.Count; Pos++)
+        for (int16u Pos=0; Pos<Count; Pos++)
         {
             int32u Ret32u;
             int32s Ret32;
@@ -2835,14 +2830,14 @@ void File_Exif::GetValueOffsetu(ifditem &IfdItem)
             Info.push_back(Ztring::ToZtring(Ret32));
         }
         if (Count != IfdItem.Count) {
-            Skip_XX((IfdItem.Count - Count) * 4,                "(Not parsed)");
+            Skip_XX((IfdItem.Count - static_cast<int64u>(Count)) * 4, "(Not parsed)");
         }
         }
         break;
     case Exif_Type::SRATIONAL:                                  /* 2x32-bit (2x4-byte) signed integers */
         {
         auto Count = IfdItem.Count > 16 ? 16 : IfdItem.Count;
-        for (int16u Pos=0; Pos<IfdItem.Count; Pos++)
+        for (int16u Pos=0; Pos<Count; Pos++)
         {
             int32u NU, DU;
             int32s N, D;
@@ -2877,7 +2872,7 @@ void File_Exif::GetValueOffsetu(ifditem &IfdItem)
                 Info.push_back(Ztring()); // Division by zero, undefined
         }
         if (Count != IfdItem.Count) {
-            Skip_XX((IfdItem.Count - Count) * 8,                "(Not parsed)");
+            Skip_XX((IfdItem.Count - static_cast<int64u>(Count)) * 8, "(Not parsed)");
         }
         }
         break;
@@ -2929,7 +2924,13 @@ void File_Exif::GetValueOffsetu(ifditem &IfdItem)
             switch (IfdItem.Tag) {
             case IFDMPF::MPEntry:
             {
-                int32u num_imgs{ Infos.find(Kind_MPF)->second.find(IFDMPF::NumberOfImages)->second.Read().To_int32u() };
+                auto Mpf=Infos.find(Kind_MPF);
+                if (Mpf==Infos.end())
+                    break;
+                auto NumberOfImages=Mpf->second.find(IFDMPF::NumberOfImages);
+                if (NumberOfImages==Mpf->second.end())
+                    break;
+                int32u num_imgs{ NumberOfImages->second.Read().To_int32u() };
                 for (int32u i = 0; i < num_imgs; ++i) {
                     Element_Begin1(("MP Entry " + std::to_string(i + 1)).c_str());
                     mp_entry entry{};
@@ -2945,7 +2946,13 @@ void File_Exif::GetValueOffsetu(ifditem &IfdItem)
             }
             case IFDMPF::ImageUIDList:
             {
-                int32u num_imgs{ Infos.find(Kind_MPF)->second.find(IFDMPF::NumberOfImages)->second.Read().To_int32u() };
+                auto Mpf=Infos.find(Kind_MPF);
+                if (Mpf==Infos.end())
+                    break;
+                auto NumberOfImages=Mpf->second.find(IFDMPF::NumberOfImages);
+                if (NumberOfImages==Mpf->second.end())
+                    break;
+                int32u num_imgs{ NumberOfImages->second.Read().To_int32u() };
                 for (int32u i = 0; i < num_imgs; ++i) {
                     string Data;
                     Get_String(33, Data,                        "Individual Image Unique ID"); Element_Info1(Data.c_str());

@@ -91,6 +91,17 @@ static string Png_Colour_type_Settings(int8u Colour_type, int8u Bit_depth)
         default: return "";
     }
 }
+static const char* Png_sRGB_Rendering_intent(int8u Colour_type)
+{
+    switch (Colour_type)
+    {
+    case 0: return "Perceptual";
+    case 1: return "Relative colorimetric";
+    case 2: return "Saturation";
+    case 3: return "Absolute colorimetric";
+    default: return "";
+    }
+}
 
 //---------------------------------------------------------------------------
 const char* Mpegv_colour_primaries(int8u colour_primaries);
@@ -157,7 +168,7 @@ static const char* Keywords_Mapping[][2]=
 //***************************************************************************
 
 //---------------------------------------------------------------------------
-File_Png::File_Png() : Data_Size{}, Signature{}
+File_Png::File_Png()
 {
     //Config
     #if MEDIAINFO_TRACE
@@ -192,6 +203,21 @@ void File_Png::Streams_Accept()
 //---------------------------------------------------------------------------
 void File_Png::Streams_Finish()
 {
+    if (isAPNG) {
+        Fill(StreamKind, 0, Video_Duration, duration * 1000);
+        Fill(StreamKind, 0, Video_FrameCount, framecount);
+        if (framerate_min == framerate_max)
+        {
+            Fill(StreamKind, 0, Video_FrameRate, framerate_min);
+            Fill(StreamKind, 0, Video_FrameRate_Mode, "CFR");
+        }
+        else
+        {
+            Fill(StreamKind, 0, Video_FrameRate_Mode, "VFR");
+            Fill(StreamKind, 0, Video_FrameRate_Minimum, framerate_min);
+            Fill(StreamKind, 0, Video_FrameRate_Maximum, framerate_max);
+        }
+    }
     if (Data_Size != (int64u)-1) {
         if (StreamKind == Stream_Video && !IsSub && File_Size != (int64u)-1 && !Config->File_Sizes.empty())
             Fill(Stream_Video, 0, Video_StreamSize, File_Size - (Config->File_Sizes.front() - Data_Size) * Config->File_Sizes.size()); //We guess that the metadata part has a fixed size
@@ -359,6 +385,8 @@ void File_Png::Data_Parse()
 //---------------------------------------------------------------------------
 void File_Png::IDAT()
 {
+    IDATseen = true;
+
     //Parsing
     Skip_XX(Element_TotalSize_Get()-4,                          "Data");
     Param2("CRC",                                               "(Skipped) (4 bytes)");
@@ -501,6 +529,40 @@ void File_Png::MHDR()
 }
 
 //---------------------------------------------------------------------------
+void File_Png::acTL()
+{
+    //Parsing
+    int32u num_plays;
+    Skip_B4(                                                    "num_frames");
+    Get_B4(num_plays,                                           "num_plays");
+
+    FILLING_BEGIN_PRECISE()
+        if (!IDATseen && Signature == 0x89504E47) {
+            if (StreamKind == Stream_Image) {
+                StreamKind = Stream_Video;
+                Stream_Prepare(StreamKind);
+                Fill(StreamKind, 0, "Format_Settings_Packing", Retrieve_Const(Stream_Image, 0, "Format_Settings_Packing"));
+                Fill(StreamKind, 0, "Format_Settings", Retrieve_Const(Stream_Image, 0, "Format_Settings"));
+                Fill(StreamKind, 0, "Width", Retrieve_Const(Stream_Image, 0, "Width"));
+                Fill(StreamKind, 0, "Height", Retrieve_Const(Stream_Image, 0, "Height"));
+                Fill(StreamKind, 0, "ColorSpace", Retrieve_Const(Stream_Image, 0, "ColorSpace"));
+                Fill(StreamKind, 0, "BitDepth", Retrieve_Const(Stream_Image, 0, "BitDepth"));
+                Fill(StreamKind, 0, "PixelAspectRatio", Retrieve_Const(Stream_Image, 0, "PixelAspectRatio"));
+                Fill(StreamKind, 0, "Format_Compression", Retrieve_Const(Stream_Image, 0, "Format_Compression"));
+                Stream_Erase(Stream_Image, 0);
+            }
+            isAPNG = true;
+            Fill(Stream_General, 0, General_Format, "APNG", Unlimited, true, true);
+            Fill(StreamKind, 0, Video_Format, "APNG", Unlimited, true, true);
+            if (num_plays)
+                Fill(StreamKind, 0, "RepeatCount", num_plays);
+            else
+                Fill(StreamKind, 0, "RepeatCount", "Unlimited");
+        }
+    FILLING_END()
+}
+
+//---------------------------------------------------------------------------
 void File_Png::caBX()
 {
     //Parsing
@@ -579,6 +641,51 @@ void File_Png::eXIf()
 }
 
 //---------------------------------------------------------------------------
+void File_Png::fcTL()
+{
+    //Parsing
+    int16u delay_num, delay_den;
+    float64 framerate{};
+    Skip_B4(                                                    "sequence_number");
+    Skip_B4(                                                    "width");
+    Skip_B4(                                                    "height");
+    Skip_B4(                                                    "x_offset");
+    Skip_B4(                                                    "y_offset");
+    Get_B2(delay_num,                                           "delay_num");
+    Get_B2(delay_den,                                           "delay_den");
+    Skip_B1(                                                    "dispose_op");
+    Skip_B1(                                                    "blend_op");
+    Data_Common();
+
+    FILLING_BEGIN()
+        ++framecount;
+        if (delay_num) {
+            if (delay_den) {
+                duration += static_cast<float64>(delay_num) / delay_den;
+                framerate = static_cast<float64>(delay_den) / delay_num;
+            }
+            else {
+                duration += static_cast<float64>(delay_num) / 100;
+                framerate = static_cast<float64>(100) / delay_num;
+            }
+        }
+        if (framerate_min == 0 || framerate < framerate_min)
+            framerate_min = framerate;
+        if (framerate > framerate_max)
+            framerate_max = framerate;
+    FILLING_END()
+}
+
+//---------------------------------------------------------------------------
+void File_Png::fdAT()
+{
+    //Parsing
+    Skip_B4(                                                    "sequence_number");
+    Skip_XX(Element_Size - Element_Offset,                      "frame_data");
+    Data_Common();
+}
+
+//---------------------------------------------------------------------------
 void File_Png::gAMA()
 {
     //Parsing
@@ -642,6 +749,7 @@ void File_Png::iCCP()
 
     if (!Compression)
     {
+    #if defined(MEDIAINFO_ICC_YES)
         //Uncompress init
         zng_stream strm;
         strm.next_in=(Bytef*)Buffer+Buffer_Offset+(size_t)Element_Offset;
@@ -670,12 +778,12 @@ void File_Png::iCCP()
                 break;
 
             //Need to increase buffer
-            size_t UncompressedData_NewMaxSize=strm.total_out*4;
+            size_t UncompressedData_NewMaxSize=static_cast<size_t>(strm.total_out)*4;
             int8u* UncompressedData_New=new int8u[UncompressedData_NewMaxSize];
             memcpy(UncompressedData_New, strm.next_out-strm.total_out, strm.total_out);
             delete[](strm.next_out - strm.total_out); strm.next_out=UncompressedData_New;
             strm.next_out=strm.next_out+strm.total_out;
-            strm.avail_out=UncompressedData_NewMaxSize-strm.total_out;
+            strm.avail_out=static_cast<uInt>(UncompressedData_NewMaxSize-strm.total_out);
         }
         auto Buffer=(const char*)strm.next_out-strm.total_out;
         auto Buffer_Size=(size_t)strm.total_out;
@@ -750,6 +858,22 @@ void File_Png::sBIT()
     FILLING_BEGIN()
         if (Bits.size()==1)
             Fill(StreamKind_Last, 0, "BitDepth", Bits.begin()->first, 10, true);
+    FILLING_END()
+
+    Data_Common();
+}
+
+//---------------------------------------------------------------------------
+void File_Png::sRGB()
+{
+    //Parsing
+    int8u rendering_intent;
+    Get_B1(rendering_intent,                                    "Rendering intent"); Param_Info1(Png_sRGB_Rendering_intent(rendering_intent));
+
+    FILLING_BEGIN()
+        Fill(StreamKind_Last, 0, "colour_primaries", Mpegv_colour_primaries(1));
+        Fill(StreamKind_Last, 0, "transfer_characteristics", Mpegv_transfer_characteristics(13));
+        Fill(StreamKind_Last, 0, "matrix_coefficients", Mpegv_matrix_coefficients(0));
     FILLING_END()
 
     Data_Common();
@@ -880,12 +1004,12 @@ void File_Png::Textual(bitset8 Method)
                     break;
 
                 //Need to increase buffer
-                size_t UncompressedData_NewMaxSize=strm.total_out*4;
+                size_t UncompressedData_NewMaxSize=static_cast<size_t>(strm.total_out)*4;
                 int8u* UncompressedData_New=new int8u[UncompressedData_NewMaxSize];
                 memcpy(UncompressedData_New, strm.next_out-strm.total_out, strm.total_out);
                 delete[](strm.next_out - strm.total_out); strm.next_out=UncompressedData_New;
                 strm.next_out=strm.next_out+strm.total_out;
-                strm.avail_out=UncompressedData_NewMaxSize-strm.total_out;
+                strm.avail_out=static_cast<uInt>(UncompressedData_NewMaxSize-strm.total_out);
             }
             auto Buffer=(const char*)strm.next_out-strm.total_out;
             auto Buffer_Size=(size_t)strm.total_out;
@@ -928,10 +1052,11 @@ void File_Png::Textual(bitset8 Method)
             #if defined(MEDIAINFO_XMP_YES)
             auto Text_UTF8=Text.To_UTF8();
             File_Xmp MI;
+            MI.NoTrace = true; //Already have trace (Text string) from above
             Open_Buffer_Init(&MI, Text_UTF8.size());
             Open_Buffer_Continue(&MI, (const int8u*)Text_UTF8.c_str(), Text_UTF8.size());
             Open_Buffer_Finalize(&MI);
-            Element_Show(); //TODO: why is it needed?
+            Element_Show(); //Needed since element (including the previous trace) will be removed if sub parser has no trace output
             Merge(MI, Stream_General, 0, 0, false);
             Text.clear();
             #endif
@@ -951,7 +1076,7 @@ void File_Png::Textual(bitset8 Method)
 void File_Png::Decode_RawProfile(const char* in, size_t in_len, const string& type)
 {
 #if defined(MEDIAINFO_EXIF_YES) || defined(MEDIAINFO_ICC_YES) || defined(MEDIAINFO_IIM_YES)
-    auto HexStringToBytes{
+    auto HexStringToBytes =
         [](const char* src, size_t len, size_t expected_length) -> string {
             string to_return;
             auto end = src + len;
@@ -983,8 +1108,7 @@ void File_Png::Decode_RawProfile(const char* in, size_t in_len, const string& ty
                 return {};
             }
             return to_return;
-        }
-    };
+        };
 
     if (!in || !in_len) {
         return;

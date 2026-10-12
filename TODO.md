@@ -70,12 +70,24 @@
   Патчи: lua — только $Id:; unrar — UnRAR.vcxproj + win32stm.cpp; jsoncpp — реальные
   правки FlylinkDC (остальное было upstream-дрейфом); snappy — патч удалён
   (upstream 1.3.1 уже имеет эти overload-ы). URL в vendor-update.py обновлены,
-  diff у snappy убран. Ещё НЕ закоммичено.
-- [ ] libtorrent 2.1.0->2.1.2: реальный форк (196 файлов в патче), ребаз даёт 27
-  конфликтов (torrent.cpp, peer_connection.cpp, merkle.cpp, alert.cpp,
-  settings_pack.cpp, path.cpp, ...). Нужен ручной порт + контрольная сборка MSVC.
-- [ ] mediainfolib 25.07->26.10: реальный форк (116 файлов), ребаз даёт 17
-  конфликтов. Нужен ручной порт + контрольная сборка MSVC.
+  diff у snappy убран. Закоммичено (`7f623158`).
+- [x] libtorrent 2.1.0->2.1.2: база форка — upstream `e2b12e72` (RC_2_1, 2025-07-26).
+  Ребаз дал 2 конфликта (`src/http_parser.cpp` — квалификация `libtorrent::read_until`;
+  `src/identify_client.cpp` — перенос `-MG` в начало), разрешены вручную. Патч
+  перегенерирован (16081 б, 12 файлов), verify 499/0. Новый disk-I/O бэкенд pread
+  (14 файлов: `src/{pread_disk_io,pread_storage,disk_cache,back_pressure,precomputed_block_hashes}.cpp`,
+  `include/libtorrent/pread_disk_io.hpp`, `include/libtorrent/aux_/{pread_disk_job,pread_storage,disk_cache,back_pressure,precomputed_block_hashes,merge_block_requests,visit_block_iovecs}.hpp`,
+  `include/libtorrent/random.hpp`) добавлен в манифест (485->499), дерево и
+  `libtorrent_2022.vcxproj` (+8 ClInclude/+5 ClCompile) с `.filters`. `vendor-update.py
+  --vendor libtorrent` воспроизводит: add=0 update=12 delete=0 unchanged=487. НЕ закоммичено.
+- [x] mediainfolib 25.07->26.10: база форка — тег v25.07 (2025-07-29, `History_DLL.txt`
+  совпал). 17 конфликтов ребаза разрешены вручную (upstream — чистки warnings и новые
+  сигнатуры/рефакторинг; сохранены правки форка: zlib-ng `zng_*`, доп. include в PreComp.h,
+  `Offset` в File_Pac.cpp, класс `File__Base_Avc_Hevc`). Добавлены 3 новых парсера
+  (`Image/File_AmigaIcon`, `Video/File_Apv`, `Video/File_Av2`) в манифест (509->515),
+  дерево и `MediaInfoLib_2022.vcxproj` (+.filters). Патч перегенерирован (171696 б, 110 файлов),
+  verify 515/0; `vendor-update.py --vendor mediainfolib` -> add=0 update=110 delete=0 unchanged=405.
+  НЕ закоммичено (нужна контрольная сборка MSVC).
 - [ ] При первом реальном прогоне новых вендоров создаются коммиты через
   `commit()` (git add → porcelain → commit). Нюанс на Windows при
   core.autocrlf=true: у LF-исходников (tar.gz с GitHub) после синка

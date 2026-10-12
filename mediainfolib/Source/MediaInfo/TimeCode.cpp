@@ -521,7 +521,7 @@ int TimeCode::FromString(const string_view& V, bool Ignore1001FromDropFrame)
             case 'h':
             {
                 T *= 3600;
-                uint64_t T_Divider = PowersOf10[2];
+                uint64_t T_Divider = PowersOf10[0];
                 T = (T + T_Divider / 2) / T_Divider;
                 FramesRate /= T_Divider;
                 uint64_t Temp2 = T / FramesRate;
@@ -693,7 +693,7 @@ int TimeCode::FromSeconds(double Seconds, bool Truncate, bool TimeIsDropFrame)
 
     // Seconds to frames
     double FrameCountF = Seconds * ((int64_t)GetFramesMax() + 1) / ((!TimeIsDropFrame && Is1001fps()) ? 1.001 : 1) + (Truncate ? 0.0 : 0.5);
-    if (FrameCountF > numeric_limits<int64_t>::max() || FrameCountF < numeric_limits<int64_t>::min())
+    if (FrameCountF > (double)numeric_limits<int64_t>::max() || FrameCountF < (double)numeric_limits<int64_t>::min())
     {
         *this = TimeCode();
         return 1;

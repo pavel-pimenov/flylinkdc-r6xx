@@ -90,51 +90,43 @@ void File_Sdp::Streams_Finish()
 //---------------------------------------------------------------------------
 bool File_Sdp::Synchronize()
 {
-    //Synchronizing
-    while (Buffer_Offset+2<Buffer_Size)
-    {
-        while (Buffer_Offset+2<Buffer_Size)
-        {
-            if (Buffer[Buffer_Offset  ]==0x51
-             && Buffer[Buffer_Offset+1]==0x15)
-                break; //while()
-
-            Buffer_Offset++;
-        }
-
-        if (IsSub)
-            break; // Found one file with unknown bytes at the end of the stream, so removing this integrity test for the moment
-
-        if (Buffer_Offset+2<Buffer_Size) //Testing if size is coherant
-        {
-            if (Buffer_Offset+Buffer[Buffer_Offset+2]==Buffer_Size)
+    auto Buffer_Current = Buffer_Offset;
+    auto i = 0;
+    const auto Count = IsSub ? 0 : 4; // Found one file with unknown bytes at the end of the stream, so removing this integrity test for the moment
+    while (i <= Count) {
+        auto Remaining = Buffer_Size - Buffer_Current;
+        if (Buffer_Current > Buffer_Size || Remaining <= 2) {
+            if (i
+                && ((IsSub && Buffer_Current == Buffer_Size)
+                    || (File_Offset + Buffer_Offset < File_Size && File_Offset + Buffer_Size == File_Size))) {
                 break;
-
-            if (Buffer_Offset+Buffer[Buffer_Offset+2]+3>Buffer_Size)
-                return false; //Wait for more data
-
-            if (Buffer[Buffer_Offset+Buffer[Buffer_Offset+2]  ]==0x51
-             && Buffer[Buffer_Offset+Buffer[Buffer_Offset+2]+1]==0x15)
-                break; //while()
-
-            Buffer_Offset++;
+            }
+            return false; // Wait for more data
         }
+
+        if (BigEndian2int16u(Buffer + Buffer_Current) != 0x5115) {
+            // Skip straight to the next possible sync byte instead of
+            // re-testing every single offset one at a time
+            auto Next = (const int8u*)memchr(Buffer + Buffer_Current + 1, 0x51, Remaining - 1);
+            i = 0;
+            Buffer_Offset = Next ? (size_t)(Next - Buffer) : Buffer_Size;
+            Buffer_Current = Buffer_Offset;
+            continue;
+        }
+
+        auto Length = BigEndian2int8u(Buffer + Buffer_Current + 2);
+        if (Length < 9) {
+            i = 0;
+            Buffer_Current = ++Buffer_Offset;
+            continue;
+        }
+
+        Buffer_Current += Length;
+        ++i;
     }
 
-    //Must have enough buffer for having header
-    if (Buffer_Offset+2>=Buffer_Size)
-        return false;
-
     //Synched is OK
-    if (!Status[IsAccepted])
-    {
-        //For the moment, we accept only if the file is in sync, the test is not strict enough
-        if (Buffer_Offset)
-        {
-            Reject();
-            return false;
-        }
-
+    if (!Status[IsAccepted]) {
         Accept();
     }
     return true;
@@ -227,6 +219,13 @@ void File_Sdp::Data_Parse()
     {
         if (FieldLines[Pos])
         {
+            if (Element_Offset>Element_Size || Element_Size-Element_Offset<45
+             || Buffer_Offset>Buffer_Size || Element_Offset>Buffer_Size-Buffer_Offset
+             || Buffer_Size-Buffer_Offset-(size_t)Element_Offset<45)
+            {
+                Trusted_IsNot("Truncated teletext field");
+                return;
+            }
             Element_Code=(int64u)-1;
             stream &Stream=Streams[0];
             if (Stream.Parser==NULL)

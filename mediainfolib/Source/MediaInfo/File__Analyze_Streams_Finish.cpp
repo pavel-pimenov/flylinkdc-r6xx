@@ -420,8 +420,8 @@ struct FindReplaceCompany_struct {
 };
 
 static const FindReplaceCompany_struct Model_Replace[] = {
-    { "Canon", Model_Replace_Canon, {} },
-    { "OpenCube", Model_Replace_OpenCube, {} },
+    { "Canon", Model_Replace_Canon, nullptr },
+    { "OpenCube", Model_Replace_OpenCube, nullptr },
 }; 
 
 //---------------------------------------------------------------------------
@@ -824,6 +824,12 @@ static const char* Model_Name_Sony =
     "XQ-FS44;1 VII\n"
     "XQ-FS54;1 VII\n"
     "XQ-FS72;1 VII\n"
+    "XQ-FE44;10 VII\n"
+    "XQ-FE54;10 VII\n"
+    "XQ-FE72;10 VII\n"
+    "XQ-GE44;1 VIII\n"
+    "XQ-GE54;1 VIII\n"
+    "XQ-GE74;1 VIII\n"
 ;
 
 static const char* Model_Name_Sony_Ericsson =
@@ -1737,6 +1743,7 @@ static constexpr const char* Model_Name_Samsung =
     "SM-S550TL;On5\n"
     "SM-S711;S23 FE\n"
     "SM-S721;S24 FE\n"
+    "SM-S731;S25 FE\n"
     "SM-S727VL;J7 Pop\n"
     "SM-S737TL;J7 Sky Pro\n"
     "SM-S757BL;J7 Crown\n"
@@ -1762,6 +1769,9 @@ static constexpr const char* Model_Name_Samsung =
     "SM-S936;S25+\n"
     "SM-S937;S25 Edge\n"
     "SM-S938;S25 Ultra\n"
+    "SM-S942;S26\n"
+    "SM-S947;S26+\n"
+    "SM-S948;S26 Ultra\n"
     "SM-S975L;S4\n"
     "SM-S978;E5\n"
     "SM-T110;Tab 3 Lite\n"
@@ -2095,7 +2105,7 @@ static const FindReplaceCompany_struct Model_Name[] = {
     { "Sony", Model_Name_Sony, "Xperia " },
     { "Sony Ericsson", Model_Name_Sony_Ericsson, "Xperia " },
     { "Samsung", Model_Name_Samsung, "Galaxy " },
-    { "Xiaomi", Model_Name_Xiaomi, {} },
+    { "Xiaomi", Model_Name_Xiaomi, nullptr },
 };
 
 //---------------------------------------------------------------------------
@@ -3035,6 +3045,12 @@ void File__Analyze::Streams_Finish_StreamOnly_General(size_t StreamPos)
         }
     }
 
+    const auto& FileExtension_Invalid = Retrieve(Stream_General, StreamPos, "FileExtension_Invalid");
+    if (!FileExtension_Invalid.empty()) {
+        Fill(Stream_General, StreamPos, "ConformanceWarnings", "Yes", Unlimited, true, true);
+        Fill(Stream_General, StreamPos, "ConformanceWarnings GeneralCompliance", "File name extension is not expected for this file format (actual " + Retrieve(Stream_General, StreamPos, General_FileExtension).To_UTF8() + ", expected " + FileExtension_Invalid.To_UTF8() + ")", true, true);
+    }
+
     //Audio_Channels_Total
     if (Retrieve_Const(Stream_General, StreamPos, General_Audio_Channels_Total).empty())
     {
@@ -3356,7 +3372,11 @@ void File__Analyze::Streams_Finish_StreamOnly_General_Curate(size_t StreamPos)
                     if (len < CompanyName.size() && CompanyName[CompanyName.size() - (len + 1)] == ',') {
                         len++;
                     }
+                    #if defined(UNICODE) || defined (_UNICODE)
                     Fill(Stream_General, StreamPos, Parameter, CompanyName.substr(0, CompanyName.size() - len), true);
+                    #else
+                    Fill(Stream_General, StreamPos, Parameter, CompanyName.substr(0, CompanyName.size() - len), true, true);
+                    #endif // defined(UNICODE) || defined (_UNICODE)
                     DoAgain = true;
                     break;
                 }
@@ -3380,7 +3400,11 @@ void File__Analyze::Streams_Finish_StreamOnly_General_Curate(size_t StreamPos)
                 && IsAsciiDigit(CompanyNameU[6])
                 && IsAsciiDigit(CompanyNameU[7])
                 && CompanyNameU[8] == ' ') {
+                #if defined(UNICODE) || defined (_UNICODE)
                 Fill(Stream_General, StreamPos, Parameter, CompanyName.substr(9), true);
+                #else
+                Fill(Stream_General, StreamPos, Parameter, CompanyName.substr(9), true, true);
+                #endif // defined(UNICODE) || defined (_UNICODE)
             }
         }
 
@@ -3405,7 +3429,7 @@ void File__Analyze::Streams_Finish_StreamOnly_General_Curate(size_t StreamPos)
     }
 
     // Move versions found in name field
-    auto MoveVersion = [&](size_t Parameter_Source, size_t Parameter_Version, size_t Parameter_Name = 0) {
+    auto MoveVersion = [&](size_t Parameter_Source, size_t Parameter_Version, size_t Parameter_Name) {
         const auto& Name = Retrieve_Const(Stream_General, StreamPos, Parameter_Source);
         if (Name.empty()) {
             return;
@@ -3520,9 +3544,9 @@ void File__Analyze::Streams_Finish_StreamOnly_General_Curate(size_t StreamPos)
             }
         }
     }
-    MoveVersion(General_Encoded_Library_Name, General_Encoded_Library_Version);
+    MoveVersion(General_Encoded_Library_Name, General_Encoded_Library_Version, 0);
     MoveVersion(General_Encoded_Library, General_Encoded_Library_Version, General_Encoded_Library_Name);
-    MoveVersion(General_Encoded_Application_Name, General_Encoded_Application_Version);
+    MoveVersion(General_Encoded_Application_Name, General_Encoded_Application_Version, 0);
     MoveVersion(General_Encoded_Application, General_Encoded_Application_Version, General_Encoded_Application_Name);
 
     // Move company name found in name field
@@ -3829,7 +3853,7 @@ void File__Analyze::Streams_Finish_StreamOnly_General_Curate(size_t StreamPos)
     RemoveSynonyms(General_Encoded_Application_CompanyName, General_Encoded_Application_Name);
 
     // Create displayed string
-    auto CreateString = [&](size_t Parameter_Start, bool HasModel = false) {
+    auto CreateString = [&](size_t Parameter_Start, bool HasModel) {
         const auto Parameter = Parameter_Start;
         const auto Parameter_String = ++Parameter_Start;
         if (!Retrieve_Const(Stream_General, StreamPos, Parameter_String).empty()) {
@@ -3867,8 +3891,8 @@ void File__Analyze::Streams_Finish_StreamOnly_General_Curate(size_t StreamPos)
         Fill(Stream_General, StreamPos, Parameter_String, Value, true);
     };
     CreateString(General_Encoded_Hardware, true);
-    CreateString(General_Encoded_Library);
-    CreateString(General_Encoded_Application);
+    CreateString(General_Encoded_Library, false);
+    CreateString(General_Encoded_Application, false);
 }
 
 //---------------------------------------------------------------------------
@@ -3990,6 +4014,26 @@ void File__Analyze::Streams_Finish_StreamOnly_Video(size_t Pos)
             Fill(Stream_Video, Pos, Video_ChromaSubsampling_String, Retrieve(Stream_Video, Pos, Video_ChromaSubsampling)+__T(" (")+ Retrieve(Stream_Video, Pos, Video_ChromaSubsampling_Position)+__T(')'));
     }
 
+    //MasteringDisplay_Luminance
+    {
+        const auto& Luminance_Min = Retrieve_Const(Stream_Video, Pos, Video_MasteringDisplay_Luminance_Min);
+        const auto& Luminance_Max = Retrieve_Const(Stream_Video, Pos, Video_MasteringDisplay_Luminance_Max);
+        const auto& Luminance = Retrieve(Stream_Video, Pos, Video_MasteringDisplay_Luminance);
+        if (Luminance_Min.empty() && Luminance_Max.empty() && !Luminance.empty())
+        {
+            Fill(Stream_Video, Pos, Video_MasteringDisplay_Luminance_Min, Luminance.SubString(__T("min: "), __T(" ")));
+            Fill(Stream_Video, Pos, Video_MasteringDisplay_Luminance_Max, Luminance.SubString(__T("max: "), __T(" ")));
+        }
+        const auto& Luminance_Original_Min = Retrieve_Const(Stream_Video, Pos, Video_MasteringDisplay_Luminance_Original_Min);
+        const auto& Luminance_Original_Max = Retrieve_Const(Stream_Video, Pos, Video_MasteringDisplay_Luminance_Original_Max);
+        const auto& Luminance_Original = Retrieve(Stream_Video, Pos, Video_MasteringDisplay_Luminance_Original);
+        if (Luminance_Original_Min.empty() && Luminance_Original_Max.empty() && !Luminance_Original.empty())
+        {
+            Fill(Stream_Video, Pos, Video_MasteringDisplay_Luminance_Original_Min, Luminance.SubString(__T("min: "), __T(" ")));
+            Fill(Stream_Video, Pos, Video_MasteringDisplay_Luminance_Original_Max, Luminance.SubString(__T("max: "), __T(" ")));
+        }
+    }
+
     //Commercial name
     if (Retrieve(Stream_Video, Pos, Video_HDR_Format_Compatibility).rfind(__T("HDR10"), 0)==0
      && ((!Retrieve(Stream_Video, Pos, Video_BitDepth).empty() && Retrieve(Stream_Video, Pos, Video_BitDepth).To_int64u()<10) //e.g. ProRes has not bitdepth info
@@ -3998,8 +4042,12 @@ void File__Analyze::Streams_Finish_StreamOnly_Video(size_t Pos)
      || Retrieve(Stream_Video, Pos, Video_MasteringDisplay_ColorPrimaries).empty()
         ))
     {
-        //We actually fill HDR10/HDR10+ by default, so it will be removed below if not fitting in the color related rules
-        Clear(Stream_Video, Pos, Video_HDR_Format_Compatibility);
+        //If HDR10+ Profile A with HLG, it is actually HLG+
+        if (Retrieve(Stream_Video, Pos, Video_transfer_characteristics) == __T("HLG") && Retrieve(Stream_Video, Pos, Video_HDR_Format_Compatibility).rfind(__T("HDR10+ Profile A"), 0) == 0)
+            Fill(Stream_Video, Pos, Video_HDR_Format_Compatibility, "HLG+", Unlimited, true, true);
+        else
+            //We actually fill HDR10/HDR10+ by default, so it will be removed below if not fitting in the color related rules
+            Clear(Stream_Video, Pos, Video_HDR_Format_Compatibility);
     }
     if (Retrieve(Stream_Video, Pos, Video_HDR_Format_String).empty())
     {
@@ -4062,6 +4110,7 @@ void File__Analyze::Streams_Finish_StreamOnly_Video(size_t Pos)
                                     }
                                 }
                             }
+                            ToAdd.resize(Summary.size());
                         }
                     }
                 }
@@ -4929,8 +4978,7 @@ void File__Analyze::Streams_Finish_InterStreams()
                 continue;
             for (size_t StreamPos=0; StreamPos<Count_Get((stream_t)StreamKind); StreamPos++)
             {
-                if (!IsValid)
-                    IsValid=true;
+                IsValid=true;
                 if (Retrieve((stream_t)StreamKind, StreamPos, Fill_Parameter((stream_t)StreamKind, Generic_BitRate_Mode))!=__T("CBR"))
                     IsCBR=false;
                 if (Retrieve((stream_t)StreamKind, StreamPos, Fill_Parameter((stream_t)StreamKind, Generic_BitRate_Mode))==__T("VBR"))

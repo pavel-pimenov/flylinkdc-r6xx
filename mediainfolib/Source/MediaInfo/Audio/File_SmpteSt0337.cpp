@@ -361,6 +361,7 @@ void File_SmpteSt0337::Read_Buffer_Unsynched()
         FrameInfo.DTS=Frame_Count_NotParsedIncluded*1000000000/48000;
     }
 
+    Aligned=false;
     if (Parser)
         Parser->Open_Buffer_Unsynch();
 }
@@ -444,27 +445,43 @@ size_t File_SmpteSt0337::Read_Buffer_Seek (size_t Method, int64u Value, int64u I
 bool File_SmpteSt0337::Synchronize()
 {
     // Guard band
-    size_t Buffer_Offset_Base=Buffer_Offset;
+    size_t Buffer_Offset_Base = Buffer_Offset;
+
+    static const uint8_t Sync16_BE    [4] = { 0xF8,0x72,0x4E,0x1F };
+    static const uint8_t Sync16_LE    [4] = { 0x72,0xF8,0x1F,0x4E };
+
+    static const uint8_t Sync20_BE    [5] = { 0x6F,0x87,0x25,0x4E,0x1F };
+    static const uint8_t Sync20_LE    [5] = { 0x72,0xF8,0xF6,0xE1,0x54 };
+
+    static const uint8_t Sync24_BE    [6] = { 0x96,0xF8,0x72,0xA5,0x4E,0x1F };
+    static const uint8_t Sync24_LE    [6] = { 0x72,0xF8,0x96,0x1F,0x4E,0xA5 };
+    static const uint8_t Sync16in24_BE[6] = { 0x00,0xF8,0x72,0x00,0x4E,0x1F };
+    static const uint8_t Sync16in24_LE[6] = { 0x00,0x72,0xF8,0x00,0x1F,0x4E };
+    static const uint8_t Sync20in24_BE[6] = { 0x6F,0x87,0x20,0x54,0xE1,0xF0 };
+    static const uint8_t Sync20in24_LE[6] = { 0x20,0x87,0x6F,0xF0,0xE1,0x54 };
+
+    static const uint8_t Sync16in32_BE[8] = { 0x00,0x00,0xF8,0x72,0x00,0x00,0x4E,0x1F };
+    static const uint8_t Sync16in32_LE[8] = { 0x00,0x00,0x72,0xF8,0x00,0x00,0x1F,0x4E };
+    static const uint8_t Sync20in32_BE[8] = { 0x00,0x6F,0x87,0x20,0x00,0x54,0xE1,0xF0 };
+    static const uint8_t Sync20in32_LE[8] = { 0x00,0x20,0x87,0x6F,0x00,0xF0,0xE1,0x54 };
+    static const uint8_t Sync24in32_BE[8] = { 0x00,0x96,0xF8,0x72,0x00,0xA5,0x4E,0x1F };
+    static const uint8_t Sync24in32_LE[8] = { 0x00,0x72,0xF8,0x96,0x00,0x1F,0x4E,0xA5 };
 
     // Synchronizing
-    while (Buffer_Offset+16<=Buffer_Size)
+    while (Buffer_Offset + 16 <= Buffer_Size)
     {
-        if ((BitDepth==0 || BitDepth==16) && (!Aligned || ((Buffer_TotalBytes+Buffer_Offset)%4)==0))
+        const uint8_t* p = reinterpret_cast<const uint8_t*>(Buffer + Buffer_Offset);
+
+        if ((BitDepth == 0 || BitDepth == 16) && (!Aligned || ((Buffer_TotalBytes + Buffer_Offset) % 4) == 0))
         {
-            if (Buffer[Buffer_Offset  ]==0xF8
-             && Buffer[Buffer_Offset+1]==0x72
-             && Buffer[Buffer_Offset+2]==0x4E
-             && Buffer[Buffer_Offset+3]==0x1F) // 16-bit, BE
+            if (memcmp(p, Sync16_BE, 4) == 0) // 16-bit, BE
             {
                 BitDepth=16;
                 Stream_Bits=16;
                 Endianness='B'; // BE
                 break; // while()
             }
-            if (Buffer[Buffer_Offset  ]==0x72
-             && Buffer[Buffer_Offset+1]==0xF8
-             && Buffer[Buffer_Offset+2]==0x1F
-             && Buffer[Buffer_Offset+3]==0x4E) // 16-bit, LE
+            if (memcmp(p, Sync16_LE, 4) == 0) // 16-bit, LE
             {
                 BitDepth=16;
                 Stream_Bits=16;
@@ -472,27 +489,16 @@ bool File_SmpteSt0337::Synchronize()
                 break; // while()
             }
         }
-        if ((BitDepth==0 || BitDepth==20) && (!Aligned || ((Buffer_TotalBytes+Buffer_Offset)%5)==0))
+        if ((BitDepth == 0 || BitDepth == 20) && (!Aligned || ((Buffer_TotalBytes + Buffer_Offset) % 5) == 0))
         {
-            if (Buffer[Buffer_Offset  ]==0x6F
-             && Buffer[Buffer_Offset+1]==0x87
-             && Buffer[Buffer_Offset+2]==0x25
-             && Buffer[Buffer_Offset+3]==0x4E
-             && Buffer[Buffer_Offset+4]==0x1F) // 20-bit, BE
+            if (memcmp(p, Sync20_BE, 5) == 0) // 20-bit, BE
             {
                 BitDepth=20;
                 Stream_Bits=20;
                 Endianness='B'; // BE
                 break; // while()
             }
-        }
-        if ((BitDepth==0 || BitDepth==20) && (!Aligned || ((Buffer_TotalBytes+Buffer_Offset)%5)==0))
-        {
-            if (Buffer[Buffer_Offset  ]==0x72
-             && Buffer[Buffer_Offset+1]==0xF8
-             && Buffer[Buffer_Offset+2]==0xF6
-             && Buffer[Buffer_Offset+3]==0xE1
-             && Buffer[Buffer_Offset+4]==0x54) // 20-bit, LE
+            if (memcmp(p, Sync20_LE, 5) == 0) // 20-bit, LE
             {
                 BitDepth=20;
                 Stream_Bits=20;
@@ -500,38 +506,23 @@ bool File_SmpteSt0337::Synchronize()
                 break; // while()
             }
         }
-        if ((BitDepth==0 || BitDepth==24) && (!Aligned || ((Buffer_TotalBytes+Buffer_Offset)%6)==0))
+        if ((BitDepth == 0 || BitDepth == 24) && (!Aligned || ((Buffer_TotalBytes + Buffer_Offset) % 6) == 0))
         {
-            if (Buffer[Buffer_Offset  ]==0x96
-             && Buffer[Buffer_Offset+1]==0xF8
-             && Buffer[Buffer_Offset+2]==0x72
-             && Buffer[Buffer_Offset+3]==0xA5
-             && Buffer[Buffer_Offset+4]==0x4E
-             && Buffer[Buffer_Offset+5]==0x1F) // 24-bit, BE
+            if (memcmp(p, Sync24_BE, 6) == 0) // 24-bit, BE
             {
                 BitDepth=24;
                 Stream_Bits=24;
                 Endianness='B'; // BE
                 break; // while()
             }
-            if (Buffer[Buffer_Offset  ]==0x72
-             && Buffer[Buffer_Offset+1]==0xF8
-             && Buffer[Buffer_Offset+2]==0x96
-             && Buffer[Buffer_Offset+3]==0x1F
-             && Buffer[Buffer_Offset+4]==0x4E
-             && Buffer[Buffer_Offset+5]==0xA5) // 24-bit, LE
+            if (memcmp(p, Sync24_LE, 6) == 0) // 24-bit, LE
             {
                 BitDepth=24;
                 Stream_Bits=24;
                 Endianness='L'; // LE
                 break; // while()
             }
-            if (Buffer[Buffer_Offset  ]==0x00
-             && Buffer[Buffer_Offset+1]==0xF8
-             && Buffer[Buffer_Offset+2]==0x72
-             && Buffer[Buffer_Offset+3]==0x00
-             && Buffer[Buffer_Offset+4]==0x4E
-             && Buffer[Buffer_Offset+5]==0x1F) // 16-bit in 24-bit, BE
+            if (memcmp(p, Sync16in24_BE, 6) == 0) // 16-bit in 24-bit, BE
             {
                 BitDepth=24;
                 Stream_Bits=16;
@@ -539,12 +530,7 @@ bool File_SmpteSt0337::Synchronize()
                 NullPadding_Size=1;
                 break; // while()
             }
-            if (Buffer[Buffer_Offset  ]==0x00
-             && Buffer[Buffer_Offset+1]==0x72
-             && Buffer[Buffer_Offset+2]==0xF8
-             && Buffer[Buffer_Offset+3]==0x00
-             && Buffer[Buffer_Offset+4]==0x1F
-             && Buffer[Buffer_Offset+5]==0x4E) // 16-bit in 24-bit, LE
+            if (memcmp(p, Sync16in24_LE, 6) == 0) // 16-bit in 24-bit, LE
             {
                 BitDepth=24;
                 Stream_Bits=16;
@@ -552,24 +538,14 @@ bool File_SmpteSt0337::Synchronize()
                 NullPadding_Size=1;
                 break; // while()
             }
-            if (Buffer[Buffer_Offset  ]==0x6F
-             && Buffer[Buffer_Offset+1]==0x87
-             && Buffer[Buffer_Offset+2]==0x20
-             && Buffer[Buffer_Offset+3]==0x54
-             && Buffer[Buffer_Offset+4]==0xE1
-             && Buffer[Buffer_Offset+5]==0xF0) // 20-bit in 24-bit, BE
+            if (memcmp(p, Sync20in24_BE, 6) == 0) // 20-bit in 24-bit, BE
             {
                 BitDepth=24;
                 Stream_Bits=20;
                 Endianness='B'; // BE
                 break; // while()
             }
-            if (Buffer[Buffer_Offset  ]==0x20
-             && Buffer[Buffer_Offset+1]==0x87
-             && Buffer[Buffer_Offset+2]==0x6F
-             && Buffer[Buffer_Offset+3]==0xF0
-             && Buffer[Buffer_Offset+4]==0xE1
-             && Buffer[Buffer_Offset+5]==0x54) // 20-bit in 24-bit, LE
+            if (memcmp(p, Sync20in24_LE, 6) == 0) // 20-bit in 24-bit, LE
             {
                 BitDepth=24;
                 Stream_Bits=20;
@@ -577,16 +553,9 @@ bool File_SmpteSt0337::Synchronize()
                 break; // while()
             }
         }
-        if ((BitDepth==0 || BitDepth==32) && (!Aligned || ((Buffer_TotalBytes+Buffer_Offset)%8)==0))
+        if ((BitDepth == 0 || BitDepth == 32) && (!Aligned || ((Buffer_TotalBytes + Buffer_Offset) % 8) == 0))
         {
-            if (Buffer[Buffer_Offset  ]==0x00
-             && Buffer[Buffer_Offset+1]==0x00
-             && Buffer[Buffer_Offset+2]==0xF8
-             && Buffer[Buffer_Offset+3]==0x72
-             && Buffer[Buffer_Offset+4]==0x00
-             && Buffer[Buffer_Offset+5]==0x00
-             && Buffer[Buffer_Offset+6]==0x4E
-             && Buffer[Buffer_Offset+7]==0x1F) // 16-bit in 32-bit, BE
+            if (memcmp(p, Sync16in32_BE, 8) == 0) // 16-bit in 32-bit, BE
             {
                 BitDepth=32;
                 Stream_Bits=16;
@@ -594,14 +563,7 @@ bool File_SmpteSt0337::Synchronize()
                 NullPadding_Size=2;
                 break; // while()
             }
-            if (Buffer[Buffer_Offset  ]==0x00
-             && Buffer[Buffer_Offset+1]==0x00
-             && Buffer[Buffer_Offset+2]==0x72
-             && Buffer[Buffer_Offset+3]==0xF8
-             && Buffer[Buffer_Offset+4]==0x00
-             && Buffer[Buffer_Offset+5]==0x00
-             && Buffer[Buffer_Offset+6]==0x1F
-             && Buffer[Buffer_Offset+7]==0x4E) // 16-bit in 32-bit, LE
+            if (memcmp(p, Sync16in32_LE, 8) == 0) // 16-bit in 32-bit, LE
             {
                 BitDepth=32;
                 Stream_Bits=16;
@@ -609,14 +571,7 @@ bool File_SmpteSt0337::Synchronize()
                 NullPadding_Size=2;
                 break; // while()
             }
-            if (Buffer[Buffer_Offset  ]==0x00
-             && Buffer[Buffer_Offset+1]==0x6F
-             && Buffer[Buffer_Offset+2]==0x87
-             && Buffer[Buffer_Offset+3]==0x20
-             && Buffer[Buffer_Offset+4]==0x00
-             && Buffer[Buffer_Offset+5]==0x54
-             && Buffer[Buffer_Offset+6]==0xE1
-             && Buffer[Buffer_Offset+7]==0xF0) // 20-bit in 32-bit, BE
+            if (memcmp(p, Sync20in32_BE, 8) == 0) // 20-bit in 32-bit, BE
             {
                 BitDepth=32;
                 Stream_Bits=20;
@@ -624,14 +579,7 @@ bool File_SmpteSt0337::Synchronize()
                 NullPadding_Size=1;
                 break; // while()
             }
-            if (Buffer[Buffer_Offset  ]==0x00
-             && Buffer[Buffer_Offset+1]==0x20
-             && Buffer[Buffer_Offset+2]==0x87
-             && Buffer[Buffer_Offset+3]==0x6F
-             && Buffer[Buffer_Offset+4]==0x00
-             && Buffer[Buffer_Offset+5]==0xF0
-             && Buffer[Buffer_Offset+6]==0xE1
-             && Buffer[Buffer_Offset+7]==0x54) // 20-bit in 32-bit, LE
+            if (memcmp(p, Sync20in32_LE, 8) == 0) // 20-bit in 32-bit, LE
             {
                 BitDepth=32;
                 Stream_Bits=20;
@@ -639,14 +587,7 @@ bool File_SmpteSt0337::Synchronize()
                 NullPadding_Size=1;
                 break; // while()
             }
-            if (Buffer[Buffer_Offset  ]==0x00
-             && Buffer[Buffer_Offset+1]==0x96
-             && Buffer[Buffer_Offset+2]==0xF8
-             && Buffer[Buffer_Offset+3]==0x72
-             && Buffer[Buffer_Offset+4]==0x00
-             && Buffer[Buffer_Offset+5]==0xA5
-             && Buffer[Buffer_Offset+6]==0x4E
-             && Buffer[Buffer_Offset+7]==0x1F) // 24-bit in 32-bit, BE
+            if (memcmp(p, Sync24in32_BE, 8) == 0) // 24-bit in 32-bit, BE
             {
                 BitDepth=32;
                 Stream_Bits=24;
@@ -654,14 +595,7 @@ bool File_SmpteSt0337::Synchronize()
                 NullPadding_Size=1;
                 break; // while()
             }
-            if (Buffer[Buffer_Offset  ]==0x00
-             && Buffer[Buffer_Offset+1]==0x72
-             && Buffer[Buffer_Offset+2]==0xF8
-             && Buffer[Buffer_Offset+3]==0x96
-             && Buffer[Buffer_Offset+4]==0x00
-             && Buffer[Buffer_Offset+5]==0x1F
-             && Buffer[Buffer_Offset+6]==0x4E
-             && Buffer[Buffer_Offset+7]==0xA5) // 24-bit in 32-bit, LE
+            if (memcmp(p, Sync24in32_LE, 8) == 0) // 24-bit in 32-bit, LE
             {
                 BitDepth=32;
                 Stream_Bits=24;
@@ -684,9 +618,6 @@ bool File_SmpteSt0337::Synchronize()
             GuardBand_Before+=Buffer_Offset;
         return false;
     }
-
-    if (!Status[IsAccepted] && IsSub)
-        Accept("SMPTE ST 337");
 
     // Guard band
     GuardBand_Before+=Buffer_Offset-Buffer_Offset_Base;
@@ -725,6 +656,7 @@ bool File_SmpteSt0337::Synched_Test()
                 if (Buffer[Buffer_Offset_Temp])
                 {
                     Trusted_IsNot("Bad sync");
+                    Open_Buffer_Unsynch();
                     return true;
                 }
                 Buffer_Offset_Temp++;
@@ -749,6 +681,7 @@ bool File_SmpteSt0337::Synched_Test()
                 if (Buffer[Buffer_Offset_Temp])
                 {
                     Trusted_IsNot("Bad sync");
+                    Open_Buffer_Unsynch();
                     return true;
                 }
                 Buffer_Offset_Temp++;
@@ -773,6 +706,7 @@ bool File_SmpteSt0337::Synched_Test()
                 if (Buffer[Buffer_Offset_Temp])
                 {
                     Trusted_IsNot("Bad sync");
+                    Open_Buffer_Unsynch();
                     return true;
                 }
                 Buffer_Offset_Temp++;
@@ -797,6 +731,7 @@ bool File_SmpteSt0337::Synched_Test()
                 if (Buffer[Buffer_Offset_Temp])
                 {
                     Trusted_IsNot("Bad sync");
+                    Open_Buffer_Unsynch();
                     return true;
                 }
                 Buffer_Offset_Temp++;
@@ -1014,6 +949,7 @@ void File_SmpteSt0337::Header_Parse()
         if (!IsOK)
         {
             Trusted_IsNot("Bad sync");
+            Open_Buffer_Unsynch();
             Buffer_Offset++;
             return;
         }
@@ -1313,9 +1249,10 @@ void File_SmpteSt0337::Data_Parse()
                 }
                 else if (format_type==1)
                 {
-                    int8u* Compressed=new int8u[Data_BS_Remain()/8];
+                    size_t Compressed_Size=Data_BS_Remain()/8;
+                    int8u* Compressed=new int8u[Compressed_Size];
                     size_t Compressed_Offset=0;
-                    while (Data_BS_Remain())
+                    while (Data_BS_Remain()>=(size_t)Stream_Bits*2)
                     {
                         int64u Data;
                         Get_S6(Stream_Bits*2, Data, "Data");
@@ -1324,6 +1261,8 @@ void File_SmpteSt0337::Data_Parse()
                             Compressed[Compressed_Offset++]=(int8u)(Data>>((Stream_Bits/4-i-1)*8));
                         }
                     }
+                    if (Data_BS_Remain())
+                        Skip_BS(Data_BS_Remain(),                "Padding");
                     BS_End();
 
                     // Adapting
@@ -1651,7 +1590,7 @@ void File_SmpteSt0337::Data_Parse()
             Frame_Count_NotParsedIncluded++;
 
         int64u Frame_Count_Valid=1+(File_Offset+Buffer_Size<File_Size);
-        if (!Status[IsAccepted] && Frame_Count>=Frame_Count_Valid && (!Parser || Parser->Status[IsAccepted]))
+        if (!Status[IsAccepted] && (Frame_Count>=Frame_Count_Valid || (Parser && Parser->Status[IsAccepted])))
             Accept("SMPTE ST 337");
         if (!Status[IsFilled] && Frame_Count>=2 && (!Parser || Parser->Status[IsFilled]))
         {

@@ -93,6 +93,7 @@ extern const char* Mpegv_matrix_coefficients(int8u matrix_coefficients)
         case 12 : return "Chromaticity-derived non-constant";           //Added in HEVC 2016
         case 13 : return "Chromaticity-derived constant";               //Added in HEVC 2016
         case 14 : return "ICtCp";                                       //Added in HEVC 2016
+        case 15 : return "IPT-PQ-C2";
         default : return "";
     }
 }
@@ -1151,6 +1152,71 @@ File_Mpegv::File_Mpegv()
         Has_sequence_header=false;
         Has_sequence_extension=false;
     #endif // MEDIAINFO_ADVANCED || MEDIAINFO_EVENTS
+
+    //Init (also done by Synched_Init for synchronized streams)
+    //Temp
+    BVOP_Count=0;
+    progressive_frame_Count=0;
+    Interlaced_Top=0;
+    Interlaced_Bottom=0;
+    PictureStructure_Field=0;
+    PictureStructure_Frame=0;
+    display_horizontal_size=0;
+    display_vertical_size=0;
+    vbv_delay=0;
+    vbv_buffer_size_value=0;
+    Time_Current_Seconds=Error;
+    Time_Current_Frames=(int8u)-1;
+    Time_Begin_Seconds=Error;
+    Time_Begin_Frames=(int8u)-1;
+    Time_End_Seconds=Error;
+    Time_End_Frames=(int8u)-1;
+    picture_coding_type=(int8u)-1;
+    bit_rate_value=0;
+    FrameRate=0;
+    horizontal_size_value=0;
+    vertical_size_value=0;
+    bit_rate_extension=0;
+    temporal_reference_Old=(int16u)-1;
+    temporal_reference_Max=0;
+    aspect_ratio_information=0;
+    frame_rate_code=0;
+    profile_and_level_indication_profile=(int8u)-1;
+    profile_and_level_indication_level=(int8u)-1;
+    chroma_format=1; //Default is 4:2:0
+    horizontal_size_extension=0;
+    vertical_size_extension=0;
+    frame_rate_extension_n=0;
+    frame_rate_extension_d=0;
+    video_format=5; //Unspecified video format
+    colour_primaries=(int8u)-1;
+    transfer_characteristics=(int8u)-1;
+    matrix_coefficients=(int8u)-1;
+    vbv_buffer_size_extension=0;
+    intra_dc_precision=(int8u)-1;
+    load_intra_quantiser_matrix=false;
+    load_non_intra_quantiser_matrix=false;
+    progressive_sequence=true; //progressive by default
+    top_field_first=false;
+    repeat_first_field=false;
+    FirstFieldFound=false;
+    group_start_IsParsed=false;
+    group_start_FirstPass=false;
+    PTS_LastIFrame=(int64u)-1;
+    PTS_End_temporal_reference=(int16u)-1;
+    bit_rate_value_IsValid=false;
+    profile_and_level_indication_escape=false;
+    colour_description=false;
+    low_delay=false;
+    RefFramesCount=0;
+    BVOPsSinceLastRefFrames=0;
+    temporal_reference_LastIFrame=0;
+    tc=0;
+    IFrame_IsParsed=false;
+    IFrame_Count=0;
+
+    //Streams init (also done by Synched_Init for synchronized streams)
+    Streams.resize(0x100);
 }
 
 //---------------------------------------------------------------------------
@@ -1273,8 +1339,13 @@ void File_Mpegv::Streams_Fill()
 
     Fill(Stream_Video, 0, Video_Width, 0x1000*horizontal_size_extension+horizontal_size_value);
     Fill(Stream_Video, 0, Video_Height, 0x1000*vertical_size_extension+vertical_size_value);
-    Fill(Stream_Video, 0, Video_ChromaSubsampling, Mpegv_chroma_format[chroma_format]);
-    Fill(Stream_Video, 0, Video_ColorSpace, Mpegv_chroma_format_Colorspace[chroma_format]);
+    // chroma_format is bitstream-controlled; a crafted MPEG video can pass an 8-bit
+    // value well past the 4-entry tables. Guard both accesses -- see gh#2612.
+    if (chroma_format<sizeof(Mpegv_chroma_format)/sizeof(*Mpegv_chroma_format))
+    {
+        Fill(Stream_Video, 0, Video_ChromaSubsampling, Mpegv_chroma_format[chroma_format]);
+        Fill(Stream_Video, 0, Video_ColorSpace, Mpegv_chroma_format_Colorspace[chroma_format]);
+    }
     Fill(Stream_Video, 0, Video_BitDepth, 8);
 
     //AspectRatio
@@ -1286,21 +1357,27 @@ void File_Mpegv::Streams_Fill()
             Fill(Stream_Video, 0, Video_PixelAspectRatio, 1.000, 3, true);
         else if (display_horizontal_size && display_vertical_size)
         {
-            if (vertical_size_value && Mpegv_aspect_ratio2[aspect_ratio_information])
+            if (aspect_ratio_information<sizeof(Mpegv_aspect_ratio2)/sizeof(*Mpegv_aspect_ratio2)
+             && vertical_size_value && Mpegv_aspect_ratio2[aspect_ratio_information])
                 Fill(Stream_Video, StreamPos_Last, Video_DisplayAspectRatio, (float)(0x1000*horizontal_size_extension+horizontal_size_value)/(0x1000*vertical_size_extension+vertical_size_value)
                                                                              *Mpegv_aspect_ratio2[aspect_ratio_information]/((float)display_horizontal_size/display_vertical_size), 3, true);
         }
-        else if (Mpegv_aspect_ratio2[aspect_ratio_information])
+        else if (aspect_ratio_information<sizeof(Mpegv_aspect_ratio2)/sizeof(*Mpegv_aspect_ratio2)
+              && Mpegv_aspect_ratio2[aspect_ratio_information])
             Fill(Stream_Video, StreamPos_Last, Video_DisplayAspectRatio, Mpegv_aspect_ratio2[aspect_ratio_information], 3, true);
     }
     else //Version 1
     {
-        if (vertical_size_value && Mpegv_aspect_ratio1[aspect_ratio_information])
+        if (aspect_ratio_information<sizeof(Mpegv_aspect_ratio1)/sizeof(*Mpegv_aspect_ratio1)
+         && vertical_size_value && Mpegv_aspect_ratio1[aspect_ratio_information])
             Fill(Stream_Video, StreamPos_Last, Video_DisplayAspectRatio, (float)(0x1000*horizontal_size_extension+horizontal_size_value)/(0x1000*vertical_size_extension+vertical_size_value)/Mpegv_aspect_ratio1[aspect_ratio_information], 3, true);
     }
 
     //FrameRate
-    if (Mpegv_frame_rate[frame_rate_code])
+    // aspect_ratio_information and frame_rate_code are bitstream-controlled -- same class
+    // of guard as chroma_format above (gh#2612).
+    if (frame_rate_code<sizeof(Mpegv_frame_rate)/sizeof(*Mpegv_frame_rate)
+     && Mpegv_frame_rate[frame_rate_code])
         Fill(Stream_Video, StreamPos_Last, Video_FrameRate, Mpegv_frame_rate[frame_rate_code] * (frame_rate_extension_n + 1) / (frame_rate_extension_d + 1));
 
     //BitRate
@@ -1372,7 +1449,12 @@ void File_Mpegv::Streams_Fill()
     }
 
     //Profile
-    if (!profile_and_level_indication_escape && profile_and_level_indication_profile!=(int8u)-1 && profile_and_level_indication_level!=(int8u)-1)
+    // profile_and_level_indication_profile / _level are bitstream-controlled; the
+    // existing (int8u)-1 guards only catch 0xFF, so a crafted stream can index past
+    // Mpegv_profile_and_level_indication_profile/_level (both char *[16]).
+    if (!profile_and_level_indication_escape
+     && profile_and_level_indication_profile<sizeof(Mpegv_profile_and_level_indication_profile)/sizeof(*Mpegv_profile_and_level_indication_profile)
+     && profile_and_level_indication_level<sizeof(Mpegv_profile_and_level_indication_level)/sizeof(*Mpegv_profile_and_level_indication_level))
     {
         Fill(Stream_Video, 0, Video_Format_Profile, Ztring().From_UTF8(Mpegv_profile_and_level_indication_profile[profile_and_level_indication_profile])+__T("@")+Ztring().From_UTF8(Mpegv_profile_and_level_indication_level[profile_and_level_indication_level]));
         Fill(Stream_Video, 0, Video_Codec_Profile, Ztring().From_UTF8(Mpegv_profile_and_level_indication_profile[profile_and_level_indication_profile])+__T("@")+Ztring().From_UTF8(Mpegv_profile_and_level_indication_level[profile_and_level_indication_level]));
@@ -2179,9 +2261,9 @@ bool File_Mpegv::Header_Parser_QuickSearch()
 
         //Synchronizing
         Buffer_Offset+=4;
-        Synched=false;
         if (!Synchronize())
         {
+            Synched=false;
             UnSynched_IsNotJunk=true;
             return false;
         }
@@ -2193,7 +2275,7 @@ bool File_Mpegv::Header_Parser_QuickSearch()
         }
     }
 
-    Trusted_IsNot("MPEG Video, Synchronisation lost");
+    Trusted_IsNot("MPEG Video, Synchronization lost");
     return Synchronize();
 }
 
@@ -3117,8 +3199,7 @@ void File_Mpegv::slice_start_macroblock_block(int8u i)
                     Element_Info1(Mpegv_dct_coefficients[dct_coefficient].mapped_to2);
                     Element_Info1(Mpegv_dct_coefficients[dct_coefficient].mapped_to3);
         }
-        if (IsFirst)
-            IsFirst=false;
+        IsFirst=false;
         Element_Trace_End0();
     }
 }
@@ -3981,6 +4062,13 @@ void File_Mpegv::sequence_end()
 // Packet "B8"
 void File_Mpegv::group_start()
 {
+    if (Element_Offset>Element_Size || Element_Size-Element_Offset<4
+     || Buffer_Offset>Buffer_Size || Element_Offset>Buffer_Size-Buffer_Offset
+     || Buffer_Size-Buffer_Offset-Element_Offset<4)
+    {
+        Trusted_IsNot("Truncated GOP header");
+        return;
+    }
     if (!Status[IsAccepted])
     {
         if (!NextCode_Test())
@@ -4067,8 +4155,7 @@ void File_Mpegv::group_start()
         Time_Current_Seconds=60*60*Hours+60*Minutes+Seconds;
         Time_Current_Frames =Frames;
 
-        if (!group_start_IsParsed)
-            group_start_IsParsed=true;
+        group_start_IsParsed=true;
         if (!group_start_FirstPass)
         {
             group_start_FirstPass=true;

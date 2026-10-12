@@ -237,7 +237,7 @@ private :
     void AVI__hdlr_strl_strf ();
     void AVI__hdlr_strl_strf_auds ();
     void AVI__hdlr_strl_strf_auds_Mpega();
-    void AVI__hdlr_strl_strf_auds_Aac();
+    void AVI__hdlr_strl_strf_auds_Aac(bool IsHEAACWAVEFORMAT=false);
     void AVI__hdlr_strl_strf_auds_Vorbis();
     void AVI__hdlr_strl_strf_auds_Vorbis2();
     void AVI__hdlr_strl_strf_auds_ExtensibleWave(int16u BitsPerSample);
@@ -334,6 +334,7 @@ private :
     void WAVE_axml_Continue ();
     void WAVE_bext ();
     void WAVE_bxml () {WAVE_axml();}
+    void WAVE_C2PA();
     void WAVE_chna();
     void WAVE_cset() { AVI__CSET(); }
     void WAVE_CSET() { AVI__CSET(); }

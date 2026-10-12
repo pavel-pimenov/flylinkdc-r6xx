@@ -41,9 +41,9 @@ struct gm_data
     bool BaseRenditionIsHDR{ false };
     bool Multichannel{ false };
     float32 HDRCapacityMin{ 0 };
-    float32 HDRCapacityMax;
+    float32 HDRCapacityMax{};
     float32 GainMapMin[3]{ 0, 0, 0 };
-    float32 GainMapMax[3];
+    float32 GainMapMax[3]{};
     float32 Gamma[3]{ 1, 1, 1 };
     float32 OffsetSDR[3]{ 1.0f / 64, 1.0f / 64, 1.0f / 64 };
     float32 OffsetHDR[3]{ 1.0f / 64, 1.0f / 64, 1.0f / 64 };
@@ -57,12 +57,16 @@ class File_Xmp : public File__Analyze
 {
 public:
     bool Wait{ false };
+    bool NoTrace{ false };
     gc_items* GContainerItems{ nullptr };
     gm_data* GainMapData{ nullptr };
 
 private :
     //Buffer - File header
-    bool FileHeader_Begin();
+    bool FileHeader_Begin() override;
+    void Read_Buffer_Continue() override;
+
+    //Element namespaces
     void dc(const string& name, const string& value);
     void exif(const string& name, const string& value);
     void GIMP(const string& name, const string& value);

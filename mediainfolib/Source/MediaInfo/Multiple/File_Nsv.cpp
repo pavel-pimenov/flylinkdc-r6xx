@@ -395,11 +395,12 @@ bool File_Nsv::Synchronize()
     //Synchronizing
     if (Buffer_Size-Buffer_Offset<4)
         return false;
-    auto sync_hdr0=BigEndian2int32u(Buffer+Buffer_Offset);
-    bool Accepted=Status[IsAccepted];
-    auto Buffer_Size_m4=Buffer_Size-4;
+    const bool Accepted=Status[IsAccepted];
+    const auto Buffer_Size_m4=Buffer_Size-4;
     for (;;)
     {
+        auto sync_hdr0 = BigEndian2int32u(Buffer + Buffer_Offset);
+
         // Check sync
         auto IsMainSync=sync_hdr0==Elements::NSVs;
         if (IsMainSync || (Accepted && (sync_hdr0>>16)==0xEFBE))
@@ -427,8 +428,16 @@ bool File_Nsv::Synchronize()
         // Next byte
         if (Buffer_Offset<Buffer_Size_m4)
         {
-            sync_hdr0=(sync_hdr0<<8)|Buffer[Buffer_Offset+4];
-            Buffer_Offset++;
+            size_t SearchLen = Buffer_Size_m4 - Buffer_Offset;
+            const uint8_t* Base = Buffer + Buffer_Offset + 1;
+            const uint8_t* Next = (const uint8_t*)memchr(Base, 'N', SearchLen);
+            if (Accepted)
+            {
+                const uint8_t* EF_pos = (const uint8_t*)memchr(Base, 0xEF, SearchLen);
+                if (EF_pos && (!Next || EF_pos < Next))
+                    Next = EF_pos;
+            }
+            Buffer_Offset = Next ? (size_t)(Next - Buffer) : Buffer_Size_m4;
             continue;
         }
 
@@ -552,7 +561,7 @@ void File_Nsv::Header_Parse()
     Get_L2 (audio_len,                                          "audio_len");
     auto num_aux=aux_plus_video_len&0xF;
     int32u video_len=aux_plus_video_len>>4;
-    for (auto i=0; i<num_aux; i++)
+    for (auto i=0U; i<num_aux; i++)
     {
         int16u aux_chunk_len;
         Get_L2 (aux_chunk_len,                                  "aux_chunk_len");
@@ -844,7 +853,9 @@ void File_StarDiva::Read_Buffer_Continue()
         Element_Begin1("Header");
             int32u JL_TotalSize;
             Get_B4 (JL_TotalSize,                               "Time line data total size");
-            if (JL_TotalSize<16 && JL_TotalSize>0x49000)
+            if (JL_TotalSize<16 || JL_TotalSize>0x49000
+             || JL_TotalSize>Element_Size || Buffer_Offset>Buffer_Size
+             || JL_TotalSize>Buffer_Size-Buffer_Offset)
             {
                 Element_End0();
                 Element_End0();
@@ -911,7 +922,7 @@ void File_StarDiva::Read_Buffer_Continue()
         vector<string> Times;
         Element_Begin1("Times");
             Element_Offset=8;
-            while (Buffer[Element_Offset]!=0x99 && Buffer[Element_Offset]!=0x09)
+            while (Element_Offset<JL_End && Buffer[Buffer_Offset+Element_Offset]!=0x99 && Buffer[Buffer_Offset+Element_Offset]!=0x09)
             {
                 string Time;
                 Get_String(8, Time,                             "Time");
@@ -1164,8 +1175,15 @@ void File_StarDiva::Read_Buffer_Continue()
                 }
                 Begin=Element_Offset;
                 End=Element_Offset;
-                while (Buffer[End])
+                while (End<JL_End && Buffer[Buffer_Offset+End])
                     End++;
+                if (End>=JL_End)
+                {
+                    Trusted_IsNot("Unterminated agenda");
+                    Element_End0();
+                    Element_End0();
+                    return;
+                }
                 Element_Offset=Begin;
                 string SeqAgenda;
                 Get_String(End-Begin, SeqAgenda,                "Seq + Agenda");
@@ -1327,8 +1345,15 @@ void File_StarDiva::Read_Buffer_Continue()
                     }
                     Begin=Element_Offset;
                     End=Element_Offset;
-                    while (Buffer[End])
+                    while (End<JL_End && Buffer[Buffer_Offset+End])
                         End++;
+                    if (End>=JL_End)
+                    {
+                        Trusted_IsNot("Unterminated speaker");
+                        Element_End0();
+                        Element_End0();
+                        return;
+                    }
                     Element_Offset=Begin;
                     string Speaker;
                     Get_String(End-Begin, Speaker,                  "Speaker");

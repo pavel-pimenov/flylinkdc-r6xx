@@ -7,6 +7,147 @@ x Correction
 bug reports and feature request are here:
 https://sourceforge.net/p/mediainfo/_list/tickets
 
+Version 26.10, 2026-10-06
+-------------
+MediaInfoLib source code has been audited by several security researchers and private individuals.
+Thank you to Yazan Balawneh (CyStack), Feng Ning (Innora), TristanInSec, Gareth Davidson (bitplane),
+Stanley Tang, Brandon Barrante, Erik White, Miklos Juhasz, iliasabk, buzz, mega-wli, cjee21,
+and many others for their reports and/or patches.
++ Conformance checker: update with more precise error messages, sponsored by Austrian Mediatek
++ Conformance checker: tolerate common padding patterns found in some files, sponsored by Austrian Mediatek
++ MXF: cross-check header and footer values for timecode tracks, prioritizing the footer value
++ MXF: support more ARRI camera metadata, thanks to Luis Gómez Gutiérrez
++ Global performance improvement when analyzing files with uncommon file extensions or junk files
++ HEVC: support interlaced content, thanks to Torbjörn Einarsson
++ HEVC: detect CBR and report nominal bitrate
++ AV2: support v1.0.0 streams, thanks to cjee21
++ MP3: support gapless files, thanks to hat3k
++ MOV/MP4: support Auro CS layout information, thanks to almirus
++ DTS:X: support supplemental channel layout, thanks to almirus
++ EIA-608/708: report maximum number of characters per line
++ TTML: report maximum number of characters per line
++ MOV: support chpl version 0
++ ELF: support RISC-V
++ GIF: support XMP and loop count, thanks to cjee21
++ GIF: support animated GIFs
++ I2632, ApeTag: handle cover images, thanks to cjee21
+x I2690, TAR: improve parsing of the TAR header to avoid more false positives
+x I2706, MPEG-TS: fix infinite loop with some partial packets at the end of the file
+x I2670, DVD-Video: preserve IFO stream languages after VOB merge, thanks to wastaken7
+x I2589: fix MediaInfoList_Open file options not being used with the DLL API
+x MXF: fix failure to detect sparse content in Teletext or OP47, thanks to MaxEliaserAWS
+x DTS: move DTS:X objects to their own field, matching Dolby Atmos
+x Opus: fix 5.0 support and center-channel ordering, thanks to Puella Purpura
+x MP3: detect headerless VBR after parsing finishes, thanks to Bernard Wiesner
+x MP3: fix reconstructed settings for LAME CBR 256 and 320 kbps, thanks to hat3k
+x MP3: clean up some LAME version values
+x MOV: fix mapping for Apple language tags >= 95
+
+Version 26.05, 2026-05-12
+-------------
+Thanks to cjee21, bitplane, tautropfli, zigazajc007 and more for their work on this MediaInfo version!
++ Rust example: Update dependencies
++ Amiga .info: Initial and complete support
++ APV: Initial support, raw and in MP4
++ AV2: Initial support, raw and in MP4/AVIF
++ AV1: Support of Annex B (raw) streams
++ JPEG: Support of MotionPhoto
++ PNG: Support of animated PNG
++ HEVC/AV1: Support of HLG+
++ IAMF: Support of IAMF v2.0.0 test files
++ XMP: Support new GContainer format in JPEG files
++ HEVC: Show the precise profile for Format Range generic profile
++ Matroska: support RFC 9559 track flags (SDH, audio description, original, commentary)
++ Matroska: Map Performer, Podcast URL, Genre tags
++ MPEG-4: handle better some malformed stsd compressor names
++ MP4/MOV: handle presence or lack (heuristic) of version/flags in meta boxes
++ VorbisCom & MKV: Map ENCODER_OPTIONS from opusenc
++ APE: Read DISC and DISCSUBTITLE tag
++ WM: Read WM/SetSubTitle and WM/PartOfSet as part and part number
++ MPEG-4: Read the com.apple.iTunes:DISCSUBTITLE tag
++ Vorbis: Read the DISCSUBTITLE tag
++ Vorbis: Write disc numbers into Part/Position and Part/Position_Total
++ ID3v2: Map TSST to Part
++ MZ/PE: Identify presence of Cargo Auditable data
++ SMPTE registers: add more items
++ MZ/PE: Get Extended DLLCharacteristics / CETCOMPAT
++ MZ/PE: Extract SBAT from EFI files
++ MZ/PE: Parse resources, Optional Header and Section Headers
+x LXF: fix crashes with buggy files
+x ID3v2: fix crashes with buggy content
+x Channel splitting: fix crashes with buggy content
+x Channel grouping: fix crashes with buggy content
+x ID3v2: fix not skipping unknown character encoding
+x MPEG-4: does not parse boxes with unknown version
+x Filter C0 controls, DEL, and C1 controls
+x DLL: Fix missing const in buffer API
+x I2561, Dirac: fix freeze with some malformed content
+x I2578, Matroska: fix bad behavior with content having more then 126 tracks
+x I2557, Matroska: fix false positive cover detection
+x I2506, Matroska: fix false positive cover detection
+x MPEG-4 Visual: less false-positive detection
+x AAC: fix false-positive display of gain_control with corrupted frames
+x VP9: fix frame info with RGB content
+x DV DIF: fix recorded date century
+x ADM: fix potential crash
+
+Version 26.01, 2026-02-02
+-------------
++ More coherency/integrity checks, sponsored by Austrian Mediathek
++ MXF: fix crash with some 0 byte audio packets
++ MPEG-4: C2PA support
++ ID3v2: support of Olympus voice recorder metadata
++ Matroska: show block addition tracks
++ Matroska: add timecode label readout
++ Add default language string for ISO 639-2 special codes, thanks to cjee21
++ AVI/WAV: add support for WAVE_FORMAT_MPEG_HEAAC (0x1610)
++ AV1: Enable parsing raw OBU from network, thanks to cjee21
++ AV1: Indicate usage of Film Grain Synthesis, thanks to cjee21
++ Bindings: add C#/PowerShell (Windows/Linux) support, thanks to cjee21
++ Matroska/TimeCodeXML: add frame rate
+x Matroska: fix incoherent readout of unordered tag elements
+x TimeCodeXml output: fix lack of frame number with some MXF SDTI timecodes
+x AVI/WAV: fix crash with some invalid FourCC
+x SDP: fix false-positive detection
+x I2469, CDP: fix handling of 708 streams caught in the middle
+
+Version 25.10, 2025-11-05
+-------------
++ MXF: crosscheck of ADM profiles
++ MXF: experimental ARRI UL support, more video streams detected
++ TTML: better support files with SMPTE timecode and ticks instead of frame rate
++ MXF: update UL names from the MXF registry (details view)
+x AC-4: Add Bitstream level and Presentation level, fix
+x MXF: Fix infinite loop in some ARRI files
+x ADM: fix tagList related false positive conformance errors
+x WAV: fix buggy non word aligned files check with 4 GB+ files
+x I2452, PAC: skip '\0' prefix in content
+x I2451, TTML: change timecode output "format" from TTML style to classic timecode
+
+Version 25.09, 2025-09-30
+-------------
++ ADM: Dolby E profile for emission conformance checker
++ AAC: show when PNS is ued
++ MPEG-TS: map message_id code to the stored message character string
++ AC-4: Enhancement to Presentation Role display
++ AC-4: Add Bitstream level and Presentation level
++ MXF: support of experimental ARRI ULs
++ WavPack: fix duration for long duration
++ WAV: detection of C2PA + display of thumbnails characteristics
++ MasteringDisplay_Luminance: split Min and Max
++ Dolby Vision: Fill colour, transfer & matrix for profile 5 (thanks to cjee21)
++ JPEG: Detect lossless (thanks to cjee21)
++ MPEG-TS: update DVB descriptors and service types for NGVC and NGA (thanks to paulhiggs)
++ Reset MXF status based on footer partition (thanks to ammonriley)
++ VP9: VP9 in MP4 support (thanks to cjee21)
++ SphericalVideo: use StereoMode instead of of SourceCount
++ I2400, Fix crashes with some malformed files
+x MaxCLL/MaxFALL: value without unit in the XML/JSON output
+x Fix infinite loop in UTF8 (e.g. JavaScript) build
+x HDR: fix random crash with multiple HDR formats
+x PAC: Fix duration/timestamps
+x Spherical Video 2 support, fix BF4 support with 0.32 readout, update
+
 Version 25.07, 2025-07-29
 -------------
 + MPEG-4 : Support of Spherical Video 2

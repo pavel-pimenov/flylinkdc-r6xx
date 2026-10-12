@@ -214,7 +214,8 @@ void File_ChannelGrouping::Read_Buffer_Continue()
     for (size_t Pos=0; Pos<Common->Channels.size(); Pos++)
         if (Minimum>Common->Channels[Pos]->Buffer_Size-Common->Channels[Pos]->Buffer_Offset)
             Minimum=Common->Channels[Pos]->Buffer_Size-Common->Channels[Pos]->Buffer_Offset;
-    if (Minimum*8>=BitDepth)
+    size_t NeedBytes=BitDepth/4;
+    if (Minimum>=NeedBytes)
     {
         for (size_t Pos=0; Pos<Common->Channels.size(); Pos++)
         {
@@ -224,7 +225,7 @@ void File_ChannelGrouping::Read_Buffer_Continue()
             Common->Channels[Pos]->Offsets_Buffer.clear();
         }
 
-        while (Minimum*8>=BitDepth)
+        while (Minimum>=NeedBytes)
         {
             switch (BitDepth)
             {
@@ -238,7 +239,6 @@ void File_ChannelGrouping::Read_Buffer_Continue()
                         Common->MergedChannel.Buffer[Common->MergedChannel.Buffer_Size++]= Common->Channels[Pos]->Buffer[Common->Channels[Pos]->Buffer_Offset++];
                         Common->MergedChannel.Buffer[Common->MergedChannel.Buffer_Size++]= Common->Channels[Pos]->Buffer[Common->Channels[Pos]->Buffer_Offset++];
                     }
-                    Minimum-=2;
                     break;
                 case 20:
                     // Source: 20BE / L4L3 L2L1 L0L4 L3L2 L1L0 + R4R3 R2R1 R0R4 R3R2 R1R0
@@ -285,7 +285,6 @@ void File_ChannelGrouping::Read_Buffer_Continue()
                             Common->Channels[Pos]->Buffer_Offset+=5;
                             Common->Channels[Pos+1]->Buffer_Offset+=5;
                         }
-                    Minimum-=5; //2.5 twice
                     break;
                 case 24:
                     // Source: 24XE / L5L4 L3L2 L1L0 + R5R4 R3R2 R1R0
@@ -298,13 +297,13 @@ void File_ChannelGrouping::Read_Buffer_Continue()
                         Common->MergedChannel.Buffer[Common->MergedChannel.Buffer_Size++]= Common->Channels[Pos]->Buffer[Common->Channels[Pos]->Buffer_Offset++];
                         Common->MergedChannel.Buffer[Common->MergedChannel.Buffer_Size++]= Common->Channels[Pos]->Buffer[Common->Channels[Pos]->Buffer_Offset++];
                     }
-                    Minimum-=3;
                     break;
                 default: ;
                     // Not supported
                     Reject();
                     return;
             }
+            Minimum-=NeedBytes;
         }
     }
 

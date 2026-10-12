@@ -162,6 +162,7 @@
     <ClCompile Include="Source\MediaInfo\File_Dummy.cpp" />
     <ClCompile Include="Source\MediaInfo\File_Other.cpp" />
     <ClCompile Include="Source\MediaInfo\File_Unknown.cpp" />
+    <ClCompile Include="Source\MediaInfo\Image\File_AmigaIcon.cpp" />
     <ClCompile Include="Source\MediaInfo\Image\File_ArriRaw.cpp" />
     <ClCompile Include="Source\MediaInfo\Image\File_Bpg.cpp" />
     <ClCompile Include="Source\MediaInfo\Image\File_Dds.cpp" />
@@ -270,7 +271,9 @@
     <ClCompile Include="Source\MediaInfo\Text\File_Ttml.cpp" />
     <ClCompile Include="Source\MediaInfo\TimeCode.cpp" />
     <ClCompile Include="Source\MediaInfo\Video\File_Aic.cpp" />
+    <ClCompile Include="Source\MediaInfo\Video\File_Apv.cpp" />
     <ClCompile Include="Source\MediaInfo\Video\File_Av1.cpp" />
+    <ClCompile Include="Source\MediaInfo\Video\File_Av2.cpp" />
     <ClCompile Include="Source\MediaInfo\Video\File_Avc.cpp" />
     <ClCompile Include="Source\MediaInfo\Video\File_Avc_Duplicate.cpp" />
     <ClCompile Include="Source\MediaInfo\Video\File_Avs3V.cpp" />
@@ -421,6 +424,7 @@
     <ClInclude Include="Source\MediaInfo\File_Dummy.h" />
     <ClInclude Include="Source\MediaInfo\File_Other.h" />
     <ClInclude Include="Source\MediaInfo\File_Unknown.h" />
+    <ClInclude Include="Source\MediaInfo\Image\File_AmigaIcon.h" />
     <ClInclude Include="Source\MediaInfo\Image\File_ArriRaw.h" />
     <ClInclude Include="Source\MediaInfo\Image\File_Bpg.h" />
     <ClInclude Include="Source\MediaInfo\Image\File_Dds.h" />
@@ -563,7 +567,9 @@
     <ClInclude Include="Source\MediaInfo\Text\File_Ttml.h" />
     <ClInclude Include="Source\MediaInfo\TimeCode.h" />
     <ClInclude Include="Source\MediaInfo\Video\File_Aic.h" />
+    <ClInclude Include="Source\MediaInfo\Video\File_Apv.h" />
     <ClInclude Include="Source\MediaInfo\Video\File_Av1.h" />
+    <ClInclude Include="Source\MediaInfo\Video\File_Av2.h" />
     <ClInclude Include="Source\MediaInfo\Video\File_Avc.h" />
     <ClInclude Include="Source\MediaInfo\Video\File_Avs3V.h" />
     <ClInclude Include="Source\MediaInfo\Video\File_AvsV.h" />

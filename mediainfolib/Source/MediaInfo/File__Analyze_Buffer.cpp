@@ -49,14 +49,14 @@ extern MediaInfo_Config Config;
     } \
 
 #define INTEGRITY_SIZE_ATLEAST(_BYTES) \
-    if (Element_Offset+_BYTES>Element_Size) \
+    if (Element_Offset>Element_Size || _BYTES>Element_Size-Element_Offset) \
     { \
         Trusted_IsNot("Size is wrong"); \
         return; \
     } \
 
 #define INTEGRITY_SIZE_ATLEAST_STRING(_BYTES) \
-    if (Element_Offset+_BYTES>Element_Size) \
+    if (Element_Offset>Element_Size || _BYTES>Element_Size-Element_Offset) \
     { \
         Trusted_IsNot("Size is wrong"); \
         Info.clear(); \
@@ -64,7 +64,7 @@ extern MediaInfo_Config Config;
     } \
 
 #define INTEGRITY_SIZE_ATLEAST_INT(_BYTES) \
-    if (Element_Offset+_BYTES>Element_Size) \
+    if (Element_Offset>Element_Size || _BYTES>Element_Size-Element_Offset) \
     { \
         Trusted_IsNot("Size is wrong"); \
         Info=0; \
@@ -1036,13 +1036,6 @@ void File__Analyze::Get_EB(int64u &Info, const char* Name)
 {
     //Element size
     INTEGRITY_SIZE_ATLEAST_INT(1);
-    if (Buffer[Buffer_Offset+(size_t)Element_Offset]==0xFF)
-    {
-        if (Trace_Activated) Param(Name, "Unlimited");
-        Element_Offset++;
-        Info=Element_TotalSize_Get()-Element_Offset;
-        return;
-    }
     int8u Size=0;
     int32u Size_Mark=0;
     BS_Begin();
@@ -1602,6 +1595,16 @@ void File__Analyze::Get_C8(int64u &Info, const char* Name)
 }
 
 //---------------------------------------------------------------------------
+void File__Analyze::Get_C12(int128u& Info, const char* Name)
+{
+    INTEGRITY_SIZE_ATLEAST_INT(12);
+    Info.hi=CC4(Buffer+Buffer_Offset+(size_t)Element_Offset);
+    Info.lo=CC8(Buffer+Buffer_Offset+(size_t)Element_Offset+4);
+    if (Trace_Activated) Param_CC(Name, Buffer+Buffer_Offset+(size_t)Element_Offset, 12);
+    Element_Offset+=12;
+}
+
+//---------------------------------------------------------------------------
 void File__Analyze::Skip_C1(const char* Name)
 {
     INTEGRITY_SIZE_ATLEAST(1);
@@ -2069,7 +2072,7 @@ void File__Analyze::Skip_XX(int64u Bytes, const char* Name)
 {
     if (Element_Offset+Bytes!=Element_TotalSize_Get()) //Exception for seek to end of the element
     {
-        //INTEGRITY_SIZE_ATLEAST(Bytes);
+        INTEGRITY_SIZE_ATLEAST(Bytes);
     }
     if (Trace_Activated && Bytes) Param(Name, Ztring("(")+Ztring::ToZtring(Bytes)+Ztring(" bytes)"));
     Element_Offset+=Bytes;
@@ -2328,9 +2331,9 @@ void File__Analyze::Skip_BS(size_t Bits, const char* Name)
     INTEGRITY(Bits<=BS->Remain(), "Size is wrong", BS->Offset_Get())
     if (Trace_Activated)
     {
-        if (Bits<=32) //TODO: in BitStream.h, handle >32 bit gets
+        if (Bits<=64) //TODO: in BitStream.h, handle >64 bit gets
         {
-            Param(Name, BS->Get4((int8u)Bits), Bits);
+            Param(Name, BS->Get8((int8u)Bits), Bits);
             Param_Info(__T("(")+Ztring::ToZtring(Bits)+__T(" bits)"));
         }
         else

@@ -820,39 +820,20 @@ void File_MpegPs::Bitrate_Calc()
 bool File_MpegPs::Synchronize()
 {
     //Synchronizing
-    while (Buffer_Offset+4<=Buffer_Size && (Buffer[Buffer_Offset  ]!=0x00
-                                         || Buffer[Buffer_Offset+1]!=0x00
-                                         || Buffer[Buffer_Offset+2]!=0x01
-                                         || Buffer[Buffer_Offset+3]< 0xB9))
+    while (Buffer_Size - Buffer_Offset >= 4)
     {
-        Buffer_Offset+=2;
-        while(Buffer_Offset<Buffer_Size && Buffer[Buffer_Offset]!=0x00)
-            Buffer_Offset+=2;
-        if (Buffer_Offset>=Buffer_Size || Buffer[Buffer_Offset-1]==0x00)
-            Buffer_Offset--;
+        if (!Synchronize_0x000001())
+            return false;
+        if (Buffer[Buffer_Offset + 3] >= 0xB9)
+        {
+            //Synched is OK
+            return true;
+        }
+
+        Buffer_Offset++;
     }
 
-    //Parsing last bytes if needed
-    if (Buffer_Offset+4==Buffer_Size && (Buffer[Buffer_Offset  ]!=0x00
-                                      || Buffer[Buffer_Offset+1]!=0x00
-                                      || Buffer[Buffer_Offset+2]!=0x01
-                                      || Buffer[Buffer_Offset+3]< 0xB9))
-        Buffer_Offset++;
-    if (Buffer_Offset+3==Buffer_Size && (Buffer[Buffer_Offset  ]!=0x00
-                                      || Buffer[Buffer_Offset+1]!=0x00
-                                      || Buffer[Buffer_Offset+2]!=0x01))
-        Buffer_Offset++;
-    if (Buffer_Offset+2==Buffer_Size && (Buffer[Buffer_Offset  ]!=0x00
-                                      || Buffer[Buffer_Offset+1]!=0x00))
-        Buffer_Offset++;
-    if (Buffer_Offset+1==Buffer_Size &&  Buffer[Buffer_Offset  ]!=0x00)
-        Buffer_Offset++;
-
-    if (Buffer_Offset+3>Buffer_Size)
-        return false;
-
-    //Synched is OK
-    return true;
+    return false;
 }
 
 //---------------------------------------------------------------------------
@@ -880,7 +861,7 @@ bool File_MpegPs::Synched_Test()
     {
         Frame_Count=(int64u)-1;
         Frame_Count_NotParsedIncluded=(int64u)-1;
-        if (Streams[stream_id].TimeStamp_End.PTS.TimeStamp!=(int64u)-1 && Streams[stream_id].TimeStamp_Start.PTS.TimeStamp!=(int64u)-1)
+        if (!Streams.empty() && Streams[stream_id].TimeStamp_End.PTS.TimeStamp!=(int64u)-1 && Streams[stream_id].TimeStamp_Start.PTS.TimeStamp!=(int64u)-1)
             FrameInfo.PTS=(Streams[stream_id].TimeStamp_End.PTS.TimeStamp-Streams[stream_id].TimeStamp_Start.PTS.TimeStamp)*100000/9;
         SynchLost("MPEG-PS");
         Frame_Count=0;
@@ -4161,7 +4142,7 @@ void File_MpegPs::xxx_stream_Parse(ps_stream &Temp, int8u &stream_Count)
                     if (!SubStream_Demux->Buffers.empty() && SubStream_Demux->Buffers[0] && SubStream_Demux->Buffers[0]->DTS<FrameInfo.DTS)
                     {
                         Demux(SubStream_Demux->Buffers[0]->Buffer, SubStream_Demux->Buffers[0]->Buffer_Size, ContentType_SubStream);
-                        delete SubStream_Demux->Buffers[0]->Buffer; SubStream_Demux->Buffers[0]->Buffer=NULL;
+                        delete SubStream_Demux->Buffers[0];
                         SubStream_Demux->Buffers.erase(SubStream_Demux->Buffers.begin()); //Moving 2nd Buffer to 1st position
                     }
                 }
@@ -4190,18 +4171,21 @@ void File_MpegPs::xxx_stream_Parse(ps_stream &Temp, int8u &stream_Count)
                     SubStream_Demux->Buffers[Buffers_Pos]->Buffer_Size=0;
                     SubStream_Demux->Buffers[Buffers_Pos]->Buffer=new int8u[SubStream_Demux->Buffers[Buffers_Pos]->Buffer_Size_Max];
                 }
-                if (SubStream_Demux->Buffers[Buffers_Pos]->Buffer_Size_Max>SubStream_Demux->Buffers[Buffers_Pos]->Buffer_Size+(size_t)(Element_Size-Element_Offset) && SubStream_Demux->Buffers[Buffers_Pos]->Buffer_Size_Max<=16*1024*1024)
+                size_t Buffer_Size_ToAdd=(size_t)(Element_Size-Element_Offset);
+                if (Buffer_Size_ToAdd<=32*1024*1024-SubStream_Demux->Buffers[Buffers_Pos]->Buffer_Size)
                 {
-                    SubStream_Demux->Buffers[Buffers_Pos]->Buffer_Size_Max*=2;
-                    int8u* Buffer_Demux=SubStream_Demux->Buffers[Buffers_Pos]->Buffer;
-                    SubStream_Demux->Buffers[Buffers_Pos]->Buffer=new int8u[SubStream_Demux->Buffers[Buffers_Pos]->Buffer_Size_Max];
-                    std::memcpy(SubStream_Demux->Buffers[Buffers_Pos]->Buffer, Buffer_Demux, SubStream_Demux->Buffers[Buffers_Pos]->Buffer_Size);
-                    delete[] Buffer_Demux; //Buffer_Demux=NULL;
-                }
-                if (SubStream_Demux->Buffers[Buffers_Pos]->Buffer_Size+(size_t)(Element_Size-Element_Offset)<=SubStream_Demux->Buffers[Buffers_Pos]->Buffer_Size_Max)
-                {
-                    std::memcpy(SubStream_Demux->Buffers[Buffers_Pos]->Buffer+SubStream_Demux->Buffers[Buffers_Pos]->Buffer_Size, Buffer+Buffer_Offset+(size_t)Element_Offset, (size_t)(Element_Size-Element_Offset));
-                    SubStream_Demux->Buffers[Buffers_Pos]->Buffer_Size+=(size_t)(Element_Size-Element_Offset);
+                    size_t Buffer_Size_Required=SubStream_Demux->Buffers[Buffers_Pos]->Buffer_Size+Buffer_Size_ToAdd;
+                    if (Buffer_Size_Required>SubStream_Demux->Buffers[Buffers_Pos]->Buffer_Size_Max)
+                    {
+                        while (SubStream_Demux->Buffers[Buffers_Pos]->Buffer_Size_Max<Buffer_Size_Required)
+                            SubStream_Demux->Buffers[Buffers_Pos]->Buffer_Size_Max*=2;
+                        int8u* Buffer_Demux=SubStream_Demux->Buffers[Buffers_Pos]->Buffer;
+                        SubStream_Demux->Buffers[Buffers_Pos]->Buffer=new int8u[SubStream_Demux->Buffers[Buffers_Pos]->Buffer_Size_Max];
+                        std::memcpy(SubStream_Demux->Buffers[Buffers_Pos]->Buffer, Buffer_Demux, SubStream_Demux->Buffers[Buffers_Pos]->Buffer_Size);
+                        delete[] Buffer_Demux; //Buffer_Demux=NULL;
+                    }
+                    std::memcpy(SubStream_Demux->Buffers[Buffers_Pos]->Buffer+SubStream_Demux->Buffers[Buffers_Pos]->Buffer_Size, Buffer+Buffer_Offset+(size_t)Element_Offset, Buffer_Size_ToAdd);
+                    SubStream_Demux->Buffers[Buffers_Pos]->Buffer_Size=Buffer_Size_Required;
                 }
             }
         #endif //MEDIAINFO_DEMUX
@@ -4396,9 +4380,9 @@ bool File_MpegPs::Header_Parser_QuickSearch()
     if (Buffer_Offset+3==Buffer_Size)
         return false; //Sync is OK, but stream_id is not available
     if (Buffer_Offset+4<=Buffer_Size)
-        Trusted_IsNot("MPEG-PS, Synchronisation lost");
+        Trusted_IsNot("MPEG-PS, Synchronization lost");
     Synched=false;
-    return Synchronize();
+    return Buffer_Offset < Buffer_Size ? Synchronize() : false;
 }
 
 //***************************************************************************

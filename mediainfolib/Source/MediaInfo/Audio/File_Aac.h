@@ -97,6 +97,7 @@ public :
         Mode_ADIF,
         Mode_ADTS,
         Mode_LATM,
+        Mode_HEAACWAVEFORMAT,
     };
     mode   Mode;
     bool   FromIamf;
@@ -128,6 +129,7 @@ protected :
     void Read_Buffer_Init();
     void Read_Buffer_Continue ();
     void Read_Buffer_Continue_AudioSpecificConfig();
+    void Read_Buffer_Continue_HEAACWAVEFORMAT();
     void Read_Buffer_Continue_payload();
     void Read_Buffer_Unsynched();
 
@@ -170,7 +172,7 @@ protected :
     void AudioMuxElement                    ();
     void StreamMuxConfig                    ();
     int32u LatmGetValue                     ();
-    void PayloadLengthInfo                  ();
+    bool PayloadLengthInfo                  ();
     void PayloadMux                         ();
     bool muxConfigPresent;
 
@@ -188,7 +190,8 @@ protected :
     //Temp
     int8u   numSubFrames;
     int8u   numProgram;
-    int8u   numLayer;
+    int8u   numLayer[16];
+    int8u   streamCnt;
     int8u   numChunk;
     bool    audioMuxVersionA;
     int8u   streamID[16][8];
@@ -399,6 +402,8 @@ protected :
     std::map<std::string, Ztring>   Infos;
     std::map<std::string, Ztring>   Infos_AudioSpecificConfig;
     bool                            CanFill;
+    bool                            gain_control_data_present_InPacket;
+    bool                            gain_control_data_present_AtLeastOnce;
 
 private :
     void FillInfosHEAACv2(const Ztring& Format_Settings);

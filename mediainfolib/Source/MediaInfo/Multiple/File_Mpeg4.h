@@ -101,6 +101,7 @@ private :
     void meta_iprp();
     void meta_iprp_ipco();
     void meta_iprp_ipco_av1C();
+    void meta_iprp_ipco_av2C();
     void meta_iprp_ipco_auxC();
     void meta_iprp_ipco_avcC();
     void meta_iprp_ipco_clap();
@@ -227,9 +228,11 @@ private :
     void moov_trak_mdia_minf_stbl_stsd_xxxx_AALP();
     void moov_trak_mdia_minf_stbl_stsd_xxxx_ACLR();
     void moov_trak_mdia_minf_stbl_stsd_xxxx_APRG();
+    void moov_trak_mdia_minf_stbl_stsd_xxxx_apvC();
     void moov_trak_mdia_minf_stbl_stsd_xxxx_ARES();
     void moov_trak_mdia_minf_stbl_stsd_xxxx_AORD();
     void moov_trak_mdia_minf_stbl_stsd_xxxx_av1C();
+    void moov_trak_mdia_minf_stbl_stsd_xxxx_av2C();
     void moov_trak_mdia_minf_stbl_stsd_xxxx_avcC();
     void moov_trak_mdia_minf_stbl_stsd_xxxx_avcE();
     void moov_trak_mdia_minf_stbl_stsd_xxxx_bitr();
@@ -237,6 +240,7 @@ private :
     void moov_trak_mdia_minf_stbl_stsd_xxxx_ccst();
     void moov_trak_mdia_minf_stbl_stsd_xxxx_chan();
     void moov_trak_mdia_minf_stbl_stsd_xxxx_chnl();
+    void moov_trak_mdia_minf_stbl_stsd_xxxx_acxd();
     void moov_trak_mdia_minf_stbl_stsd_xxxx_clap();
     void moov_trak_mdia_minf_stbl_stsd_xxxx_clli();
     void moov_trak_mdia_minf_stbl_stsd_xxxx_colr();
@@ -251,6 +255,7 @@ private :
     void moov_trak_mdia_minf_stbl_stsd_xxxx_ddts();
     void moov_trak_mdia_minf_stbl_stsd_xxxx_dfLa();
     void moov_trak_mdia_minf_stbl_stsd_xxxx_dmlp();
+    void moov_trak_mdia_minf_stbl_stsd_xxxx_dOps();
     void moov_trak_mdia_minf_stbl_stsd_xxxx_dvc1();
     void moov_trak_mdia_minf_stbl_stsd_xxxx_dvcC();
     void moov_trak_mdia_minf_stbl_stsd_xxxx_dvvC() {moov_trak_mdia_minf_stbl_stsd_xxxx_dvcC();}
@@ -292,6 +297,7 @@ private :
     void moov_trak_mdia_minf_stbl_stsd_xxxx_vexu_eyes_hero();
     void moov_trak_mdia_minf_stbl_stsd_xxxx_vexu_eyes_stri();
     void moov_trak_mdia_minf_stbl_stsd_xxxx_vexu_must();
+    void moov_trak_mdia_minf_stbl_stsd_xxxx_vpcC();
     void moov_trak_mdia_minf_stbl_stsd_xxxx_vvcC();
     void moov_trak_mdia_minf_stbl_stsd_xxxx_wave();
     void moov_trak_mdia_minf_stbl_stsd_xxxx_wave_acbf();
@@ -413,6 +419,8 @@ private :
     void REOB();
     void skip();
     void sidx();
+    void uuid();
+    void uuid_C2PA();
     void wide();
 
     //Helpers
@@ -723,6 +731,7 @@ private :
         void Parsers_Clear()
         {
             Parsers.clear();
+            IsPcm=false;
             #ifdef MEDIAINFO_DVDIF_ANALYZE_YES
                 IsDvDif=false;
             #endif //MEDIAINFO_DVDIF_ANALYZE_YES

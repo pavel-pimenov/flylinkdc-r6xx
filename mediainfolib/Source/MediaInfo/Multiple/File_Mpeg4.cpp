@@ -294,8 +294,11 @@ static Ztring Mpeg4_Language_Apple(int16u Language)
         "jv" // Javanese
     };
 
-    if (Language>94)
-        Language-=(128-94); // Gap in the list
+    if (Language>=95 && Language<128)
+        return Ztring::ToZtring(Language); // Undefined / reserved gap in QuickTime language codes
+
+    if (Language>=128)
+        Language-=(128-95); // Gap in the list
 
     if (Language>=ListSize)
         return Ztring::ToZtring(Language);
@@ -2223,26 +2226,24 @@ void File_Mpeg4::Header_Parse()
 
     if (Size<8)
     {
-        //Special case: until the end of the atom
-            if (Size==0)
-        {
-            Size=Config->File_Current_Size-(File_Offset+Buffer_Offset);
-            if (Status[IsAccepted] && Element_Level==2 && Name==0x00000000) //First real level (Level 1 is atom, level 2 is header block)
-            {
-                Element_Offset=0;
-                Name=Elements::mdat;
-            }
-        }
         //Special case: Big files, size is 64-bit
-        else if (Size==1)
+        if (Size==1)
         {
             //Reading Extended size
             Get_B8 (Size,                                       "Size (Extended)");
         }
-        //Not in specs!
+        //Until the end of the atom if 0, else not in specs but currently handled as 0
         else
         {
-            Size=Config->File_Current_Size-(File_Offset+Buffer_Offset);
+            if (Element_Level == 2 && Config->File_Sizes.size() > 1)
+                Size = Config->File_Sizes[0] - (File_Offset + Buffer_Offset); //TODO: Element_TotalSize_Get() should not use complete sequence size
+            else
+                Size = Element_TotalSize_Get();
+            if (Status[IsAccepted] && Element_Level == 2 && Name == 0x00000000) //First real level (Level 1 is atom, level 2 is header block)
+            {
+                Element_Offset = 0;
+                Name = Elements::mdat;
+            }
         }
     }
 

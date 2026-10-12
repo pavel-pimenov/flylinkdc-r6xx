@@ -911,6 +911,18 @@ void File_MpegTs::Streams_Update_Programs_PerStream(size_t StreamID)
                     }
                     else
                     {
+                        if (First.size() >= 31 && First.find(" PreselectionLabel", First.size() - 18) == First.size() - 18)
+                        {
+                            auto message_id = strtoul(Info->second.To_UTF8().c_str(), nullptr, 16);
+                            const auto& message_ids = Complete_Stream->Transport_Streams[Complete_Stream->transport_stream_id].message_ids;
+                            auto PerId = message_ids.find(message_id);
+                            if (PerId != message_ids.end()) {
+                                for (const auto& PerLanguage : PerId->second) {
+                                    Fill((stream_t)StreamKind, StreamPos, First.c_str(), __T('(') + Ztring().From_CC3(PerLanguage.first) + __T(") ") + PerLanguage.second, true);
+                                }
+                            }
+                        }
+                        else
                         Fill((stream_t)StreamKind, StreamPos, First.c_str(), Info->second, true);
                         std::map<std::string, ZenLib::Ztring>::iterator Option=Temp->Infos_Option.find(First.c_str());
                         if (Option!=Temp->Infos_Option.end())
@@ -1476,40 +1488,45 @@ void File_MpegTs::Streams_Finish()
 //---------------------------------------------------------------------------
 bool File_MpegTs::Synchronize()
 {
-    //Synchronizing
-    while (       Buffer_Offset+188*16+BDAV_Size*16+TSP_Size*16<=Buffer_Size
-      && !(Buffer[Buffer_Offset+188* 0+BDAV_Size* 1+TSP_Size* 0]==0x47
-        && Buffer[Buffer_Offset+188* 1+BDAV_Size* 2+TSP_Size* 1]==0x47
-        && Buffer[Buffer_Offset+188* 2+BDAV_Size* 3+TSP_Size* 2]==0x47
-        && Buffer[Buffer_Offset+188* 3+BDAV_Size* 4+TSP_Size* 3]==0x47
-        && Buffer[Buffer_Offset+188* 4+BDAV_Size* 5+TSP_Size* 4]==0x47
-        && Buffer[Buffer_Offset+188* 5+BDAV_Size* 6+TSP_Size* 5]==0x47
-        && Buffer[Buffer_Offset+188* 6+BDAV_Size* 7+TSP_Size* 6]==0x47
-        && Buffer[Buffer_Offset+188* 7+BDAV_Size* 8+TSP_Size* 7]==0x47
-        && Buffer[Buffer_Offset+188* 8+BDAV_Size* 9+TSP_Size* 8]==0x47
-        && Buffer[Buffer_Offset+188* 9+BDAV_Size*10+TSP_Size* 9]==0x47
-        && Buffer[Buffer_Offset+188*10+BDAV_Size*11+TSP_Size*10]==0x47
-        && Buffer[Buffer_Offset+188*11+BDAV_Size*12+TSP_Size*11]==0x47
-        && Buffer[Buffer_Offset+188*12+BDAV_Size*13+TSP_Size*12]==0x47
-        && Buffer[Buffer_Offset+188*13+BDAV_Size*14+TSP_Size*13]==0x47
-        && Buffer[Buffer_Offset+188*14+BDAV_Size*15+TSP_Size*14]==0x47
-        && Buffer[Buffer_Offset+188*15+BDAV_Size*16+TSP_Size*15]==0x47))
+    #ifdef MEDIAINFO_ARIBSTDB24B37_YES
+        if (FromAribStdB24B37)
+            return true;
+    #endif
+
+    const size_t Frame_Size = 188 + BDAV_Size + TSP_Size;
+    const size_t Required_Length = Frame_Size * 16;
+
+    while (Buffer_Size - Buffer_Offset >= Required_Length)
     {
+        const size_t Candidate_End = Buffer_Size - Frame_Size + 1;
+        const size_t Search_Begin = Buffer_Offset + BDAV_Size;
+        const size_t Search_End = Candidate_End + BDAV_Size;
+        const int8u* Sync = (const int8u*)memchr(Buffer + Search_Begin, 0x47, Search_End - Search_Begin);
+        if (!Sync)
+        {
+            Buffer_Offset = Candidate_End;
+            break;
+        }
+        Buffer_Offset = (size_t)(Sync - Buffer) - BDAV_Size;
+
+        bool IsNOK = false;
+        size_t Offset = Buffer_Offset + BDAV_Size;
+        for (size_t i = 0; i < 15; ++i)
+        {
+            Offset += Frame_Size;
+            if (Buffer[Offset] != 0x47)
+            {
+                IsNOK = true;
+                break;
+            }
+        }
+        if (!IsNOK)
+            return true;
+
         Buffer_Offset++;
-        while (       Buffer_Offset+BDAV_Size+1<=Buffer_Size
-            && Buffer[Buffer_Offset+BDAV_Size]!=0x47)
-            Buffer_Offset++;
     }
 
-    if (Buffer_Offset+188*16+BDAV_Size*16+TSP_Size*16>=Buffer_Size
-    #ifdef MEDIAINFO_ARIBSTDB24B37_YES
-     && !FromAribStdB24B37
-    #endif
-        )
-        return false;
-
-    //Synched is OK
-    return true;
+    return false;
 }
 
 //---------------------------------------------------------------------------
@@ -2691,18 +2708,20 @@ void File_MpegTs::Header_Parse_AdaptationField()
     else
     {
     #endif //MEDIAINFO_TRACE
+        if (Element_Size>=BDAV_Size+5)
+        {
         int8u adaptation_field_length=Buffer[Buffer_Offset+BDAV_Size+4];
+        if (adaptation_field_length>188-(4+1)) //TS size - header - adaptation_field_length
+            adaptation_field_length=188-(4+1);
         #ifdef MEDIAINFO_MPEGTS_PCR_YES
-            if (adaptation_field_length>188-4-1) //TS size - header - adaptation_field_length
-                adaptation_field_length=188-4-1;
-            else if (adaptation_field_length)
+            if (adaptation_field_length)
             {
                 bool discontinuity_indicator=(Buffer[Buffer_Offset+BDAV_Size+5]&0x80)!=0;
                 bool PCR_flag=(Buffer[Buffer_Offset+BDAV_Size+5]&0x10)!=0;
                 bool OPCR_flag=(Buffer[Buffer_Offset+BDAV_Size+5]&0x08)!=0;
                 bool splicing_point_flag=(Buffer[Buffer_Offset+BDAV_Size+5]&0x04)!=0;
                 bool transport_private_data_flag=(Buffer[Buffer_Offset+BDAV_Size+5]&0x02)!=0;
-                if (PCR_flag)
+                if (PCR_flag && adaptation_field_length>=6)
                 {
                     int64u program_clock_reference=(  (((int64u)Buffer[Buffer_Offset+BDAV_Size+6])<<25)
                                                     | (((int64u)Buffer[Buffer_Offset+BDAV_Size+7])<<17)
@@ -2848,13 +2867,14 @@ void File_MpegTs::Header_Parse_AdaptationField()
                         }
                     }
                 }
-                if (transport_private_data_flag && adaptation_field_length>1+(PCR_flag?6:0)+(OPCR_flag?6:0)+(splicing_point_flag?1:0)+1)
+                auto adaptation_field_length_Min=1+(PCR_flag?6:0)+(OPCR_flag?6:0)+(splicing_point_flag?1:0);
+                if (transport_private_data_flag && adaptation_field_length>adaptation_field_length_Min+1)
                 {
-                    int8u transport_private_data_length=Buffer[Buffer_Offset+BDAV_Size+5+1+(PCR_flag?6:0)+(OPCR_flag?6:0)+(splicing_point_flag?1:0)];
-                    if (1+(PCR_flag?6:0)+(OPCR_flag?6:0)+(splicing_point_flag?1:0)+1+transport_private_data_length<=adaptation_field_length)
+                    int8u transport_private_data_length=Buffer[Buffer_Offset+BDAV_Size+5+adaptation_field_length_Min];
+                    if (transport_private_data_length<=adaptation_field_length-(adaptation_field_length_Min+1))
                     {
                         int64u Element_Offset_Save=Element_Offset;
-                        Element_Offset=5+1+(PCR_flag?6:0)+(OPCR_flag?6:0)+(splicing_point_flag?1:0)+1;
+                        Element_Offset=5+adaptation_field_length_Min+1;
                         transport_private_data(transport_private_data_length);
                         Element_Offset=Element_Offset_Save;
                     }
@@ -2862,6 +2882,7 @@ void File_MpegTs::Header_Parse_AdaptationField()
             }
         #endif //MEDIAINFO_MPEGTS_PCR_YES
         Element_Offset+=1+adaptation_field_length;
+        }
     #if MEDIAINFO_TRACE
     }
     #endif //MEDIAINFO_TRACE

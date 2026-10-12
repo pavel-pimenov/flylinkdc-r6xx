@@ -171,6 +171,7 @@ public :
                 };
                 type        Type;
                 int8u       Value;
+                int8u       Padding[2]; // Pad to 4 bytes
             };
             int8u out_ch_config=(int8u)-1;
             vector<gain> Gains;
@@ -225,6 +226,7 @@ private :
         vector<presentation_substream> Substreams;
 
         int8u presentation_version;
+        int8u mdcompat;
         int32u presentation_id;
         bool b_pres_ndot;
         bool b_alternative;
@@ -250,6 +252,7 @@ private :
 
         presentation() :
             presentation_config((int8u)-1),
+            mdcompat((int8u)-1),
             presentation_id((int32u)-1),
             frame_rate_fraction_minus1(0),
             dolby_atmos_indicator(false),

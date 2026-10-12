@@ -768,6 +768,12 @@ void File_Ffv1::Read_Buffer_Continue()
     int32u tail = (version >= 3) ? 3 : 0;
     tail += ec == 1 ? 5 : 0;
 
+    if (Buffer_Offset>Buffer_Size || Element_Size>Buffer_Size-Buffer_Offset)
+    {
+        Trusted_IsNot("Invalid frame range");
+        Skip_Frame();
+        return;
+    }
     vector<int32u> Slices_BufferSizes;
     if (version>=3)
     {
@@ -777,8 +783,9 @@ void File_Ffv1::Read_Buffer_Continue()
             if (Slices_BufferPos<tail)
             {
                 //There is a problem
-                Slices_BufferSizes.clear();
-                break;
+                Trusted_IsNot("Invalid slice footer");
+                Skip_Frame();
+                return;
             }
 
             int32u Size=BigEndian2int24u(Buffer+Buffer_Offset+(size_t)Slices_BufferPos-tail);
@@ -787,8 +794,9 @@ void File_Ffv1::Read_Buffer_Continue()
             if (Size>Slices_BufferPos)
             {
                 //There is a problem
-                Slices_BufferSizes.clear();
-                break;
+                Trusted_IsNot("Invalid slice footer");
+                Skip_Frame();
+                return;
             }
             Slices_BufferPos-=Size;
 
@@ -804,7 +812,24 @@ void File_Ffv1::Read_Buffer_Continue()
         int64u Element_Offset_Begin=Element_Offset;
         int64u Element_Size_Save=Element_Size;
         if (Pos<Slices_BufferSizes.size())
+        {
+            if (Element_Offset>Element_Size || Slices_BufferSizes[Pos]>Element_Size-Element_Offset)
+            {
+                Trusted_IsNot("Invalid slice size");
+                Element_End0();
+                Skip_Frame();
+                return;
+            }
             Element_Size=Element_Offset+Slices_BufferSizes[Pos];
+        }
+        if (Element_Offset>Element_Size || tail>Element_Size-Element_Offset)
+        {
+            Trusted_IsNot("Truncated slice footer");
+            Element_Size=Element_Size_Save;
+            Element_End0();
+            Skip_Frame();
+            return;
+        }
         int32u crc_left=0;
         if (ec == 1)
             crc_left=FFv1_CRC_Compute(Buffer+Buffer_Offset+(size_t)Element_Offset, (size_t)(Element_Size-Element_Offset));
@@ -905,8 +930,8 @@ void File_Ffv1::Read_Buffer_Continue()
     if (!BuggySlices && version>=3 && slices && (ParseCompletely || Trace_Activated))
     {
         vector<size_t> SlicesPlaces;
-        size_t SlicesPlaces_Size=num_h_slices*num_v_slices;
-        SlicesPlaces.resize(num_h_slices*num_v_slices);
+        size_t SlicesPlaces_Size=(size_t)num_h_slices*num_v_slices;
+        SlicesPlaces.resize(SlicesPlaces_Size);
         Slice* Slice_Max=slices+SlicesPlaces_Size;
         current_slice=slices;
         while (current_slice<Slice_Max)
@@ -1078,6 +1103,12 @@ void File_Ffv1::Parameters()
         }
         num_h_slices++;
         num_v_slices++;
+        if (num_v_slices && num_h_slices>((size_t)-1)/num_v_slices)
+        {
+            Param_Error("FFV1-HEADER-slices:1");
+            Element_End0();
+            return;
+        }
         Get_RU (States, quant_table_count,                      "quant_table_count");
         if (quant_table_count>8)
         {
@@ -1186,7 +1217,7 @@ void File_Ffv1::Parameters()
         //Slices
         if (!slices)
         {
-            slices=new Slice[num_h_slices*num_v_slices];
+            slices=new Slice[(size_t)num_h_slices*num_v_slices];
             current_slice=&slices[0];
         }
         if (version<=1)
@@ -1270,8 +1301,7 @@ void File_Ffv1::SliceContent(states &States)
 
     #if MEDIAINFO_TRACE
         bool Trace_Activated_Save=Trace_Activated;
-        if (Trace_Activated)
-            Trace_Activated=false; // Trace is too huge, deactivating it during pixel decoding
+        Trace_Activated=false; // Trace is too huge, deactivating it during pixel decoding
     #endif //MEDIAINFO_TRACE
 
     if (!coder_type)
@@ -1365,7 +1395,7 @@ bool File_Ffv1::SliceHeader(states &States)
     }
 
     Get_RU (States, slice_y,                                "slice_y");
-    if (slice_y >= num_h_slices)
+    if (slice_y >= num_v_slices)
     {
         Param_Error("FFV1-SLICE-slice_xywh:1");
         Element_End0();
@@ -1373,8 +1403,7 @@ bool File_Ffv1::SliceHeader(states &States)
     }
 
     Get_RU (States, slice_width_minus1,                     "slice_width_minus1");
-    int32u slice_x2 = slice_x + slice_width_minus1 + 1; //right boundary
-    if (slice_x2 > num_h_slices)
+    if (slice_width_minus1 >= num_h_slices-slice_x)
     {
         Param_Error("FFV1-SLICE-slice_xywh:1");
         Element_End0();
@@ -1382,15 +1411,16 @@ bool File_Ffv1::SliceHeader(states &States)
     }
 
     Get_RU (States, slice_height_minus1,                    "slice_height_minus1");
-    int32u slice_y2 = slice_y + slice_height_minus1 + 1; //bottom boundary
-    if (slice_y2 > num_v_slices)
+    if (slice_height_minus1 >= num_v_slices-slice_y)
     {
         Param_Error("FFV1-SLICE-slice_xywh:1");
         Element_End0();
         return false;
     }
 
-    current_slice = &slices[slice_x + slice_y * num_h_slices];
+    int32u slice_x2 = slice_x + slice_width_minus1 + 1; //right boundary
+    int32u slice_y2 = slice_y + slice_height_minus1 + 1; //bottom boundary
+    current_slice = &slices[(size_t)slice_x + (size_t)slice_y * num_h_slices];
     current_slice->slice_x = slice_x;
     current_slice->slice_y = slice_y;
     current_slice->slice_w = slice_x2;
@@ -1679,7 +1709,7 @@ int32s File_Ffv1::pixel_GR(int32s context)
     {
         if (context)
         {
-            if (context >= Context_GR_Size)
+            if ((size_t)context >= Context_GR_Size)
             {
                 BS->Skip(BS->Remain());
                 return 0;

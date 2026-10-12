@@ -22,6 +22,7 @@
 
 //---------------------------------------------------------------------------
 #include <algorithm>
+#include <set>
 #include "MediaInfo/Multiple/File_Vbi.h"
 #if defined(MEDIAINFO_EIA608_YES)
     #include "MediaInfo/Text/File_Eia608.h"
@@ -60,6 +61,7 @@ File_Vbi::File_Vbi()
 //---------------------------------------------------------------------------
 void File_Vbi::Streams_Finish()
 {
+    std::set<int16u> Streams_ToErase;
     for (auto& Stream : Streams) {
         if (!Stream.second.Parser) {
             continue;
@@ -68,7 +70,7 @@ void File_Vbi::Streams_Finish()
     }
 
     for (auto& Stream : Streams) {
-        if (!Stream.second.Parser) {
+        if (!Stream.second.Parser || Streams_ToErase.find(Stream.first) != Streams_ToErase.end()) {
             continue;
         }
         size_t Start[Stream_Max];
@@ -89,7 +91,7 @@ void File_Vbi::Streams_Finish()
                 Fill((stream_t)StreamKind, StreamPos, General_ID, ID_String, true);
                 if (Stream.second.Type) {
                     Fill((stream_t)StreamKind, StreamPos, "MuxingMode", "VBI");
-                    if (Stream.second.Type == VbiType_Vitc) {
+                    if (Stream.first < 263 && Stream.second.Type == VbiType_Vitc) {
                         Fill(Stream_Other, StreamPos, Other_Format, "SMPTE TC"); // TODO: in timecode parser directly
                         Fill(Stream_Other, StreamPos, Other_BitRate_Mode, "CBR"); // TODO: in timecode parser directly
                         auto Field2 = Streams.find(ID + 263); // NTSC
@@ -102,10 +104,10 @@ void File_Vbi::Streams_Finish()
                             if (TimeCode_FirstFrame2 != TimeCode_FirstFrame1) {
                                 Fill(Stream_Other, StreamPos, Other_TimeCode_FirstFrame, TimeCode_FirstFrame2);
                             }
-                            Streams.erase(Field2);
+                            Streams_ToErase.insert(Field2->first);
                         }
                     }
-                    if (Stream.second.Type == VbiType_Teletext) {
+                    if (Stream.first < 263 && Stream.second.Type == VbiType_Teletext) {
                         auto Field2 = Streams.find(ID + 263); // NTSC
                         if (Field2 == Streams.end() || Field2->second.Type != Stream.second.Type) {
                             Field2 = Streams.find(ID + 313); //PAL
@@ -114,13 +116,16 @@ void File_Vbi::Streams_Finish()
                             const auto& ID_FirstFrame1 = Stream.second.Parser->Retrieve_Const(StreamKind_Last, 0, General_ID);
                             const auto& ID_FirstFrame2 = Field2->second.Parser->Retrieve_Const(StreamKind_Last, 0, General_ID);
                             if (ID_FirstFrame1 == ID_FirstFrame2) {
-                                Streams.erase(Field2);
+                                Streams_ToErase.insert(Field2->first);
                             }
                         }
                     }
                 }
             }
         }
+    }
+    for (auto Stream : Streams_ToErase) {
+        Streams.erase(Stream);
     }
 }
 
@@ -195,7 +200,7 @@ void File_Vbi::Line21()
     // Check luminance min & max
     int8u Level_Min = (int8u)-1;
     int8u Level_Max = 0;
-    for (int i = 0; i < Buffer_Size; i++) {
+    for (size_t i = 0; i < Buffer_Size; i++) {
         auto Value = Buffer[i];
         Level_Min = min(Level_Min, Value);
         Level_Max = max(Level_Max, Value);
@@ -214,7 +219,7 @@ void File_Vbi::Line21()
     size_t Current_Pos_Max = 0; // Max index of the lowest (0) or highest (1) current value
     int8u Current_Value = (int8u)-1;
     bool Is1 = false;
-    for (int i = 0; i < Buffer_Size; i++) {
+    for (size_t i = 0; i < Buffer_Size; i++) {
         auto Value = Buffer[i];
         if (Value <= Level_0) {
             // Is 0
@@ -299,7 +304,7 @@ void File_Vbi::Line21()
     auto Idx_Min = Get_Buffer_Index(7); // Begin of S1
     ClockRunIn_0_x2 += Step_x12 / 12; // From start of a bit to middle of a bit
     auto Idx_Max = Get_Buffer_Index(8); // Middle of S2
-    for (int Idx = Idx_Min; Idx < Idx_Max; Idx++) {
+    for (unsigned Idx = Idx_Min; Idx < Idx_Max; Idx++) {
         if (Buffer[Idx] > Level_0) {
             return; // Issue between begin of S1 and middle of S2, not 0
         }
@@ -348,7 +353,7 @@ void File_Vbi::Vitc()
     // Check luminance min & max
     int8u Level_Min = (int8u)-1;
     int8u Level_Max = 0;
-    for (int i = 0; i < Buffer_Size; i++) {
+    for (size_t i = 0; i < Buffer_Size; i++) {
         auto Value = Buffer[i];
         Level_Min = min(Level_Min, Value);
         Level_Max = max(Level_Max, Value);
@@ -366,7 +371,7 @@ void File_Vbi::Vitc()
     size_t Step_x81 = 0; // Step between each bit
     size_t Current_Pos_PreviousChange = 0; // Min index of the 0 level or the 1 level
     bool Is1 = false;
-    for (int i = 0; i < Buffer_Size; i++) {
+    for (size_t i = 0; i < Buffer_Size; i++) {
         auto Value = Buffer[i];
         if (Value <= Level_0) {
             // Is 0
@@ -470,7 +475,7 @@ void File_Vbi::Teletext()
     // Check luminance min & max
     int8u Level_Min = (int8u)-1;
     int8u Level_Max = 0;
-    for (int i = 0; i < Buffer_Size; i++) {
+    for (size_t i = 0; i < Buffer_Size; i++) {
         auto Value = Buffer[i];
         Level_Min = min(Level_Min, Value);
         Level_Max = max(Level_Max, Value);

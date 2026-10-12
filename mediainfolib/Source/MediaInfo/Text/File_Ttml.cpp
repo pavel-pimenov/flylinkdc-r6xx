@@ -28,6 +28,7 @@
 #endif //MEDIAINFO_EVENTS
 #include "tinyxml2.h"
 #include <cstring>
+#include <limits>
 using namespace tinyxml2;
 using namespace std;
 //---------------------------------------------------------------------------
@@ -49,6 +50,179 @@ static const auto Ttml_timeBase_Size=sizeof(Ttml_timeBase)/sizeof(*Ttml_timeBase
 //***************************************************************************
 // Utils
 //***************************************************************************
+
+// Helper structure to track line and character counting
+struct LineCharCounter
+{
+    int64u LineCount = 0;
+    size_t CurrentLineCharCount = 0;
+    size_t MaxCharsPerLine = 0;
+    bool HasVisibleCharOnLine = false;
+    bool LastCharWasSpace = false;
+
+    void ProcessText(const char* text)
+    {
+        if (!text)
+            return;
+
+        while (*text)
+        {
+            unsigned char c = (unsigned char)*text;
+
+            // In TTML/HTML, newlines and carriage returns in source are treated as whitespace,
+            // NOT as line breaks. Only <br/> creates line breaks.
+            bool isWhitespace = (c == ' ' || c == '\t' || c == '\r' || c == '\n');
+
+            if (isWhitespace)
+            {
+                // Only count space if we have visible chars and last wasn't already a space
+                if (HasVisibleCharOnLine && !LastCharWasSpace)
+                {
+                    CurrentLineCharCount++;
+                    LastCharWasSpace = true;
+                }
+                text++;
+            }
+            else
+            {
+                // UTF-8 character handling
+                size_t utf8Len = 1;
+                bool isNbsp = false;
+
+                if ((c & 0x80) == 0x00)
+                {
+                    // ASCII (1 byte)
+                    utf8Len = 1;
+                }
+                else if ((c & 0xE0) == 0xC0)
+                {
+                    // 2-byte UTF-8
+                    utf8Len = 2;
+                    // Check if this is a non-breaking space (U+00A0 = 0xC2 0xA0 in UTF-8)
+                    if (c == 0xC2 && text[1] && (unsigned char)text[1] == 0xA0)
+                    {
+                        isNbsp = true;
+                    }
+                }
+                else if ((c & 0xF0) == 0xE0)
+                {
+                    // 3-byte UTF-8
+                    utf8Len = 3;
+                }
+                else if ((c & 0xF8) == 0xF0)
+                {
+                    // 4-byte UTF-8
+                    utf8Len = 4;
+                }
+
+                // Validate we have enough bytes for the UTF-8 sequence
+                const char* p = text + 1;
+                for (size_t i = 1; i < utf8Len; i++)
+                {
+                    if (!*p++)
+                    {
+                        utf8Len = i;
+                        break;
+                    }
+                }
+
+                // Count as 1 character regardless of byte length
+                CurrentLineCharCount++;
+                HasVisibleCharOnLine = true;
+
+                // Non-breaking spaces are NOT collapsible
+                LastCharWasSpace = false;
+
+                // Advance by the UTF-8 sequence length
+                text += utf8Len;
+                while ((*text & 0x80) == 0x80)
+                    ++text;
+            }
+        }
+    }
+
+    void NewLine()
+    {
+        // Trim trailing collapsible space (space/tab that was counted)
+        // We do NOT trim nbsp because those are not collapsible
+        // LastCharWasSpace is only set for regular spaces, not nbsp
+        if (LastCharWasSpace && CurrentLineCharCount > 0)
+            CurrentLineCharCount--;
+
+        // Only count lines that have content
+        if (HasVisibleCharOnLine && CurrentLineCharCount > 0)
+        {
+            if (MaxCharsPerLine < CurrentLineCharCount)
+                MaxCharsPerLine = CurrentLineCharCount;
+            LineCount++;
+        }
+
+        // Reset for next line
+        CurrentLineCharCount = 0;
+        HasVisibleCharOnLine = false;
+        LastCharWasSpace = false;
+    }
+
+    void Finish()
+    {
+        // Trim trailing collapsible space (space/tab that was counted)
+        if (LastCharWasSpace && CurrentLineCharCount > 0)
+            CurrentLineCharCount--;
+
+        // Only count final line if it has content
+        if (HasVisibleCharOnLine && CurrentLineCharCount > 0)
+        {
+            if (MaxCharsPerLine < CurrentLineCharCount)
+                MaxCharsPerLine = CurrentLineCharCount;
+            LineCount++;
+        }
+    }
+};
+
+// Recursively process XML nodes to extract text and count lines
+void ProcessNodeForLineCount(XMLNode* node, LineCharCounter& counter)
+{
+    if (!node)
+        return;
+
+    // Process all children (text nodes and elements)
+    for (XMLNode* child = node->FirstChild(); child; child = child->NextSibling())
+    {
+        // Check if it's a text node
+        XMLText* textNode = child->ToText();
+        if (textNode)
+        {
+            counter.ProcessText(textNode->Value());
+        }
+        // Check if it's an element
+        else
+        {
+            XMLElement* element = child->ToElement();
+            if (element)
+            {
+                // Handle <br/> elements as line breaks
+                const char* elemName = element->Value();
+
+                // Check for br element (with or without namespace)
+                // Common forms: "br", "tt:br", "ttml:br", etc.
+                bool isBr = (strcmp(elemName, "br") == 0 || 
+                            strcmp(elemName, "tt:br") == 0 ||
+                            strcmp(elemName, "ttml:br") == 0 ||
+                            strstr(elemName, ":br") != nullptr);
+
+                if (isBr)
+                {
+                    counter.NewLine();
+                }
+                else
+                {
+                    // Recursively process other elements (span, b, i, etc.)
+                    ProcessNodeForLineCount(element, counter);
+                }
+            }
+        }
+    }
+}
 
 double to_float64(const char* s)
 {
@@ -193,9 +367,9 @@ void File_Ttml::Streams_Accept()
     Stream_Prepare(Stream_Text);
     Fill(Stream_Text, 0, "Format", "TTML");
 
-    FrameCount=0;
     LineCount=0;
-    LineMaxCountPerEvent=0;
+    MaxCountOfLinesPerFrame=0;
+    MaxCountOfCharsPerLine=0;
     EmptyCount=0;
     FrameRate_Int=0;
     FrameRateMultiplier_Num=1;
@@ -209,43 +383,47 @@ void File_Ttml::Streams_Finish()
 {
     if (Time_End.IsSet() && Time_Begin.IsSet())
     {
-        int64s Duration=(Time_End-Time_Begin).ToMilliseconds();
-        Fill(Stream_General, 0, General_Duration, Duration);
-        Fill(Stream_Text, 0, Text_Duration, Duration);
-        if (!Time_Begin.IsTimed())
-            Fill(Stream_Text, 0, Text_TimeCode_FirstFrame, Time_Begin.ToString());
-        if (!Time_End.IsTimed() && Time_End>Time_Begin)
+        auto AdaptMediaTime=[&](TimeCode &TC)
         {
-            TimeCode LastFrame=Time_End;
-            --LastFrame;
-            Fill(Stream_Text, 0, Text_TimeCode_LastFrame, LastFrame.ToString());
-        }
-        auto MediaTimeToMilliseconds=[&](TimeCode TC)
-        {
-            auto Is1001fps=TC.Is1001fps();
-            if (TimeBase!=timeBase_media || (!Is1001fps && !TC.DropFrame())) // https://www.w3.org/TR/2018/REC-ttml2-20181108/#semantics-media-timing
-                return TC.ToMilliseconds();
+            if (Time_Begin.IsTimed() || TimeBase!=timeBase_media || (!TC.Is1001fps() && !TC.DropFrame())) // https://www.w3.org/TR/2018/REC-ttml2-20181108/#semantics-media-timing
+                return;
             auto Frames=TC.GetFrames();
             auto MS=((float)Frames)*1000/TC.GetFrameRate();
-            TC.Set1001fps(false);
-            TC.SetDropFrame(false);
-            TC.SetFrames(0);
-            auto Value=TC.ToMilliseconds();
+            auto Temp(TC);
+            Temp.Set1001fps(false);
+            Temp.SetDropFrame(false);
+            Temp.SetFrames(0);
+            auto Value=Temp.ToMilliseconds();
             Value+=float32_int64s(MS);
-            return Value;
+            TC.FromSeconds(Value / 1000.0);
         };
-        auto Time_Begin_ms = (int64s)MediaTimeToMilliseconds(Time_Begin);
-        auto Time_End_ms = (int64s)MediaTimeToMilliseconds(Time_End);
+        AdaptMediaTime(Time_Begin);
+        AdaptMediaTime(Time_End);
+        auto Duration = Time_End - Time_Begin;
+        auto Time_Begin_ms = (int64u)Time_Begin.ToMilliseconds();
+        auto Time_End_ms = (int64u)Time_End.ToMilliseconds();
+        auto Duration_ms = (int64u)(Time_End - Time_Begin).ToMilliseconds();
+        Fill(Stream_General, 0, General_Duration, Duration_ms);
+        Fill(Stream_Text, 0, Text_Duration, Duration_ms);
         Fill(Stream_Text, 0, Text_Duration_Start_Command, Time_Begin_ms);
         Fill(Stream_Text, 0, Text_Duration_Start, Time_Begin_ms);
         Fill(Stream_Text, 0, Text_Duration_End, Time_End_ms);
         Fill(Stream_Text, 0, Text_Duration_End_Command, Time_End_ms);
+        if (!Time_Begin.IsTimed())
+            Fill(Stream_Text, 0, Text_TimeCode_FirstFrame, Time_Begin.ToString());
+        if (!Time_End.IsTimed() && Time_End > Time_Begin)
+            Fill(Stream_Text, 0, Text_TimeCode_LastFrame, (Time_End - 1).ToString());
     }
     Fill(Stream_Text, 0, Text_FrameRate_Mode, "CFR");
-    Fill(Stream_Text, 0, Text_Events_Total, FrameCount-EmptyCount);
-    Fill(Stream_Text, 0, Text_Lines_Count, LineCount);
-    if (LineCount)
-        Fill(Stream_Text, 0, Text_Lines_MaxCountPerEvent, LineMaxCountPerEvent);
+    const auto Events_Total = Frame_Count - EmptyCount;
+    Fill(Stream_Text, 0, Text_Events_Total, Events_Total);
+    if (Events_Total) {
+        Fill(Stream_Text, 0, Text_Lines_Count, LineCount);
+        if (LineCount) {
+            Fill(Stream_Text, 0, Text_Lines_MaxCountPerEvent, MaxCountOfLinesPerFrame);
+            Fill(Stream_Text, 0, Text_Lines_MaxCharacterCount, MaxCountOfCharsPerLine);
+        }
+    }
 }
 
 //***************************************************************************
@@ -316,6 +494,7 @@ void File_Ttml::Read_Buffer_Continue()
     // Root attributes
     bool IsSmpteTt=false, IsEbuTt=false, IsImsc1=false;
     int32u tickRate=0;
+    int32u TimeCodeFrameMax=0;
     const char* Tt_Attribute;
     Tt_Attribute=Root->Attribute("ittp:aspectRatio");
     if (!Tt_Attribute)
@@ -371,24 +550,6 @@ void File_Ttml::Read_Buffer_Continue()
         Fill(Stream_Text, 0, Text_FrameRate_Num, FrameRate_Int*FrameRateMultiplier_Num, 10, true);
         Fill(Stream_Text, 0, Text_FrameRate_Den, FrameRateMultiplier_Den, 10, true);
     }
-    if (!FrameRate_Int && !tickRate)
-    {
-        #if MEDIAINFO_ADVANCED
-            float64 FrameRate_F=Video_FrameRate_Rounded(Config->File_DefaultFrameRate_Get());
-            if (!FrameRate_F)
-                FrameRate_F=30; //"if no application defined frame rate applies, then thirty (30) frames per second" https://www.w3.org/TR/2018/REC-ttml2-20181108/#parameter-attribute-frameRate
-        #else //MEDIAINFO_ADVANCED
-            const float64 FrameRate_F=30;
-        #endif //MEDIAINFO_ADVANCED
-        FrameRate_Int=float64_int64s(FrameRate_F);
-        if (FrameRate_Int != FrameRate_F)
-        {
-            FrameRateMultiplier_Num=1000;
-            FrameRateMultiplier_Den=float64_int64s(FrameRate_Int/FrameRate_F*1000);
-            if (FrameRateMultiplier_Num==1000 && FrameRateMultiplier_Den==1001)
-                FrameRate_Is1001=true;
-        }
-    }
     Tt_Attribute=Root->Attribute("xml:lang");
     if (!Tt_Attribute)
         Tt_Attribute=Root->Attribute("lang");
@@ -429,6 +590,13 @@ void File_Ttml::Read_Buffer_Continue()
     {
         Fill(Stream_General, 0, General_Format_Profile, "SMPTE-TT");
         Fill(Stream_Text, 0, Text_Format_Profile, "SMPTE-TT");
+        if (!FrameRate_Int && tickRate >= 2000)
+        {
+            // Not clear but it seems that tickRate is actually frame rate x 1000 in several files without frame rate
+            auto Temp = float64_int64s(tickRate / 1000.0) - 1;
+            if (Temp <= numeric_limits<int32u>::max())
+                TimeCodeFrameMax = Temp;
+        }
     }
     if (IsEbuTt)
     {
@@ -439,6 +607,24 @@ void File_Ttml::Read_Buffer_Continue()
     {
         Fill(Stream_General, 0, General_Format_Profile, "IMSC1");
         Fill(Stream_Text, 0, Text_Format_Profile, "IMSC1");
+    }
+    if (!FrameRate_Int && !tickRate)
+    {
+        #if MEDIAINFO_ADVANCED
+            float64 FrameRate_F=Video_FrameRate_Rounded(Config->File_DefaultFrameRate_Get());
+            if (!FrameRate_F)
+                FrameRate_F=30; //"if no application defined frame rate applies, then thirty (30) frames per second" https://www.w3.org/TR/2018/REC-ttml2-20181108/#parameter-attribute-frameRate
+        #else //MEDIAINFO_ADVANCED
+            const float64 FrameRate_F=30;
+        #endif //MEDIAINFO_ADVANCED
+        FrameRate_Int=float64_int64s(FrameRate_F);
+        if (FrameRate_Int != FrameRate_F)
+        {
+            FrameRateMultiplier_Num=1000;
+            FrameRateMultiplier_Den=float64_int64s(FrameRate_Int/FrameRate_F*1000);
+            if (FrameRateMultiplier_Num==1000 && FrameRateMultiplier_Den==1001)
+                FrameRate_Is1001=true;
+        }
     }
     string Rosetta_Profile, Rosetta_Version;
 
@@ -468,6 +654,8 @@ void File_Ttml::Read_Buffer_Continue()
                     {
                         if (!Time_Begin_New.FromString(Attribute))
                         {
+                            if (TimeCodeFrameMax && !Time_Begin_New.IsTimed())
+                                Time_Begin_New.SetFramesMax(TimeCodeFrameMax);
                             if (!Time_Begin.IsSet() || Time_Begin>Time_Begin_New)
                                 Time_Begin=Time_Begin_New;
                             if (!Time_End.IsSet() || Time_End<Time_Begin_New)
@@ -478,6 +666,8 @@ void File_Ttml::Read_Buffer_Continue()
                     {
                         if (!Time_End_New.FromString(Attribute))
                         {
+                            if (TimeCodeFrameMax && !Time_End_New.IsTimed())
+                                Time_End_New.SetFramesMax(TimeCodeFrameMax);
                             if (!Time_Begin.IsSet() || Time_Begin>Time_End_New)
                                 Time_Begin=Time_End_New;
                             if (!Time_End.IsSet() || Time_End<Time_End_New)
@@ -489,6 +679,8 @@ void File_Ttml::Read_Buffer_Continue()
                         TimeCode Time_Dur_New=Time_Template;
                         if (Time_Begin.IsSet() && !Time_Dur_New.FromString(Attribute))
                         {
+                            if (TimeCodeFrameMax && !Time_Dur_New.IsTimed())
+                                Time_Dur_New.SetFramesMax(TimeCodeFrameMax);
                             Time_End_New=Time_Begin_New;
                             Time_End_New+=Time_Dur_New;
                             if (!Time_Begin.IsSet() || Time_Begin>Time_End_New)
@@ -507,6 +699,8 @@ void File_Ttml::Read_Buffer_Continue()
                             {
                                 if (!Time_Begin_New.FromString(Attribute))
                                 {
+                                    if (TimeCodeFrameMax && !Time_Begin_New.IsTimed())
+                                        Time_Begin_New.SetFramesMax(TimeCodeFrameMax);
                                     if (!Time_Begin.IsSet() || Time_Begin>Time_Begin_New)
                                         Time_Begin=Time_Begin_New;
                                     if (!Time_End.IsSet() || Time_End<Time_Begin_New)
@@ -517,6 +711,8 @@ void File_Ttml::Read_Buffer_Continue()
                             {
                                 if (!Time_End_New.FromString(Attribute))
                                 {
+                                    if (TimeCodeFrameMax && !Time_End_New.IsTimed())
+                                        Time_End_New.SetFramesMax(TimeCodeFrameMax);
                                     if (!Time_Begin.IsSet() || Time_Begin>Time_End_New)
                                         Time_Begin=Time_End_New;
                                     if (!Time_End.IsSet() || Time_End<Time_End_New)
@@ -528,6 +724,8 @@ void File_Ttml::Read_Buffer_Continue()
                                 TimeCode Time_Dur_New=Time_Template;
                                 if (Time_Begin.IsSet() && !Time_Dur_New.FromString(Attribute))
                                 {
+                                    if (TimeCodeFrameMax && !Time_Dur_New.IsTimed())
+                                        Time_Dur_New.SetFramesMax(TimeCodeFrameMax);
                                     Time_End_New=Time_Begin_New;
                                     Time_End_New+=Time_Dur_New;
                                     if (!Time_Begin.IsSet() || Time_Begin>Time_End_New)
@@ -542,13 +740,16 @@ void File_Ttml::Read_Buffer_Continue()
                                 if (!p)
                                     p=div_element;
                             #endif //MEDIAINFO_EVENTS
-                            int64u LineCount_New=1;
-                            for (XMLElement* p_element=div_element->FirstChildElement(); p_element; p_element=p_element->NextSiblingElement())
-                            {
-                                if (!strcmp(p_element->Value(), "br"))
-                                    LineCount_New++;
-                            }
-                            LineCount+=LineCount_New;
+
+                            // Count lines and characters using recursive processing
+                            LineCharCounter counter;
+                            ProcessNodeForLineCount(div_element, counter);
+                            counter.Finish();
+
+                            int64u LineCount_New = counter.LineCount;
+                            int64u LineCount_FromCounter = counter.LineCount;  // Save the actual line count from this <p> element
+                            if (counter.MaxCharsPerLine > MaxCountOfCharsPerLine)
+                                MaxCountOfCharsPerLine = counter.MaxCharsPerLine;
 
                             if (Time_Begin_New.IsSet())
                             {
@@ -592,8 +793,8 @@ void File_Ttml::Read_Buffer_Continue()
                                          && (TimeLine[i].Time_End.IsSet() && Time_End_New.ToMilliseconds()!=TimeLine[i].Time_End.ToMilliseconds()))
                                             CreateFrame_End=1;
                                     }
-                                    FrameCount+=CreateFrame_Begin;
-                                    FrameCount+=CreateFrame_End;
+                                    Frame_Count+=CreateFrame_Begin;
+                                    Frame_Count+=CreateFrame_End;
                                 }
 
                                 for (size_t i=0; i<TimeLine.size(); i++)
@@ -607,7 +808,7 @@ void File_Ttml::Read_Buffer_Continue()
                                 }
 
                                 if (!HasSameTime)
-                                    TimeLine.push_back(timeline(Time_Begin_New, Time_End_New, LineCount_New));
+                                    TimeLine.push_back(timeline(Time_Begin_New, Time_End_New, LineCount_FromCounter));
 
                                 LineCount_New=0;
                                 for (size_t i=0; i<TimeLine.size(); i++)
@@ -616,10 +817,11 @@ void File_Ttml::Read_Buffer_Continue()
                                 }
                             }
                             else
-                                FrameCount++;
-                          
-                            if (LineMaxCountPerEvent<LineCount_New)
-                                LineMaxCountPerEvent=LineCount_New;
+                                Frame_Count++;
+
+                            LineCount+=LineCount_FromCounter;  // Add the actual line count from this <p>, not the accumulated overlap count
+                            if (MaxCountOfLinesPerFrame<LineCount_New)  // But MaxCountOfLinesPerFrame uses the overlap sum for simultaneous display
+                                MaxCountOfLinesPerFrame=LineCount_New;
                         }
                     }
                 }

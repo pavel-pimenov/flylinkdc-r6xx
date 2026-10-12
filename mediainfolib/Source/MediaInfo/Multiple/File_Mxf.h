@@ -85,6 +85,7 @@ protected :
     void Streams_Finish_ContentStorage (const int128u ContentStorageUID);
     void Streams_Finish_ContentStorage_ForTimeCode (const int128u ContentStorageUID);
     void Streams_Finish_ContentStorage_ForAS11 (const int128u ContentStorageUID);
+    void Streams_Finish_Arri ();
     void Streams_Finish_Package (const int128u PackageUID);
     void Streams_Finish_Package_ForTimeCode (const int128u PackageUID);
     void Streams_Finish_Package_ForAS11 (const int128u PackageUID);
@@ -236,6 +237,17 @@ protected :
     void DM_AS_11_Core_Framework();
     void DM_AS_11_Segmentation_Framework();
     void DM_AS_11_UKDPP_Framework();
+    void Arri_DmFramework();
+    void Arri_DmFramework_Sets();
+    void Arri_DmSet();
+    void Arri_DmSet_Name();
+    void Arri_DmSet_Mime();
+    void Arri_DmSet_Json();
+    void Arri_DmSet_Schema();
+    void Arri_ClipSet();
+    void Arri_BinaryPack();
+    void Arri_BinaryPack_Header();
+    void Arri_BinaryPack_VideoParameters();
     void Dolby_050201000101() { MXFGenericStreamDataElementKey_09_01(); }
     void PHDRImageMetadataItem();
     void ISXDDataEssenceDescriptor();
@@ -421,8 +433,8 @@ protected :
     void MGAAudioMetadataIdentifier();                          //
     void MGAAudioMetadataPayloadULArray();                      //
     void MGAMetadataSectionLinkID();                            //
-    void SADMMetadataSectionLinkID();                           //
-    void SADMProfileLevelULBatch();                             //
+    void SADMMetadataSectionLinkID() { MGAMetadataSectionLinkID(); }
+    void SADMProfileLevelULBatch() { ADMProfileLevelULBatch(); }
     void MPEGAudioBitRate();                         //
     void MultipleDescriptor_FileDescriptors();                  //3F01
     void RFC5646SpokenLanguage();
@@ -1086,6 +1098,25 @@ protected :
     typedef std::map<int128u, component> components; //Key is InstanceUID of the component
     components Components;
 
+    //Timecode comparison
+    struct timecodecache
+    {
+        struct value
+        {
+            int64u Offset;
+            int64u Value;
+
+            value(int64u Offset = 0, int64u Value = 0)
+                : Offset(Offset)
+                , Value(Value)
+            {}
+        };
+        std::vector<value> Values;
+        size_t StreamPos = (size_t)-1;
+    };
+    typedef std::map<int128u, timecodecache> timecodecaches; //Key is InstanceUID of the timecode
+    timecodecaches TimecodeCaches;
+
     //Descriptive Metadata - DescriptiveMarkers
     struct dmsegment
     {
@@ -1228,6 +1259,27 @@ protected :
     typedef std::map<int128u, as11> as11s; //Key is InstanceUID of the ProductionFramework
     as11s AS11s;
 
+    //Descriptive Metadata - ARRI
+    struct arri_dmset
+    {
+        Ztring      Name;
+        Ztring      Mime;
+        std::string Json;
+    };
+    typedef std::map<int128u, arri_dmset> arri_dmsets; //Key is InstanceUID of the set
+    arri_dmsets ArriDmSets;
+    std::vector<int128u> ArriDmSets_Order; //InstanceUIDs in file order
+    std::set<int128u> ArriDmFrameworks; //InstanceUIDs
+    std::vector<std::pair<std::string, Ztring> > ArriBinaryFields;
+    std::map<std::string, Ztring> ArriClipFields;
+    std::map<int128u, std::pair<Ztring, Ztring> > ArriClipParams; //Key: InstanceUID of set, value: name and version
+    std::vector<int128u> ArriClipParams_Order; //InstanceUIDs in file order
+    std::vector<int128u> ArriClipParams_Refs; //InstanceUIDs in referenced order
+    std::map<int128u, std::map<std::string, Ztring> > ArriClipObjects; //Key: InstanceUID of LUT or color space set
+    std::map<int128u, std::map<std::string, int128u> > ArriClipObjectRefs; //Key: InstanceUID of LUT set
+    std::vector<int128u> ArriClipLuts_Refs; //InstanceUIDs in referenced order
+    std::map<int8u, std::vector<std::pair<std::string, Ztring> > > ArriClipLooks; //Key: look index (Mini)
+
     //Descriptive Metadata - Omneon
     struct dmomneonlink
     {
@@ -1270,6 +1322,7 @@ protected :
     void           ChooseParser_SmpteSt0337(const essences::iterator &Essence, const descriptors::iterator &Descriptor);
     void           ChooseParser_Jpeg2000(const essences::iterator &Essence, const descriptors::iterator &Descriptor);
     void           ChooseParser_ProRes(const essences::iterator &Essence, const descriptors::iterator &Descriptor);
+    void           ChooseParser_ArriRaw(const essences::iterator& Essence, const descriptors::iterator& Descriptor);
     void           ChooseParser_Ffv1(const essences::iterator& Essence, const descriptors::iterator& Descriptor);
     void           ChooseParser_Isxd(const essences::iterator& Essence, const descriptors::iterator& Descriptor);
     void           ChooseParser_Phdr(const essences::iterator& Essence, const descriptors::iterator& Descriptor);
@@ -1284,7 +1337,7 @@ protected :
     void           ChooseParser_xAnc(const essences::iterator& Essence, const descriptors::iterator& Descriptor);
     void           ChooseParser_Hdcam(const essences::iterator& Essence, const descriptors::iterator& Descriptor);
     void           ChooseParser_Hevc(const essences::iterator& Essence, const descriptors::iterator& Descriptor);
-    void           ChooseParser_JpegXs(const essences::iterator& Essence, const descriptors::iterator& Descriptor);
+    void           ChooseParser(const essences::iterator& Essence, const descriptors::iterator& Descriptor, stream_t StreamKind, const char* Format = nullptr);
 
     //Helpers
     int32u Vector(int32u ExpectedLength=(int32u)-1);
@@ -1458,10 +1511,13 @@ protected :
     int32u ADMChannelMapping_LocalChannelID;
     string ADMChannelMapping_ADMAudioTrackUID;
     std::bitset<2> ADMChannelMapping_Presence;
+    std::map<int128u, set<int128u> > ADMProfileLevelULBatch_List;
+    void CompareAdmProfiles();
     #endif
     #if defined(MEDIAINFO_IAB_YES)
     File__Analyze* Adm_ForLaterMerge;
     #endif
+    bool IsArriExperimental = false;
         
     //Demux
     #if MEDIAINFO_DEMUX

@@ -55,7 +55,7 @@ void File_OtherText::Read_Buffer_Continue()
         #endif //WINDOWS
     if (File.size()<0x100)
     {
-        File.From_Unicode((wchar_t*)Buffer, 0, (Buffer_Size/sizeof(wchar_t))>16384?16384:(Buffer_Size/sizeof(wchar_t))); //Unicode with BOM
+        File.From_UTF16((const char*)Buffer, 0, Buffer_Size>16384?16384:Buffer_Size); //Unicode with BOM
         //TODO: Order of bytes (big or Little endian)
         if (File.size()<0x100)
         {
@@ -146,6 +146,7 @@ void File_OtherText::Read_Buffer_Continue()
     }
     else if (Lines[0].size()>10
           && Lines[0][0]==__T('~') && Lines[0][1]==__T('C') && Lines[0][2]==__T('P') && Lines[0][3]==__T('C') && Lines[0][9]==__T('~')
+          && Lines.size()>1 && Lines[1].size()>8
           && Lines[1][ 0]==__T('0') && Lines[1][ 1]==__T('0')
           && Lines[1][ 2]==__T(':') && Lines[1][ 5]==__T(':') && Lines[1][ 8]==__T(':')
     )

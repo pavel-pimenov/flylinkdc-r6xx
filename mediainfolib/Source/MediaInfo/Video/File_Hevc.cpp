@@ -44,7 +44,7 @@ extern const char* Hevc_profile_idc(int32u profile_idc)
         case   1 : return "Main";
         case   2 : return "Main 10";
         case   3 : return "Main Still";
-        case   4 : return "Format Range"; // extensions
+        case   4 : return "Format Range"; // extensions, detailed profile computed based on constraint flags
         case   5 : return "High Throughput";
         case   6 : return "Multiview Main";
         case   7 : return "Scalable Main"; // can be "Scalable Main 10" depending on general_max_8bit_constraint_flag
@@ -67,6 +67,7 @@ extern const char* Hevc_profile_idc(int32u profile_idc)
 
 //---------------------------------------------------------------------------
 #include "MediaInfo/Video/File_Hevc.h"
+#include "MediaInfo/Video/File_Avc.h"
 #if defined(MEDIAINFO_AFDBARDATA_YES)
     #include "MediaInfo/Video/File_AfdBarData.h"
 #endif //defined(MEDIAINFO_AFDBARDATA_YES)
@@ -148,6 +149,29 @@ static const char* Hevc_pic_type[]=
     "",
     "",
 };
+
+//---------------------------------------------------------------------------
+// Interpretation of pic_struct (ISO/IEC 23008-2, Table D.2)
+static const char* Hevc_pic_struct(int8u pic_struct)
+{
+    static const char* const Strings[]=
+    {
+        "frame",                                            //  0
+        "top field",                                        //  1
+        "bottom field",                                     //  2
+        "top field, bottom field",                          //  3
+        "bottom field, top field",                          //  4
+        "top field, bottom field, top field repeated",      //  5
+        "bottom field, top field, bottom field repeated",   //  6
+        "frame doubling",                                   //  7
+        "frame tripling",                                   //  8
+        "top field paired with previous bottom field",      //  9
+        "bottom field paired with previous top field",      // 10
+        "top field paired with next bottom field",          // 11
+        "bottom field paired with next top field",          // 12
+    };
+    return (size_t)pic_struct<sizeof(Strings)/sizeof(*Strings) ? Strings[pic_struct] : "";
+}
 
 //---------------------------------------------------------------------------
 static const char* Hevc_slice_type(int32u slice_type)
@@ -381,48 +405,72 @@ void File_Hevc::Streams_Fill_Profile(const profile_tier_level_struct& p)
     if (!LegacyStreamDisplay && !Retrieve_Const(Stream_Video, 0, Video_Format_Profile).empty())
         return;
 
-    Ztring Profile;
+    string Profile;
     if (p.profile_space==0)
     {
         if (p.profile_idc)
         {
-            Profile=Ztring().From_UTF8(Hevc_profile_idc(p.profile_idc));
-            int8u Profile_Addition_Bits=0;
+            if (p.profile_idc == 4)
+            {
+                // Determine chroma format prefix
+                if (p.general_max_monochrome_constraint_flag)
+                    Profile = "Monochrome";
+                else {
+                    int8u ChromaIndex;
+                    if (p.general_max_420chroma_constraint_flag)
+                        ChromaIndex = 1;
+                    else if (p.general_max_422chroma_constraint_flag)
+                        ChromaIndex = 2;
+                    else
+                        ChromaIndex = 3;
+                    Profile = Hevc_profile_idc(1);
+                    Profile += ' ';
+                    Profile += Hevc_chroma_format_idc(ChromaIndex);
+                }
+                if (p.general_intra_constraint_flag)
+                {
+                    if (p.general_one_picture_only_constraint_flag)
+                        Profile += " Still Picture";
+                    else
+                        Profile += " Intra";
+                }
+            }
+            else
+            {
+                Profile=Hevc_profile_idc(p.profile_idc);
+            }
             switch (p.profile_idc)
             {
+                case 4 :
                 case 6 :
                 case 7 :
-                    if (!p.general_max_8bit_constraint_flag)
-                    {
-                        if (!p.general_max_10bit_constraint_flag)
-                        {
-                            if (!p.general_max_12bit_constraint_flag)
-                            {
-                                if (!p.general_max_14bit_constraint_flag)
-                                    Profile_Addition_Bits=4;
-                                else
-                                    Profile_Addition_Bits=3;
-                            }
-                            else
-                                Profile_Addition_Bits=2;
-                        }
+                    if (!p.general_max_8bit_constraint_flag) {
+                        // Compute bit depth from constraint flags
+                        int8u BitDepthIndex;
+                        if (p.general_max_10bit_constraint_flag)
+                            BitDepthIndex = 1;
+                        else if (p.general_max_12bit_constraint_flag)
+                            BitDepthIndex = 2;
+                        else if (p.general_max_14bit_constraint_flag)
+                            BitDepthIndex = 3;
                         else
-                            Profile_Addition_Bits=1;
+                            BitDepthIndex = 4;
+                        Profile += ' ';
+                        Profile += to_string(8 + BitDepthIndex * 2);
                     }
-            }
-            if (Profile_Addition_Bits)
-            {
-                Profile+=' ';
-                Profile+=Ztring::ToZtring(8+Profile_Addition_Bits*2);
+                    break;
+                default:
+                    break;
             }
         }
         if (p.level_idc)
         {
             if (p.profile_idc)
-                Profile+=__T('@');
-            Profile+=__T('L')+Ztring().From_Number(((float)p.level_idc)/30, (p.level_idc%10)?1:0);
-            Profile+=__T('@');
-            Profile+=Ztring().From_UTF8(Hevc_tier_flag(p.tier_flag));
+                Profile+='@';
+            Profile += 'L';
+            Profile += Ztring().From_Number(((float)p.level_idc) / 30, (p.level_idc % 10) ? 1 : 0).To_UTF8();
+            Profile += '@';
+            Profile += Hevc_tier_flag(p.tier_flag);
         }
     }
     Fill(Stream_Video, 0, Video_Format_Profile, Profile);
@@ -448,6 +496,37 @@ void File_Hevc::Streams_Fill(std::vector<video_parameter_set_struct*>::iterator 
 }
 
 //---------------------------------------------------------------------------
+// HEVC has no field coding: a coded picture is either a frame holding both fields or a
+// single field, and which one it is, along with the field order, is signalled only by
+// metadata. Gather it in one place so that everything derived from it stays consistent.
+File_Hevc::interlacement_info File_Hevc::Interlacement_Detect(const seq_parameter_set_struct* seq_parameter_set_Item)
+{
+    interlacement_info Interlacement;
+    Interlacement.pic_struct      =seq_parameter_set_Item->pic_struct_FirstDetected;
+    Interlacement.source_scan_type=seq_parameter_set_Item->source_scan_type_FirstDetected;
+
+    //Separated fields: each coded picture carries a single field, so the coded picture size is that of a field.
+    //field_seq_flag is the normative signal; ISO/IEC 23008-2 Table D.2 requires it to be 1 for pic_struct 1, 2 and 9 to 12, which are used as a fallback when there is no VUI.
+    Interlacement.SeparatedFields =(seq_parameter_set_Item->vui_parameters && seq_parameter_set_Item->vui_parameters->flags[field_seq_flag])
+                                || Interlacement.pic_struct==1 || Interlacement.pic_struct==2 || (Interlacement.pic_struct>=9 && Interlacement.pic_struct<=12);
+
+    const auto& p=seq_parameter_set_Item->profile_tier_level_info;
+    if (Interlacement.pic_struct<=12) //13 to 15 are reserved, so they tell nothing, like an absent SEI
+    {
+        //Table D.2: every value but the (progressive) frame, frame doubling and frame tripling ones describes fields
+        Interlacement.IsProgressive=Interlacement.pic_struct==0 || Interlacement.pic_struct==7 || Interlacement.pic_struct==8;
+        Interlacement.IsInterlaced =!Interlacement.IsProgressive;
+    }
+    else //No usable pic_struct: fall back to field_seq_flag, source_scan_type and the profile_tier_level constraint flags
+    {
+        Interlacement.IsInterlaced =Interlacement.SeparatedFields || Interlacement.source_scan_type==0 || (!p.general_progressive_source_flag && p.general_interlaced_source_flag);
+        Interlacement.IsProgressive=!Interlacement.IsInterlaced && (Interlacement.source_scan_type==1 || (p.general_progressive_source_flag && !p.general_interlaced_source_flag));
+    }
+
+    return Interlacement;
+}
+
+//---------------------------------------------------------------------------
 void File_Hevc::Streams_Fill(std::vector<seq_parameter_set_struct*>::iterator seq_parameter_set_Item_)
 {
     auto seq_parameter_set_Item = *seq_parameter_set_Item_;
@@ -464,6 +543,10 @@ void File_Hevc::Streams_Fill(std::vector<seq_parameter_set_struct*>::iterator se
     Width -=(seq_parameter_set_Item->conf_win_left_offset+seq_parameter_set_Item->conf_win_right_offset)*CropUnitX;
     Height-=(seq_parameter_set_Item->conf_win_top_offset +seq_parameter_set_Item->conf_win_bottom_offset)*CropUnitY;
 
+    const interlacement_info Interlacement=Interlacement_Detect(seq_parameter_set_Item);
+    if (Interlacement.SeparatedFields)
+        Height*=2; //The coded picture is a single field; the displayed frame is twice as high
+
     const auto& p=seq_parameter_set_Item->profile_tier_level_info;
     Streams_Fill_Profile(p);
     Fill(Stream_Video, StreamPos_Last, Video_Width, Width);
@@ -471,7 +554,86 @@ void File_Hevc::Streams_Fill(std::vector<seq_parameter_set_struct*>::iterator se
     if (seq_parameter_set_Item->conf_win_left_offset || seq_parameter_set_Item->conf_win_right_offset)
         Fill(Stream_Video, StreamPos_Last, Video_Stored_Width, seq_parameter_set_Item->pic_width_in_luma_samples);
     if (seq_parameter_set_Item->conf_win_top_offset || seq_parameter_set_Item->conf_win_bottom_offset)
-        Fill(Stream_Video, StreamPos_Last, Video_Stored_Height, seq_parameter_set_Item->pic_height_in_luma_samples);
+        Fill(Stream_Video, StreamPos_Last, Video_Stored_Height, seq_parameter_set_Item->pic_height_in_luma_samples*(Interlacement.SeparatedFields?2:1)); //Both fields of the frame are stored, as File_Avc does with frame_mbs_only_flag
+
+    //Scan type and field order, from pic_struct (ISO/IEC 23008-2, Table D.2)
+    switch (Interlacement.pic_struct)
+    {
+        case  3 : //top field, bottom field, in that order
+        case  5 : //top field, bottom field, top field repeated, in that order
+                    Fill(Stream_Video, 0, Video_ScanType, "Interlaced");
+                    Fill(Stream_Video, 0, Video_ScanOrder, "TFF");
+                    Fill(Stream_Video, 0, Video_Interlacement, "TFF");
+                    Fill(Stream_Video, 0, Video_Format_Settings_PictureStructure, "Frame");
+                    Fill(Stream_Video, 0, Video_ScanType_StoreMethod, "InterleavedFields");
+                    break;
+        case  4 : //bottom field, top field, in that order
+        case  6 : //bottom field, top field, bottom field repeated, in that order
+                    Fill(Stream_Video, 0, Video_ScanType, "Interlaced");
+                    Fill(Stream_Video, 0, Video_ScanOrder, "BFF");
+                    Fill(Stream_Video, 0, Video_Interlacement, "BFF");
+                    Fill(Stream_Video, 0, Video_Format_Settings_PictureStructure, "Frame");
+                    Fill(Stream_Video, 0, Video_ScanType_StoreMethod, "InterleavedFields");
+                    break;
+        //Table D.2 gives the pairing of a field in output order, so the field it is paired
+        //with tells which of the two is displayed first: a top field paired with the next
+        //bottom field (11) and a bottom field paired with the previous top field (10) both
+        //describe a top field first frame, 12 and 9 a bottom field first one.
+        case 10 : //bottom field paired with previous top field in output order
+        case 11 : //top field paired with next bottom field in output order
+                    Fill(Stream_Video, 0, Video_ScanType, "Interlaced");
+                    Fill(Stream_Video, 0, Video_ScanOrder, "TFF");
+                    Fill(Stream_Video, 0, Video_Interlacement, "TFF");
+                    Fill(Stream_Video, 0, Video_ScanType_StoreMethod, "SeparatedFields");
+                    break;
+        case  9 : //top field paired with previous bottom field in output order
+        case 12 : //bottom field paired with next top field in output order
+                    Fill(Stream_Video, 0, Video_ScanType, "Interlaced");
+                    Fill(Stream_Video, 0, Video_ScanOrder, "BFF");
+                    Fill(Stream_Video, 0, Video_Interlacement, "BFF");
+                    Fill(Stream_Video, 0, Video_ScanType_StoreMethod, "SeparatedFields");
+                    break;
+        case  1 : //top field
+        case  2 : //bottom field
+                    //A bare field carries its own parity but no pairing hint, so one of them
+                    //does not tell the field order. An IRAP starts a frame and therefore leads
+                    //its pair, so the parity of the first IRAP gives the order of the sequence.
+                    Fill(Stream_Video, 0, Video_ScanType, "Interlaced");
+                    Fill(Stream_Video, 0, Video_ScanType_StoreMethod, "SeparatedFields");
+                    switch (seq_parameter_set_Item->pic_struct_FirstIrap)
+                    {
+                        case  1 :
+                                    Fill(Stream_Video, 0, Video_ScanOrder, "TFF");
+                                    Fill(Stream_Video, 0, Video_Interlacement, "TFF");
+                                    break;
+                        case  2 :
+                                    Fill(Stream_Video, 0, Video_ScanOrder, "BFF");
+                                    Fill(Stream_Video, 0, Video_Interlacement, "BFF");
+                                    break;
+                        default :   //No IRAP field seen, so the field order is not known
+                                    Fill(Stream_Video, 0, Video_Interlacement, "Interlaced");
+                    }
+                    break;
+        case  0 : //(progressive) frame
+        case  7 : //frame doubling
+        case  8 : //frame tripling
+                    Fill(Stream_Video, 0, Video_ScanType, "Progressive");
+                    Fill(Stream_Video, 0, Video_Interlacement, "PPF");
+                    break;
+        default : //No pic_timing SEI
+                    if (Interlacement.IsInterlaced)
+                    {
+                        Fill(Stream_Video, 0, Video_ScanType, "Interlaced");
+                        Fill(Stream_Video, 0, Video_Interlacement, "Interlaced");
+                        if (Interlacement.SeparatedFields)
+                            Fill(Stream_Video, 0, Video_ScanType_StoreMethod, "SeparatedFields");
+                    }
+                    else if (Interlacement.IsProgressive)
+                    {
+                        Fill(Stream_Video, 0, Video_ScanType, "Progressive");
+                        Fill(Stream_Video, 0, Video_Interlacement, "PPF");
+                    }
+    }
 
     Fill(Stream_Video, 0, Video_ColorSpace, Hevc_chroma_format_idc_ColorSpace(seq_parameter_set_Item->chroma_format_idc));
     Fill(Stream_Video, 0, Video_ChromaSubsampling, Hevc_chroma_format_idc(seq_parameter_set_Item->chroma_format_idc));
@@ -484,7 +646,12 @@ void File_Hevc::Streams_Fill(std::vector<seq_parameter_set_struct*>::iterator se
     if (vui_parameters)
     {
         if (vui_parameters->time_scale && vui_parameters->num_units_in_tick)
-            Fill(Stream_Video, StreamPos_Last, Video_FrameRate, (float32)vui_parameters->time_scale / vui_parameters->num_units_in_tick);
+        {
+            float64 FrameRate=(float64)vui_parameters->time_scale / vui_parameters->num_units_in_tick;
+            if (Interlacement.SeparatedFields)
+                FrameRate/=2; //The tick is per coded picture, so for separated fields it is the field rate; report the frame rate (e.g. 25 fps for 50 fields/s), as for AVC
+            Fill(Stream_Video, StreamPos_Last, Video_FrameRate, FrameRate);
+        }
 
         if (vui_parameters->sar_width && vui_parameters->sar_height)
         {
@@ -508,6 +675,49 @@ void File_Hevc::Streams_Fill(std::vector<seq_parameter_set_struct*>::iterator se
                     Fill(Stream_Video, 0, Video_ColorSpace, Mpegv_matrix_coefficients_ColorSpace(vui_parameters->matrix_coefficients), Unlimited, true, true);
             }
         }
+
+        //hrd_parameter_sets
+        int64u bit_rate_value=(int64u)-1;
+        bool   bit_rate_value_IsValid=true;
+        bool   cbr_flag=false;
+        bool   cbr_flag_IsSet=false;
+        bool   cbr_flag_IsValid=true;
+        seq_parameter_set_struct::vui_parameters_struct::xxl* NAL=vui_parameters->NAL;
+        if (NAL)
+            for (size_t Pos=0; Pos<NAL->SchedSel.size(); Pos++)
+            {
+                if (NAL->SchedSel[Pos].cpb_size_value!=(int32u)-1)
+                    Fill(Stream_Video, 0, Video_BufferSize, NAL->SchedSel[Pos].cpb_size_value);
+                if (bit_rate_value!=(int64u)-1 && bit_rate_value!=NAL->SchedSel[Pos].bit_rate_value)
+                    bit_rate_value_IsValid=false;
+                if (bit_rate_value==(int64u)-1)
+                    bit_rate_value=NAL->SchedSel[Pos].bit_rate_value;
+                if (cbr_flag_IsSet==true && cbr_flag!=NAL->SchedSel[Pos].cbr_flag)
+                    cbr_flag_IsValid=false;
+                if (cbr_flag_IsSet==0)
+                {
+                    cbr_flag=NAL->SchedSel[Pos].cbr_flag;
+                    cbr_flag_IsSet=true;
+                }
+            }
+        seq_parameter_set_struct::vui_parameters_struct::xxl* VCL=vui_parameters->VCL;
+        if (VCL)
+            for (size_t Pos=0; Pos<VCL->SchedSel.size(); Pos++)
+            {
+                Fill(Stream_Video, 0, Video_BufferSize, VCL->SchedSel[Pos].cpb_size_value);
+                if (bit_rate_value!=(int64u)-1 && bit_rate_value!=VCL->SchedSel[Pos].bit_rate_value)
+                    bit_rate_value_IsValid=false;
+                if (bit_rate_value==(int64u)-1)
+                    bit_rate_value=VCL->SchedSel[Pos].bit_rate_value;
+                if (cbr_flag_IsSet==true && cbr_flag!=VCL->SchedSel[Pos].cbr_flag)
+                    cbr_flag_IsValid=false;
+                if (cbr_flag_IsSet==0)
+                {
+                    cbr_flag=VCL->SchedSel[Pos].cbr_flag;
+                    cbr_flag_IsSet=true;
+                }
+            }
+        File_Avc::Fill_BitRate_Mode(this, cbr_flag, cbr_flag_IsSet, cbr_flag_IsValid, bit_rate_value, bit_rate_value_IsValid);
     }
 }
 
@@ -540,78 +750,8 @@ void File_Hevc::Streams_Finish()
 }
 
 //***************************************************************************
-// Buffer - File header
-//***************************************************************************
-
-//---------------------------------------------------------------------------
-bool File_Hevc::FileHeader_Begin()
-{
-    if (!File__Analyze::FileHeader_Begin_0x000001())
-        return false;
-
-    if (!MustSynchronize)
-    {
-        Synched_Init();
-        Buffer_TotalBytes_FirstSynched=0;
-        File_Offset_FirstSynched=File_Offset;
-    }
-
-    //All should be OK
-    return true;
-}
-
-//***************************************************************************
 // Buffer - Synchro
 //***************************************************************************
-
-//---------------------------------------------------------------------------
-bool File_Hevc::Synchronize()
-{
-    //Synchronizing
-    size_t Buffer_Offset_Min=Buffer_Offset;
-    while(Buffer_Offset+4<=Buffer_Size && (Buffer[Buffer_Offset  ]!=0x00
-                                        || Buffer[Buffer_Offset+1]!=0x00
-                                        || Buffer[Buffer_Offset+2]!=0x01))
-    {
-        Buffer_Offset+=2;
-        while(Buffer_Offset<Buffer_Size && Buffer[Buffer_Offset]!=0x00)
-            Buffer_Offset+=2;
-        if (Buffer_Offset>=Buffer_Size || Buffer[Buffer_Offset-1]==0x00)
-            Buffer_Offset--;
-    }
-    if (Buffer_Offset>Buffer_Offset_Min && Buffer[Buffer_Offset-1]==0x00)
-        Buffer_Offset--;
-
-    //Parsing last bytes if needed
-    if (Buffer_Offset+4==Buffer_Size && (Buffer[Buffer_Offset  ]!=0x00
-                                      || Buffer[Buffer_Offset+1]!=0x00
-                                      || Buffer[Buffer_Offset+2]!=0x00
-                                      || Buffer[Buffer_Offset+3]!=0x01))
-        Buffer_Offset++;
-    if (Buffer_Offset+3==Buffer_Size && (Buffer[Buffer_Offset  ]!=0x00
-                                      || Buffer[Buffer_Offset+1]!=0x00
-                                      || Buffer[Buffer_Offset+2]!=0x01))
-        Buffer_Offset++;
-    if (Buffer_Offset+2==Buffer_Size && (Buffer[Buffer_Offset  ]!=0x00
-                                      || Buffer[Buffer_Offset+1]!=0x00))
-        Buffer_Offset++;
-    if (Buffer_Offset+1==Buffer_Size &&  Buffer[Buffer_Offset  ]!=0x00)
-        Buffer_Offset++;
-
-    if (Buffer_Offset+4>Buffer_Size)
-        return false;
-
-    if (File_Offset==0 && Buffer_Offset==0 && (Buffer[3]==0xE0 || Buffer[3]==0xFE))
-    {
-        //It is from MPEG-PS
-        Reject();
-        return false;
-    }
-
-    //Synched is OK
-    Synched=true;
-    return true;
-}
 
 //---------------------------------------------------------------------------
 bool File_Hevc::Synched_Test()
@@ -687,7 +827,7 @@ bool File_Hevc::Demux_UnpacketizeContainer_Test()
             Size+=lengthSizeMinusOne+1;
 
             //Coherency checking
-            if (Size<lengthSizeMinusOne+1+2 || Buffer_Offset+Size>Buffer_Size || (Buffer_Offset+Size!=Buffer_Size && Buffer_Offset+Size+lengthSizeMinusOne+1>Buffer_Size))
+            if (Size<(size_t)(lengthSizeMinusOne+1+2) || Buffer_Offset+Size>Buffer_Size || (Buffer_Offset+Size!=Buffer_Size && Buffer_Offset+Size+lengthSizeMinusOne+1>Buffer_Size))
                 Size=Buffer_Size-Buffer_Offset;
             size_t Buffer_Offset_Temp=Buffer_Offset+lengthSizeMinusOne+1;
 
@@ -1039,6 +1179,9 @@ void File_Hevc::Read_Buffer_Unsynched()
     PTS_End=0;
     DTS_End=0;
 
+    //Temp
+    pic_struct_Pending=(int8u)-1;
+
     //Temporal references
     Clean_Temp_References();
     delete TemporalReferences_DelayedElement; TemporalReferences_DelayedElement=NULL;
@@ -1234,9 +1377,9 @@ bool File_Hevc::Header_Parser_QuickSearch()
 
         //Synchronizing
         Buffer_Offset+=4;
-        Synched=false;
         if (!Synchronize())
         {
+            Synched=false;
             UnSynched_IsNotJunk=true;
             return false;
         }
@@ -1248,7 +1391,7 @@ bool File_Hevc::Header_Parser_QuickSearch()
         }
     }
 
-    Trusted_IsNot("HEVC, Synchronisation lost");
+    Trusted_IsNot("HEVC, Synchronization lost");
     return Synchronize();
 }
 
@@ -1456,6 +1599,7 @@ void File_Hevc::slice_segment_layer()
     BS_Begin();
     slice_segment_header();
     BS_End();
+    pic_struct_Pending=(int8u)-1; //Belongs to this access unit only
     Skip_XX(Element_Size-Element_Offset,                        "(ToDo)");
 
     FILLING_BEGIN();
@@ -1821,7 +1965,7 @@ void File_Hevc::video_parameter_set()
         vector<vector<int32u> > LayerSetLayerIdList;
         vector<vector<int32u> > highest_layer_idx_plus1List;
         highest_layer_idx_plus1List.resize(num_add_layer_sets);
-        for (int i = 0; i < num_add_layer_sets; i++)
+        for (int32u i = 0; i < num_add_layer_sets; i++)
         {
             highest_layer_idx_plus1List[i].reserve(NumIndependentLayers);
             highest_layer_idx_plus1List[i].push_back(0); // Unused?
@@ -1832,7 +1976,7 @@ void File_Hevc::video_parameter_set()
                 highest_layer_idx_plus1List[i].push_back(highest_layer_idx_plus1);
             }
         }
-        for (int i = 0; i < num_add_layer_sets; i++)
+        for (int32u i = 0; i < num_add_layer_sets; i++)
         {
             int32u layerNum = 0;
             auto lsIdx = vps_num_layer_sets_minus1 + 1 + i;
@@ -1863,7 +2007,7 @@ void File_Hevc::video_parameter_set()
         Skip_SB(                                                "default_ref_layers_active_flag");
         int32u vps_num_profile_tier_level_minus1;
         Get_UE(vps_num_profile_tier_level_minus1,               "vps_num_profile_tier_level_minus1");
-        for (int i = vps_base_layer_internal_flag ? 2 : 1; i <= vps_num_profile_tier_level_minus1; i++)
+        for (int32u i = vps_base_layer_internal_flag ? 2 : 1; i <= vps_num_profile_tier_level_minus1; i++)
         {
             bool vps_profile_present_flag;
             Get_SB(vps_profile_present_flag,                    "vps_profile_present_flag");
@@ -1943,6 +2087,13 @@ void File_Hevc::seq_parameter_set()
     profile_tier_level(p, true, max_sub_layers_minus1);
     }
     Get_UE (   sps_seq_parameter_set_id,                        "sps_seq_parameter_set_id");
+    if (sps_seq_parameter_set_id>=16)
+    {
+        Param_Error("sps_seq_parameter_set_id");
+        Skip_BS(Data_BS_Remain(),                               "Data");
+        BS_End();
+        return;
+    }
     if (MustParse_VPS_SPS_PPS_FromFlv)
     {
         BS_End();
@@ -2673,9 +2824,16 @@ void File_Hevc::sei_message_pic_timing(int32u &seq_parameter_set_id, int32u payl
     BS_Begin();
     if ((*seq_parameter_set_Item)->vui_parameters?(*seq_parameter_set_Item)->vui_parameters->flags[frame_field_info_present_flag]:((*seq_parameter_set_Item)->profile_tier_level_info.general_progressive_source_flag && (*seq_parameter_set_Item)->profile_tier_level_info.general_interlaced_source_flag))
     {
-        Skip_S1(4,                                              "pic_struct");
-        Skip_S1(2,                                              "source_scan_type");
+        int8u pic_struct, source_scan_type;
+        Get_S1 (4, pic_struct,                                  "pic_struct"); Param_Info1(Hevc_pic_struct(pic_struct));
+        Get_S1 (2, source_scan_type,                            "source_scan_type");
         Skip_SB(                                                "duplicate_flag");
+        //Keep the first values found, which describe how the stream as a whole is coded
+        if ((*seq_parameter_set_Item)->pic_struct_FirstDetected==(int8u)-1)
+            (*seq_parameter_set_Item)->pic_struct_FirstDetected=pic_struct;
+        if ((*seq_parameter_set_Item)->source_scan_type_FirstDetected==(int8u)-1)
+            (*seq_parameter_set_Item)->source_scan_type_FirstDetected=source_scan_type;
+        pic_struct_Pending=pic_struct; //This SEI describes the access unit whose slices follow, which tell whether the picture is an IRAP
     }
     if ((*seq_parameter_set_Item)->CpbDpbDelaysPresentFlag())
     {
@@ -2872,6 +3030,10 @@ void File_Hevc::sei_message_user_data_registered_itu_t_t35_B5_0031_GA94_03_Delay
                         if (Height)
                         {
                             auto PixelAspectRatio=((float32)seq_parameter_set_Item->vui_parameters->sar_width)/seq_parameter_set_Item->vui_parameters->sar_height;
+                            //Height above is the coded picture height, which for separated fields is the height of a single field, so the ratio is computed on a frame twice as high.
+                            //Interleaved fields (pic_struct 3 to 6) code a full frame, so an interlaced source is not enough, the picture has to be a field.
+                            if (Interlacement_Detect(seq_parameter_set_Item).SeparatedFields)
+                                PixelAspectRatio/=2;
                             ((File_DtvccTransport*)GA94_03_Parser)->AspectRatio=Width*PixelAspectRatio/Height;
                         }
                     }
@@ -3163,7 +3325,7 @@ void File_Hevc::sei_message_user_data_registered_itu_t_t35_B5_003C()
 
     switch (itu_t_t35_terminal_provider_oriented_code)
     {
-        case 0x0001: sei_message_user_data_registered_itu_t_t35_B5_003C_0001(); break;
+        case 0x0001: case 0x0003: sei_message_user_data_registered_itu_t_t35_B5_003C_0001(); break;
     }
 }
 
@@ -3234,6 +3396,7 @@ void File_Hevc::sei_message_user_data_registered_itu_t_t35_26_0004()
 void File_Hevc::sei_message_user_data_registered_itu_t_t35_26_0004_0005()
 {
     //Parsing
+    Element_Info1("T/UWA 005 (HDR Vivid)");
     int16u targeted_system_display_maximum_luminance_Max=0;
     int8u system_start_code;
     bool color_saturation_mapping_enable_flag;
@@ -3833,7 +3996,14 @@ void File_Hevc::slice_segment_header()
 
     //Saving some info
     std::vector<seq_parameter_set_struct*>::iterator seq_parameter_set_Item;
-    if ((*pic_parameter_set_Item)->seq_parameter_set_id>=seq_parameter_sets.size() || (*(seq_parameter_set_Item=seq_parameter_sets.begin()+(*pic_parameter_set_Item)->seq_parameter_set_id))==NULL || (*seq_parameter_set_Item)->vui_parameters==NULL)
+    if ((*pic_parameter_set_Item)->seq_parameter_set_id>=seq_parameter_sets.size() || (*(seq_parameter_set_Item=seq_parameter_sets.begin()+(*pic_parameter_set_Item)->seq_parameter_set_id))==NULL)
+        return;
+
+    //An IRAP starts a frame and therefore leads its field pair, so the parity of the first one gives the field order of a stream coded as bare fields (pic_struct 1 or 2)
+    if (RapPicFlag && (*seq_parameter_set_Item)->pic_struct_FirstIrap==(int8u)-1 && (pic_struct_Pending==1 || pic_struct_Pending==2))
+        (*seq_parameter_set_Item)->pic_struct_FirstIrap=pic_struct_Pending;
+
+    if ((*seq_parameter_set_Item)->vui_parameters==NULL)
         return;
     float FrameRate=0;
     if ((*seq_parameter_set_Item)->vui_parameters->time_scale && (*seq_parameter_set_Item)->vui_parameters->num_units_in_tick)
@@ -3843,7 +4013,7 @@ void File_Hevc::slice_segment_header()
     if (first_slice_segment_in_pic_flag && pic_order_cnt_DTS_Ref!=(int64u)-1 && FrameInfo.PTS!=(int64u)-1 && FrameRate && TemporalReferences_Reserved)
     {
         int64s pic_order_cnt=float64_int64s(int64s(FrameInfo.PTS-pic_order_cnt_DTS_Ref)*FrameRate/1000000000);
-        if (pic_order_cnt>=TemporalReferences.size()/4 || pic_order_cnt<=-((int64s)TemporalReferences.size()/4))
+        if (pic_order_cnt>=(int64s)TemporalReferences.size()/4 || pic_order_cnt<=-((int64s)TemporalReferences.size()/4))
             pic_order_cnt_DTS_Ref=(int64u)-1; // Incoherency in DTS? Disabling compute by DTS, TODO: more generic test (all formats)
     }
     if (first_slice_segment_in_pic_flag && pic_order_cnt_DTS_Ref!=(int64u)-1 && FrameInfo.PTS!=(int64u)-1 && FrameRate && TemporalReferences_Reserved)
@@ -3997,12 +4167,12 @@ void File_Hevc::profile_tier_level(profile_tier_level_struct& p, bool profilePre
         Get_SB (    p.general_max_12bit_constraint_flag,        "general_max_12bit_constraint_flag");
         Get_SB (    p.general_max_10bit_constraint_flag,        "general_max_10bit_constraint_flag");
         Get_SB (    p.general_max_8bit_constraint_flag,         "general_max_8bit_constraint_flag");
-        Skip_SB(                                                "general_max_422chroma_constraint_flag");
-        Skip_SB(                                                "general_max_420chroma_constraint_flag");
-        Skip_SB(                                                "general_max_monochrome_constraint_flag");
-        Skip_SB(                                                "general_intra_constraint_flag");
-        Skip_SB(                                                "general_one_picture_only_constraint_flag");
-        Skip_SB(                                                "general_lower_bit_rate_constraint_flag");
+        Get_SB (    p.general_max_422chroma_constraint_flag,    "general_max_422chroma_constraint_flag");
+        Get_SB (    p.general_max_420chroma_constraint_flag,    "general_max_420chroma_constraint_flag");
+        Get_SB (    p.general_max_monochrome_constraint_flag,   "general_max_monochrome_constraint_flag");
+        Get_SB (    p.general_intra_constraint_flag,            "general_intra_constraint_flag");
+        Get_SB (    p.general_one_picture_only_constraint_flag, "general_one_picture_only_constraint_flag");
+        Get_SB (    p.general_lower_bit_rate_constraint_flag,   "general_lower_bit_rate_constraint_flag");
         Get_SB (    p.general_max_14bit_constraint_flag,        "general_max_14bit_constraint_flag");
         for (int8u constraint_pos=0; constraint_pos<33; constraint_pos++)
             Skip_SB(                                            "general_reserved");
@@ -4162,7 +4332,8 @@ void File_Hevc::vui_parameters(seq_parameter_set_struct::vui_parameters_struct* 
         Get_UE (chroma_sample_loc_type_bottom_field,            "chroma_sample_loc_type_bottom_field");
     TEST_SB_END();
     Skip_SB(                                                    "neutral_chroma_indication_flag");
-    Skip_SB(                                                    "field_seq_flag");
+    Get_SB (   flag,                                            "field_seq_flag");
+    flags[field_seq_flag]=flag;
     Get_SB (   flag,                                            "frame_field_info_present_flag");
     flags[frame_field_info_present_flag]=flag;
     TEST_SB_SKIP(                                               "default_display_window_flag ");
