@@ -1,0 +1,2187 @@
+--- a/License.txt
++++ b/License.txt
+@@ -1,4 +1,4 @@
+-Copyright (c) 2002-2020 MediaArea.net SARL. All rights reserved.
++Copyright (c) 2002-2025 MediaArea.net SARL. All rights reserved.
+ 
+ This software is provided 'as-is', without any express or implied
+ warranty.  In no event will the authors be held liable for any damages
+--- a/Source/ZenLib/BitStream.h
++++ b/Source/ZenLib/BitStream.h
+@@ -30,16 +30,32 @@
+ class BitStream
+ {
+ public:
+-    BitStream ()                                                                {Buffer=NULL;
+-                                                                                 Buffer_Size=Buffer_Size_Init=Buffer_Size_BeforeLastCall=0;
+-                                                                                 LastByte_Size=0;
+-                                                                                 BufferUnderRun=true;
+-                                                                                 BookMark=false;}
+-    BitStream (const int8u* Buffer_, size_t Size_)                              {Buffer=Buffer_;
+-                                                                                 Buffer_Size=Buffer_Size_Init=Buffer_Size_BeforeLastCall=Size_*8; //Size is in bits
+-                                                                                 LastByte_Size=0;
+-                                                                                 BufferUnderRun=Buffer_Size?false:true;
+-                                                                                 BookMark=false;}
++    BitStream ()                                                                { Buffer = NULL;
++                                                                                  Buffer_Size = 0;
++                                                                                  Buffer_Size_Init = 0;
++                                                                                  Buffer_Size_BeforeLastCall = 0;
++                                                                                  LastByte = 0;
++                                                                                  LastByte_Size = 0;
++                                                                                  BufferUnderRun = true;
++                                                                                  BookMark = false;
++                                                                                  Buffer_BookMark = 0;
++                                                                                  Buffer_Size_BookMark = 0;
++                                                                                  LastByte_BookMark = 0;
++                                                                                  LastByte_Size_BookMark = 0;
++                                                                                  BufferUnderRun_BookMark = false; }
++    BitStream (const int8u* Buffer_, size_t Size_)                              { Buffer = Buffer_;
++                                                                                  Buffer_Size = Size_ * 8; //Size is in bits
++                                                                                  Buffer_Size_Init = Size_ * 8; //Size is in bits
++                                                                                  Buffer_Size_BeforeLastCall = Size_ * 8; //Size is in bits
++                                                                                  LastByte = 0;
++                                                                                  LastByte_Size = 0;
++                                                                                  BufferUnderRun = (Buffer_Size ? false : true);
++                                                                                  BookMark = false;
++                                                                                  Buffer_BookMark = 0;
++                                                                                  Buffer_Size_BookMark = 0;
++                                                                                  LastByte_BookMark = 0;
++                                                                                  LastByte_Size_BookMark = 0;
++                                                                                  BufferUnderRun_BookMark = false; }
+     virtual ~BitStream ()                                                       {};
+ 
+     virtual void Attach(const int8u* Buffer_, size_t Size_)
+@@ -98,14 +114,17 @@
+                             ToReturn |= ((size_t)*Buffer) << NewBits;
+                             Buffer++;
+                             Buffer_Size-=8;
++                            [[fallthrough]];
+                 case 2 :    NewBits-=8;
+                             ToReturn |= ((size_t)*Buffer) << NewBits;
+                             Buffer++;
+                             Buffer_Size-=8;
++                            [[fallthrough]];
+                 case 1 :    NewBits-=8;
+                             ToReturn |= ((size_t)*Buffer) << NewBits;
+                             Buffer++;
+                             Buffer_Size-=8;
++                            [[fallthrough]];
+                 case 0 :
+                             LastByte=*Buffer;
+                             Buffer++;
+@@ -191,12 +210,15 @@
+                 case 3 :    NewBits-=8;
+                             Buffer++;
+                             Buffer_Size-=8;
++                            [[fallthrough]];
+                 case 2 :    NewBits-=8;
+                             Buffer++;
+                             Buffer_Size-=8;
++                            [[fallthrough]];
+                 case 1 :    NewBits-=8;
+                             Buffer++;
+                             Buffer_Size-=8;
++                            [[fallthrough]];
+                 case 0 :
+                             LastByte=*Buffer;
+                             Buffer++;
+--- a/Source/ZenLib/BitStream_Fast.h
++++ b/Source/ZenLib/BitStream_Fast.h
+@@ -30,12 +30,16 @@
+ class BitStream_Fast
+ {
+ public:
+-    BitStream_Fast ()                                                           {Buffer=NULL;
+-                                                                                 Buffer_Size=Buffer_Size_Init=0;
+-                                                                                 BufferUnderRun=false;}
+-    BitStream_Fast (const int8u* Buffer_, size_t Size_)                         {Buffer=Buffer_;
+-                                                                                 Buffer_Size=Buffer_Size_Init=Size_*8; //Size is in bits
+-                                                                                 BufferUnderRun=false;}
++    BitStream_Fast ()                                                           { Buffer = NULL;
++                                                                                  Buffer_Size = 0;
++                                                                                  Buffer_Size_Init = 0;
++                                                                                  LastByte = 0;
++                                                                                  BufferUnderRun = false; }
++    BitStream_Fast (const int8u* Buffer_, size_t Size_)                         { Buffer = Buffer_;
++                                                                                  Buffer_Size = Size_ * 8; //Size is in bits
++                                                                                  Buffer_Size_Init = Size_ * 8; //Size is in bits
++                                                                                  LastByte = 0;
++                                                                                  BufferUnderRun = false; }
+     ~BitStream_Fast ()                                                          {}
+ 
+     void Attach(const int8u* Buffer_, size_t Size_)
+@@ -182,11 +186,12 @@
+         {
+             case 3 :    NewBits-=8;
+                         ToReturn|=*(Buffer++)<<NewBits;
++                        [[fallthrough]];
+             case 2 :    NewBits-=8;
+                         ToReturn|=*(Buffer++)<<NewBits;
++                        [[fallthrough]];
+             case 1 :    NewBits-=8;
+                         ToReturn|=*(Buffer++)<<NewBits;
+-            default:    ;
+         }
+         LastByte=*(Buffer++);
+         Buffer_Size-=HowMany;
+@@ -358,13 +363,14 @@
+             case 3 :    NewBits-=8;
+                         ToReturn|=*Buffer<<NewBits;
+                         Buffer++;
++                        [[fallthrough]];
+             case 2 :    NewBits-=8;
+                         ToReturn|=*Buffer<<NewBits;
+                         Buffer++;
++                        [[fallthrough]];
+             case 1 :    NewBits-=8;
+                         ToReturn|=*Buffer<<NewBits;
+                         Buffer++;
+-            default:    ;
+         }
+         ToReturn|=((*Buffer)>>((Buffer_Size-HowMany)%8))&Mask[NewBits];
+ 
+--- a/Source/ZenLib/BitStream_LE.h
++++ b/Source/ZenLib/BitStream_LE.h
+@@ -26,18 +26,19 @@
+ class BitStream_LE : public BitStream
+ {
+ public:
+-    BitStream_LE ()                                                             :BitStream()
+-    {
+-        endbyte=0;
+-        endbit=0;
+-        buffer=NULL;
+-        ptr=NULL;
+-        storage=0;
+-    };
++    BitStream_LE()                                                              : BitStream(), 
++                                                                                  endbyte(0), 
++                                                                                  endbit(0), 
++                                                                                  buffer(NULL), 
++                                                                                  ptr(NULL), 
++                                                                                  ptr_BeforeLastCall(NULL), 
++                                                                                  storage(0) {
++    }
+ 
+-    BitStream_LE (const int8u* Buffer_, size_t Size_)                           :BitStream(Buffer_, Size_) {
++    BitStream_LE (const int8u* Buffer_, size_t Size_)                           : BitStream(Buffer_, Size_),
++                                                                                  ptr_BeforeLastCall(NULL) {
+         Attach(Buffer_, Size_);
+-    };
++    }
+ 
+     void Attach(const int8u* Buffer_, size_t Size_)
+     {
+@@ -46,14 +47,14 @@
+         buffer=Buffer_;
+         ptr=Buffer_;
+         storage=(long)Size_;
+-    };
++    }
+ 
+     int32u Get (size_t HowMany)
+     {
+         ptr_BeforeLastCall=ptr;
+ 
+         long ret;
+-        static const int32u Mask[33]={
++        static const int32u Mask[33] = {
+           0x00000000,
+           0x00000001, 0x00000003, 0x00000007, 0x0000000f,
+           0x0000001f, 0x0000003f, 0x0000007f, 0x000000ff,
+@@ -64,7 +65,15 @@
+           0x01ffffff, 0x03ffffff, 0x07ffffff, 0x0fffffff,
+           0x1fffffff, 0x3fffffff, 0x7fffffff, 0xffffffff,
+         };
+-        unsigned long m=Mask[HowMany];
++        unsigned long m = 0;
++        if (HowMany < 33)
++        {
++            m = Mask[HowMany];
++        }
++        else
++        {
++            return 0; // fix https://github.com/MediaArea/MediaInfoLib/commit/0333ecb73f6a8803544d32b4c9ac0b04ec9231b3
++        }
+ 
+         HowMany+=endbit;
+ 
+@@ -98,7 +107,7 @@
+         overflow:
+ 
+         return(ret);
+-    };
++    }
+ 
+     void Skip(size_t bits)
+     {
+@@ -108,28 +117,28 @@
+     int32u Remain () //How many bits remain?
+     {
+         return storage*8-(endbyte*8+endbit);
+-    };
++    }
+ 
+     void Byte_Align()
+     {
+         if (endbit)
+             Get(endbit);
+-    };
++    }
+ 
+     size_t Offset_Get()
+     {
+         return ptr-buffer;
+-    };
++    }
+ 
+     size_t BitOffset_Get()
+     {
+         return endbit;
+-    };
++    }
+ 
+     size_t OffsetBeforeLastCall_Get()
+     {
+         return ptr_BeforeLastCall-buffer;
+-    };
++    }
+ 
+ private :
+     long endbyte;
+@@ -137,7 +146,7 @@
+ 
+     const unsigned char *buffer;
+     const unsigned char *ptr;
+-    const unsigned char *ptr_BeforeLastCall;
++    const unsigned char* ptr_BeforeLastCall = nullptr;
+     long storage;
+ };
+ 
+--- a/Source/ZenLib/Conf.h
++++ b/Source/ZenLib/Conf.h
+@@ -25,6 +25,9 @@
+     #ifndef __WIN32__
+         #define __WIN32__ 1
+     #endif
++
++#define ZENLIB_NO_WIN9X_SUPPORT // [!] FlylinkDC opt: disable Windows 98 support to all platforms.
++
+ #endif
+ 
+ //---------------------------------------------------------------------------
+@@ -61,6 +64,11 @@
+     #if defined(WINAPI_FAMILY) && (WINAPI_FAMILY==WINAPI_FAMILY_APP)
+         #ifndef WINDOWS_UWP
+             #define WINDOWS_UWP
++        #endif
++    #endif
++    #if defined(WINAPI_FAMILY) && (WINAPI_FAMILY==WINAPI_FAMILY_GAMES)
++        #ifndef WINDOWS_GAMES
++            #define WINDOWS_GAMES
+         #endif
+     #endif
+ #endif
+@@ -84,6 +92,20 @@
+ #endif
+ 
+ //---------------------------------------------------------------------------
++//Linux
++#if defined(__LINUX__) || defined(__linux__)
++    #ifndef LINUX
++        #define LINUX
++    #endif
++    #ifndef _LINUX
++        #define _LINUX
++    #endif
++    #ifndef __LINUX__
++        #define __LINUX__ 1
++    #endif
++#endif
++
++//---------------------------------------------------------------------------
+ //MacOS Classic
+ #if defined(macintosh)
+     #ifndef MACOS
+@@ -148,12 +170,6 @@
+ // Compiler bugs/unuseful warning
+ //***************************************************************************
+ 
+-//MSVC6 : for(int t=0; t<10; ++t) { do something }; for(int t=0; t<10; ++t) { do something }
+-#if defined(_MSC_VER) && _MSC_VER <= 1200
+-    #define for if(true)for
+-    #pragma warning(disable:4786) // MSVC6 doesn't like typenames longer than 255 chars (which generates an enormous amount of warnings).
+-#endif
+-
+ //MSVC2005 : "deprecated" warning (replacement functions are not in MinGW32 or Borland!)
+ #if defined(_MSC_VER) && _MSC_VER >= 1400
+     #pragma warning(disable : 4996)
+@@ -189,11 +205,11 @@
+ //---------------------------------------------------------------------------
+ //(-1) is known to be the MAX of an unsigned int but GCC complains about it
+ #ifdef __cplusplus
+-    #include <new> //for size_t
++    #include <cstddef> //for size_t
+ #else /* __cplusplus */
+     #include <stddef.h> //for size_t
+ #endif /* __cplusplus */
+-#include <cstring> //size_t
++//[-] FlylinkDC++ Team #include <cstring> //size_t
+ namespace ZenLib
+ {
+     const std::size_t Error=((std::size_t)(-1));
+@@ -352,8 +368,8 @@
+ 
+ //Windows - MSVC (before Visual Studio 2015)
+ #if defined (_MSC_VER) && _MSC_VER < 1900
+-    #define snprintf _snprintf
+-    #define snwprintf _snwprintf
++    // [-] VC++2015 #define snprintf _snprintf
++    // [-] VC++2015 #define snwprintf _snwprintf
+ #endif
+ 
+ } //namespace
+--- a/Source/ZenLib/CriticalSection.cpp
++++ b/Source/ZenLib/CriticalSection.cpp
+@@ -3,7 +3,6 @@
+  *  Use of this source code is governed by a zlib-style license that can
+  *  be found in the License.txt file in the root of the source tree.
+  */
+-
+ //---------------------------------------------------------------------------
+ #include "ZenLib/PreComp.h"
+ #ifdef __BORLANDC__
+@@ -78,6 +77,7 @@
+ #ifdef WINDOWS
+ //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
++#ifdef FLYLINKDC_USE_ZENLIB_CRITICAL_SECTION
+ 
+ //---------------------------------------------------------------------------
+ #undef __TEXT
+@@ -124,6 +124,7 @@
+ 
+ } //Namespace
+ 
++#endif
+ //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ // UNIX
+--- a/Source/ZenLib/CriticalSection.h
++++ b/Source/ZenLib/CriticalSection.h
+@@ -23,7 +23,7 @@
+ 
+ namespace ZenLib
+ {
+-
++#ifdef FLYLINKDC_USE_ZENLIB_CRITICAL_SECTION
+ //***************************************************************************
+ /// @brief CriticalSection manipulation
+ //***************************************************************************
+@@ -64,7 +64,27 @@
+ private:
+     ZenLib::CriticalSection *CritSec;
+ };
++#else
++class CriticalSection
++{
++public :
++	__forceinline CriticalSection  () {}
++	__forceinline ~CriticalSection () {}
++	__forceinline void  Enter() {}
++	__forceinline void  Leave() {}
++};
++class CriticalSectionLocker
++{
++public:
++    __forceinline CriticalSectionLocker (const ZenLib::CriticalSection &)
++    {
++    }
++    __forceinline ~CriticalSectionLocker ()
++    {
++    }
++};
+ 
++#endif
+ } //NameSpace
+ 
+ #endif
+--- a/Source/ZenLib/Dir.cpp
++++ b/Source/ZenLib/Dir.cpp
+@@ -298,6 +298,22 @@
+                     #endif //UNICODE
+                     if (File_Name!=__T(".") && File_Name!=__T("..")) //Avoid . an ..
+                     {
++                        if (!(Options&Include_Hidden) && ((!File_Name.empty() && File_Name[0]==__T('.')) ||
++                        #ifdef UNICODE
++                            (FindFileDataW.dwFileAttributes&FILE_ATTRIBUTE_HIDDEN)
++                        #else
++                            (FindFileData.dwFileAttributes&FILE_ATTRIBUTE_HIDDEN)
++                        #endif //UNICODE
++                        ))
++                        {
++                            #ifdef UNICODE
++                            ReturnValue=FindNextFileW(hFind, &FindFileDataW);
++                            #else
++                            ReturnValue=FindNextFile(hFind, &FindFileData);
++                            #endif //UNICODE
++                            continue;
++                        }
++
+                         Ztring File_Name_Complete=Path+__T("\\")+File_Name;
+                         if (Exists(File_Name_Complete))
+                         {
+@@ -306,7 +322,7 @@
+                             if (Options&Parse_SubDirs)
+                                 ToReturn+=GetAllFileNames(File_Name_Complete, Options); //A SubDir
+                         }
+-                        else if ((Options&Include_Files) && ((Options&Include_Hidden) || (!File_Name.empty() && File_Name[0]!=__T('.'))))
++                        else if (Options&Include_Files)
+                             ToReturn.push_back(File_Name_Complete); //A file
+                     }
+                     #ifdef UNICODE
+@@ -352,15 +368,20 @@
+                 {
+                     //A file
+                     Ztring File_Name(DirEnt->d_name);
++                    if (!(Options&Include_Hidden) && (!File_Name.empty() && File_Name[0]==__T('.')))
++                        continue;
++
+                     if (File_Name!=__T(".") && File_Name!=__T("..")) //Avoid . an ..
+                     {
+                         Ztring File_Name_Complete=Dir_Name+File_Name;
+                         if (Exists(File_Name_Complete))
+                         {
++                            if (Options&Include_Dirs)
++                                ToReturn.push_back(File_Name_Complete); //A dir
+                             if (Options&Parse_SubDirs)
+                                 ToReturn+=GetAllFileNames(File_Name_Complete, Options); //A SubDir
+                         }
+-                        else if ((Options&Include_Hidden) || (!File_Name.empty() && File_Name[0]!=__T('.')))
++                        else if (Options&Include_Files)
+                             ToReturn.push_back(File_Name_Complete); //A file
+                     }
+                 }
+@@ -530,13 +551,13 @@
+     Dir::dirlist_t Options;
+     HANDLE hFind;
+     #ifdef UNICODE
+-        WIN32_FIND_DATAW FindFileDataW;
++        WIN32_FIND_DATAW FindFileDataW{};
+     #else
+-        WIN32_FIND_DATA FindFileData;
++        WIN32_FIND_DATA FindFileData{};
+     #endif //UNICODE
+ 
+     GetAllFileNames_Private()
+-        : hFind(INVALID_HANDLE_VALUE)
++        : Options(), hFind(INVALID_HANDLE_VALUE)
+     {
+     }
+ };
+--- a/Source/ZenLib/File.cpp
++++ b/Source/ZenLib/File.cpp
+@@ -30,6 +30,19 @@
+         #include <sys/stat.h>
+         #if !defined(WINDOWS)
+             #include <unistd.h>
++            #if defined(LINUX)
++                #include <features.h>
++                #if defined(__GLIBC__) && defined(__GLIBC_PREREQ)
++                    #if __GLIBC_PREREQ(2, 28)
++                        #ifndef LINUX_STATX
++                            #define LINUX_STATX 1
++                         #endif
++                        #include <fcntl.h>
++                        #include <sys/syscall.h>
++                        #include <linux/stat.h>
++                    #endif
++                #endif
++            #endif
+         #endif //!defined(WINDOWS)
+         #include <fstream>
+         using namespace std;
+@@ -353,8 +366,6 @@
+                         return false;
+                     }
+                 }
+-                else
+-                    Position=0;
+             #else
+                 DWORD dwDesiredAccess, dwShareMode, dwCreationDisposition;
+                 switch (Access)
+@@ -680,7 +691,7 @@
+                     FAILED(Async_Read->GetResults(&Readed)))
+                     return 0;
+ 
+-                if (FAILED(Reader->ReadBytes((UINT32)Buffer_Size_Max, (BYTE*)Buffer)))
++                if (FAILED(Reader->ReadBytes(Readed, (BYTE*)Buffer)))
+                     return 0;
+ 
+                 Reader->DetachStream(&Stream);
+@@ -809,7 +820,8 @@
+                     Offset=Position_Get();
+                 Ztring File_Name_Sav=File_Name;
+                 Close();
+-                truncate(File_Name_Sav.To_Local().c_str(), Offset);
++                if (truncate(File_Name_Sav.To_Local().c_str(), Offset))
++                    return false;
+                 if (!Open(File_Name_Sav, Access_Read_Write))
+                     return false;
+                 GoTo(0, FromEnd);
+@@ -945,8 +957,10 @@
+ //---------------------------------------------------------------------------
+ int64u File::Position_Get ()
+ {
+-    if (Position!=(int64u)-1)
+-        return Position;
++    #ifndef WINDOWS_UWP
++        if (Position!=(int64u)-1)
++            return Position;
++    #endif //WINDOWS_UWP
+ 
+     ZENLIB_DEBUG1(      "File Position_Get",
+                         Debug+=", File_Name="; Debug+=Ztring(File_Name).To_UTF8())
+@@ -1080,7 +1094,23 @@
+         return __T(""); //Not implemented
+     #else //ZENLIB_USEWX
+         #ifdef ZENLIB_STANDARD
+-            return __T(""); //Not implemented
++            #if defined(LINUX) && defined(LINUX_STATX)
++                struct statx Stat;
++                int Result=statx(AT_FDCWD, File_Name.To_Local().c_str(), AT_STATX_SYNC_AS_STAT, STATX_BTIME, &Stat);
++                if (Result<0)
++                    return __T(""); //Error
++                Ztring Time; Time.Date_From_Seconds_1970((int64s)Stat.stx_btime.tv_sec);
++                return Time;
++            #elif defined MACOS || defined MACOSX
++                struct stat Stat;
++                int Result=stat(File_Name.To_Local().c_str(), &Stat);
++                if (Result<0)
++                    return __T(""); //Error
++                Ztring Time; Time.Date_From_Seconds_1970((int64s)Stat.st_birthtime);
++                return Time;
++            #else
++                return __T(""); //Not implemented
++            #endif //defined(LINUX) && defined(LINUX_STATX)
+         #elif defined WINDOWS
+             #ifdef WINDOWS_UWP
+                 ComPtr<IStorageItem> Item;
+@@ -1149,7 +1179,23 @@
+         return __T(""); //Not implemented
+     #else //ZENLIB_USEWX
+         #ifdef ZENLIB_STANDARD
+-            return __T(""); //Not implemented
++            #if defined(LINUX) && defined(LINUX_STATX)
++                struct statx Stat;
++                int Result=statx(AT_FDCWD, File_Name.To_Local().c_str(), AT_STATX_SYNC_AS_STAT, STATX_BTIME, &Stat);
++                if (Result<0)
++                    return __T(""); //Error
++                Ztring Time; Time.Date_From_Seconds_1970_Local(Stat.stx_btime.tv_sec);
++                return Time;
++            #elif defined MACOS || defined MACOSX
++                struct stat Stat;
++                int Result=stat(File_Name.To_Local().c_str(), &Stat);
++                if (Result<0)
++                    return __T(""); //Error
++                Ztring Time; Time.Date_From_Seconds_1970_Local((int64s)Stat.st_birthtime);
++                return Time;
++            #else
++                return __T(""); //Not implemented
++            #endif //defined(LINUX) && defined(LINUX_STATX)
+         #elif defined WINDOWS
+             #ifdef WINDOWS_UWP
+                 ComPtr<IStorageItem> Item;
+@@ -1231,7 +1277,7 @@
+                 FILETIME TimeFT;
+                 if (GetFileTime(File_Handle, NULL, NULL, &TimeFT))
+                 {
+-                    int64u Time64=0x100000000ULL*TimeFT.dwHighDateTime+TimeFT.dwLowDateTime;
++                    const int64u Time64=0x100000000ULL*TimeFT.dwHighDateTime+TimeFT.dwLowDateTime;
+                     Ztring Time; Time.Date_From_Milliseconds_1601(Time64/10000);
+                     return Time;
+                 }
+@@ -1332,23 +1378,23 @@
+ //***************************************************************************
+ 
+ //---------------------------------------------------------------------------
+-int64u File::Size_Get(const Ztring &File_Name)
+-{
+-    File F(File_Name);
++int64u File::Size_Get(const Ztring &p_File_Name)
++{
++	File F(p_File_Name);
+     return F.Size_Get();
+ }
+ 
+ //---------------------------------------------------------------------------
+-Ztring File::Created_Get(const Ztring &File_Name)
+-{
+-    File F(File_Name);
++Ztring File::Created_Get(const Ztring &p_File_Name)
++{
++	File F(p_File_Name);
+     return F.Created_Get();
+ }
+ 
+ //---------------------------------------------------------------------------
+-Ztring File::Modified_Get(const Ztring &File_Name)
+-{
+-    File F(File_Name);
++Ztring File::Modified_Get(const Ztring &p_File_Name)
++{
++	File F(p_File_Name);
+     return F.Modified_Get();
+ }
+ 
+@@ -1414,9 +1460,9 @@
+                 return false;
+             #else
+                 #ifdef UNICODE
+-                    DWORD FileAttributes=GetFileAttributesW(File_Name.c_str());
++                    const DWORD FileAttributes=GetFileAttributesW(File_Name.c_str());
+                 #else
+-                    DWORD FileAttributes=GetFileAttributes(File_Name.c_str());
++                    const DWORD FileAttributes=GetFileAttributes(File_Name.c_str());
+                 #endif //UNICODE
+ 
+                 ZENLIB_DEBUG2(      "File Exists",
+--- a/Source/ZenLib/FileName.cpp
++++ b/Source/ZenLib/FileName.cpp
+@@ -46,7 +46,7 @@
+         return FN.GetPath().c_str();
+     #else //ZENLIB_USEWX
+         //Path limit
+-        size_t Pos_Path=rfind(FileName_PathSeparator);
++        const size_t Pos_Path=rfind(FileName_PathSeparator);
+         if (Pos_Path==Ztring::npos)
+             return Ztring(); //Not found
+         else
+@@ -139,7 +139,7 @@
+         if (Pos_Path==Ztring::npos)
+             Pos_Path=0; //Not found
+         //Extension limit
+-        size_t Pos_Ext=rfind(__T('.'));
++        const size_t Pos_Ext=rfind(__T('.'));
+         if (Pos_Ext==Ztring::npos || Pos_Ext<Pos_Path)
+             return Ztring(); //Not found
+         else
+@@ -190,11 +190,15 @@
+             if (!GetTempPath(MAX_PATH, Path))
+                 return Ztring(); //Problem while getting a temp path
+ 
+-            Char FileName[MAX_PATH+1];
+-            if (!GetTempFileName(Path, Prefix.c_str(), 0, FileName))
+-                 return Ztring(); //Problem while getting a file name
+-
+-            return Ztring(FileName);
++            #ifndef WINDOWS_GAMES
++                Char FileName[MAX_PATH+1];
++                if (!GetTempFileName(Path, Prefix.c_str(), 0, FileName))
++                    return Ztring(); //Problem while getting a file name
++
++                return Ztring(FileName);
++            #else // #ifdef WINDOWS_GAMES
++                return __T("D:\\xxx.txt");
++            #endif // #ifdef WINDOWS_GAMES
+         #else
+             return __T("C:\\xxx.txt");
+         #endif
+--- a/Source/ZenLib/Format/Http/Http_Cookies.cpp
++++ b/Source/ZenLib/Format/Http/Http_Cookies.cpp
+@@ -100,8 +100,9 @@
+             struct tm *Gmt=gmtime(&Cookie->second.Expires);
+             #endif
+ 
+-            if (strftime(Temp, 200, "%a, %d-%b-%Y %H:%M:%S GMT", Gmt))
+-                Out << "; expires=" << Temp;
++            if (Gmt)
++                if (strftime(Temp, 200, "%a, %d-%b-%Y %H:%M:%S GMT", Gmt))
++                    Out << "; expires=" << Temp;
+         }
+         if (!Cookie->second.Path.empty())
+         {
+--- a/Source/ZenLib/Format/Http/Http_Request.h
++++ b/Source/ZenLib/Format/Http/Http_Request.h
+@@ -17,10 +17,6 @@
+ 
+ //---------------------------------------------------------------------------
+ #include "ZenLib/Format/Http/Http_Handler.h"
+-#include <string>
+-#include <ctime>
+-#include <map>
+-#include <vector>
+ //---------------------------------------------------------------------------
+ 
+ 
+--- a/Source/ZenLib/Format/Http/Http_Utils.cpp
++++ b/Source/ZenLib/Format/Http/Http_Utils.cpp
+@@ -204,10 +204,39 @@
+     {
+         if (URL[Pos]==L'%' && Pos+2<URL.size()) //At least 3 chars
+         {
+-            const wchar_t Char1 = Char2Hex(URL[Pos+1]);
+-            const wchar_t Char2 = Char2Hex(URL[Pos+2]);
+-            const wchar_t Char = (Char1<<4) | Char2;
+-            Result+=Char;
++            int32u Char1 = Char2Hex(URL[Pos+1]);
++            int32u Char2 = Char2Hex(URL[Pos+2]);
++            int32u Char  = (Char1<<4) | Char2;
++            if (Char>=0xC2 && Char<=0xF4)
++            {
++                //Handle as UTF-8
++                //auto AdditionalBytes_Real=0;
++                auto AdditionalBytes_Theory=Char>=0xF0?3:(Char>=0xE0?2:1);
++                Char&=AdditionalBytes_Theory>0xF0?0x1F:0x0F;
++                if (Pos+(AdditionalBytes_Theory+1)*3<=URL.size())
++                {
++                    for (auto i=0; i<AdditionalBytes_Theory; i++)
++                        if (URL[Pos+3*i]!=L'%' )
++                            AdditionalBytes_Theory=0;
++                    for (auto i=0; i<AdditionalBytes_Theory; i++)
++                    {
++                        auto Base=Pos+(i+1)*3+1;
++                        Char1 = Char2Hex(URL[Base]);
++                        Char2 = Char2Hex(URL[Base+1]);
++                        Char  = (Char<<6) | ((Char1&0x3)<<4) | Char2;
++                    }
++                    Pos+=3*AdditionalBytes_Theory; //3 additional chars per extra are used
++                }
++            }
++            if (sizeof(wchar_t)==4 || Char<=0xD800)
++                Result+=(wchar_t)Char;
++            else
++            {
++                //Output as UTF-16
++                Char-=0x10000;
++                Result+=0xD800|((wchar_t)(Char>>10));
++                Result+=0xDC00|((wchar_t)(Char&((1<<10)-1)));
++            }
+             Pos+=2; //3 chars are used
+         }
+         else if (URL[Pos]==L'+')
+--- a/Source/ZenLib/InfoMap.h
++++ b/Source/ZenLib/InfoMap.h
+@@ -21,7 +21,7 @@
+ /// @brief Helper for InfoMap
+ //***************************************************************************
+ 
+-class InfoMap : public std::multimap<Ztring, ZtringList>
++	class InfoMap : public std::multimap<Ztring, ZtringList>, protected ZSeparator
+ {
+ public :
+     //Constructors/Destructor
+@@ -47,10 +47,6 @@
+     /// During Read() or Write() method, if there is more elements, merge them with the last element
+     void Max_Set (size_type Level, size_type Max);
+ 
+-protected :
+-    Ztring Separator[2];
+-    Ztring Quote;
+-    size_type Max[2];
+ };
+ 
+ } //namespace
+--- a/Source/ZenLib/OS_Utils.cpp
++++ b/Source/ZenLib/OS_Utils.cpp
+@@ -40,6 +40,7 @@
+             using namespace ABI::Windows::Security::Cryptography::Core;
+         #else
+             #include <shlobj.h>
++            #include <shellapi.h>
+         #endif
+     #endif
+ #endif //ZENLIB_USEWX
+@@ -234,7 +235,7 @@
+ {
+     #ifdef ZENLIB_USEWX
+     #else //ZENLIB_USEWX
+-        #if defined(WINDOWS) && !defined(WINDOWS_UWP)
++        #if defined(WINDOWS) && !defined(WINDOWS_UWP) && !defined(WINDOWS_GAMES)
+             ShellExecute(NULL, __T("open"), ToExecute.c_str(), NULL, NULL, 0);
+         #else
+             //Not supported
+@@ -252,7 +253,7 @@
+ 
+ Ztring Directory_Select_Caption;
+ 
+-#if defined(WINDOWS) && !defined(WINDOWS_UWP)
++#if defined(WINDOWS) && !defined(WINDOWS_UWP) && !defined(WINDOWS_GAMES)
+     #ifdef UNICODE
+         char    InitDirA[MAX_PATH];
+         wchar_t InitDir [MAX_PATH];
+--- a/Source/ZenLib/PreComp.h
++++ b/Source/ZenLib/PreComp.h
+@@ -17,6 +17,8 @@
+ 
+ //---------------------------------------------------------------------------
+ #if defined(_MSC_VER) || defined(__BORLANDC__)
++//[-] FlylinkDC++ Team 
++/*
+     #include <cstring>
+     #include <cstdio>
+     #include <cstdlib>
+@@ -26,8 +28,16 @@
+     #include <sstream>
+     #include <iomanip>
+     #include <cmath>
++*/
++    #undef __TEXT
++    #include <windows.h>
+     #include "ZenLib/Conf.h"
+     #include "ZenLib/Conf_Internal.h"
++    #include "ZenLib/Ztring.h"
++    #include "ZenLib/ZtringList.h"
++    #include "ZenLib/File.h"
++    #include "ZenLib/OS_Utils.h"
++
+ #endif //defined(_MSC_VER) || defined(__BORLANDC__)
+ //---------------------------------------------------------------------------
+ 
+--- a/Source/ZenLib/Thread.cpp
++++ b/Source/ZenLib/Thread.cpp
+@@ -18,7 +18,9 @@
+ //---------------------------------------------------------------------------
+ #include "ZenLib/Thread.h"
+ #include <ZenLib/Ztring.h>
+-#include <ZenLib/CriticalSection.h>
++
++#ifdef FLYLINKDC_ZENLIB_USE_THREAD
++
+ //---------------------------------------------------------------------------
+ 
+ //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+@@ -304,6 +306,7 @@
+         CriticalSectionLocker CSL(C);
+ 
+         //Terminating (not clean)
++        #pragma warning ( suppress : 6258 ) //C6258: Using TerminateThread does not allow proper thread clean up.
+         TerminateThread((HANDLE)ThreadPointer, 1);
+         ThreadPointer=NULL;
+ 
+@@ -599,5 +602,7 @@
+ //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ #endif //WINDOWS
+ #endif //ZENLIB_USEWX
+-//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+-//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
++#endif //FLYLINKDC_ZENLIB_USE_THREAD
++
++//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
++//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+--- a/Source/ZenLib/Thread.h
++++ b/Source/ZenLib/Thread.h
+@@ -24,6 +24,7 @@
+ namespace ZenLib
+ {
+ 
++#ifdef FLYLINKDC_ZENLIB_USE_THREAD
+ //***************************************************************************
+ /// @brief Thread manipulation
+ //***************************************************************************
+@@ -86,6 +87,8 @@
+     CriticalSection C;
+ };
+ 
++#endif
++
+ } //NameSpace
+ 
+-#endif
++#endif // FLYLINKDC_ZENLIB_USE_THREAD
+--- a/Source/ZenLib/Translation.h
++++ b/Source/ZenLib/Translation.h
+@@ -21,7 +21,7 @@
+ /// @brief Helper for translation
+ //***************************************************************************
+ 
+-class Translation : public std::map<Ztring, Ztring>
++	class Translation : public std::map<Ztring, Ztring>, protected ZSeparator
+ {
+ public :
+     //Constructors/Destructor
+@@ -49,10 +49,6 @@
+     /// During Read() or Write() method, if there is more elements, merge them with the last element
+     void Max_Set (size_type Level, size_type Max);
+ 
+-protected :
+-    Ztring Separator[2];
+-    Ztring Quote;
+-    size_type Max[2];
+ };
+ 
+ } //namespace
+--- a/Source/ZenLib/Utils.cpp
++++ b/Source/ZenLib/Utils.cpp
+@@ -471,7 +471,7 @@
+ 
+ //---------------------------------------------------------------------------
+ // Little Endian - 128 bits
+-void int128u2LittleEndian(char* List, int128u Value)
++void int128u2LittleEndian(char* List, const int128u& Value)
+ {
+     int64u2LittleEndian(List+8, Value.lo);
+     int64u2LittleEndian(List  , Value.hi);
+@@ -924,7 +924,7 @@
+ 
+ //---------------------------------------------------------------------------
+ // Big Endian - 128 bits
+-void int128u2BigEndian(char* List, int128u Value)
++void int128u2BigEndian(char* List, const int128u& Value)
+ {
+     int64u2BigEndian(List, Value.hi);
+     int64u2BigEndian(List+8, Value.lo);
+--- a/Source/ZenLib/Utils.h
++++ b/Source/ZenLib/Utils.h
+@@ -69,14 +69,13 @@
+ void   int56u2LittleEndian    (char* List, int64u Value);
+ void   int64s2LittleEndian    (char* List, int64s Value);
+ void   int64u2LittleEndian    (char* List, int64u Value);
+-void   int128u2LittleEndian   (char* List, int128u Value);
++void   int128u2LittleEndian   (char* List, const int128u& Value);
+ #endif
+ void   float162LittleEndian   (char* List, float32 Value);
+ void   float322LittleEndian   (char* List, float32 Value);
+ void   float642LittleEndian   (char* List, float64 Value);
+ void   float802LittleEndian   (char* List, float80 Value);
+ 
+-#ifndef __BORLANDC__
+ inline int8s  LittleEndian2int8s  (const int8u* List) {return LittleEndian2int8s  ((const char*)List);}
+ inline int8u  LittleEndian2int8u  (const int8u* List) {return LittleEndian2int8u  ((const char*)List);}
+ inline int16s LittleEndian2int16s (const int8u* List) {return LittleEndian2int16s ((const char*)List);}
+@@ -118,13 +117,12 @@
+ inline void   int56u2LittleEndian    (int8u* List, int64u Value) {return int56u2LittleEndian   ((char*)List, Value);}
+ inline void   int64s2LittleEndian    (int8u* List, int64s Value) {return int64s2LittleEndian   ((char*)List, Value);}
+ inline void   int64u2LittleEndian    (int8u* List, int64u Value) {return int64u2LittleEndian   ((char*)List, Value);}
+-inline void   int128u2LittleEndian   (int8u* List, int128u Value) {return int128u2LittleEndian ((char*)List, Value);}
++inline void   int128u2LittleEndian   (int8u* List, const int128u& Value) {return int128u2LittleEndian ((char*)List, Value);}
+ #endif
+ inline void   float162LittleEndian   (int8u* List, float32 Value) {return float162LittleEndian ((char*)List, Value);}
+ inline void   float322LittleEndian   (int8u* List, float32 Value) {return float322LittleEndian ((char*)List, Value);}
+ inline void   float642LittleEndian   (int8u* List, float64 Value) {return float642LittleEndian ((char*)List, Value);}
+ inline void   float802LittleEndian   (int8u* List, float80 Value) {return float802LittleEndian ((char*)List, Value);}
+-#endif //__BORLANDC__
+ 
+ //---------------------------------------------------------------------------
+ //Big Endians
+@@ -169,14 +167,13 @@
+ void   int56u2BigEndian    (char* List, int64u Value);
+ void   int64s2BigEndian    (char* List, int64s Value);
+ void   int64u2BigEndian    (char* List, int64u Value);
+-void   int128u2BigEndian   (char* List, int128u Value);
++void   int128u2BigEndian   (char* List, const int128u& Value);
+ #endif
+ void   float162BigEndian   (char* List, float32 Value);
+ void   float322BigEndian   (char* List, float32 Value);
+ void   float642BigEndian   (char* List, float64 Value);
+ void   float802BigEndian   (char* List, float80 Value);
+ 
+-#ifndef __BORLANDC__
+ inline int8s  BigEndian2int8s     (const int8u* List) {return BigEndian2int8s     ((const char*)List);}
+ inline int8u  BigEndian2int8u     (const int8u* List) {return BigEndian2int8u     ((const char*)List);}
+ inline int16s BigEndian2int16s    (const int8u* List) {return BigEndian2int16s    ((const char*)List);}
+@@ -218,13 +215,12 @@
+ inline void   int56u2BigEndian    (int8u* List, int64u Value) {return int56u2BigEndian   ((char*)List, Value);}
+ inline void   int64s2BigEndian    (int8u* List, int64s Value) {return int64s2BigEndian   ((char*)List, Value);}
+ inline void   int64u2BigEndian    (int8u* List, int64u Value) {return int64u2BigEndian   ((char*)List, Value);}
+-inline void   int128u2BigEndian   (int8u* List, int128u Value) {return int128u2BigEndian ((char*)List, Value);}
++inline void   int128u2BigEndian   (int8u* List, const int128u& Value) {return int128u2BigEndian ((char*)List, Value);}
+ #endif
+ inline void   float162BigEndian   (int8u* List, float32 Value) {return float162BigEndian ((char*)List, Value);}
+ inline void   float322BigEndian   (int8u* List, float32 Value) {return float322BigEndian ((char*)List, Value);}
+ inline void   float642BigEndian   (int8u* List, float64 Value) {return float642BigEndian ((char*)List, Value);}
+ inline void   float802BigEndian   (int8u* List, float80 Value) {return float802BigEndian ((char*)List, Value);}
+-#endif //__BORLANDC__
+ 
+ //---------------------------------------------------------------------------
+ // int32 - int64
+@@ -261,7 +257,6 @@
+ inline int32u CC3(const char*  C) {return BigEndian2int24u(C);}
+ inline int16u CC2(const char*  C) {return BigEndian2int16u(C);}
+ inline int8u  CC1(const char*  C) {return BigEndian2int8u (C);}
+-#ifndef __BORLANDC__
+ inline int64u CC8(const int8u* C) {return BigEndian2int64u(C);}
+ inline int64u CC7(const int8u* C) {return BigEndian2int56u(C);}
+ inline int64u CC6(const int8u* C) {return BigEndian2int48u(C);}
+@@ -270,7 +265,6 @@
+ inline int32u CC3(const int8u* C) {return BigEndian2int24u(C);}
+ inline int16u CC2(const int8u* C) {return BigEndian2int16u(C);}
+ inline int8u  CC1(const int8u* C) {return BigEndian2int8u (C);}
+-#endif // __BORLANDC__
+ 
+ //---------------------------------------------------------------------------
+ // turn a numeric literal into a hex constant
+--- a/Source/ZenLib/Ztring.cpp
++++ b/Source/ZenLib/Ztring.cpp
+@@ -32,7 +32,9 @@
+     #ifdef WINDOWS
+         #undef __TEXT
+         #include <windows.h>
+-        #include <tchar.h>
++        #ifndef WINDOWS_GAMES
++            #include <tchar.h>
++        #endif
+     #endif
+ #endif //ZENLIB_USEWX
+ #ifdef __MINGW32__
+@@ -160,10 +162,10 @@
+         #if defined (MACOS) || defined (MACOSX)
+             #define _tnprintf swprintf
+         #else
+-            #define _tnprintf snwprintf
++        //[-] FlylinkDC++ VC++2015  #define _tnprintf snwprintf
+         #endif
+     #else
+-        #define _tnprintf snprintf
++       // [-] FlylinkDC++ VC++2015 #define _tnprintf snprintf
+     #endif
+ #else
+     typedef basic_stringstream<Char>  tStringStream;
+@@ -266,7 +268,7 @@
+                 if (Size!=0 && Size!=(size_t)-1)
+                 {
+                     char* AnsiString=new char[Size+1];
+-                    Size=wcstombs(AnsiString, S, wcslen(S));
++                    Size=wcstombs(AnsiString, S, Size+1);
+                     AnsiString[Size]='\0';
+                     assign (AnsiString);
+                     delete[] AnsiString;
+@@ -649,17 +651,13 @@
+ 
+     if (Length==Error)
+         Length=strlen(S+Start);
+-    #ifdef _UNICODE
+-        char* Temp = new char[Length+1];
+-        strncpy(Temp, S +Start, Length);
+-        Temp[Length] = '\0';
+-        From_ISO_8859_1(Temp);
+-        delete[] Temp;
+-    #else
+-        assign(S +Start, Length);
+-        if (find(__T('\0')) != std::string::npos)
+-            resize(find(__T('\0')));
+-    #endif
++
++    char* Temp = new char[Length+1];
++    strncpy(Temp, S +Start, Length);
++    Temp[Length] = '\0';
++    From_ISO_8859_1(Temp);
++    delete[] Temp;
++
+     return *this;
+ }
+ 
+@@ -688,21 +686,17 @@
+ 
+     if (Length==Error)
+         Length=strlen(S+Start);
+-    #ifdef _UNICODE
+-        char* Temp = new char[Length+1];
+-        strncpy(Temp, S +Start, Length);
+-        Temp[Length] = '\0';
+-        From_ISO_8859_2(Temp);
+-        delete[] Temp;
+-    #else
+-        assign(S +Start, Length);
+-        if (find(__T('\0')) != std::string::npos)
+-            resize(find(__T('\0')));
+-    #endif
+-    return *this;
+-}
+-
+-Ztring& Ztring::From_GUID (const int128u S)
++
++    char* Temp = new char[Length+1];
++    strncpy(Temp, S +Start, Length);
++    Temp[Length] = '\0';
++    From_ISO_8859_2(Temp);
++    delete[] Temp;
++
++    return *this;
++}
++
++Ztring& Ztring::From_GUID (const int128u& S)
+ {
+     Ztring S1;
+     S1.From_CC1((int8u) ((S.hi&0x000000FF00000000LL)>>32)); append(S1);
+@@ -721,7 +715,7 @@
+     return *this;
+ }
+ 
+-Ztring& Ztring::From_UUID (const int128u S)
++Ztring& Ztring::From_UUID (const int128u& S)
+ {
+     Ztring S1;
+     S1.From_CC2((int16u)((S.hi&0xFFFF000000000000LL)>>48)); assign(S1);
+@@ -1067,7 +1061,7 @@
+     return *this;
+ }
+ 
+-Ztring& Ztring::From_Number (const int128u I, int8u Radix)
++Ztring& Ztring::From_Number (const int128u& I, int8u Radix)
+ {
+     From_Local(I.toString(Radix));
+ 
+@@ -1652,23 +1646,23 @@
+             case 6:
+                 utf8chars[5] = 0x80 | (wc & 0x3f);
+                 wc = (wc >> 6) | 0x4000000;
+-                /* fallthrough */
++                [[fallthrough]];
+             case 5:
+                 utf8chars[4] = 0x80 | (wc & 0x3f);
+                 wc = (wc >> 6) | 0x200000;
+-                /* fallthrough */
++                [[fallthrough]];
+             case 4:
+                 utf8chars[3] = 0x80 | (wc & 0x3f);
+                 wc = (wc >> 6) | 0x10000;
+-                /* fallthrough */
++                [[fallthrough]];
+             case 3:
+                 utf8chars[2] = 0x80 | (wc & 0x3f);
+                 wc = (wc >> 6) | 0x800;
+-                /* fallthrough */
++                [[fallthrough]];
+             case 2:
+                 utf8chars[1] = 0x80 | (wc & 0x3f);
+                 wc = (wc >> 6) | 0xc0;
+-                /* fallthrough */
++                [[fallthrough]];
+             case 1:
+                 utf8chars[0] = (char) wc;
+             }
+@@ -1865,7 +1859,7 @@
+     #endif
+ 
+     //Rounded
+-    if (Options==Ztring_Rounded && find(__T('.'))!=Error)
++    if (Options&Ztring_Rounded && find(__T('.'))!=Error)
+     {
+         float80 F=To_float80();
+         F-=I;
+@@ -1903,7 +1897,7 @@
+     #endif
+ 
+     //Rounded
+-    if (Options==Ztring_Rounded && find(__T('.'))!=std::string::npos)
++    if (Options&Ztring_Rounded && find(__T('.'))!=std::string::npos)
+     {
+         float32 F=To_float32();
+         F-=I;
+@@ -1941,7 +1935,7 @@
+     #endif
+ 
+     //Rounded
+-    if (Options==Ztring_Rounded && find(__T('.'))!=Error)
++    if (Options&Ztring_Rounded && find(__T('.'))!=Error)
+     {
+         float80 F=To_float80();
+         F-=I;
+@@ -1979,7 +1973,7 @@
+     #endif
+ 
+     //Rounded
+-    if (Options==Ztring_Rounded && find(__T('.'))!=std::string::npos)
++    if (Options&Ztring_Rounded && find(__T('.'))!=std::string::npos)
+     {
+         float32 F=To_float32();
+         F-=I;
+@@ -2017,7 +2011,7 @@
+     #endif
+ 
+     //Rounded
+-    if (Options==Ztring_Rounded && find(__T('.'))!=Error)
++    if (Options&Ztring_Rounded && find(__T('.'))!=Error)
+     {
+         float80 F=To_float80();
+         F-=I;
+@@ -2055,7 +2049,7 @@
+     #endif
+ 
+     //Rounded
+-    if (Options==Ztring_Rounded && find(__T('.'))!=std::string::npos)
++    if (Options&Ztring_Rounded && find(__T('.'))!=std::string::npos)
+     {
+         float32 F=To_float32();
+         F-=I;
+@@ -2093,7 +2087,7 @@
+     #endif
+ 
+     //Rounded
+-    if (Options==Ztring_Rounded && find(__T('.'))!=std::string::npos)
++    if (Options&Ztring_Rounded && find(__T('.'))!=std::string::npos)
+     {
+         float32 F=To_float32();
+         F-=I;
+@@ -2131,7 +2125,7 @@
+     #endif
+ 
+     //Rounded
+-    if (Options==Ztring_Rounded && find(__T('.'))!=std::string::npos)
++    if (Options&Ztring_Rounded && find(__T('.'))!=std::string::npos)
+     {
+         float32 F=To_float32();
+         F-=I;
+--- a/Source/ZenLib/Ztring.h
++++ b/Source/ZenLib/Ztring.h
+@@ -131,9 +131,9 @@
+     Ztring& From_ISO_8859_2   (const char  *S, size_type Length)                {return From_ISO_8859_2(S, 0, Length);}
+ 
+         /// @brief convert an 16 byte GUID into Ztring
+-    Ztring& From_GUID    (const int128u S);
++    Ztring& From_GUID    (const int128u& S);
+         /// @brief convert an 16 byte UUID into Ztring
+-    Ztring& From_UUID    (const int128u S);
++    Ztring& From_UUID    (const int128u& S);
+         /// @brief convert an 4 Character Code into Ztring
+     Ztring& From_CC4     (const char  *S)                                       {return From_Local(S, 0, 4);}
+         /// @brief convert an 4 Character Code into Ztring
+@@ -175,7 +175,7 @@
+         /// @brief convert number into Ztring
+     Ztring& From_Number  (const int64u,   int8u Radix=10);
+         /// @brief convert number into Ztring
+-    Ztring& From_Number  (const int128u,  int8u Radix=10);
++    Ztring& From_Number  (const int128u&,  int8u Radix=10);
+     /// @brief convert number into Ztring
+     Ztring& From_Number  (const float32,  int8u AfterComma=3, ztring_t Options=Ztring_Nothing);
+         /// @brief convert number into Ztring
+@@ -214,6 +214,9 @@
+     Ztring& Date_From_Seconds_1970 (const int64s Seconds);
+         /// @brief convert count of seconds since 1970 into a readable and sortable string (in local time)
+     Ztring& Date_From_Seconds_1970_Local (const int32u Seconds);
++private:
++    Ztring& Date_From_Seconds_1970_internal(const struct tm *Gmt, Ztring Date = __T("UTC "));
++public:
+         /// @brief convert a free formated string into a readable and sortable string
+     Ztring& Date_From_String (const char* Date, size_type Value_Size=Error);
+         /// @brief convert numbers into a readable and sortable string
+@@ -308,7 +311,7 @@
+     static Ztring ToZtring  (const int32u   I, int8u Radix=10)                   {return Ztring().From_Number(I, Radix);}
+     static Ztring ToZtring  (const int64s   I, int8u Radix=10)                   {return Ztring().From_Number(I, Radix);}
+     static Ztring ToZtring  (const int64u   I, int8u Radix=10)                   {return Ztring().From_Number(I, Radix);}
+-    static Ztring ToZtring  (const int128u  I, int8u Radix=10)                   {return Ztring().From_Number(I, Radix);}
++    static Ztring ToZtring  (const int128u&  I, int8u Radix=10)                   {return Ztring().From_Number(I, Radix);}
+     static Ztring ToZtring  (const float32  F, int8u AfterComma=3)               {return Ztring().From_Number(F, AfterComma);}
+     static Ztring ToZtring  (const float64  F, int8u AfterComma=3)               {return Ztring().From_Number(F, AfterComma);}
+     static Ztring ToZtring  (const float80  F, int8u AfterComma=3)               {return Ztring().From_Number(F, AfterComma);}
+@@ -364,6 +367,19 @@
+     bool Compare (const Ztring &ToCompare, const Ztring &Comparator=__T("=="), ztring_t Options=Ztring_Nothing) const;
+ };
+ 
++class ZSeparator // [+]FlylinkDC++
++{
++   public:
++	   ZSeparator()
++	   {
++		   Max[0] = Max[1] = Error;
++	   }
++   protected:
++	Ztring Separator[2];
++	Ztring Quote;
++	size_t Max[2];
++};
++
+ } //NameSpace
+ 
+ #endif
+--- a/Source/ZenLib/ZtringList.cpp
++++ b/Source/ZenLib/ZtringList.cpp
+@@ -39,7 +39,7 @@
+ //---------------------------------------------------------------------------
+ // Constructors
+ ZtringList::ZtringList ()
+-: std::vector<ZenLib::Ztring, std::allocator<ZenLib::Ztring> > ()
++: std::vector<ZenLib::Ztring, std::allocator<ZenLib::Ztring> > (), Max()
+ {
+     Separator[0]=__T(";");
+     Quote=__T("\"");
+@@ -47,8 +47,9 @@
+ }
+ 
+ ZtringList::ZtringList(const ZtringList &Source)
+-: std::vector<ZenLib::Ztring, std::allocator<ZenLib::Ztring> > ()
+-{
++: std::vector<ZenLib::Ztring, std::allocator<ZenLib::Ztring> > (), Max()
++{
++	Max[0] = Error;
+     Separator[0]=Source.Separator[0];
+     Quote=Source.Quote;
+ 
+@@ -76,6 +77,7 @@
+ #ifdef _UNICODE
+ ZtringList::ZtringList (const char* S)
+ {
++	Max[0] = Error;
+     Write(Ztring(S));
+ }
+ #endif
+@@ -320,11 +322,11 @@
+ // Return the length of the longest string in the list.
+ Ztring::size_type ZtringList::MaxStringLength_Get ()
+ {
+-   size_type Max = 0;
++   size_type l_Max = 0;
+    for (ZtringList::const_iterator it=begin(); it!=end(); ++it)
+-      if (it->size()>Max)
+-         Max=it->size();
+-   return Max;
++      if (it->size()>l_Max)
++		  l_Max=it->size();
++   return l_Max;
+ }
+ 
+ //***************************************************************************
+--- a/Source/ZenLib/ZtringListList.cpp
++++ b/Source/ZenLib/ZtringListList.cpp
+@@ -536,7 +536,7 @@
+     size_t Size=size();
+     for (; Pos0<Size; Pos0++)
+         if (operator[](Pos0).size()>Pos1)
+-            if (operator[](Pos0)[Pos1]==ToFind)
++            if (operator[](Pos0)[Pos1]==ToFind) // TODO - FlylinkDC++  Hot Point 
+                 break;
+ 
+     if (Pos0>=Size)
+--- a/Source/ZenLib/ZtringListList.h
++++ b/Source/ZenLib/ZtringListList.h
+@@ -26,7 +26,7 @@
+ /// @brief Vector of vectors of strings manipulation (based on std::vector<std::vector<std::(w)string>>)
+ //***************************************************************************
+ 
+-class ZtringListList : public std::vector<ZtringList>
++class ZtringListList : public std::vector<ZtringList>, protected ZSeparator
+ {
+ public :
+     //Constructors/Destructor
+@@ -122,10 +122,6 @@
+     /// During Read() or Write() method, if there is more elements, merge them with the last element
+     void Max_Set (size_type Level, size_type Max);
+ 
+-protected :
+-    Ztring Separator[2];
+-    Ztring Quote;
+-    size_type Max[2];
+ };
+ 
+ } //namespace
+--- a/Source/ZenLib/int128s.cpp
++++ b/Source/ZenLib/int128s.cpp
+@@ -36,6 +36,7 @@
+ */
+ 
+ #include <cmath>
++#include <memory>
+ #if defined (__BORLANDC__) || defined (__SUNPRO_CC)
+     #define fmodf fmod
+ #endif
+@@ -55,7 +56,7 @@
+ 
+ // IMPLEMENTATION
+ 
+-const char * int128::toString (unsigned int radix) const throw () {
++const char * int128::toString (unsigned int radix) const noexcept {
+     if (!*this) return "0";
+     if (radix < 2 || radix > 37) return "(invalid radix)";
+ 
+@@ -77,7 +78,7 @@
+     return &sz [i];
+ }
+ 
+-int128::int128 (const char * sz) throw ()
++int128::int128 (const char * sz) noexcept
+     : lo (0u), hi (0) {
+ 
+     if (!sz) return;
+@@ -122,7 +123,7 @@
+     return;
+ }
+ 
+-int128::int128 (const float a) throw ()
++int128::int128 (const float a) noexcept
+     #if defined (__mips__)       || defined (__mipsel__)
+     : lo ((int64u) fmodf ((const double)a, 18446744073709551616.0)),
+     #else
+@@ -130,11 +131,11 @@
+     #endif
+       hi ((int64s) (a / 18446744073709551616.0f)) {}
+ 
+-int128::int128 (const double & a) throw ()
++int128::int128 (const double & a) noexcept
+     : lo ((int64u) fmod (a, 18446744073709551616.0)),
+       hi ((int64s) (a / 18446744073709551616.0)) {}
+ 
+-int128::int128 (const long double & a) throw ()
++int128::int128 (const long double & a) noexcept
+     #if defined (__mips__)       || defined (__mipsel__)
+     : lo ((int64u) fmod ((const double)a, 18446744073709551616.0)),
+     #else
+@@ -142,22 +143,22 @@
+     #endif
+       hi ((int64s) (a / 18446744073709551616.0l)) {}
+ 
+-float int128::toFloat () const throw () {
++float int128::toFloat () const noexcept {
+     return (float) this->hi * 18446744073709551616.0f
+          + (float) this->lo;
+ }
+ 
+-double int128::toDouble () const throw () {
++double int128::toDouble () const noexcept {
+     return (double) this->hi * 18446744073709551616.0
+          + (double) this->lo;
+ }
+ 
+-long double int128::toLongDouble () const throw () {
++long double int128::toLongDouble () const noexcept {
+     return (long double) this->hi * 18446744073709551616.0l
+          + (long double) this->lo;
+ }
+ 
+-int128 int128::operator - () const throw () {
++int128 int128::operator - () const noexcept {
+     if (!this->hi && !this->lo)
+         // number is 0, just return 0
+         return *this;
+@@ -166,7 +167,7 @@
+         return int128 (0-this->lo, ~this->hi);
+ }
+ 
+-int128 int128::operator ~ () const throw () {
++int128 int128::operator ~ () const noexcept {
+     return int128 (~this->lo, ~this->hi);
+ }
+ 
+@@ -200,7 +201,7 @@
+     return b;
+ }
+ 
+-int128 & int128::operator += (const int128 & b) throw () {
++int128 & int128::operator += (const int128 & b) noexcept {
+     int64u old_lo = this->lo;
+ 
+     this->lo += b.lo;
+@@ -209,7 +210,7 @@
+     return *this;
+ }
+ 
+-int128 & int128::operator *= (const int128 & b) throw () {
++int128 & int128::operator *= (const int128 & b) noexcept {
+     if (!b)
+         return *this = 0u;
+     if (b == 1u)
+@@ -232,7 +233,7 @@
+ }
+ 
+ 
+-int128 int128::div (const int128 & divisor, int128 & remainder) const throw () {
++int128 int128::div (const int128 & divisor, int128 & remainder) const noexcept {
+     if (!divisor)
+         return 1u / (unsigned int) divisor.lo;
+         // or RaiseException (EXCEPTION_INT_DIVIDE_BY_ZERO,
+@@ -280,7 +281,7 @@
+     return q;
+ }
+ 
+-bool int128::bit (unsigned int n) const throw () {
++bool int128::bit (unsigned int n) const noexcept {
+     n &= 0x7F;
+ 
+     if (n < 64)
+@@ -289,7 +290,7 @@
+         return (this->hi & (1ull << (n - 64)))?true:false;
+ }
+ 
+-void int128::bit (unsigned int n, bool val) throw () {
++void int128::bit (unsigned int n, bool val) noexcept {
+     n &= 0x7F;
+ 
+     if (val) {
+@@ -302,7 +303,7 @@
+ }
+ 
+ 
+-int128 & int128::operator >>= (unsigned int n) throw () {
++int128 & int128::operator >>= (unsigned int n) noexcept {
+     n &= 0x7F;
+ 
+     if (n > 63) {
+@@ -331,7 +332,7 @@
+     return *this;
+ }
+ 
+-int128 & int128::operator <<= (unsigned int n) throw () {
++int128 & int128::operator <<= (unsigned int n) noexcept {
+     n &= 0x7F;
+ 
+     if (n > 63) {
+@@ -358,32 +359,32 @@
+     return *this;
+ }
+ 
+-bool int128::operator ! () const throw () {
++bool int128::operator ! () const noexcept {
+     return !(this->hi || this->lo);
+ }
+ 
+-int128 & int128::operator |= (const int128 & b) throw () {
++int128 & int128::operator |= (const int128 & b) noexcept {
+     this->hi |= b.hi;
+     this->lo |= b.lo;
+ 
+     return *this;
+ }
+ 
+-int128 & int128::operator &= (const int128 & b) throw () {
++int128 & int128::operator &= (const int128 & b) noexcept {
+     this->hi &= b.hi;
+     this->lo &= b.lo;
+ 
+     return *this;
+ }
+ 
+-int128 & int128::operator ^= (const int128 & b) throw () {
++int128 & int128::operator ^= (const int128 & b) noexcept {
+     this->hi ^= b.hi;
+     this->lo ^= b.lo;
+ 
+     return *this;
+ }
+ 
+-bool operator <  (const int128 & a, const int128 & b) throw () {
++bool operator <  (const int128 & a, const int128 & b) noexcept {
+     if (a.hi == b.hi) {
+         if (a.hi < 0)
+             return (int64s) a.lo < (int64s) b.lo;
+@@ -393,13 +394,13 @@
+         return a.hi < b.hi;
+ }
+ 
+-bool operator == (const int128 & a, const int128 & b) throw () {
++bool operator == (const int128 & a, const int128 & b) noexcept {
+     return a.hi == b.hi && a.lo == b.lo;
+ }
+-bool operator && (const int128 & a, const int128 & b) throw () {
++bool operator && (const int128 & a, const int128 & b) noexcept {
+     return (a.hi || a.lo) && (b.hi || b.lo);
+ }
+-bool operator || (const int128 & a, const int128 & b) throw () {
++bool operator || (const int128 & a, const int128 & b) noexcept {
+     return (a.hi || a.lo) || (b.hi || b.lo);
+ }
+ 
+--- a/Source/ZenLib/int128s.h
++++ b/Source/ZenLib/int128s.h
+@@ -25,14 +25,6 @@
+   Version: 1.1
+ */
+ 
+-#include <exception>
+-#include <cstdlib>
+-#include <cstdio>
+-#ifdef __cplusplus
+-    #include <new> //for size_t
+-#else /* __cplusplus */
+-    #include <stddef.h> //for size_t
+-#endif /* __cplusplus */
+ #include "ZenLib/Conf.h"
+ 
+ namespace ZenLib
+@@ -48,94 +40,94 @@
+ 
+     protected:
+         // Some global operator functions must be friends
+-        friend bool operator <  (const int128 &, const int128 &) throw ();
+-        friend bool operator == (const int128 &, const int128 &) throw ();
+-        friend bool operator || (const int128 &, const int128 &) throw ();
+-        friend bool operator && (const int128 &, const int128 &) throw ();
++        friend bool operator <  (const int128 &, const int128 &) noexcept;
++        friend bool operator == (const int128 &, const int128 &) noexcept;
++        friend bool operator || (const int128 &, const int128 &) noexcept;
++        friend bool operator && (const int128 &, const int128 &) noexcept;
+ 
+     public:
+         // Constructors
+-        inline int128 () throw () : lo(0), hi(0) {};
+-        inline int128 (const int128 & a) throw () : lo (a.lo), hi (a.hi) {};
++        inline int128 () noexcept : lo(0), hi(0) {};
++        inline int128 (const int128 & a) noexcept : lo (a.lo), hi (a.hi) {};
+ 
+-        inline int128 (const unsigned int & a) throw () : lo (a), hi (0ll) {};
+-        inline int128 (const signed int & a) throw () : lo (a), hi (0ll) {
++        inline int128 (const unsigned int & a) noexcept : lo (a), hi (0ll) {};
++        inline int128 (const signed int & a) noexcept : lo (a), hi (0ll) {
+             if (a < 0) this->hi = -1ll;
+         };
+ 
+-        inline int128 (const int64u & a) throw () : lo (a), hi (0ll) {};
+-        inline int128 (const int64s & a) throw () : lo (a), hi (0ll) {
++        inline int128 (const int64u & a) noexcept : lo (a), hi (0ll) {};
++        inline int128 (const int64s & a) noexcept : lo (a), hi (0ll) {
+             if (a < 0) this->hi = -1ll;
+         };
+ 
+-        int128 (const float a) throw ();
+-        int128 (const double & a) throw ();
+-        int128 (const long double & a) throw ();
++        int128 (const float a) noexcept;
++        int128 (const double & a) noexcept;
++        int128 (const long double & a) noexcept;
+ 
+-        int128 (const char * sz) throw ();
++        int128 (const char * sz) noexcept;
+ 
+         // TODO: Consider creation of operator= to eliminate
+         //       the need of intermediate objects during assignments.
+ 
+     private:
+         // Special internal constructors
+-        int128 (const int64u & a, const int64s & b) throw ()
++        int128 (const int64u & a, const int64s & b) noexcept
+             : lo (a), hi (b) {};
+ 
+     public:
+         // Operators
+-        bool operator ! () const throw ();
++        bool operator ! () const noexcept;
+ 
+-        int128 operator - () const throw ();
+-        int128 operator ~ () const throw ();
++        int128 operator - () const noexcept;
++        int128 operator ~ () const noexcept;
+ 
+         int128 & operator ++ ();
+         int128 & operator -- ();
+         int128 operator ++ (int);
+         int128 operator -- (int);
+ 
+-        int128 & operator += (const int128 & b) throw ();
+-        int128 & operator *= (const int128 & b) throw ();
++        int128 & operator += (const int128 & b) noexcept;
++        int128 & operator *= (const int128 & b) noexcept;
+ 
+-        int128 & operator >>= (unsigned int n) throw ();
+-        int128 & operator <<= (unsigned int n) throw ();
++        int128 & operator >>= (unsigned int n) noexcept;
++        int128 & operator <<= (unsigned int n) noexcept;
+ 
+-        int128 & operator |= (const int128 & b) throw ();
+-        int128 & operator &= (const int128 & b) throw ();
+-        int128 & operator ^= (const int128 & b) throw ();
++        int128 & operator |= (const int128 & b) noexcept;
++        int128 & operator &= (const int128 & b) noexcept;
++        int128 & operator ^= (const int128 & b) noexcept;
+ 
+         // Inline simple operators
+-        inline const int128 & operator + () const throw () { return *this; };
++        inline const int128 & operator + () const noexcept { return *this; };
+ 
+         // Rest of inline operators
+-        inline int128 & operator -= (const int128 & b) throw () {
++        inline int128 & operator -= (const int128 & b) noexcept {
+             return *this += (-b);
+         };
+-        inline int128 & operator /= (const int128 & b) throw () {
++        inline int128 & operator /= (const int128 & b) noexcept {
+             int128 dummy;
+             *this = this->div (b, dummy);
+             return *this;
+         };
+-        inline int128 & operator %= (const int128 & b) throw () {
++        inline int128 & operator %= (const int128 & b) noexcept {
+             this->div (b, *this);
+             return *this;
+         };
+ 
+         // Common methods
+-        int toInt () const throw () {  return (int) this->lo; };
+-        int64s toInt64 () const throw () {  return (int64s) this->lo; };
++        int toInt () const noexcept {  return (int) this->lo; };
++        int64s toInt64 () const noexcept {  return (int64s) this->lo; };
+ 
+-        const char * toString (unsigned int radix = 10) const throw ();
+-        float toFloat () const throw ();
+-        double toDouble () const throw ();
+-        long double toLongDouble () const throw ();
++        const char * toString (unsigned int radix = 10) const noexcept;
++        float toFloat () const noexcept;
++        double toDouble () const noexcept;
++        long double toLongDouble () const noexcept;
+ 
+         // Arithmetic methods
+-        int128  div (const int128 &, int128 &) const throw ();
++        int128  div (const int128 &, int128 &) const noexcept;
+ 
+         // Bit operations
+-        bool    bit (unsigned int n) const throw ();
+-        void    bit (unsigned int n, bool val) throw ();
++        bool    bit (unsigned int n) const noexcept;
++        void    bit (unsigned int n, bool val) noexcept;
+ }
+ #if defined(__GNUC__)  && !defined(__ANDROID_API__)
+     __attribute__ ((__aligned__ (16), __packed__))
+@@ -145,43 +137,43 @@
+ 
+ // GLOBAL OPERATORS
+ 
+-bool operator <  (const int128 & a, const int128 & b) throw ();
+-bool operator == (const int128 & a, const int128 & b) throw ();
+-bool operator || (const int128 & a, const int128 & b) throw ();
+-bool operator && (const int128 & a, const int128 & b) throw ();
++bool operator <  (const int128 & a, const int128 & b) noexcept;
++bool operator == (const int128 & a, const int128 & b) noexcept;
++bool operator || (const int128 & a, const int128 & b) noexcept;
++bool operator && (const int128 & a, const int128 & b) noexcept;
+ 
+ // GLOBAL OPERATOR INLINES
+ 
+-inline int128 operator + (const int128 & a, const int128 & b) throw () {
++inline int128 operator + (const int128 & a, const int128 & b) noexcept {
+     return int128 (a) += b; }
+-inline int128 operator - (const int128 & a, const int128 & b) throw () {
++inline int128 operator - (const int128 & a, const int128 & b) noexcept {
+     return int128 (a) -= b; }
+-inline int128 operator * (const int128 & a, const int128 & b) throw () {
++inline int128 operator * (const int128 & a, const int128 & b) noexcept {
+     return int128 (a) *= b; }
+-inline int128 operator / (const int128 & a, const int128 & b) throw () {
++inline int128 operator / (const int128 & a, const int128 & b) noexcept {
+     return int128 (a) /= b; }
+-inline int128 operator % (const int128 & a, const int128 & b) throw () {
++inline int128 operator % (const int128 & a, const int128 & b) noexcept {
+     return int128 (a) %= b; }
+ 
+-inline int128 operator >> (const int128 & a, unsigned int n) throw () {
++inline int128 operator >> (const int128 & a, unsigned int n) noexcept {
+     return int128 (a) >>= n; }
+-inline int128 operator << (const int128 & a, unsigned int n) throw () {
++inline int128 operator << (const int128 & a, unsigned int n) noexcept {
+     return int128 (a) <<= n; }
+ 
+-inline int128 operator & (const int128 & a, const int128 & b) throw () {
++inline int128 operator & (const int128 & a, const int128 & b) noexcept {
+     return int128 (a) &= b; }
+-inline int128 operator | (const int128 & a, const int128 & b) throw () {
++inline int128 operator | (const int128 & a, const int128 & b) noexcept {
+     return int128 (a) |= b; }
+-inline int128 operator ^ (const int128 & a, const int128 & b) throw () {
++inline int128 operator ^ (const int128 & a, const int128 & b) noexcept {
+     return int128 (a) ^= b; }
+ 
+-inline bool operator >  (const int128 & a, const int128 & b) throw () {
++inline bool operator >  (const int128 & a, const int128 & b) noexcept {
+     return   b < a; }
+-inline bool operator <= (const int128 & a, const int128 & b) throw () {
++inline bool operator <= (const int128 & a, const int128 & b) noexcept {
+     return !(b < a); }
+-inline bool operator >= (const int128 & a, const int128 & b) throw () {
++inline bool operator >= (const int128 & a, const int128 & b) noexcept {
+     return !(a < b); }
+-inline bool operator != (const int128 & a, const int128 & b) throw () {
++inline bool operator != (const int128 & a, const int128 & b) noexcept {
+     return !(a == b); }
+ 
+ 
+--- a/Source/ZenLib/int128u.cpp
++++ b/Source/ZenLib/int128u.cpp
+@@ -36,6 +36,7 @@
+ */
+ 
+ #include <cmath>
++#include <memory>
+ #if defined (__BORLANDC__) || defined (__SUNPRO_CC)
+     #define fmodf fmod
+ #endif
+@@ -55,7 +56,7 @@
+ 
+ // IMPLEMENTATION
+ 
+-const char * uint128::toString (unsigned int radix) const throw () {
++const char * uint128::toString (unsigned int radix) const noexcept {
+     if (!*this) return "0";
+     if (radix < 2 || radix > 37) return "(invalid radix)";
+ 
+@@ -74,7 +75,7 @@
+     return &sz [i];
+ }
+ 
+-uint128::uint128 (const char * sz) throw ()
++uint128::uint128 (const char * sz) noexcept
+     : lo (0u), hi (0u) {
+ 
+     if (!sz) return;
+@@ -119,7 +120,7 @@
+     return;
+ }
+ 
+-uint128::uint128 (const float a) throw ()
++uint128::uint128 (const float a) noexcept
+     #if defined (__mips__)       || defined (__mipsel__)
+     : lo ((int64u) fmod ((const double)a, 18446744073709551616.0)),
+     #else
+@@ -127,11 +128,11 @@
+     #endif
+       hi ((int64u) (a / 18446744073709551616.0f)) {}
+ 
+-uint128::uint128 (const double & a) throw ()
++uint128::uint128 (const double & a) noexcept
+     : lo ((int64u) fmod (a, 18446744073709551616.0)),
+       hi ((int64u) (a / 18446744073709551616.0)) {}
+ 
+-uint128::uint128 (const long double & a) throw ()
++uint128::uint128 (const long double & a) noexcept
+     #if defined (__mips__)       || defined (__mipsel__)
+     : lo ((int64u) fmod ((const double)a, 18446744073709551616.0)),
+     #else
+@@ -139,22 +140,22 @@
+     #endif
+       hi ((int64u) (a / 18446744073709551616.0l)) {}
+ 
+-float uint128::toFloat () const throw () {
++float uint128::toFloat () const noexcept {
+     return (float) this->hi * 18446744073709551616.0f
+          + (float) this->lo;
+ }
+ 
+-double uint128::toDouble () const throw () {
++double uint128::toDouble () const noexcept {
+     return (double) this->hi * 18446744073709551616.0
+          + (double) this->lo;
+ }
+ 
+-long double uint128::toLongDouble () const throw () {
++long double uint128::toLongDouble () const noexcept {
+     return (long double) this->hi * 18446744073709551616.0l
+          + (long double) this->lo;
+ }
+ 
+-uint128 uint128::operator - () const throw () {
++uint128 uint128::operator - () const noexcept {
+     if (!this->hi && !this->lo)
+         // number is 0, just return 0
+         return *this;
+@@ -163,7 +164,7 @@
+         return uint128 (0-this->lo, ~this->hi);
+ }
+ 
+-uint128 uint128::operator ~ () const throw () {
++uint128 uint128::operator ~ () const noexcept {
+     return uint128 (~this->lo, ~this->hi);
+ }
+ 
+@@ -197,7 +198,7 @@
+     return b;
+ }
+ 
+-uint128 & uint128::operator += (const uint128 & b) throw () {
++uint128 & uint128::operator += (const uint128 & b) noexcept {
+     int64u old_lo = this->lo;
+ 
+     this->lo += b.lo;
+@@ -206,7 +207,7 @@
+     return *this;
+ }
+ 
+-uint128 & uint128::operator *= (const uint128 & b) throw () {
++uint128 & uint128::operator *= (const uint128 & b) noexcept {
+     if (!b)
+         return *this = 0u;
+     if (b == 1u)
+@@ -229,7 +230,7 @@
+ }
+ 
+ 
+-uint128 uint128::div (const uint128 & ds, uint128 & remainder) const throw () {
++uint128 uint128::div (const uint128 & ds, uint128 & remainder) const noexcept {
+     if (!ds)
+         return 1u / (unsigned int) ds.lo;
+ 
+@@ -270,7 +271,7 @@
+     return q;
+ }
+ 
+-bool uint128::bit (unsigned int n) const throw () {
++bool uint128::bit (unsigned int n) const noexcept {
+     n &= 0x7F;
+ 
+     if (n < 64)
+@@ -279,7 +280,7 @@
+         return (this->hi & (1ull << (n - 64)))?true:false;
+ }
+ 
+-void uint128::bit (unsigned int n, bool val) throw () {
++void uint128::bit (unsigned int n, bool val) noexcept {
+     n &= 0x7F;
+ 
+     if (val) {
+@@ -292,7 +293,7 @@
+ }
+ 
+ 
+-uint128 & uint128::operator >>= (unsigned int n) throw () {
++uint128 & uint128::operator >>= (unsigned int n) noexcept {
+     n &= 0x7F;
+ 
+     if (n > 63) {
+@@ -319,7 +320,7 @@
+     return *this;
+ }
+ 
+-uint128 & uint128::operator <<= (unsigned int n) throw () {
++uint128 & uint128::operator <<= (unsigned int n) noexcept {
+     n &= 0x7F;
+ 
+     if (n > 63) {
+@@ -346,42 +347,42 @@
+     return *this;
+ }
+ 
+-bool uint128::operator ! () const throw () {
++bool uint128::operator ! () const noexcept {
+     return !(this->hi || this->lo);
+ }
+ 
+-uint128 & uint128::operator |= (const uint128 & b) throw () {
++uint128 & uint128::operator |= (const uint128 & b) noexcept {
+     this->hi |= b.hi;
+     this->lo |= b.lo;
+ 
+     return *this;
+ }
+ 
+-uint128 & uint128::operator &= (const uint128 & b) throw () {
++uint128 & uint128::operator &= (const uint128 & b) noexcept {
+     this->hi &= b.hi;
+     this->lo &= b.lo;
+ 
+     return *this;
+ }
+ 
+-uint128 & uint128::operator ^= (const uint128 & b) throw () {
++uint128 & uint128::operator ^= (const uint128 & b) noexcept {
+     this->hi ^= b.hi;
+     this->lo ^= b.lo;
+ 
+     return *this;
+ }
+ 
+-bool operator <  (const uint128 & a, const uint128 & b) throw () {
++bool operator <  (const uint128 & a, const uint128 & b) noexcept {
+     return (a.hi == b.hi) ? (a.lo < b.lo) : (a.hi < b.hi);
+ }
+ 
+-bool operator == (const uint128 & a, const uint128 & b) throw () {
++bool operator == (const uint128 & a, const uint128 & b) noexcept {
+     return a.hi == b.hi && a.lo == b.lo;
+ }
+-bool operator && (const uint128 & a, const uint128 & b) throw () {
++bool operator && (const uint128 & a, const uint128 & b) noexcept {
+     return (a.hi || a.lo) && (b.hi || b.lo);
+ }
+-bool operator || (const uint128 & a, const uint128 & b) throw () {
++bool operator || (const uint128 & a, const uint128 & b) noexcept {
+     return (a.hi || a.lo) || (b.hi || b.lo);
+ }
+ 
+--- a/Source/ZenLib/int128u.h
++++ b/Source/ZenLib/int128u.h
+@@ -25,10 +25,6 @@
+   Version: 1.1
+ */
+ 
+-
+-#include <exception>
+-#include <cstdlib>
+-#include <cstdio>
+ #include "ZenLib/Conf.h"
+ 
+ // CLASS
+@@ -44,89 +40,89 @@
+ 
+     protected:
+         // Some global operator functions must be friends
+-        friend bool operator <  (const uint128 &, const uint128 &) throw ();
+-        friend bool operator == (const uint128 &, const uint128 &) throw ();
+-        friend bool operator || (const uint128 &, const uint128 &) throw ();
+-        friend bool operator && (const uint128 &, const uint128 &) throw ();
++        friend bool operator <  (const uint128 &, const uint128 &) noexcept;
++        friend bool operator == (const uint128 &, const uint128 &) noexcept;
++        friend bool operator || (const uint128 &, const uint128 &) noexcept;
++        friend bool operator && (const uint128 &, const uint128 &) noexcept;
+ 
+     public:
+         // Constructors
+-        inline uint128 () throw () : lo(0), hi(0) {};
+-        inline uint128 (const uint128 & a) throw () : lo (a.lo), hi (a.hi) {};
++        inline uint128 () noexcept : lo(0), hi(0) {};
++        inline uint128 (const uint128 & a) noexcept : lo (a.lo), hi (a.hi) {};
+ 
+-        inline uint128 (const int & a) throw () : lo (a), hi (0ull) {};
+-        inline uint128 (const unsigned int & a) throw () : lo (a), hi (0ull) {};
+-        inline uint128 (const int64u & a) throw () : lo (a), hi (0ull) {};
++        inline uint128 (const int & a) noexcept : lo (a), hi (0ull) {};
++        inline uint128 (const unsigned int & a) noexcept : lo (a), hi (0ull) {};
++        inline uint128 (const int64u & a) noexcept : lo (a), hi (0ull) {};
+ 
+-        uint128 (const float a) throw ();
+-        uint128 (const double & a) throw ();
+-        uint128 (const long double & a) throw ();
++        uint128 (const float a) noexcept;
++        uint128 (const double & a) noexcept;
++        uint128 (const long double & a) noexcept;
+ 
+-        uint128 (const char * sz) throw ();
++        uint128 (const char * sz) noexcept;
+ 
+         // TODO: Consider creation of operator= to eliminate
+         //       the need of intermediate objects during assignments.
+ 
+     private:
+         // Special internal constructors
+-        uint128 (const int64u & a, const int64u & b) throw ()
++        uint128 (const int64u & a, const int64u & b) noexcept
+             : lo (a), hi (b) {};
+ 
+     public:
+         // Operators
+-        bool operator ! () const throw ();
++        bool operator ! () const noexcept;
+ 
+-        uint128 operator - () const throw ();
+-        uint128 operator ~ () const throw ();
++        uint128 operator - () const noexcept;
++        uint128 operator ~ () const noexcept;
+ 
+         uint128 & operator ++ ();
+         uint128 & operator -- ();
+         uint128 operator ++ (int);
+         uint128 operator -- (int);
+ 
+-        uint128 & operator += (const uint128 & b) throw ();
+-        uint128 & operator *= (const uint128 & b) throw ();
++        uint128 & operator += (const uint128 & b) noexcept;
++        uint128 & operator *= (const uint128 & b) noexcept;
+ 
+-        uint128 & operator >>= (unsigned int n) throw ();
+-        uint128 & operator <<= (unsigned int n) throw ();
++        uint128 & operator >>= (unsigned int n) noexcept;
++        uint128 & operator <<= (unsigned int n) noexcept;
+ 
+-        uint128 & operator |= (const uint128 & b) throw ();
+-        uint128 & operator &= (const uint128 & b) throw ();
+-        uint128 & operator ^= (const uint128 & b) throw ();
++        uint128 & operator |= (const uint128 & b) noexcept;
++        uint128 & operator &= (const uint128 & b) noexcept;
++        uint128 & operator ^= (const uint128 & b) noexcept;
+ 
+         // Inline simple operators
+-        inline const uint128 & operator + () const throw () { return *this; }
++        inline const uint128 & operator + () const noexcept { return *this; }
+ 
+         // Rest of inline operators
+-        inline uint128 & operator -= (const uint128 & b) throw () {
++        inline uint128 & operator -= (const uint128 & b) noexcept {
+             return *this += (-b);
+         };
+-        inline uint128 & operator /= (const uint128 & b) throw () {
++        inline uint128 & operator /= (const uint128 & b) noexcept {
+             uint128 dummy;
+             *this = this->div (b, dummy);
+             return *this;
+         };
+-        inline uint128 & operator %= (const uint128 & b) throw () {
++        inline uint128 & operator %= (const uint128 & b) noexcept {
+             this->div (b, *this);
+             return *this;
+         };
+ 
+         // Common methods
+-        unsigned int toUint () const throw () {
++        unsigned int toUint () const noexcept {
+             return (unsigned int) this->lo; }
+-        int64u toUint64 () const throw () {
++        int64u toUint64 () const noexcept {
+             return (int64u) this->lo; }
+-        const char * toString (unsigned int radix = 10) const throw ();
+-        float toFloat () const throw ();
+-        double toDouble () const throw ();
+-        long double toLongDouble () const throw ();
++        const char * toString (unsigned int radix = 10) const noexcept;
++        float toFloat () const noexcept;
++        double toDouble () const noexcept;
++        long double toLongDouble () const noexcept;
+ 
+         // Arithmetic methods
+-        uint128  div (const uint128 &, uint128 &) const throw ();
++        uint128  div (const uint128 &, uint128 &) const noexcept;
+ 
+         // Bit operations
+-        bool    bit (unsigned int n) const throw ();
+-        void    bit (unsigned int n, bool val) throw ();
++        bool    bit (unsigned int n) const noexcept;
++        void    bit (unsigned int n, bool val) noexcept;
+ }
+ #if defined(__GNUC__) && !defined(__ANDROID_API__)
+         __attribute__ ((__aligned__ (16), __packed__))
+@@ -136,43 +132,43 @@
+ 
+ // GLOBAL OPERATORS
+ 
+-bool operator <  (const uint128 & a, const uint128 & b) throw ();
+-bool operator == (const uint128 & a, const uint128 & b) throw ();
+-bool operator || (const uint128 & a, const uint128 & b) throw ();
+-bool operator && (const uint128 & a, const uint128 & b) throw ();
++bool operator <  (const uint128 & a, const uint128 & b) noexcept;
++bool operator == (const uint128 & a, const uint128 & b) noexcept;
++bool operator || (const uint128 & a, const uint128 & b) noexcept;
++bool operator && (const uint128 & a, const uint128 & b) noexcept;
+ 
+ // GLOBAL OPERATOR INLINES
+ 
+-inline uint128 operator + (const uint128 & a, const uint128 & b) throw () {
++inline uint128 operator + (const uint128 & a, const uint128 & b) noexcept {
+     return uint128 (a) += b; }
+-inline uint128 operator - (const uint128 & a, const uint128 & b) throw () {
++inline uint128 operator - (const uint128 & a, const uint128 & b) noexcept {
+     return uint128 (a) -= b; }
+-inline uint128 operator * (const uint128 & a, const uint128 & b) throw () {
++inline uint128 operator * (const uint128 & a, const uint128 & b) noexcept {
+     return uint128 (a) *= b; }
+-inline uint128 operator / (const uint128 & a, const uint128 & b) throw () {
++inline uint128 operator / (const uint128 & a, const uint128 & b) noexcept {
+     return uint128 (a) /= b; }
+-inline uint128 operator % (const uint128 & a, const uint128 & b) throw () {
++inline uint128 operator % (const uint128 & a, const uint128 & b) noexcept {
+     return uint128 (a) %= b; }
+ 
+-inline uint128 operator >> (const uint128 & a, unsigned int n) throw () {
++inline uint128 operator >> (const uint128 & a, unsigned int n) noexcept {
+     return uint128 (a) >>= n; }
+-inline uint128 operator << (const uint128 & a, unsigned int n) throw () {
++inline uint128 operator << (const uint128 & a, unsigned int n) noexcept {
+     return uint128 (a) <<= n; }
+ 
+-inline uint128 operator & (const uint128 & a, const uint128 & b) throw () {
++inline uint128 operator & (const uint128 & a, const uint128 & b) noexcept {
+     return uint128 (a) &= b; }
+-inline uint128 operator | (const uint128 & a, const uint128 & b) throw () {
++inline uint128 operator | (const uint128 & a, const uint128 & b) noexcept {
+     return uint128 (a) |= b; }
+-inline uint128 operator ^ (const uint128 & a, const uint128 & b) throw () {
++inline uint128 operator ^ (const uint128 & a, const uint128 & b) noexcept {
+     return uint128 (a) ^= b; }
+ 
+-inline bool operator >  (const uint128 & a, const uint128 & b) throw () {
++inline bool operator >  (const uint128 & a, const uint128 & b) noexcept {
+     return   b < a; }
+-inline bool operator <= (const uint128 & a, const uint128 & b) throw () {
++inline bool operator <= (const uint128 & a, const uint128 & b) noexcept {
+     return !(b < a); }
+-inline bool operator >= (const uint128 & a, const uint128 & b) throw () {
++inline bool operator >= (const uint128 & a, const uint128 & b) noexcept {
+     return !(a < b); }
+-inline bool operator != (const uint128 & a, const uint128 & b) throw () {
++inline bool operator != (const uint128 & a, const uint128 & b) noexcept {
+     return !(a == b); }
+ 
+ 

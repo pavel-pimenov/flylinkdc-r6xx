@@ -97,6 +97,64 @@ VENDORS = (
         'version': {'paths': ['zlib-ng.h'],
                     'pattern': r'#define\s+ZLIBNG_VERSION\s+"([^"]+)"'},
     },
+    {
+        'name': 'jsoncpp',
+        'url': 'https://github.com/open-source-parsers/jsoncpp/archive/refs/tags/1.9.6.zip',
+        'local': 'jsoncpp',
+        'strip': 1,
+        'generate': [sys.executable, 'amalgamate.py'],
+        'select': {'dist/jsoncpp.cpp': 'jsoncpp.cpp',
+                   'dist/json/json.h': 'include/json/json.h'},
+        'diff': ['vendor-patches/jsoncpp.patch'],
+        'version': {'paths': ['dist/json/json.h', 'include/json/json.h'],
+                    'pattern': r'JSONCPP_VERSION_STRING\s+"([^"]+)"'},
+    },
+    {
+        'name': 'maxminddb',
+        'url': 'https://github.com/maxmind/libmaxminddb/releases/download/1.7.1/'
+               'libmaxminddb-1.7.1.tar.gz',
+        'local': 'maxminddb',
+        'strip': 1,
+        'select': {'src/data-pool.c': 'data-pool.c',
+                   'src/data-pool.h': 'data-pool.h',
+                   'src/maxminddb.c': 'maxminddb.c',
+                   'src/maxminddb-compat-util.h': 'maxminddb-compat-util.h',
+                   'include/maxminddb.h': 'maxminddb.h',
+                   'projects/VS12/maxminddb_config.h': 'maxminddb_config.h'},
+        'diff': ['vendor-patches/maxminddb.patch'],
+        'version': {'paths': ['include/maxminddb.h', 'maxminddb.h'],
+                    'pattern': r'#define\s+PACKAGE_VERSION\s+"([^"]+)"'},
+    },
+    {
+        'name': 'boost',
+        'url': 'https://archives.boost.io/release/1.88.0/source/boost_1_88_0.tar.gz',
+        'local': 'boost',
+        'strip': 1,
+        'select': 'vendor-manifests/boost.txt',
+        'diff': ['vendor-patches/boost.patch'],
+        'version': {'paths': ['boost/version.hpp'],
+                    'pattern': r'#define\s+BOOST_LIB_VERSION\s+"([^"]+)"'},
+    },
+    {
+        'name': 'leveldb',
+        'url': 'https://github.com/google/leveldb/archive/refs/tags/1.23.tar.gz',
+        'local': 'leveldb',
+        'strip': 1,
+        'select': 'vendor-manifests/leveldb.txt',
+        'diff': ['vendor-patches/leveldb.patch'],
+        'version': {'paths': ['include/leveldb/db.h'],
+                    'pattern': r'#define\s+LEVELDB_VER\s+"([^"]+)"'},
+    },
+    {
+        'name': 'zenlib',
+        'url': 'https://github.com/MediaArea/ZenLib/archive/refs/tags/v0.4.41.tar.gz',
+        'local': 'Zenlib',
+        'strip': 1,
+        'select': 'vendor-manifests/zenlib.txt',
+        'diff': ['vendor-patches/zenlib.patch'],
+        'version': {'paths': ['History.txt'],
+                    'pattern': r'^Version\s+([\d.]+)'},
+    },
 )
 
 
@@ -187,6 +245,30 @@ def plan(vendor, src, local):
                 out_rel = (out + '/' + rel) if out else rel
                 src_rel = (prefix + '/' + rel) if prefix else rel
                 plan_copy[out_rel] = src_rel
+    elif 'select' in vendor:
+        sel = vendor['select']
+        if isinstance(sel, str):
+            manifest = REPO / sel
+            items = []
+            for line in manifest.read_text(encoding='utf-8').splitlines():
+                line = line.strip()
+                if line and not line.startswith('#'):
+                    items.append((line, line))
+        elif isinstance(sel, (list, tuple)):
+            items = [(p, p) for p in sel]
+        else:
+            items = list(sel.items())
+        for src_rel, out_rel in items:
+            s = src / src_rel
+            if s.is_dir():
+                for rel, p in rel_files(s).items():
+                    out_ = (out_rel + '/' + rel) if out_rel else rel
+                    src_ = (src_rel + '/' + rel) if src_rel else rel
+                    plan_copy[out_] = src_
+            elif s.is_file():
+                plan_copy[out_rel] = src_rel
+            else:
+                raise SystemExit(f'{vendor["name"]}: select source missing: {src_rel}')
     elif vendor.get('tree'):
         up = rel_files(src)
         for rel, p in up.items():
@@ -207,6 +289,18 @@ def plan(vendor, src, local):
             added.append(out_rel)
     return {'copy': plan_copy, 'delete': plan_delete,
             'added': added, 'updated': updated, 'unchanged': unchanged}
+
+
+def run_generate(cmd, cwd):
+    shown = cmd if isinstance(cmd, str) else ' '.join(cmd)
+    log(f'  generate: {shown}')
+    r = subprocess.run(cmd, cwd=str(cwd), shell=isinstance(cmd, str),
+                       capture_output=True, text=True)
+    for line in (r.stdout or '').splitlines():
+        log(f'    {line}')
+    if r.returncode:
+        print(r.stderr, file=sys.stderr)
+        raise SystemExit(f'generate failed ({r.returncode})')
 
 
 def apply_patches(local, patches):
@@ -245,6 +339,15 @@ def perform(vendor, src, local, plan_data):
     for empty in sorted([p for p in local.rglob('*') if p.is_dir() and not any(p.iterdir())],
                         key=lambda p: len(p.parts), reverse=True):
         empty.rmdir()
+    for patch_rel in vendor.get('diff', []):
+        patch = REPO / patch_rel
+        log(f'  apply patch {patch_rel}')
+        r = subprocess.run(['git', 'apply', '-p1', '--whitespace=nowarn', str(patch)],
+                           cwd=str(local), capture_output=True, text=True)
+        if r.returncode:
+            print(r.stdout, file=sys.stdout)
+            print(r.stderr, file=sys.stderr)
+            raise SystemExit(f'{vendor["name"]}: patch failed: {patch_rel}')
     if vendor.get('patches'):
         log('  apply local patches')
         apply_patches(local, vendor['patches'])
@@ -289,6 +392,8 @@ def process(vendor, args):
         extract_dir = work / name
         extract(archive, extract_dir)
         src = source_root(vendor, extract_dir)
+        if vendor.get('generate'):
+            run_generate(vendor['generate'], src)
         new_ver = read_version(src, vendor['version']) if 'version' in vendor else None
         log(f'[{name}] upstream version:  {new_ver}')
 
@@ -326,7 +431,11 @@ def process(vendor, args):
             message = f'* vendor-update: {name} {new_ver}'
         else:
             message = f'* vendor-update: sync {name}'
-        commit([vendor['local']], message)
+        commit_paths = [vendor['local']]
+        if isinstance(vendor.get('select'), str):
+            commit_paths.append(vendor['select'])
+        commit_paths += vendor.get('diff', [])
+        commit(commit_paths, message)
     finally:
         shutil.rmtree(work, ignore_errors=True)
 

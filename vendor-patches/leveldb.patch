@@ -1,0 +1,1456 @@
+--- a/CONTRIBUTING.md
++++ b/CONTRIBUTING.md
+@@ -1,36 +1,31 @@
+-# Contributing
++# How to Contribute
+ 
+-We'd love to accept your code patches! However, before we can take them, we
+-have to jump a couple of legal hurdles.
++We'd love to accept your patches and contributions to this project. There are
++just a few small guidelines you need to follow.
+ 
+-## Contributor License Agreements
++## Contributor License Agreement
+ 
+-Please fill out either the individual or corporate Contributor License
+-Agreement as appropriate.
++Contributions to this project must be accompanied by a Contributor License
++Agreement. You (or your employer) retain the copyright to your contribution;
++this simply gives us permission to use and redistribute your contributions as
++part of the project. Head over to <https://cla.developers.google.com/> to see
++your current agreements on file or to sign a new one.
+ 
+-* If you are an individual writing original source code and you're sure you
+-own the intellectual property, then sign an [individual CLA](https://developers.google.com/open-source/cla/individual).
+-* If you work for a company that wants to allow you to contribute your work,
+-then sign a [corporate CLA](https://developers.google.com/open-source/cla/corporate).
++You generally only need to submit a CLA once, so if you've already submitted one
++(even if it was for a different project), you probably don't need to do it
++again.
+ 
+-Follow either of the two links above to access the appropriate CLA and
+-instructions for how to sign and return it.
++## Code Reviews
+ 
+-## Submitting a Patch
++All submissions, including submissions by project members, require review. We
++use GitHub pull requests for this purpose. Consult
++[GitHub Help](https://help.github.com/articles/about-pull-requests/) for more
++information on using pull requests.
+ 
+-1. Sign the contributors license agreement above.
+-2. Decide which code you want to submit. A submission should be a set of changes
+-that addresses one issue in the [issue tracker](https://github.com/google/leveldb/issues).
+-Please don't mix more than one logical change per submission, because it makes
+-the history hard to follow. If you want to make a change
+-(e.g. add a sample or feature) that doesn't have a corresponding issue in the
+-issue tracker, please create one.
+-3. **Submitting**: When you are ready to submit, send us a Pull Request. Be
+-sure to include the issue number you fixed and the name you used to sign
+-the CLA.
++See [the README](README.md#contributing-to-the-leveldb-project) for areas
++where we are likely to accept external contributions.
+ 
+-## Writing Code ##
++## Community Guidelines
+ 
+-If your contribution contains code, please make sure that it follows
+-[the style guide](https://google.github.io/styleguide/cppguide.html).
+-Otherwise we will have to ask you to make changes, and that's no fun for anyone.
++This project follows [Google's Open Source Community
++Guidelines](https://opensource.google/conduct/).
+\ No newline at end of file
+--- a/README.md
++++ b/README.md
+@@ -1,7 +1,11 @@
+-**LevelDB is a fast key-value storage library written at Google that provides an ordered mapping from string keys to string values.**
+-
+-[![Build Status](https://travis-ci.org/google/leveldb.svg?branch=master)](https://travis-ci.org/google/leveldb)
+-[![Build status](https://ci.appveyor.com/api/projects/status/g2j5j4rfkda6eyw5/branch/master?svg=true)](https://ci.appveyor.com/project/pwnall/leveldb)
++LevelDB is a fast key-value storage library written at Google that provides an ordered mapping from string keys to string values.
++
++> **This repository is receiving very limited maintenance. We will only review the following types of changes.**
++>
++> * Fixes for critical bugs, such as data loss or memory corruption
++> * Changes absolutely needed by internally supported leveldb clients. These typically fix breakage introduced by a language/standard library/OS update
++
++[![ci](https://github.com/google/leveldb/actions/workflows/build.yml/badge.svg)](https://github.com/google/leveldb/actions/workflows/build.yml)
+ 
+ Authors: Sanjay Ghemawat (sanjay@google.com) and Jeff Dean (jeff@google.com)
+ 
+@@ -14,12 +18,12 @@
+   * Multiple changes can be made in one atomic batch.
+   * Users can create a transient snapshot to get a consistent view of data.
+   * Forward and backward iteration is supported over the data.
+-  * Data is automatically compressed using the [Snappy compression library](https://google.github.io/snappy/).
++  * Data is automatically compressed using the [Snappy compression library](https://google.github.io/snappy/), but [Zstd compression](https://facebook.github.io/zstd/) is also supported.
+   * External activity (file system operations etc.) is relayed through a virtual interface so users can customize the operating system interactions.
+ 
+ # Documentation
+ 
+-  [LevelDB library documentation](https://github.com/google/leveldb/blob/master/doc/index.md) is online and bundled with the source code.
++  [LevelDB library documentation](https://github.com/google/leveldb/blob/main/doc/index.md) is online and bundled with the source code.
+ 
+ # Limitations
+ 
+@@ -73,6 +77,11 @@
+ 
+ # Contributing to the leveldb Project
+ 
++> **This repository is receiving very limited maintenance. We will only review the following types of changes.**
++>
++> * Bug fixes
++> * Changes absolutely needed by internally supported leveldb clients. These typically fix breakage introduced by a language/standard library/OS update
++
+ The leveldb project welcomes contributions. leveldb's primary goal is to be
+ a reliable and fast key/value store. Changes that are in line with the
+ features/limitations outlined above, and meet the requirements below,
+@@ -100,6 +109,12 @@
+    clang-format -i --style=file <file>
+    ```
+ 
++We are unlikely to accept contributions to the build configuration files, such
++as `CMakeLists.txt`. We are focused on maintaining a build configuration that
++allows us to test that the project works in a few supported configurations
++inside Google. We are not currently interested in supporting other requirements,
++such as different operating systems, compilers, or build systems.
++
+ ## Submitting a Pull Request
+ 
+ Before any pull request will be accepted the author must first sign a
+@@ -108,7 +123,7 @@
+ In order to keep the commit timeline linear
+ [squash](https://git-scm.com/book/en/v2/Git-Tools-Rewriting-History#Squashing-Commits)
+ your changes down to a single commit and [rebase](https://git-scm.com/docs/git-rebase)
+-on google/leveldb/master. This keeps the commit timeline linear and more easily sync'ed
++on google/leveldb/main. This keeps the commit timeline linear and more easily sync'ed
+ with the internal repository at Google. More information at GitHub's
+ [About Git rebase](https://help.github.com/articles/about-git-rebase/) page.
+ 
+--- a/db/builder.cc
++++ b/db/builder.cc
+@@ -1,6 +1,8 @@
+ // Copyright (c) 2011 The LevelDB Authors. All rights reserved.
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file. See the AUTHORS file for names of contributors.
++
++#include "stdinc.h"
+ 
+ #include "db/builder.h"
+ 
+--- a/db/c.cc
++++ b/db/c.cc
+@@ -1,6 +1,8 @@
+ // Copyright (c) 2011 The LevelDB Authors. All rights reserved.
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file. See the AUTHORS file for names of contributors.
++
++#include "stdinc.h"
+ 
+ #include "leveldb/c.h"
+ 
+@@ -168,7 +170,11 @@
+ leveldb_t* leveldb_open(const leveldb_options_t* options, const char* name,
+                         char** errptr) {
+   DB* db;
+-  if (SaveError(errptr, DB::Open(options->rep, std::string(name), &db))) {
++  int64_t l_count_files = 0; // FlylinkDC++
++  int64_t l_size_files = 0; // FlylinkDC++
++  if (SaveError(errptr, DB::Open(options->rep, std::string(name), &db, 
++       l_count_files, l_size_files // FlylinkDC++
++  ))) {
+     return nullptr;
+   }
+   leveldb_t* result = new leveldb_t;
+--- a/db/db_impl.cc
++++ b/db/db_impl.cc
+@@ -1,6 +1,8 @@
+ // Copyright (c) 2011 The LevelDB Authors. All rights reserved.
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file. See the AUTHORS file for names of contributors.
++
++#include "stdinc.h"
+ 
+ #include "db/db_impl.h"
+ 
+@@ -628,6 +630,11 @@
+     } else {  // Running either my compaction or another compaction.
+       background_work_finished_signal_.Wait();
+     }
++  }
++  // Finish current background compaction in the case where
++  // `background_work_finished_signal_` was signalled due to an error.
++  while (background_compaction_scheduled_) {
++    background_work_finished_signal_.Wait();
+   }
+   if (manual_compaction_ == &manual) {
+     // Cancel my manual compaction since we aborted early for some reason.
+@@ -1368,8 +1375,22 @@
+         versions_->ReuseFileNumber(new_log_number);
+         break;
+       }
++
+       delete log_;
++
++      s = logfile_->Close();
++      if (!s.ok()) {
++        // We may have lost some data written to the previous log file.
++        // Switch to the new log file anyway, but record as a background
++        // error so we do not attempt any more writes.
++        //
++        // We could perhaps attempt to save the memtable corresponding
++        // to log file and suppress the error if that works, but that
++        // would add more complexity in a critical code path.
++        RecordBackgroundError(s);
++      }
+       delete logfile_;
++
+       logfile_ = lfile;
+       logfile_number_ = new_log_number;
+       log_ = new log::Writer(lfile);
+@@ -1480,16 +1501,26 @@
+ 
+ DB::~DB() = default;
+ 
+-Status DB::Open(const Options& options, const std::string& dbname, DB** dbptr) {
++Status DB::Open(const Options& options, const std::string& dbname,
++                DB** dbptr,
++				int64_t& p_count_files,
++				int64_t& p_size_files
++) {
+   *dbptr = nullptr;
+ 
+   DBImpl* impl = new DBImpl(options, dbname);
+   impl->mutex_.Lock();
+   VersionEdit edit;
++  impl->env_->m_count_files = 0;
++  impl->env_->m_size_files = 0;
++  p_count_files = 0;
++  p_size_files = 0;
+   // Recover handles create_if_missing, error_if_exists
+   bool save_manifest = false;
+   Status s = impl->Recover(&edit, &save_manifest);
+   if (s.ok() && impl->mem_ == nullptr) {
++	  p_count_files = impl->env_->m_count_files;
++	  p_size_files = impl->env_->m_size_files;
+     // Create new log and a corresponding memtable.
+     uint64_t new_log_number = impl->versions_->NewFileNumber();
+     WritableFile* lfile;
+--- a/db/db_iter.cc
++++ b/db/db_iter.cc
+@@ -1,6 +1,8 @@
+ // Copyright (c) 2011 The LevelDB Authors. All rights reserved.
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file. See the AUTHORS file for names of contributors.
++
++#include "stdinc.h"
+ 
+ #include "db/db_iter.h"
+ 
+--- a/db/dbformat.cc
++++ b/db/dbformat.cc
+@@ -1,6 +1,8 @@
+ // Copyright (c) 2011 The LevelDB Authors. All rights reserved.
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file. See the AUTHORS file for names of contributors.
++
++#include "stdinc.h"
+ 
+ #include "db/dbformat.h"
+ 
+--- a/db/filename.cc
++++ b/db/filename.cc
+@@ -1,6 +1,8 @@
+ // Copyright (c) 2011 The LevelDB Authors. All rights reserved.
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file. See the AUTHORS file for names of contributors.
++
++#include "stdinc.h"
+ 
+ #include "db/filename.h"
+ 
+--- a/db/log_reader.cc
++++ b/db/log_reader.cc
+@@ -1,6 +1,8 @@
+ // Copyright (c) 2011 The LevelDB Authors. All rights reserved.
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file. See the AUTHORS file for names of contributors.
++
++#include "stdinc.h"
+ 
+ #include "db/log_reader.h"
+ 
+--- a/db/log_reader.h
++++ b/db/log_reader.h
+@@ -24,7 +24,7 @@
+    public:
+     virtual ~Reporter();
+ 
+-    // Some corruption was detected.  "size" is the approximate number
++    // Some corruption was detected.  "bytes" is the approximate number
+     // of bytes dropped due to the corruption.
+     virtual void Corruption(size_t bytes, const Status& status) = 0;
+   };
+--- a/db/log_writer.cc
++++ b/db/log_writer.cc
+@@ -1,6 +1,8 @@
+ // Copyright (c) 2011 The LevelDB Authors. All rights reserved.
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file. See the AUTHORS file for names of contributors.
++
++#include "stdinc.h"
+ 
+ #include "db/log_writer.h"
+ 
+--- a/db/memtable.cc
++++ b/db/memtable.cc
+@@ -1,6 +1,8 @@
+ // Copyright (c) 2011 The LevelDB Authors. All rights reserved.
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file. See the AUTHORS file for names of contributors.
++
++#include "stdinc.h"
+ 
+ #include "db/memtable.h"
+ #include "db/dbformat.h"
+@@ -78,6 +80,7 @@
+   // Format of an entry is concatenation of:
+   //  key_size     : varint32 of internal_key.size()
+   //  key bytes    : char[internal_key.size()]
++  //  tag          : uint64((sequence << 8) | type)
+   //  value_size   : varint32 of value.size()
+   //  value bytes  : char[value.size()]
+   size_t key_size = key.size();
+--- a/db/repair.cc
++++ b/db/repair.cc
+@@ -24,6 +24,8 @@
+ //   Store per-table metadata (smallest, largest, largest-seq#, ...)
+ //   in the table's meta section to speed up ScanTable.
+ 
++#include "stdinc.h"
++
+ #include "db/builder.h"
+ #include "db/db_impl.h"
+ #include "db/dbformat.h"
+--- a/db/skiplist.h
++++ b/db/skiplist.h
+@@ -35,8 +35,6 @@
+ #include "util/random.h"
+ 
+ namespace leveldb {
+-
+-class Arena;
+ 
+ template <typename Key, class Comparator>
+ class SkipList {
+@@ -243,7 +241,7 @@
+   // Increase height with probability 1 in kBranching
+   static const unsigned int kBranching = 4;
+   int height = 1;
+-  while (height < kMaxHeight && ((rnd_.Next() % kBranching) == 0)) {
++  while (height < kMaxHeight && rnd_.OneIn(kBranching)) {
+     height++;
+   }
+   assert(height > 0);
+--- a/db/snapshot.h
++++ b/db/snapshot.h
+@@ -25,7 +25,7 @@
+   friend class SnapshotList;
+ 
+   // SnapshotImpl is kept in a doubly-linked circular list. The SnapshotList
+-  // implementation operates on the next/previous fields direcly.
++  // implementation operates on the next/previous fields directly.
+   SnapshotImpl* prev_;
+   SnapshotImpl* next_;
+ 
+--- a/db/table_cache.cc
++++ b/db/table_cache.cc
+@@ -1,6 +1,8 @@
+ // Copyright (c) 2011 The LevelDB Authors. All rights reserved.
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file. See the AUTHORS file for names of contributors.
++
++#include "stdinc.h"
+ 
+ #include "db/table_cache.h"
+ 
+--- a/db/version_edit.cc
++++ b/db/version_edit.cc
+@@ -1,6 +1,8 @@
+ // Copyright (c) 2011 The LevelDB Authors. All rights reserved.
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file. See the AUTHORS file for names of contributors.
++
++#include "stdinc.h"
+ 
+ #include "db/version_edit.h"
+ 
+@@ -34,6 +36,7 @@
+   has_prev_log_number_ = false;
+   has_next_file_number_ = false;
+   has_last_sequence_ = false;
++  compact_pointers_.clear();
+   deleted_files_.clear();
+   new_files_.clear();
+ }
+--- a/db/version_edit.h
++++ b/db/version_edit.h
+@@ -16,7 +16,7 @@
+ class VersionSet;
+ 
+ struct FileMetaData {
+-  FileMetaData() : refs(0), allowed_seeks(1 << 30), file_size(0) {}
++  FileMetaData() : refs(0), allowed_seeks(1 << 30), number(0), file_size(0) {}
+ 
+   int refs;
+   int allowed_seeks;  // Seeks allowed until compaction
+--- a/db/version_set.cc
++++ b/db/version_set.cc
+@@ -1,6 +1,8 @@
+ // Copyright (c) 2011 The LevelDB Authors. All rights reserved.
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file. See the AUTHORS file for names of contributors.
++
++#include "stdinc.h"
+ 
+ #include "db/version_set.h"
+ 
+@@ -626,7 +628,7 @@
+   }
+ 
+   // Apply all of the edits in *edit to the current state.
+-  void Apply(VersionEdit* edit) {
++  void Apply(const VersionEdit* edit) {
+     // Update compaction pointers
+     for (size_t i = 0; i < edit->compact_pointers_.size(); i++) {
+       const int level = edit->compact_pointers_[i].first;
+@@ -806,7 +808,6 @@
+     // first call to LogAndApply (when opening the database).
+     assert(descriptor_file_ == nullptr);
+     new_manifest_file = DescriptorFileName(dbname_, manifest_file_number_);
+-    edit->SetNextFile(next_file_number_);
+     s = env_->NewWritableFile(new_manifest_file, &descriptor_file_);
+     if (s.ok()) {
+       descriptor_log_ = new log::Writer(descriptor_file_);
+@@ -1304,7 +1305,7 @@
+   return c;
+ }
+ 
+-// Finds the largest key in a vector of files. Returns true if files it not
++// Finds the largest key in a vector of files. Returns true if files is not
+ // empty.
+ bool FindLargestKey(const InternalKeyComparator& icmp,
+                     const std::vector<FileMetaData*>& files,
+@@ -1392,6 +1393,7 @@
+ 
+   current_->GetOverlappingInputs(level + 1, &smallest, &largest,
+                                  &c->inputs_[1]);
++  AddBoundaryInputs(icmp_, current_->files_[level + 1], &c->inputs_[1]);
+ 
+   // Get entire range covered by compaction
+   InternalKey all_start, all_limit;
+@@ -1414,6 +1416,7 @@
+       std::vector<FileMetaData*> expanded1;
+       current_->GetOverlappingInputs(level + 1, &new_start, &new_limit,
+                                      &expanded1);
++      AddBoundaryInputs(icmp_, current_->files_[level + 1], &expanded1);
+       if (expanded1.size() == c->inputs_[1].size()) {
+         Log(options_->info_log,
+             "Expanding@%d %d+%d (%ld+%ld bytes) to %d+%d (%ld+%ld bytes)\n",
+--- a/db/version_set.h
++++ b/db/version_set.h
+@@ -59,9 +59,6 @@
+ 
+ class Version {
+  public:
+-  // Lookup the value for key.  If found, store it in *val and
+-  // return OK.  Else return a non-OK status.  Fills *stats.
+-  // REQUIRES: lock is not held
+   struct GetStats {
+     FileMetaData* seek_file;
+     int seek_file_level;
+@@ -72,6 +69,9 @@
+   // REQUIRES: This version has been saved (see VersionSet::SaveTo)
+   void AddIterators(const ReadOptions&, std::vector<Iterator*>* iters);
+ 
++  // Lookup the value for key.  If found, store it in *val and
++  // return OK.  Else return a non-OK status.  Fills *stats.
++  // REQUIRES: lock is not held
+   Status Get(const ReadOptions&, const LookupKey& key, std::string* val,
+              GetStats* stats);
+ 
+--- a/db/write_batch.cc
++++ b/db/write_batch.cc
+@@ -12,6 +12,8 @@
+ // varstring :=
+ //    len: varint32
+ //    data: uint8[len]
++
++#include "stdinc.h"
+ 
+ #include "leveldb/write_batch.h"
+ 
+--- a/helpers/memenv/memenv.cc
++++ b/helpers/memenv/memenv.cc
+@@ -1,6 +1,8 @@
+ // Copyright (c) 2011 The LevelDB Authors. All rights reserved.
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file. See the AUTHORS file for names of contributors.
++
++#include "stdinc.h"
+ 
+ #include "helpers/memenv/memenv.h"
+ 
+--- a/include/leveldb/c.h
++++ b/include/leveldb/c.h
+@@ -40,15 +40,15 @@
+ #ifndef STORAGE_LEVELDB_INCLUDE_C_H_
+ #define STORAGE_LEVELDB_INCLUDE_C_H_
+ 
++#include <stdarg.h>
++#include <stddef.h>
++#include <stdint.h>
++
++#include "leveldb/export.h"
++
+ #ifdef __cplusplus
+ extern "C" {
+ #endif
+-
+-#include <stdarg.h>
+-#include <stddef.h>
+-#include <stdint.h>
+-
+-#include "leveldb/export.h"
+ 
+ /* Exported types */
+ 
+--- a/include/leveldb/cache.h
++++ b/include/leveldb/cache.h
+@@ -96,14 +96,6 @@
+   // Return an estimate of the combined charges of all elements stored in the
+   // cache.
+   virtual size_t TotalCharge() const = 0;
+-
+- private:
+-  void LRU_Remove(Handle* e);
+-  void LRU_Append(Handle* e);
+-  void Unref(Handle* e);
+-
+-  struct Rep;
+-  Rep* rep_;
+ };
+ 
+ }  // namespace leveldb
+--- a/include/leveldb/db.h
++++ b/include/leveldb/db.h
+@@ -17,6 +17,8 @@
+ // Update CMakeLists.txt if you change these
+ static const int kMajorVersion = 1;
+ static const int kMinorVersion = 23;
++
++#define LEVELDB_VER "1.23"                 // [+] FlylinkDC++
+ 
+ struct Options;
+ struct ReadOptions;
+@@ -50,9 +52,11 @@
+   // OK on success.
+   // Stores nullptr in *dbptr and returns a non-OK status on error.
+   // Caller should delete *dbptr when it is no longer needed.
+-  static Status Open(const Options& options, const std::string& name,
+-                     DB** dbptr);
+-
++  static Status Open(const Options& options,
++                     const std::string& name,
++                     DB** dbptr,
++					 int64_t& p_count_files,
++					 int64_t& p_size_files);
+   DB() = default;
+ 
+   DB(const DB&) = delete;
+--- a/include/leveldb/env.h
++++ b/include/leveldb/env.h
+@@ -216,6 +216,9 @@
+ 
+   // Sleep/delay the thread for the prescribed number of micro-seconds.
+   virtual void SleepForMicroseconds(int micros) = 0;
++ public:
++	int64_t m_count_files = 0; // FlylinkDC++
++	int64_t m_size_files = 0; // FlylinkDC++
+ };
+ 
+ // A file abstraction for reading sequentially through a file
+--- a/include/leveldb/options.h
++++ b/include/leveldb/options.h
+@@ -26,7 +26,8 @@
+   // NOTE: do not change the values of existing entries, as these are
+   // part of the persistent format on disk.
+   kNoCompression = 0x0,
+-  kSnappyCompression = 0x1
++  kSnappyCompression = 0x1,
++  kZstdCompression = 0x2,
+ };
+ 
+ // Options to control the behavior of a database (passed to DB::Open)
+@@ -130,6 +131,10 @@
+   // efficiently detect that and will switch to uncompressed mode.
+   CompressionType compression = kSnappyCompression;
+ 
++  // Compression level for zstd.
++  // Currently only the range [-5,22] is supported. Default is 1.
++  int zstd_compression_level = 1;
++
+   // EXPERIMENTAL: If true, append to existing MANIFEST and log files
+   // when a database is opened.  This can significantly speed up open.
+   //
+@@ -144,8 +149,6 @@
+ 
+ // Options that control read operations
+ struct LEVELDB_EXPORT ReadOptions {
+-  ReadOptions() = default;
+-
+   // If true, all data read from underlying storage will be
+   // verified against corresponding checksums.
+   bool verify_checksums = false;
+--- a/include/leveldb/slice.h
++++ b/include/leveldb/slice.h
+@@ -50,6 +50,9 @@
+ 
+   // Return true iff the length of the referenced data is zero
+   bool empty() const { return size_ == 0; }
++
++  const char* begin() const { return data(); }
++  const char* end() const { return data() + size(); }
+ 
+   // Return the ith byte in the referenced data.
+   // REQUIRES: n < size()
+--- a/port/port_example.h
++++ b/port/port_example.h
+@@ -55,7 +55,7 @@
+   void Signal();
+ 
+   // Wake up all waiting threads.
+-  void SignallAll();
++  void SignalAll();
+ };
+ 
+ // ------------------ Compression -------------------
+@@ -72,7 +72,7 @@
+                                   size_t* result);
+ 
+ // Attempt to snappy uncompress input[0,input_length-1] into *output.
+-// Returns true if successful, false if the input is invalid lightweight
++// Returns true if successful, false if the input is invalid snappy
+ // compressed data.
+ //
+ // REQUIRES: at least the first "n" bytes of output[] must be writable
+@@ -80,6 +80,25 @@
+ // Snappy_GetUncompressedLength.
+ bool Snappy_Uncompress(const char* input_data, size_t input_length,
+                        char* output);
++
++// Store the zstd compression of "input[0,input_length-1]" in *output.
++// Returns false if zstd is not supported by this port.
++bool Zstd_Compress(const char* input, size_t input_length, std::string* output);
++
++// If input[0,input_length-1] looks like a valid zstd compressed
++// buffer, store the size of the uncompressed data in *result and
++// return true.  Else return false.
++bool Zstd_GetUncompressedLength(const char* input, size_t length,
++                                size_t* result);
++
++// Attempt to zstd uncompress input[0,input_length-1] into *output.
++// Returns true if successful, false if the input is invalid zstd
++// compressed data.
++//
++// REQUIRES: at least the first "n" bytes of output[] must be writable
++// where "n" is the result of a successful call to
++// Zstd_GetUncompressedLength.
++bool Zstd_Uncompress(const char* input_data, size_t input_length, char* output);
+ 
+ // ------------------ Miscellaneous -------------------
+ 
+--- a/port/port_stdcxx.h
++++ b/port/port_stdcxx.h
+@@ -28,6 +28,10 @@
+ #if HAVE_SNAPPY
+ #include <snappy.h>
+ #endif  // HAVE_SNAPPY
++#if HAVE_ZSTD
++#define ZSTD_STATIC_LINKING_ONLY  // For ZSTD_compressionParameters.
++#include <zstd.h>
++#endif  // HAVE_ZSTD
+ 
+ #include <cassert>
+ #include <condition_variable>  // NOLINT
+@@ -126,6 +130,74 @@
+ #endif  // HAVE_SNAPPY
+ }
+ 
++inline bool Zstd_Compress(int level, const char* input, size_t length,
++                          std::string* output) {
++#if HAVE_ZSTD
++  // Get the MaxCompressedLength.
++  size_t outlen = ZSTD_compressBound(length);
++  if (ZSTD_isError(outlen)) {
++    return false;
++  }
++  output->resize(outlen);
++  ZSTD_CCtx* ctx = ZSTD_createCCtx();
++  ZSTD_compressionParameters parameters =
++      ZSTD_getCParams(level, std::max(length, size_t{1}), /*dictSize=*/0);
++  ZSTD_CCtx_setCParams(ctx, parameters);
++  outlen = ZSTD_compress2(ctx, &(*output)[0], output->size(), input, length);
++  ZSTD_freeCCtx(ctx);
++  if (ZSTD_isError(outlen)) {
++    return false;
++  }
++  output->resize(outlen);
++  return true;
++#else
++  // Silence compiler warnings about unused arguments.
++  (void)level;
++  (void)input;
++  (void)length;
++  (void)output;
++  return false;
++#endif  // HAVE_ZSTD
++}
++
++inline bool Zstd_GetUncompressedLength(const char* input, size_t length,
++                                       size_t* result) {
++#if HAVE_ZSTD
++  size_t size = ZSTD_getFrameContentSize(input, length);
++  if (size == 0) return false;
++  *result = size;
++  return true;
++#else
++  // Silence compiler warnings about unused arguments.
++  (void)input;
++  (void)length;
++  (void)result;
++  return false;
++#endif  // HAVE_ZSTD
++}
++
++inline bool Zstd_Uncompress(const char* input, size_t length, char* output) {
++#if HAVE_ZSTD
++  size_t outlen;
++  if (!Zstd_GetUncompressedLength(input, length, &outlen)) {
++    return false;
++  }
++  ZSTD_DCtx* ctx = ZSTD_createDCtx();
++  outlen = ZSTD_decompressDCtx(ctx, output, outlen, input, length);
++  ZSTD_freeDCtx(ctx);
++  if (ZSTD_isError(outlen)) {
++    return false;
++  }
++  return true;
++#else
++  // Silence compiler warnings about unused arguments.
++  (void)input;
++  (void)length;
++  (void)output;
++  return false;
++#endif  // HAVE_ZSTD
++}
++
+ inline bool GetHeapProfile(void (*func)(void*, const char*, int), void* arg) {
+   // Silence compiler warnings about unused arguments.
+   (void)func;
+--- a/table/block.cc
++++ b/table/block.cc
+@@ -3,6 +3,8 @@
+ // found in the LICENSE file. See the AUTHORS file for names of contributors.
+ //
+ // Decodes the blocks generated by block_builder.cc.
++
++#include "stdinc.h"
+ 
+ #include "table/block.h"
+ 
+--- a/table/block_builder.cc
++++ b/table/block_builder.cc
+@@ -25,6 +25,8 @@
+ //     restarts: uint32[num_restarts]
+ //     num_restarts: uint32
+ // restarts[i] contains the offset within the block of the ith restart point.
++
++#include "stdinc.h"
+ 
+ #include "table/block_builder.h"
+ 
+--- a/table/filter_block.cc
++++ b/table/filter_block.cc
+@@ -1,6 +1,8 @@
+ // Copyright (c) 2012 The LevelDB Authors. All rights reserved.
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file. See the AUTHORS file for names of contributors.
++
++#include "stdinc.h"
+ 
+ #include "table/filter_block.h"
+ 
+--- a/table/format.cc
++++ b/table/format.cc
+@@ -2,9 +2,12 @@
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file. See the AUTHORS file for names of contributors.
+ 
++#include "stdinc.h"
++
+ #include "table/format.h"
+ 
+ #include "leveldb/env.h"
++#include "leveldb/options.h"
+ #include "port/port.h"
+ #include "table/block.h"
+ #include "util/coding.h"
+@@ -40,6 +43,10 @@
+ }
+ 
+ Status Footer::DecodeFrom(Slice* input) {
++  if (input->size() < kEncodedLength) {
++    return Status::Corruption("not an sstable (footer too short)");
++  }
++
+   const char* magic_ptr = input->data() + kEncodedLength - 8;
+   const uint32_t magic_lo = DecodeFixed32(magic_ptr);
+   const uint32_t magic_hi = DecodeFixed32(magic_ptr + 4);
+@@ -116,13 +123,31 @@
+       size_t ulength = 0;
+       if (!port::Snappy_GetUncompressedLength(data, n, &ulength)) {
+         delete[] buf;
+-        return Status::Corruption("corrupted compressed block contents");
++        return Status::Corruption("corrupted snappy compressed block length");
+       }
+       char* ubuf = new char[ulength];
+       if (!port::Snappy_Uncompress(data, n, ubuf)) {
+         delete[] buf;
+         delete[] ubuf;
+-        return Status::Corruption("corrupted compressed block contents");
++        return Status::Corruption("corrupted snappy compressed block contents");
++      }
++      delete[] buf;
++      result->data = Slice(ubuf, ulength);
++      result->heap_allocated = true;
++      result->cachable = true;
++      break;
++    }
++    case kZstdCompression: {
++      size_t ulength = 0;
++      if (!port::Zstd_GetUncompressedLength(data, n, &ulength)) {
++        delete[] buf;
++        return Status::Corruption("corrupted zstd compressed block length");
++      }
++      char* ubuf = new char[ulength];
++      if (!port::Zstd_Uncompress(data, n, ubuf)) {
++        delete[] buf;
++        delete[] ubuf;
++        return Status::Corruption("corrupted zstd compressed block contents");
+       }
+       delete[] buf;
+       result->data = Slice(ubuf, ulength);
+--- a/table/iterator.cc
++++ b/table/iterator.cc
+@@ -1,6 +1,8 @@
+ // Copyright (c) 2011 The LevelDB Authors. All rights reserved.
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file. See the AUTHORS file for names of contributors.
++
++#include "stdinc.h"
+ 
+ #include "leveldb/iterator.h"
+ 
+--- a/table/merger.cc
++++ b/table/merger.cc
+@@ -1,6 +1,8 @@
+ // Copyright (c) 2011 The LevelDB Authors. All rights reserved.
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file. See the AUTHORS file for names of contributors.
++
++#include "stdinc.h"
+ 
+ #include "table/merger.h"
+ 
+--- a/table/table.cc
++++ b/table/table.cc
+@@ -1,6 +1,8 @@
+ // Copyright (c) 2011 The LevelDB Authors. All rights reserved.
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file. See the AUTHORS file for names of contributors.
++
++#include "stdinc.h"
+ 
+ #include "leveldb/table.h"
+ 
+--- a/table/table_builder.cc
++++ b/table/table_builder.cc
+@@ -1,6 +1,8 @@
+ // Copyright (c) 2011 The LevelDB Authors. All rights reserved.
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file. See the AUTHORS file for names of contributors.
++
++#include "stdinc.h"
+ 
+ #include "leveldb/table_builder.h"
+ 
+@@ -168,6 +170,21 @@
+       }
+       break;
+     }
++
++    case kZstdCompression: {
++      std::string* compressed = &r->compressed_output;
++      if (port::Zstd_Compress(r->options.zstd_compression_level, raw.data(),
++                              raw.size(), compressed) &&
++          compressed->size() < raw.size() - (raw.size() / 8u)) {
++        block_contents = *compressed;
++      } else {
++        // Zstd not supported, or compressed less than 12.5%, so just
++        // store uncompressed form
++        block_contents = raw;
++        type = kNoCompression;
++      }
++      break;
++    }
+   }
+   WriteRawBlock(block_contents, type, handle);
+   r->compressed_output.clear();
+--- a/table/two_level_iterator.cc
++++ b/table/two_level_iterator.cc
+@@ -1,6 +1,8 @@
+ // Copyright (c) 2011 The LevelDB Authors. All rights reserved.
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file. See the AUTHORS file for names of contributors.
++
++#include "stdinc.h"
+ 
+ #include "table/two_level_iterator.h"
+ 
+--- a/util/arena.cc
++++ b/util/arena.cc
+@@ -1,6 +1,8 @@
+ // Copyright (c) 2011 The LevelDB Authors. All rights reserved.
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file. See the AUTHORS file for names of contributors.
++
++#include "stdinc.h"
+ 
+ #include "util/arena.h"
+ 
+--- a/util/bloom.cc
++++ b/util/bloom.cc
+@@ -1,6 +1,8 @@
+ // Copyright (c) 2012 The LevelDB Authors. All rights reserved.
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file. See the AUTHORS file for names of contributors.
++
++#include "stdinc.h"
+ 
+ #include "leveldb/filter_policy.h"
+ 
+--- a/util/cache.cc
++++ b/util/cache.cc
+@@ -2,12 +2,13 @@
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file. See the AUTHORS file for names of contributors.
+ 
+-#include "leveldb/cache.h"
++#include "stdinc.h"
+ 
+ #include <cassert>
+ #include <cstdio>
+ #include <cstdlib>
+ 
++#include "leveldb/cache.h" // FlylinkDC++
+ #include "port/port.h"
+ #include "port/thread_annotations.h"
+ #include "util/hash.h"
+@@ -54,7 +55,7 @@
+   char key_data[1];  // Beginning of key
+ 
+   Slice key() const {
+-    // next_ is only equal to this if the LRU handle is the list head of an
++    // next is only equal to this if the LRU handle is the list head of an
+     // empty list. List heads never have meaningful keys.
+     assert(next != this);
+ 
+--- a/util/coding.cc
++++ b/util/coding.cc
+@@ -1,6 +1,8 @@
+ // Copyright (c) 2011 The LevelDB Authors. All rights reserved.
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file. See the AUTHORS file for names of contributors.
++
++#include "stdinc.h"
+ 
+ #include "util/coding.h"
+ 
+@@ -142,16 +144,6 @@
+   }
+ }
+ 
+-const char* GetLengthPrefixedSlice(const char* p, const char* limit,
+-                                   Slice* result) {
+-  uint32_t len;
+-  p = GetVarint32Ptr(p, limit, &len);
+-  if (p == nullptr) return nullptr;
+-  if (p + len > limit) return nullptr;
+-  *result = Slice(p, len);
+-  return p + len;
+-}
+-
+ bool GetLengthPrefixedSlice(Slice* input, Slice* result) {
+   uint32_t len;
+   if (GetVarint32(input, &len) && input->size() >= len) {
+--- a/util/comparator.cc
++++ b/util/comparator.cc
+@@ -1,6 +1,8 @@
+ // Copyright (c) 2011 The LevelDB Authors. All rights reserved.
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file. See the AUTHORS file for names of contributors.
++
++#include "stdinc.h"
+ 
+ #include "leveldb/comparator.h"
+ 
+--- a/util/crc32c.cc
++++ b/util/crc32c.cc
+@@ -3,6 +3,9 @@
+ // found in the LICENSE file. See the AUTHORS file for names of contributors.
+ //
+ // A portable implementation of crc32c.
++
++
++#include "stdinc.h"
+ 
+ #include "util/crc32c.h"
+ 
+--- a/util/env.cc
++++ b/util/env.cc
+@@ -1,6 +1,8 @@
+ // Copyright (c) 2011 The LevelDB Authors. All rights reserved.
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file. See the AUTHORS file for names of contributors.
++
++#include "stdinc.h"
+ 
+ #include "leveldb/env.h"
+ 
+--- a/util/env_posix.cc
++++ b/util/env_posix.cc
+@@ -2,11 +2,14 @@
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file. See the AUTHORS file for names of contributors.
+ 
++#include "stdinc.h"
++
+ #include <dirent.h>
+ #include <fcntl.h>
+-#include <pthread.h>
+ #include <sys/mman.h>
++#ifndef __Fuchsia__
+ #include <sys/resource.h>
++#endif
+ #include <sys/stat.h>
+ #include <sys/time.h>
+ #include <sys/types.h>
+@@ -72,7 +75,14 @@
+ class Limiter {
+  public:
+   // Limit maximum number of resources to |max_acquires|.
+-  Limiter(int max_acquires) : acquires_allowed_(max_acquires) {}
++  Limiter(int max_acquires)
++      :
++#if !defined(NDEBUG)
++        max_acquires_(max_acquires),
++#endif  // !defined(NDEBUG)
++        acquires_allowed_(max_acquires) {
++    assert(max_acquires >= 0);
++  }
+ 
+   Limiter(const Limiter&) = delete;
+   Limiter operator=(const Limiter&) = delete;
+@@ -85,15 +95,35 @@
+ 
+     if (old_acquires_allowed > 0) return true;
+ 
+-    acquires_allowed_.fetch_add(1, std::memory_order_relaxed);
++    int pre_increment_acquires_allowed =
++        acquires_allowed_.fetch_add(1, std::memory_order_relaxed);
++
++    // Silence compiler warnings about unused arguments when NDEBUG is defined.
++    (void)pre_increment_acquires_allowed;
++    // If the check below fails, Release() was called more times than acquire.
++    assert(pre_increment_acquires_allowed < max_acquires_);
++
+     return false;
+   }
+ 
+   // Release a resource acquired by a previous call to Acquire() that returned
+   // true.
+-  void Release() { acquires_allowed_.fetch_add(1, std::memory_order_relaxed); }
++  void Release() {
++    int old_acquires_allowed =
++        acquires_allowed_.fetch_add(1, std::memory_order_relaxed);
++
++    // Silence compiler warnings about unused arguments when NDEBUG is defined.
++    (void)old_acquires_allowed;
++    // If the check below fails, Release() was called more times than acquire.
++    assert(old_acquires_allowed < max_acquires_);
++  }
+ 
+  private:
++#if !defined(NDEBUG)
++  // Catches an excessive number of Release() calls.
++  const int max_acquires_;
++#endif  // !defined(NDEBUG)
++
+   // The number of available resources.
+   //
+   // This is a counter and is not tied to the invariants of any other class, so
+@@ -108,7 +138,7 @@
+ class PosixSequentialFile final : public SequentialFile {
+  public:
+   PosixSequentialFile(std::string filename, int fd)
+-      : fd_(fd), filename_(filename) {}
++      : fd_(fd), filename_(std::move(filename)) {}
+   ~PosixSequentialFile() override { close(fd_); }
+ 
+   Status Read(size_t n, Slice* result, char* scratch) override {
+@@ -214,7 +244,7 @@
+   // over the ownership of the region.
+   //
+   // |mmap_limiter| must outlive this instance. The caller must have already
+-  // aquired the right to use one mmap region, which will be released when this
++  // acquired the right to use one mmap region, which will be released when this
+   // instance is destroyed.
+   PosixMmapReadableFile(std::string filename, char* mmap_base, size_t length,
+                         Limiter* mmap_limiter)
+@@ -728,7 +758,7 @@
+   // Instances are constructed on the thread calling Schedule() and used on the
+   // background thread.
+   //
+-  // This structure is thread-safe beacuse it is immutable.
++  // This structure is thread-safe because it is immutable.
+   struct BackgroundWorkItem {
+     explicit BackgroundWorkItem(void (*function)(void* arg), void* arg)
+         : function(function), arg(arg) {}
+@@ -757,6 +787,10 @@
+   if (g_open_read_only_file_limit >= 0) {
+     return g_open_read_only_file_limit;
+   }
++#ifdef __Fuchsia__
++  // Fuchsia doesn't implement getrlimit.
++  g_open_read_only_file_limit = 50;
++#else
+   struct ::rlimit rlim;
+   if (::getrlimit(RLIMIT_NOFILE, &rlim)) {
+     // getrlimit failed, fallback to hard-coded default.
+@@ -767,6 +801,7 @@
+     // Allow use of 20% of available file descriptors for read-only files.
+     g_open_read_only_file_limit = rlim.rlim_cur / 5;
+   }
++#endif
+   return g_open_read_only_file_limit;
+ }
+ 
+@@ -837,13 +872,17 @@
+  public:
+   SingletonEnv() {
+ #if !defined(NDEBUG)
+-    env_initialized_.store(true, std::memory_order::memory_order_relaxed);
++    env_initialized_.store(true, std::memory_order_relaxed);
+ #endif  // !defined(NDEBUG)
+     static_assert(sizeof(env_storage_) >= sizeof(EnvType),
+                   "env_storage_ will not fit the Env");
+-    static_assert(alignof(decltype(env_storage_)) >= alignof(EnvType),
++    static_assert(std::is_standard_layout_v<SingletonEnv<EnvType>>);
++    static_assert(
++        offsetof(SingletonEnv<EnvType>, env_storage_) % alignof(EnvType) == 0,
++        "env_storage_ does not meet the Env's alignment needs");
++    static_assert(alignof(SingletonEnv<EnvType>) % alignof(EnvType) == 0,
+                   "env_storage_ does not meet the Env's alignment needs");
+-    new (&env_storage_) EnvType();
++    new (env_storage_) EnvType();
+   }
+   ~SingletonEnv() = default;
+ 
+@@ -854,13 +893,12 @@
+ 
+   static void AssertEnvNotInitialized() {
+ #if !defined(NDEBUG)
+-    assert(!env_initialized_.load(std::memory_order::memory_order_relaxed));
++    assert(!env_initialized_.load(std::memory_order_relaxed));
+ #endif  // !defined(NDEBUG)
+   }
+ 
+  private:
+-  typename std::aligned_storage<sizeof(EnvType), alignof(EnvType)>::type
+-      env_storage_;
++  alignas(EnvType) char env_storage_[sizeof(EnvType)];
+ #if !defined(NDEBUG)
+   static std::atomic<bool> env_initialized_;
+ #endif  // !defined(NDEBUG)
+--- a/util/env_windows.cc
++++ b/util/env_windows.cc
+@@ -4,6 +4,9 @@
+ 
+ // Prevent Windows headers from defining min/max macros and instead
+ // use STL.
++
++#include "stdinc.h"
++
+ #ifndef NOMINMAX
+ #define NOMINMAX
+ #endif  // ifndef NOMINMAX
+@@ -114,7 +117,14 @@
+ class Limiter {
+  public:
+   // Limit maximum number of resources to |max_acquires|.
+-  Limiter(int max_acquires) : acquires_allowed_(max_acquires) {}
++  Limiter(int max_acquires)
++      :
++#if !defined(NDEBUG)
++        max_acquires_(max_acquires),
++#endif  // !defined(NDEBUG)
++        acquires_allowed_(max_acquires) {
++    assert(max_acquires >= 0);
++  }
+ 
+   Limiter(const Limiter&) = delete;
+   Limiter operator=(const Limiter&) = delete;
+@@ -133,9 +143,22 @@
+ 
+   // Release a resource acquired by a previous call to Acquire() that returned
+   // true.
+-  void Release() { acquires_allowed_.fetch_add(1, std::memory_order_relaxed); }
++  void Release() {
++    int old_acquires_allowed =
++        acquires_allowed_.fetch_add(1, std::memory_order_relaxed);
++
++    // Silence compiler warnings about unused arguments when NDEBUG is defined.
++    (void)old_acquires_allowed;
++    // If the check below fails, Release() was called more times than acquire.
++    assert(old_acquires_allowed < max_acquires_);
++  }
+ 
+  private:
++#if !defined(NDEBUG)
++  // Catches an excessive number of Release() calls.
++  const int max_acquires_;
++#endif  // !defined(NDEBUG)
++
+   // The number of available resources.
+   //
+   // This is a counter and is not tied to the invariants of any other class, so
+@@ -476,6 +499,8 @@
+                      std::vector<std::string>* result) override {
+     const std::string find_pattern = directory_path + "\\*";
+     WIN32_FIND_DATAA find_data;
++    m_count_files = 0; // FlylinkDC++
++    m_size_files = 0;
+     HANDLE dir_handle = ::FindFirstFileA(find_pattern.c_str(), &find_data);
+     if (dir_handle == INVALID_HANDLE_VALUE) {
+       DWORD last_error = ::GetLastError();
+@@ -487,10 +512,28 @@
+     do {
+       char base_name[_MAX_FNAME];
+       char ext[_MAX_EXT];
+-
+-      if (!_splitpath_s(find_data.cFileName, nullptr, 0, nullptr, 0, base_name,
+-                        ARRAYSIZE(base_name), ext, ARRAYSIZE(ext))) {
+-        result->emplace_back(std::string(base_name) + ext);
++     
++      if(!(find_data.cFileName[0] == '.' && find_data.cFileName[1] == '\0' ||
++           find_data.cFileName[0] == '.' && find_data.cFileName[1] == '.' && find_data.cFileName[2] == '\0'))
++      {
++          if (!_splitpath_s(find_data.cFileName, nullptr, 0, nullptr, 0, base_name,
++              ARRAYSIZE(base_name), ext, ARRAYSIZE(ext))) {
++              const std::string full_name = std::string(base_name) + ext;
++              result->emplace_back(full_name);
++              if (full_name.size() > 4)
++              {
++                  if (find_data.nFileSizeLow < 1024 * 512 && find_data.nFileSizeHigh == 0)
++                  {
++                      if ((full_name[full_name.size() - 1] == 'b' || full_name[full_name.size() - 1] == 'B') &&
++                          (full_name[full_name.size() - 2] == 'd' || full_name[full_name.size() - 2] == 'D') &&
++                          (full_name[full_name.size() - 3] == 'l' || full_name[full_name.size() - 3] == 'L'))
++                      {
++                          m_count_files++;
++                          m_size_files += (int64_t)find_data.nFileSizeLow | ((int64_t)find_data.nFileSizeHigh) << 32;
++                      }
++                  }
++              }
++          }
+       }
+     } while (::FindNextFileA(dir_handle, &find_data));
+     DWORD last_error = ::GetLastError();
+@@ -622,7 +665,7 @@
+   }
+ 
+   Status NewLogger(const std::string& filename, Logger** result) override {
+-    std::FILE* fp = std::fopen(filename.c_str(), "w");
++    std::FILE* fp = std::fopen(filename.c_str(), "wN");
+     if (fp == nullptr) {
+       *result = nullptr;
+       return WindowsError(filename, ::GetLastError());
+@@ -661,7 +704,7 @@
+   // Instances are constructed on the thread calling Schedule() and used on the
+   // background thread.
+   //
+-  // This structure is thread-safe beacuse it is immutable.
++  // This structure is thread-safe because it is immutable.
+   struct BackgroundWorkItem {
+     explicit BackgroundWorkItem(void (*function)(void* arg), void* arg)
+         : function(function), arg(arg) {}
+@@ -745,13 +788,17 @@
+  public:
+   SingletonEnv() {
+ #if !defined(NDEBUG)
+-    env_initialized_.store(true, std::memory_order::memory_order_relaxed);
++    env_initialized_.store(true, std::memory_order_relaxed);
+ #endif  // !defined(NDEBUG)
+     static_assert(sizeof(env_storage_) >= sizeof(EnvType),
+                   "env_storage_ will not fit the Env");
+-    static_assert(alignof(decltype(env_storage_)) >= alignof(EnvType),
++    static_assert(std::is_standard_layout_v<SingletonEnv<EnvType>>);
++    static_assert(
++        offsetof(SingletonEnv<EnvType>, env_storage_) % alignof(EnvType) == 0,
++        "env_storage_ does not meet the Env's alignment needs");
++    static_assert(alignof(SingletonEnv<EnvType>) % alignof(EnvType) == 0,
+                   "env_storage_ does not meet the Env's alignment needs");
+-    new (&env_storage_) EnvType();
++    new (env_storage_) EnvType();
+   }
+   ~SingletonEnv() = default;
+ 
+@@ -762,13 +809,12 @@
+ 
+   static void AssertEnvNotInitialized() {
+ #if !defined(NDEBUG)
+-    assert(!env_initialized_.load(std::memory_order::memory_order_relaxed));
++    assert(!env_initialized_.load(std::memory_order_relaxed));
+ #endif  // !defined(NDEBUG)
+   }
+ 
+  private:
+-  typename std::aligned_storage<sizeof(EnvType), alignof(EnvType)>::type
+-      env_storage_;
++  alignas(EnvType) char env_storage_[sizeof(EnvType)];
+ #if !defined(NDEBUG)
+   static std::atomic<bool> env_initialized_;
+ #endif  // !defined(NDEBUG)
+--- a/util/filter_policy.cc
++++ b/util/filter_policy.cc
+@@ -1,6 +1,8 @@
+ // Copyright (c) 2012 The LevelDB Authors. All rights reserved.
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file. See the AUTHORS file for names of contributors.
++
++#include "stdinc.h"
+ 
+ #include "leveldb/filter_policy.h"
+ 
+--- a/util/hash.cc
++++ b/util/hash.cc
+@@ -1,6 +1,8 @@
+ // Copyright (c) 2011 The LevelDB Authors. All rights reserved.
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file. See the AUTHORS file for names of contributors.
++
++#include "stdinc.h"
+ 
+ #include "util/hash.h"
+ 
+@@ -27,7 +29,7 @@
+   uint32_t h = seed ^ (n * m);
+ 
+   // Pick up four bytes at a time
+-  while (data + 4 <= limit) {
++  while (limit - data >= 4) {
+     uint32_t w = DecodeFixed32(data);
+     data += 4;
+     h += w;
+--- a/util/histogram.cc
++++ b/util/histogram.cc
+@@ -1,6 +1,8 @@
+ // Copyright (c) 2011 The LevelDB Authors. All rights reserved.
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file. See the AUTHORS file for names of contributors.
++
++#include "stdinc.h"
+ 
+ #include "util/histogram.h"
+ 
+--- a/util/logging.cc
++++ b/util/logging.cc
+@@ -1,6 +1,8 @@
+ // Copyright (c) 2011 The LevelDB Authors. All rights reserved.
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file. See the AUTHORS file for names of contributors.
++
++#include "stdinc.h"
+ 
+ #include "util/logging.h"
+ 
+--- a/util/no_destructor.h
++++ b/util/no_destructor.h
+@@ -5,6 +5,7 @@
+ #ifndef STORAGE_LEVELDB_UTIL_NO_DESTRUCTOR_H_
+ #define STORAGE_LEVELDB_UTIL_NO_DESTRUCTOR_H_
+ 
++#include <cstddef>
+ #include <type_traits>
+ #include <utility>
+ 
+@@ -20,10 +21,14 @@
+   explicit NoDestructor(ConstructorArgTypes&&... constructor_args) {
+     static_assert(sizeof(instance_storage_) >= sizeof(InstanceType),
+                   "instance_storage_ is not large enough to hold the instance");
++    static_assert(std::is_standard_layout_v<NoDestructor<InstanceType>>);
+     static_assert(
+-        alignof(decltype(instance_storage_)) >= alignof(InstanceType),
++        offsetof(NoDestructor, instance_storage_) % alignof(InstanceType) == 0,
+         "instance_storage_ does not meet the instance's alignment requirement");
+-    new (&instance_storage_)
++    static_assert(
++        alignof(NoDestructor<InstanceType>) % alignof(InstanceType) == 0,
++        "instance_storage_ does not meet the instance's alignment requirement");
++    new (instance_storage_)
+         InstanceType(std::forward<ConstructorArgTypes>(constructor_args)...);
+   }
+ 
+@@ -37,8 +42,7 @@
+   }
+ 
+  private:
+-  typename std::aligned_storage<sizeof(InstanceType),
+-                                alignof(InstanceType)>::type instance_storage_;
++  alignas(InstanceType) char instance_storage_[sizeof(InstanceType)];
+ };
+ 
+ }  // namespace leveldb
+--- a/util/options.cc
++++ b/util/options.cc
+@@ -1,6 +1,8 @@
+ // Copyright (c) 2011 The LevelDB Authors. All rights reserved.
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file. See the AUTHORS file for names of contributors.
++
++#include "stdinc.h"
+ 
+ #include "leveldb/options.h"
+ 
+--- a/util/status.cc
++++ b/util/status.cc
+@@ -1,6 +1,8 @@
+ // Copyright (c) 2011 The LevelDB Authors. All rights reserved.
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file. See the AUTHORS file for names of contributors.
++
++#include "stdinc.h"
+ 
+ #include "leveldb/status.h"
+ 

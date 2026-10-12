@@ -1,0 +1,227 @@
+--- a/jsoncpp.cpp
++++ b/jsoncpp.cpp
+@@ -68,7 +68,7 @@
+ // End of content of file: LICENSE
+ // //////////////////////////////////////////////////////////////////////
+ 
+-
++#include "stdinc.h" // [+]FlylinkDC++
+ 
+ 
+ 
+@@ -2521,12 +2521,20 @@
+ #endif
+ 
+ #if !defined(JSON_USE_INT64_DOUBLE_CONVERSION)
++#if defined(_MSC_VER)
++#pragma warning(push)
++#pragma warning(disable : 4389) /* signed/unsigned mismatch in template */
++#endif
+ template <typename T, typename U>
+ static inline bool InRange(double d, T min, U max) {
+   // The casts can lose precision, but we are looking only for
+   // an approximate range. Might fail on edge cases though. ~cdunn
+-  return d >= static_cast<double>(min) && d <= static_cast<double>(max);
+-}
++  return d >= static_cast<double>(min) && d <= static_cast<double>(max) &&
++         !(static_cast<U>(d) == min && d != static_cast<double>(min));
++}
++#if defined(_MSC_VER)
++#pragma warning(pop)
++#endif
+ #else  // if !defined(JSON_USE_INT64_DOUBLE_CONVERSION)
+ static inline double integerToDouble(Json::UInt64 value) {
+   return static_cast<double>(Int64(value / 2)) * 2.0 +
+@@ -2539,7 +2547,8 @@
+ 
+ template <typename T, typename U>
+ static inline bool InRange(double d, T min, U max) {
+-  return d >= integerToDouble(min) && d <= integerToDouble(max);
++  return d >= integerToDouble(min) && d <= integerToDouble(max) &&
++         !(static_cast<U>(d) == min && d != integerToDouble(min));
+ }
+ #endif // if !defined(JSON_USE_INT64_DOUBLE_CONVERSION)
+ 
+@@ -2601,7 +2610,7 @@
+ /** Free the string duplicated by
+  * duplicateStringValue()/duplicateAndPrefixStringValue().
+  */
+-#if JSONCPP_USING_SECURE_MEMORY
++#if JSONCPP_USE_SECURE_MEMORY
+ static inline void releasePrefixedStringValue(char* value) {
+   unsigned length = 0;
+   char const* valueDecoded;
+@@ -2616,10 +2625,10 @@
+   memset(value, 0, size);
+   free(value);
+ }
+-#else  // !JSONCPP_USING_SECURE_MEMORY
++#else  // !JSONCPP_USE_SECURE_MEMORY
+ static inline void releasePrefixedStringValue(char* value) { free(value); }
+ static inline void releaseStringValue(char* value, unsigned) { free(value); }
+-#endif // JSONCPP_USING_SECURE_MEMORY
++#endif // JSONCPP_USE_SECURE_MEMORY
+ 
+ } // namespace Json
+ 
+@@ -3037,7 +3046,7 @@
+   return this_str;
+ }
+ 
+-#if JSONCPP_USING_SECURE_MEMORY
++#if JSONCPP_USE_SECURE_MEMORY
+ unsigned Value::getCStringLength() const {
+   JSON_ASSERT_MESSAGE(type() == stringValue,
+                       "in Json::Value::asCString(): requires stringValue");
+@@ -3143,6 +3152,11 @@
+     JSON_ASSERT_MESSAGE(isInt64(), "LargestUInt out of Int64 range");
+     return Int64(value_.uint_);
+   case realValue:
++    // If the double value is in proximity to minInt64, it will be rounded to
++    // minInt64. The correct value in this scenario is indeterminable
++    JSON_ASSERT_MESSAGE(
++        value_.real_ != minInt64,
++        "Double value is minInt64, precise value cannot be determined");
+     JSON_ASSERT_MESSAGE(InRange(value_.real_, minInt64, maxInt64),
+                         "double out of Int64 range");
+     return Int64(value_.real_);
+@@ -3749,8 +3763,12 @@
+     // Note that maxInt64 (= 2^63 - 1) is not exactly representable as a
+     // double, so double(maxInt64) will be rounded up to 2^63. Therefore we
+     // require the value to be strictly less than the limit.
+-    return value_.real_ >= double(minInt64) &&
+-           value_.real_ < double(maxInt64) && IsIntegral(value_.real_);
++    // minInt64 is -2^63 which can be represented as a double, but since double
++    // values in its proximity are also rounded to -2^63, we require the value
++    // to be strictly greater than the limit to avoid returning 'true' for
++    // values that are not in the range
++    return value_.real_ > double(minInt64) && value_.real_ < double(maxInt64) &&
++           IsIntegral(value_.real_);
+   default:
+     break;
+   }
+@@ -3788,7 +3806,11 @@
+     // Note that maxUInt64 (= 2^64 - 1) is not exactly representable as a
+     // double, so double(maxUInt64) will be rounded up to 2^64. Therefore we
+     // require the value to be strictly less than the limit.
+-    return value_.real_ >= double(minInt64) &&
++    // minInt64 is -2^63 which can be represented as a double, but since double
++    // values in its proximity are also rounded to -2^63, we require the value
++    // to be strictly greater than the limit to avoid returning 'true' for
++    // values that are not in the range
++    return value_.real_ > double(minInt64) &&
+            value_.real_ < maxUInt64AsDouble && IsIntegral(value_.real_);
+ #else
+     return value_.real_ >= minInt && value_.real_ <= maxUInt &&
+@@ -3873,12 +3895,15 @@
+ 
+ ptrdiff_t Value::getOffsetLimit() const { return limit_; }
+ 
+-String Value::toStyledString() const {
++String Value::toStyledString(bool p_use_end_line /* = true */) const {  // [+]FlylinkDC++
+   StreamWriterBuilder builder;
+ 
+   String out = this->hasComment(commentBefore) ? "\n" : "";
+   out += Json::writeString(builder, *this);
+-  out += '\n';
++  if(p_use_end_line) // [+]FlylinkDC++
++    out += '\n';
++  else
++    out += ' ';
+ 
+   return out;
+ }
+@@ -4682,7 +4707,7 @@
+     char last = document_[document_.length() - 1];
+     if (last == ' ') // already indented
+       return;
+-    if (last != '\n') // Comments may add new-line
++    if (last != '\n' && use_end_line_) // [+]FlylinkDC++ // Comments may add new-line
+       document_ += '\n';
+   }
+   document_ += indentString_;
+--- a/include/json/json.h
++++ b/include/json/json.h
+@@ -93,17 +93,17 @@
+ // 3. /CMakeLists.txt
+ // IMPORTANT: also update the SOVERSION!!
+ 
+-#define JSONCPP_VERSION_STRING "1.9.6"
++#define JSONCPP_VERSION_STRING "1.9.7"
+ #define JSONCPP_VERSION_MAJOR 1
+ #define JSONCPP_VERSION_MINOR 9
+-#define JSONCPP_VERSION_PATCH 6
++#define JSONCPP_VERSION_PATCH 7
+ #define JSONCPP_VERSION_QUALIFIER
+ #define JSONCPP_VERSION_HEXA                                                   \
+   ((JSONCPP_VERSION_MAJOR << 24) | (JSONCPP_VERSION_MINOR << 16) |             \
+    (JSONCPP_VERSION_PATCH << 8))
+ 
+ #if !defined(JSONCPP_USE_SECURE_MEMORY)
+-#define JSONCPP_USING_SECURE_MEMORY 0
++#define JSONCPP_USE_SECURE_MEMORY 0
+ #endif
+ // If non-zero, the library zeroes any memory that it has allocated before
+ // it frees its memory.
+@@ -131,6 +131,7 @@
+ #ifndef JSON_ALLOCATOR_H_INCLUDED
+ #define JSON_ALLOCATOR_H_INCLUDED
+ 
++#include <algorithm>
+ #include <cstring>
+ #include <memory>
+ 
+@@ -163,8 +164,16 @@
+    * The memory block is filled with zeroes before being released.
+    */
+   void deallocate(pointer p, size_type n) {
+-    // memset_s is used because memset may be optimized away by the compiler
++    // These constructs will not be removed by the compiler during optimization,
++    // unlike memset.
++#if defined(HAVE_MEMSET_S)
+     memset_s(p, n * sizeof(T), 0, n * sizeof(T));
++#elif defined(_WIN32)
++    RtlSecureZeroMemory(p, n * sizeof(T));
++#else
++    std::fill_n(reinterpret_cast<volatile unsigned char*>(p), n, 0);
++#endif
++
+     // free using "global operator delete"
+     ::operator delete(p);
+   }
+@@ -357,7 +366,7 @@
+ 
+ template <typename T>
+ using Allocator =
+-    typename std::conditional<JSONCPP_USING_SECURE_MEMORY, SecureAllocator<T>,
++    typename std::conditional<JSONCPP_USE_SECURE_MEMORY, SecureAllocator<T>,
+                               std::allocator<T>>::type;
+ using String = std::basic_string<char, std::char_traits<char>, Allocator<char>>;
+ using IStringStream =
+@@ -902,7 +911,7 @@
+   int compare(const Value& other) const;
+ 
+   const char* asCString() const; ///< Embedded zeroes could cause you trouble!
+-#if JSONCPP_USING_SECURE_MEMORY
++#if JSONCPP_USE_SECURE_MEMORY
+   unsigned getCStringLength() const; // Allows you to understand the length of
+                                      // the CString
+ #endif
+@@ -1107,7 +1116,7 @@
+   /// Include delimiters and embedded newlines.
+   String getComment(CommentPlacement placement) const;
+ 
+-  String toStyledString() const;
++  String toStyledString(bool p_use_end_line = true) const; // [+]FlylinkDC++
+ 
+   const_iterator begin() const;
+   const_iterator end() const;
+@@ -2220,6 +2229,8 @@
+   unsigned int rightMargin_{74};
+   unsigned int indentSize_{3};
+   bool addChildValues_{false};
++public:
++  bool use_end_line_{true}; // [+]FlylinkDC++
+ };
+ #if defined(_MSC_VER)
+ #pragma warning(pop)
