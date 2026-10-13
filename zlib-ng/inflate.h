@@ -11,8 +11,6 @@
 #ifndef INFLATE_H_
 #define INFLATE_H_
 
-#include "crc32.h"
-
 #ifdef S390_DFLTCC_INFLATE
 #  include "arch/s390/dfltcc_common.h"
 #  define HAVE_ARCH_INFLATE_STATE
@@ -118,11 +116,10 @@ struct ALIGNED_(64) inflate_state {
     uint32_t whave;             /* valid bytes in the window */
     uint32_t wnext;             /* window write index */
     unsigned char *window;      /* allocated sliding window, if needed */
-    uint32_t chunksize;         /* size of memory copying chunk */
 
         /* bit accumulator */
     uint64_t hold;              /* input bit accumulator */
-    unsigned bits;              /* number of bits in "in" */
+    unsigned bits;              /* number of bits in hold */
         /* fixed and dynamic code tables */
     unsigned lenbits;           /* index bits for lencode */
     code const *lencode;        /* starting table for length/literal codes */
@@ -140,11 +137,6 @@ struct ALIGNED_(64) inflate_state {
     uint32_t have;              /* number of code lengths in lens[] */
     code *next;                 /* next available space in codes[] */
 
-#if defined(_M_IX86) || defined(_M_ARM)
-    uint32_t padding[1];
-#endif
-    struct crc32_fold_s ALIGNED_(16) crc_fold;
-
     uint16_t lens[320];         /* temporary storage for code lengths */
     uint16_t work[288];         /* work area for code table building */
     code codes[ENOUGH];         /* space for code tables */
@@ -160,7 +152,7 @@ struct ALIGNED_(64) inflate_state {
 #ifdef HAVE_ARCH_INFLATE_STATE
     arch_inflate_state arch;    /* architecture-specific extensions */
 #endif
-#if defined(_M_IX86) || defined(_M_ARM)
+#ifdef ARCH_32BIT
     int padding2[8];
 #endif
 };

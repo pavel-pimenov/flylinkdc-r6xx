@@ -1,7 +1,7 @@
 #ifndef DEFLATE_H_
 #define DEFLATE_H_
 /* deflate.h -- internal compression state
- * Copyright (C) 1995-2016 Jean-loup Gailly
+ * Copyright (C) 1995-2026 Jean-loup Gailly
  * For conditions of distribution and use, see copyright notice in zlib.h
  */
 
@@ -13,7 +13,6 @@
 #include "zutil.h"
 #include "zendian.h"
 #include "zmemory.h"
-#include "crc32.h"
 
 #ifdef S390_DFLTCC_DEFLATE
 #  include "arch/s390/dfltcc_common.h"
@@ -28,9 +27,11 @@
 #  define GZIP
 #endif
 
-/* define LIT_MEM to slightly increase the speed of deflate (order 1% to 2%) at
-   the cost of a larger memory footprint */
-#ifndef NO_LIT_MEM
+/* LIT_MEM uses separate distance/length buffers instead of the overlaid sym_buf.
+   This uses ~20% more memory but is 1-2% faster on platforms without fast unaligned
+   access. By default, LIT_MEM is only enabled when OPTIMAL_CMP < 32. Define LIT_MEM
+   to force separate buffers, or NO_LIT_MEM to force sym_buf usage. */
+#if !defined(LIT_MEM) && !defined(NO_LIT_MEM) && (OPTIMAL_CMP < 32)
 #  define LIT_MEM
 #endif
 
@@ -79,12 +80,45 @@
 #endif
 /* Stream status */
 
-#define HASH_BITS    16u           /* log2(HASH_SIZE) */
 #ifndef HASH_SIZE
 #  define HASH_SIZE 65536u         /* number of elements in hash table */
+#  define HASH_BITS    16u         /* log2(HASH_SIZE) */
+#else
+#  if ((HASH_SIZE) & ((HASH_SIZE) - 1)) != 0
+#    error HASH_SIZE must be a perfect power of 2!
+#  endif
+#  if (HASH_SIZE) < 64u || (HASH_SIZE) > 524288u
+#    error HASH_SIZE must be within 64-524288. Note that non-default sizes are not supported, and might not work correctly.
+#  endif
+#  define HASH_BITS ( \
+     (HASH_SIZE) == 64u ? 6u : \
+     (HASH_SIZE) == 128u ? 7u : \
+     (HASH_SIZE) == 256u ? 8u : \
+     (HASH_SIZE) == 512u ? 9u : \
+     (HASH_SIZE) == 1024u ? 10u : \
+     (HASH_SIZE) == 2048u ? 11u : \
+     (HASH_SIZE) == 4096u ? 12u : \
+     (HASH_SIZE) == 8192u ? 13u : \
+     (HASH_SIZE) == 16384u ? 14u : \
+     (HASH_SIZE) == 32768u ? 15u : \
+     (HASH_SIZE) == 65536u ? 16u : \
+     (HASH_SIZE) == 131072u ? 17u : \
+     (HASH_SIZE) == 262144u ? 18u : \
+     (HASH_SIZE) == 524288u ? 19u : 0u)
 #endif
+
 #define HASH_MASK (HASH_SIZE - 1u) /* HASH_SIZE-1 */
 
+#define MIN_ROLL_LEVEL 9
+/* Levels at and above this use the rolling three-byte hash, which can find
+ * minimum-length matches the four-byte Knuth hash cannot index.
+ *
+ * Every level at and above this must map to deflate_slow in configuration_table
+ * to prevent the hash chains from mixing Knuth and rolling hashes.
+ */
+#if MIN_ROLL_LEVEL < 7
+#  error MIN_ROLL_LEVEL must only reach levels that map to deflate_slow
+#endif
 
 /* Data structure describing a single value and its code string. */
 typedef struct ct_data_s {
@@ -119,17 +153,13 @@ typedef uint16_t Pos;
 /* Type definitions for hash callbacks */
 typedef struct internal_state deflate_state;
 
-typedef uint32_t (* update_hash_cb)        (uint32_t h, uint32_t val);
-typedef void     (* insert_string_cb)      (deflate_state *const s, uint32_t str, uint32_t count);
-typedef Pos      (* quick_insert_string_cb)(deflate_state *const s, uint32_t str);
+typedef void (* insert_batch_func)   (deflate_state *const s, unsigned char *window, uint32_t str, uint32_t count);
+void         insert_knuth_batch      (deflate_state *const s, unsigned char *window, uint32_t str, uint32_t count);
+void         insert_roll_batch       (deflate_state *const s, unsigned char *window, uint32_t str, uint32_t count);
+void         insert_knuth_batch_head (deflate_state *const s, unsigned char *window, uint32_t str, uint32_t count);
 
-uint32_t update_hash             (uint32_t h, uint32_t val);
-void     insert_string           (deflate_state *const s, uint32_t str, uint32_t count);
-Pos      quick_insert_string     (deflate_state *const s, uint32_t str);
-
-uint32_t update_hash_roll        (uint32_t h, uint32_t val);
-void     insert_string_roll      (deflate_state *const s, uint32_t str, uint32_t count);
-Pos      quick_insert_string_roll(deflate_state *const s, uint32_t str);
+/* Match function. Returns the longest match. */
+typedef uint32_t (* longest_match_func) (deflate_state *const s, uint32_t cur_match);
 
 /* Struct for memory allocation handling */
 typedef struct deflate_allocs_s {
@@ -143,6 +173,7 @@ typedef struct deflate_allocs_s {
 } deflate_allocs;
 
 struct ALIGNED_(64) internal_state {
+                /* Cacheline 0 */
     PREFIX3(stream)      *strm;            /* pointer back to this zlib stream */
     unsigned char        *pending_buf;     /* output still pending */
     unsigned char        *pending_out;     /* next pending byte to output to the stream */
@@ -155,17 +186,19 @@ struct ALIGNED_(64) internal_state {
     int                  last_flush;       /* value of flush param for previous deflate call */
     int                  reproducible;     /* Whether reproducible compression results are required. */
 
-    int block_open;
+    unsigned int block_open;
     /* Whether or not a block is currently open for the QUICK deflation scheme.
      * This is set to 1 if there is an active block, or 0 if the block was just closed.
      */
 
-                /* used by deflate.c: */
+                /* Cacheline 1 */
 
-    unsigned int  w_size;            /* LZ77 window size (32K by default) */
-    unsigned int  w_bits;            /* log2(w_size)  (8..16) */
-    unsigned int  w_mask;            /* w_size - 1 */
-    unsigned int  lookahead;         /* number of valid bytes ahead in window */
+    unsigned int  lookahead;    /* number of valid bytes ahead in window */
+    unsigned int strstart;      /* start of string to insert */
+    unsigned int  w_size;       /* LZ77 window size (32K by default) */
+
+    int block_start;            /* Window position at the beginning of the current output block.
+                                 * Gets negative when the window is moved backwards. */
 
     unsigned int high_water;
     /* High water mark offset in window for initialized bytes -- bytes above
@@ -199,15 +232,12 @@ struct ALIGNED_(64) internal_state {
 
     uint32_t ins_h; /* hash index of string to be inserted */
 
-    int block_start;
-    /* Window position at the beginning of the current output block. Gets
-     * negative when the window is moved backwards.
-     */
-
     unsigned int match_length;       /* length of best match */
-    Pos          prev_match;         /* previous match */
     int          match_available;    /* set if previous match exists */
-    unsigned int strstart;           /* start of string to insert */
+    uint32_t     prev_match;         /* previous match (used by deflate_slow) */
+
+                /* Cacheline 2 */
+
     unsigned int match_start;        /* start of matching string */
 
     unsigned int prev_length;
@@ -230,50 +260,21 @@ struct ALIGNED_(64) internal_state {
      * max_insert_length is used only for compression levels <= 6.
      */
 
-    update_hash_cb          update_hash;
-    insert_string_cb        insert_string;
-    quick_insert_string_cb  quick_insert_string;
-    /* Hash function callbacks that can be configured depending on the deflate
-     * algorithm being used */
+    int level;                  /* compression level (1..9) */
+    int strategy;               /* favor or force Huffman coding*/
+    unsigned int good_match;    /* Use a faster search when the previous match is longer than this */
+    int nice_match;             /* Stop searching when current match exceeds this */
+    unsigned int insert;        /* bytes at end of window left to insert */
 
-    int level;    /* compression level (1..9) */
-    int strategy; /* favor or force Huffman coding*/
+    int32_t bi_used;            /* Last number of used bits when going to a byte boundary. */
+    uint64_t bi_buf;            /* Output buffer.
+                                 * Bits are inserted starting at the bottom (least significant bits). */
+    int32_t bi_valid;           /* Number of valid bits in bi_buf.
+                                 * All bits above the last valid bit are always zero. */
 
-    unsigned int good_match;
-    /* Use a faster search when the previous match is longer than this */
-
-    int nice_match; /* Stop searching when current match exceeds this */
-
-#if defined(_M_IX86) || defined(_M_ARM)
-    int padding[2];
-#endif
-
-    struct crc32_fold_s ALIGNED_(16) crc_fold;
+    int32_t padding[2];         /* Keeps Cacheline 3 aligned */
 
                 /* used by trees.c: */
-    /* Didn't use ct_data typedef below to suppress compiler warning */
-    struct ct_data_s dyn_ltree[HEAP_SIZE];   /* literal and length tree */
-    struct ct_data_s dyn_dtree[2*D_CODES+1]; /* distance tree */
-    struct ct_data_s bl_tree[2*BL_CODES+1];  /* Huffman tree for bit lengths */
-
-    struct tree_desc_s l_desc;               /* desc. for literal tree */
-    struct tree_desc_s d_desc;               /* desc. for distance tree */
-    struct tree_desc_s bl_desc;              /* desc. for bit length tree */
-
-    uint16_t bl_count[MAX_BITS+1];
-    /* number of codes at each bit length for an optimal tree */
-
-    int heap[2*L_CODES+1];      /* heap used to build the Huffman trees */
-    int heap_len;               /* number of elements in the heap */
-    int heap_max;               /* element of largest frequency */
-    /* The sons of heap[n] are heap[2*n] and heap[2*n+1]. heap[0] is not used.
-     * The same heap array is used to build all trees.
-     */
-
-    unsigned char depth[2*L_CODES+1];
-    /* Depth of each subtree used as tie breaker for trees of equal frequency
-     */
-
     unsigned int  lit_bufsize;
     /* Size of match buffer for literals/lengths.  There are 4 reasons for
      * limiting lit_bufsize to 64K:
@@ -294,6 +295,8 @@ struct ALIGNED_(64) internal_state {
      *   - I can't count above 4
      */
 
+                /* Cacheline 3 */
+
 #ifdef LIT_MEM
 #   define LIT_BUFS 5
     uint16_t *d_buf;              /* buffer for distances */
@@ -306,14 +309,23 @@ struct ALIGNED_(64) internal_state {
     unsigned int sym_next;        /* running index in symbol buffer */
     unsigned int sym_end;         /* symbol table full when sym_next reaches this */
 
-    unsigned long opt_len;        /* bit length of current block with optimal trees */
-    unsigned long static_len;     /* bit length of current block with static trees */
-    unsigned int matches;         /* number of string matches in current block */
-    unsigned int insert;          /* bytes at end of window left to insert */
+    unsigned int opt_len;         /* bit length of current block with optimal trees */
+    unsigned int static_len;      /* bit length of current block with static trees */
 
-    /* compressed_len and bits_sent are only used if ZLIB_DEBUG is defined */
-    unsigned long compressed_len; /* total bit length of compressed file mod 2^32 */
-    unsigned long bits_sent;      /* bit length of compressed data sent mod 2^32 */
+    struct tree_desc_s l_desc;               /* desc. for literal tree */
+    struct tree_desc_s d_desc;               /* desc. for distance tree */
+    struct tree_desc_s bl_desc;              /* desc. for bit length tree */
+
+    uint16_t bl_count[MAX_BITS+1];
+    /* number of codes at each bit length for an optimal tree */
+
+    uint32_t pq_leaves[L_CODES+1];  /* build_tree() packed leaf entries */
+    uint32_t pq_scratch[L_CODES+1]; /* build_tree() radix buffer and internal node FIFO */
+
+    /* Didn't use ct_data typedef below to suppress compiler warning */
+    struct ct_data_s dyn_ltree[HEAP_SIZE];   /* literal and length tree */
+    struct ct_data_s dyn_dtree[2*D_CODES+1]; /* distance tree */
+    struct ct_data_s bl_tree[2*BL_CODES+1];  /* Huffman tree for bit lengths */
 
     deflate_allocs *alloc_bufs;
 
@@ -321,17 +333,18 @@ struct ALIGNED_(64) internal_state {
     arch_deflate_state arch;      /* architecture-specific extensions */
 #endif
 
-    uint64_t bi_buf;
-    /* Output buffer. bits are inserted starting at the bottom (least significant bits). */
+    /* compressed_len and bits_sent are only used if ZLIB_DEBUG is defined */
+#ifdef ZLIB_DEBUG
+    unsigned long compressed_len; /* total bit length of compressed file mod 2^32 */
+    unsigned long bits_sent;      /* bit length of compressed data sent mod 2^32 */
+#endif
 
-    int32_t bi_valid;
-    /* Number of valid bits in bi_buf.  All bits above the last valid bit are always zero. */
+    /* Level-selected function variants, set by lm_set_level() */
+    longest_match_func longest_match;
+    insert_batch_func insert_batch;
 
     /* Reserved for future use and alignment purposes */
-    int32_t reserved[19];
-#if defined(_M_IX86) || defined(_M_ARM)
-    int32_t padding2[4];
-#endif
+    int32_t reserved[20];
 };
 
 typedef enum {
@@ -353,9 +366,7 @@ typedef enum {
  * IN assertion: there is enough room in pending_buf.
  */
 static inline void put_short(deflate_state *s, uint16_t w) {
-#if BYTE_ORDER == BIG_ENDIAN
-    w = ZSWAP16(w);
-#endif
+    w = Z_U16_TO_LE(w);
     zng_memwrite_2(&s->pending_buf[s->pending], w);
     s->pending += 2;
 }
@@ -365,9 +376,7 @@ static inline void put_short(deflate_state *s, uint16_t w) {
  * IN assertion: there is enough room in pending_buf.
  */
 static inline void put_short_msb(deflate_state *s, uint16_t w) {
-#if BYTE_ORDER == LITTLE_ENDIAN
-    w = ZSWAP16(w);
-#endif
+    w = Z_U16_TO_BE(w);
     zng_memwrite_2(&s->pending_buf[s->pending], w);
     s->pending += 2;
 }
@@ -377,9 +386,7 @@ static inline void put_short_msb(deflate_state *s, uint16_t w) {
  * IN assertion: there is enough room in pending_buf.
  */
 static inline void put_uint32(deflate_state *s, uint32_t dw) {
-#if BYTE_ORDER == BIG_ENDIAN
-    dw = ZSWAP32(dw);
-#endif
+    dw = Z_U32_TO_LE(dw);
     zng_memwrite_4(&s->pending_buf[s->pending], dw);
     s->pending += 4;
 }
@@ -389,9 +396,7 @@ static inline void put_uint32(deflate_state *s, uint32_t dw) {
  * IN assertion: there is enough room in pending_buf.
  */
 static inline void put_uint32_msb(deflate_state *s, uint32_t dw) {
-#if BYTE_ORDER == LITTLE_ENDIAN
-    dw = ZSWAP32(dw);
-#endif
+    dw = Z_U32_TO_BE(dw);
     zng_memwrite_4(&s->pending_buf[s->pending], dw);
     s->pending += 4;
 }
@@ -401,9 +406,7 @@ static inline void put_uint32_msb(deflate_state *s, uint32_t dw) {
  * IN assertion: there is enough room in pending_buf.
  */
 static inline void put_uint64(deflate_state *s, uint64_t lld) {
-#if BYTE_ORDER == BIG_ENDIAN
-    lld = ZSWAP64(lld);
-#endif
+    lld = Z_U64_TO_LE(lld);
     zng_memwrite_8(&s->pending_buf[s->pending], lld);
     s->pending += 8;
 }
@@ -418,6 +421,12 @@ static inline void put_uint64(deflate_state *s, uint64_t lld) {
  * distances are limited to MAX_DIST instead of WSIZE.
  */
 
+#define W_MASK(s)  ((s)->w_size - 1)
+/* Window mask: w_size is always a power of 2, so w_mask = w_size - 1 */
+
+#define W_BITS(s)  zng_ctz32((s)->w_size)
+/* Window bits: log2(w_size), computed from w_size since w_size is a power of 2 */
+
 #define WIN_INIT STD_MAX_MATCH
 /* Number of bytes after end of data in window to initialize in order to avoid
    memory checker errors from longest match routines */
@@ -425,13 +434,14 @@ static inline void put_uint64(deflate_state *s, uint64_t lld) {
 
 void Z_INTERNAL PREFIX(fill_window)(deflate_state *s);
 void Z_INTERNAL slide_hash_c(deflate_state *s);
+void Z_INTERNAL slide_hash_head_c(deflate_state *s);
 
         /* in trees.c */
 void Z_INTERNAL zng_tr_init(deflate_state *s);
-void Z_INTERNAL zng_tr_flush_block(deflate_state *s, char *buf, uint32_t stored_len, int last);
+void Z_INTERNAL zng_tr_flush_block(deflate_state *s, unsigned char *buf, uint32_t stored_len, int last);
 void Z_INTERNAL zng_tr_flush_bits(deflate_state *s);
 void Z_INTERNAL zng_tr_align(deflate_state *s);
-void Z_INTERNAL zng_tr_stored_block(deflate_state *s, char *buf, uint32_t stored_len, int last);
+void Z_INTERNAL zng_tr_stored_block(deflate_state *s, unsigned char *buf, uint32_t stored_len, int last);
 void Z_INTERNAL PREFIX(flush_pending)(PREFIX3(streamp) strm);
 #define d_code(dist) ((dist) < 256 ? zng_dist_code[dist] : zng_dist_code[256+((dist)>>7)])
 /* Mapping from a distance to a distance code. dist is the distance - 1 and
@@ -442,14 +452,53 @@ void Z_INTERNAL PREFIX(flush_pending)(PREFIX3(streamp) strm);
 /* Bit buffer and compress bits calculation debugging */
 #ifdef ZLIB_DEBUG
 #  define cmpr_bits_add(s, len)     s->compressed_len += (len)
-#  define cmpr_bits_align(s)        s->compressed_len = (s->compressed_len + 7) & ~7L
+#  define cmpr_bits_align(s)        s->compressed_len = ALIGN_UP(s->compressed_len, 8)
 #  define sent_bits_add(s, bits)    s->bits_sent += (bits)
-#  define sent_bits_align(s)        s->bits_sent = (s->bits_sent + 7) & ~7L
+#  define sent_bits_align(s)        s->bits_sent = ALIGN_UP(s->bits_sent, 8)
 #else
 #  define cmpr_bits_add(s, len)     Z_UNUSED(len)
 #  define cmpr_bits_align(s)
 #  define sent_bits_add(s, bits)    Z_UNUSED(bits)
 #  define sent_bits_align(s)
+#endif
+
+/* ===========================================================================
+ *  Architecture-specific hooks.
+ */
+#ifdef S390_DFLTCC_DEFLATE
+#  include "arch/s390/dfltcc_deflate.h"
+/* DFLTCC instructions require window to be page-aligned */
+#  define PAD_WINDOW            PAD_4096
+#  define WINDOW_PAD_SIZE       4096
+#  define HINT_ALIGNED_WINDOW   HINT_ALIGNED_4096
+#else
+#  define PAD_WINDOW            PAD_64
+#  define WINDOW_PAD_SIZE       64
+#  define HINT_ALIGNED_WINDOW   HINT_ALIGNED_64
+/* Adjust the window size for the arch-specific deflate code. */
+#  define DEFLATE_ADJUST_WINDOW_SIZE(n) (n)
+/* Invoked at the beginning of deflateSetDictionary(). Useful for checking arch-specific window data. */
+#  define DEFLATE_SET_DICTIONARY_HOOK(strm, dict, dict_len) do {} while (0)
+/* Invoked at the beginning of deflateGetDictionary(). Useful for adjusting arch-specific window data. */
+#  define DEFLATE_GET_DICTIONARY_HOOK(strm, dict, dict_len) do {} while (0)
+/* Invoked at the end of deflateResetKeep(). Useful for initializing arch-specific extension blocks. */
+#  define DEFLATE_RESET_KEEP_HOOK(strm) do {} while (0)
+/* Invoked at the beginning of deflateParams(). Useful for updating arch-specific compression parameters. */
+#  define DEFLATE_PARAMS_HOOK(strm, level, strategy, hook_flush) do {} while (0)
+/* Returns whether the last deflate(flush) operation did everything it's supposed to do. */
+#  define DEFLATE_DONE(strm, flush) 1
+/* Adjusts the upper bound on compressed data length based on compression parameters and uncompressed data length.
+ * Useful when arch-specific deflation code behaves differently than regular zlib-ng algorithms. */
+#  define DEFLATE_BOUND_ADJUST_COMPLEN(strm, complen, sourceLen) do {} while (0)
+/* Returns whether an optimistic upper bound on compressed data length should *not* be used.
+ * Useful when arch-specific deflation code behaves differently than regular zlib-ng algorithms. */
+#  define DEFLATE_NEED_CONSERVATIVE_BOUND(strm) 0
+/* Invoked for each deflate() call. Useful for plugging arch-specific deflation code. */
+#  define DEFLATE_HOOK(strm, flush, bstate) 0
+/* Returns whether zlib-ng should compute a checksum. Set to 0 if arch-specific deflation code already does that. */
+#  define DEFLATE_NEED_CHECKSUM(strm) 1
+/* Returns whether reproducibility parameter can be set to a given value. */
+#  define DEFLATE_CAN_SET_REPRODUCIBLE(strm, reproducible) 1
 #endif
 
 #endif /* DEFLATE_H_ */

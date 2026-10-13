@@ -15,27 +15,20 @@
 #include "adler32_avx2_p.h"
 #include "x86_intrins.h"
 
-extern uint32_t adler32_fold_copy_sse42(uint32_t adler, uint8_t *dst, const uint8_t *src, size_t len);
+extern uint32_t adler32_copy_sse42(uint32_t adler, uint8_t *dst, const uint8_t *src, size_t len);
 extern uint32_t adler32_ssse3(uint32_t adler, const uint8_t *src, size_t len);
 
-static inline uint32_t adler32_fold_copy_impl(uint32_t adler, uint8_t *dst, const uint8_t *src, size_t len, const int COPY) {
-    if (src == NULL) return 1L;
-    if (len == 0) return adler;
-
+Z_FORCEINLINE static uint32_t adler32_copy_impl(uint32_t adler, uint8_t *dst, const uint8_t *src, size_t len, const int COPY) {
     uint32_t adler0, adler1;
     adler1 = (adler >> 16) & 0xffff;
     adler0 = adler & 0xffff;
 
 rem_peel:
     if (len < 16) {
-        if (COPY) {
-            return adler32_copy_len_16(adler0, src, dst, len, adler1);
-        } else {
-            return adler32_len_16(adler0, src, len, adler1);
-        }
+        return adler32_copy_tail(adler0, dst, src, len, adler1, 1, 15, COPY);
     } else if (len < 32) {
         if (COPY) {
-            return adler32_fold_copy_sse42(adler, dst, src, len);
+            return adler32_copy_sse42(adler, dst, src, len);
         } else {
             return adler32_ssse3(adler, src, len);
         }
@@ -57,8 +50,7 @@ rem_peel:
         __m256i vs3 = _mm256_setzero_si256();
         vs2_0 = vs3;
 
-        size_t k = MIN(len, NMAX);
-        k -= k % 32;
+        size_t k = ALIGN_DOWN(MIN(len, NMAX), 32);
         len -= k;
 
         while (k >= 64) {
@@ -108,7 +100,7 @@ rem_peel:
                 _mm256_storeu_si256((__m256i*)dst, vbuf);
                 dst += 32;
             }
- 
+
             vs1 = _mm256_add_epi32(vs1, vs1_sad);
             vs3 = _mm256_add_epi32(vs3, vs1_0);
             __m256i v_short_sum2 = _mm256_maddubs_epi16(vbuf, dot2v_0); // sum 32 uint8s to 16 shorts
@@ -170,11 +162,11 @@ rem_peel:
 }
 
 Z_INTERNAL uint32_t adler32_avx2(uint32_t adler, const uint8_t *src, size_t len) {
-    return adler32_fold_copy_impl(adler, NULL, src, len, 0);
+    return adler32_copy_impl(adler, NULL, src, len, 0);
 }
 
-Z_INTERNAL uint32_t adler32_fold_copy_avx2(uint32_t adler, uint8_t *dst, const uint8_t *src, size_t len) {
-    return adler32_fold_copy_impl(adler, dst, src, len, 1);
+Z_INTERNAL uint32_t adler32_copy_avx2(uint32_t adler, uint8_t *dst, const uint8_t *src, size_t len) {
+    return adler32_copy_impl(adler, dst, src, len, 1);
 }
 
 #endif

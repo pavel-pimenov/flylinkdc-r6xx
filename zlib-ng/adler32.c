@@ -9,10 +9,14 @@
 
 #ifdef ZLIB_COMPAT
 unsigned long Z_EXPORT PREFIX(adler32_z)(unsigned long adler, const unsigned char *buf, size_t len) {
+    if (buf == NULL)
+        return ADLER32_INITIAL_VALUE;
     return (unsigned long)FUNCTABLE_CALL(adler32)((uint32_t)adler, buf, len);
 }
 #else
 uint32_t Z_EXPORT PREFIX(adler32_z)(uint32_t adler, const unsigned char *buf, size_t len) {
+    if (buf == NULL)
+        return ADLER32_INITIAL_VALUE;
     return FUNCTABLE_CALL(adler32)(adler, buf, len);
 }
 #endif
@@ -20,10 +24,14 @@ uint32_t Z_EXPORT PREFIX(adler32_z)(uint32_t adler, const unsigned char *buf, si
 /* ========================================================================= */
 #ifdef ZLIB_COMPAT
 unsigned long Z_EXPORT PREFIX(adler32)(unsigned long adler, const unsigned char *buf, unsigned int len) {
+    if (buf == NULL)
+        return ADLER32_INITIAL_VALUE;
     return (unsigned long)FUNCTABLE_CALL(adler32)((uint32_t)adler, buf, len);
 }
 #else
 uint32_t Z_EXPORT PREFIX(adler32)(uint32_t adler, const unsigned char *buf, uint32_t len) {
+    if (buf == NULL)
+        return ADLER32_INITIAL_VALUE;
     return FUNCTABLE_CALL(adler32)(adler, buf, len);
 }
 #endif
@@ -48,7 +56,7 @@ static uint32_t adler32_combine_(uint32_t adler1, uint32_t adler2, z_off64_t len
     sum2 += ((adler1 >> 16) & 0xffff) + ((adler2 >> 16) & 0xffff) + BASE - rem;
     if (sum1 >= BASE) sum1 -= BASE;
     if (sum1 >= BASE) sum1 -= BASE;
-    if (sum2 >= ((unsigned long)BASE << 1)) sum2 -= ((unsigned long)BASE << 1);
+    if (sum2 >= (BASE << 1)) sum2 -= (BASE << 1);
     if (sum2 >= BASE) sum2 -= BASE;
     return sum1 | (sum2 << 16);
 }

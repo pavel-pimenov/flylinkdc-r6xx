@@ -1,19 +1,134 @@
 /* inftrees.c -- generate Huffman trees for efficient decoding
- * Copyright (C) 1995-2024 Mark Adler
+ * Copyright (C) 1995-2026 Mark Adler
  * For conditions of distribution and use, see copyright notice in zlib.h
  */
 
 #include "zbuild.h"
+#include "zmemory.h"
 #include "zutil.h"
 #include "inftrees.h"
+#include "inflate_p.h"
+#include "fallback_builtins.h"
 
-const char PREFIX(inflate_copyright)[] = " inflate 1.3.1 Copyright 1995-2024 Mark Adler ";
+#if defined(__SSE2__)
+#  include "arch/x86/x86_intrins.h"
+#elif defined(__ARM_NEON) || defined(__ARM_NEON__)
+#  include "arch/arm/neon_intrins.h"
+#elif defined(__ALTIVEC__)
+#  include "arch/power/power_intrins.h"
+#endif
+
+Z_INTERNAL const char PREFIX(inflate_copyright)[] = " inflate 1.3.2 Copyright 1995-2026 Mark Adler ";
 /*
   If you use the zlib library in a product, an acknowledgment is welcome
   in the documentation of your product. If for some reason you cannot
   include such an acknowledgment, I would appreciate that you keep this
   copyright string in the executable of your product.
  */
+
+/* Count number of codes for each code length. */
+static inline void count_lengths(uint16_t *lens, int codes, uint16_t *count) {
+    /* IBM...made some weird choices for VSX/VMX. Basically vec_ld has an inherent
+     * endianness but we don't want to force VSX to be needed */
+    static const ALIGNED_(16) uint8_t one[256] = {
+        1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1
+    };
+
+#if defined(__ALTIVEC__)
+    vector unsigned char s1 = vec_splat_u8(0);
+    vector unsigned char s2 = vec_splat_u8(0);
+
+    if (codes & 1) {
+        s1 = vec_ld(16 * lens[0], one);
+        --codes;
+        ++lens;
+    }
+
+    while (codes) {
+        s1 = vec_add(s1, vec_ld(16 * lens[0], one));
+        s2 = vec_add(s2, vec_ld(16 * lens[1], one));
+        codes -= 2;
+        lens += 2;
+    }
+
+    vector unsigned short sum_lo = vec_add(vec_unpackh(s1), vec_unpackh(s2));
+    vector unsigned short sum_hi = vec_add(vec_unpackl(s1), vec_unpackl(s2));
+
+    vec_st(sum_lo, 0, &count[0]);
+    vec_st(sum_hi, 0, &count[8]);
+
+#elif defined(__ARM_NEON) || defined(__ARM_NEON__)
+    int sym;
+    uint8x16_t s1 = vdupq_n_u8(0);
+    uint8x16_t s2 = vdupq_n_u8(0);
+
+    if (codes & 1) {
+        s1 = vld1q_u8(&one[16 * lens[0]]);
+    }
+    for (sym = codes & 1; sym < codes; sym += 2) {
+        s1 = vaddq_u8(s1, vld1q_u8(&one[16 * lens[sym]]));
+        s2 = vaddq_u8(s2, vld1q_u8(&one[16 * lens[sym+1]]));
+    }
+
+    vst1q_u16(&count[0], vaddl_u8(vget_low_u8(s1), vget_low_u8(s2)));
+    vst1q_u16(&count[8], vaddl_u8(vget_high_u8(s1), vget_high_u8(s2)));
+
+#elif defined(__SSE2__)
+    int sym;
+    __m128i s1 = _mm_setzero_si128();
+    __m128i s2 = _mm_setzero_si128();
+
+    if (codes & 1) {
+        s1 = _mm_load_si128((const __m128i*)&one[16 * lens[0]]);
+    }
+    for (sym = codes & 1; sym < codes; sym += 2) {
+        s1 = _mm_add_epi8(s1, _mm_load_si128((const __m128i*)&one[16 * lens[sym]]));  // vaddq_u8
+        s2 = _mm_add_epi8(s2, _mm_load_si128((const __m128i*)&one[16 * lens[sym+1]]));
+    }
+
+#  if defined(__AVX2__)
+    __m256i w1 = _mm256_cvtepu8_epi16(s1);
+    __m256i w2 = _mm256_cvtepu8_epi16(s2);
+    __m256i sum = _mm256_add_epi16(w1, w2);
+
+    _mm256_storeu_si256((__m256i*)&count[0], sum);
+#  else
+    __m128i zero = _mm_setzero_si128();
+
+    __m128i s1_lo = _mm_unpacklo_epi8(s1, zero);
+    __m128i s2_lo = _mm_unpacklo_epi8(s2, zero);
+    __m128i sum_lo = _mm_add_epi16(s1_lo, s2_lo);
+    _mm_storeu_si128((__m128i*)&count[0], sum_lo);
+
+    __m128i s1_hi = _mm_unpackhi_epi8(s1, zero);
+    __m128i s2_hi = _mm_unpackhi_epi8(s2, zero);
+    __m128i sum_hi = _mm_add_epi16(s1_hi, s2_hi);
+    _mm_storeu_si128((__m128i*)&count[8], sum_hi);
+#  endif
+#else
+    int len, sym;
+    for (len = 0; len <= MAX_BITS; len++)
+        count[len] = 0;
+    for (sym = 0; sym < codes; sym++)
+        count[lens[sym]]++;
+    Z_UNUSED(one);
+#endif
+}
 
 /*
    Build a set of tables to decode the provided canonical Huffman code.
@@ -28,33 +143,34 @@ const char PREFIX(inflate_copyright)[] = " inflate 1.3.1 Copyright 1995-2024 Mar
    longest code or if it is less than the shortest code.
  */
 int Z_INTERNAL zng_inflate_table(codetype type, uint16_t *lens, unsigned codes,
-                                code * *table, unsigned *bits, uint16_t *work) {
-    unsigned len;               /* a code's length in bits */
-    unsigned sym;               /* index of code symbols */
-    unsigned min, max;          /* minimum and maximum code lengths */
-    unsigned root;              /* number of index bits for root table */
-    unsigned curr;              /* number of index bits for current table */
-    unsigned drop;              /* code bits to drop for sub-table */
-    int left;                   /* number of prefix codes available */
-    unsigned used;              /* code entries in table used */
-    unsigned huff;              /* Huffman code */
-    unsigned incr;              /* for incrementing code, index */
-    unsigned fill;              /* index for replicating entries */
-    unsigned low;               /* low bits for current root entry */
-    unsigned mask;              /* mask for low root bits */
-    code here;                  /* table entry for duplication */
-    code *next;                 /* next available space in table */
-    const uint16_t *base;       /* base value table to use */
-    const uint16_t *extra;      /* extra bits table to use */
-    unsigned match;             /* use base and extra for symbol >= match */
-    uint16_t count[MAX_BITS+1];  /* number of codes of each length */
-    uint16_t offs[MAX_BITS+1];   /* offsets in table for each length */
+                                 code * *table, unsigned *bits, uint16_t *work) {
+    unsigned len;                 /* a code's length in bits */
+    unsigned sym;                 /* index of code symbols */
+    unsigned min, max;            /* minimum and maximum code lengths */
+    unsigned root;                /* number of index bits for root table */
+    unsigned curr;                /* number of index bits for current table */
+    unsigned drop;                /* code bits to drop for sub-table */
+    int left;                     /* number of prefix codes available */
+    unsigned used;                /* code entries in table used */
+    uint16_t rhuff;               /* Reversed huffman code */
+    unsigned huff;                /* Huffman code */
+    unsigned incr;                /* for incrementing code, index */
+    unsigned fill;                /* index for replicating entries */
+    unsigned low;                 /* low bits for current root entry */
+    unsigned mask;                /* mask for low root bits */
+    code here;                    /* table entry for duplication */
+    code *next;                   /* next available space in table */
+    const uint16_t *base = NULL;  /* base value table to use */
+    const uint16_t *extra = NULL; /* extra bits table to use */
+    unsigned match = 0;           /* use base and extra for symbol >= match */
+    uint16_t ALIGNED_(16) count[MAX_BITS+1]; /* number of codes of each length */
+    uint16_t offs[MAX_BITS+1];    /* offsets in table for each length */
     static const uint16_t lbase[31] = { /* Length codes 257..285 base */
         3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31,
         35, 43, 51, 59, 67, 83, 99, 115, 131, 163, 195, 227, 258, 0, 0};
     static const uint16_t lext[31] = { /* Length codes 257..285 extra */
         16, 16, 16, 16, 16, 16, 16, 16, 17, 17, 17, 17, 18, 18, 18, 18,
-        19, 19, 19, 19, 20, 20, 20, 20, 21, 21, 21, 21, 16, 203, 77};
+        19, 19, 19, 19, 20, 20, 20, 20, 21, 21, 21, 21, 16, 199, 75};
     static const uint16_t dbase[32] = { /* Distance codes 0..29 base */
         1, 2, 3, 4, 5, 7, 9, 13, 17, 25, 33, 49, 65, 97, 129, 193,
         257, 385, 513, 769, 1025, 1537, 2049, 3073, 4097, 6145,
@@ -96,10 +212,7 @@ int Z_INTERNAL zng_inflate_table(codetype type, uint16_t *lens, unsigned codes,
      */
 
     /* accumulate lengths for codes (assumes lens[] all in 0..MAXBITS) */
-    for (len = 0; len <= MAX_BITS; len++)
-        count[len] = 0;
-    for (sym = 0; sym < codes; sym++)
-        count[lens[sym]]++;
+    count_lengths(lens, codes, count);
 
     /* bound code lengths, force root to be within code lengths */
     root = *bits;
@@ -169,6 +282,9 @@ int Z_INTERNAL zng_inflate_table(codetype type, uint16_t *lens, unsigned codes,
        in the rest of the decoding tables with invalid code markers.
      */
 
+    /* The packed table fill below reads and writes each entry as a single uint32_t. */
+    Assert(sizeof(code) == 4, "code entry must be exactly 4 bytes");
+
     /* set up for code type */
     switch (type) {
     case CODES:
@@ -180,13 +296,13 @@ int Z_INTERNAL zng_inflate_table(codetype type, uint16_t *lens, unsigned codes,
         extra = lext;
         match = 257;
         break;
-    default:    /* DISTS */
+    case DISTS:
         base = dbase;
         extra = dext;
-        match = 0;
     }
 
     /* initialize state for loop */
+    rhuff = 0;                  /* starting code, reversed */
     huff = 0;                   /* starting code */
     sym = 0;                    /* starting code symbol */
     len = min;                  /* starting code length */
@@ -207,7 +323,9 @@ int Z_INTERNAL zng_inflate_table(codetype type, uint16_t *lens, unsigned codes,
         /* create table entry */
         here.bits = (unsigned char)(len - drop);
         if (LIKELY(work[sym] >= match)) {
-            here.op = (unsigned char)(extra[work[sym] - match]);
+            unsigned op = extra[work[sym] - match];
+            here.op = COMBINE_OP(op, here.bits);
+            here.bits = COMBINE_BITS(here.bits, op);
             here.val = base[work[sym] - match];
         } else if (work[sym] + 1U < match) {
             here.op = (unsigned char)0;
@@ -221,21 +339,29 @@ int Z_INTERNAL zng_inflate_table(codetype type, uint16_t *lens, unsigned codes,
         incr = 1U << (len - drop);
         fill = 1U << curr;
         min = fill;                 /* save offset to next table */
-        do {
-            fill -= incr;
-            next[(huff >> drop) + fill] = here;
-        } while (fill != 0);
+        {
+            /* `here` is a 4-byte struct that the compiler writes one field at a time.
+               Read it as a packed uint32_t so each slot is filled by a single store. */
+            uint32_t here_u32 = zng_memread_4(&here);
+            code *base_ptr = next + (huff >> drop);
+            unsigned step4 = incr << 2;
+            /* Unroll by four so the slot addresses are independent. */
+            while (fill >= step4) {
+                zng_memwrite_4(&base_ptr[fill - 1 * incr], here_u32);
+                zng_memwrite_4(&base_ptr[fill - 2 * incr], here_u32);
+                zng_memwrite_4(&base_ptr[fill - 3 * incr], here_u32);
+                zng_memwrite_4(&base_ptr[fill - 4 * incr], here_u32);
+                fill -= step4;
+            }
+            while (fill != 0) {
+                fill -= incr;
+                zng_memwrite_4(&base_ptr[fill], here_u32);
+            }
+        }
 
         /* backwards increment the len-bit code huff */
-        incr = 1U << (len - 1);
-        while (huff & incr)
-            incr >>= 1;
-        if (incr != 0) {
-            huff &= incr - 1;
-            huff += incr;
-        } else {
-            huff = 0;
-        }
+        rhuff = (uint16_t)(rhuff + (0x8000u >> (len - 1)));
+        huff = zng_bitreverse16(rhuff);
 
         /* go to next symbol, update count, len */
         sym++;

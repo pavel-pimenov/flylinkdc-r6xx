@@ -21,7 +21,97 @@
     <ClCompile Include="zlib-ng\adler32.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="zlib-ng\arch\generic\adler32_c.c">
+      <Filter>Source Files\arc\generic</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib-ng\arch\generic\chunkset_c.c">
+      <Filter>Source Files\arc\generic</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib-ng\arch\generic\compare256_c.c">
+      <Filter>Source Files\arc\generic</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib-ng\arch\generic\crc32_braid_c.c">
+      <Filter>Source Files\arc\generic</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib-ng\arch\generic\crc32_chorba_c.c">
+      <Filter>Source Files\arc\generic</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib-ng\arch\generic\slide_hash_c.c">
+      <Filter>Source Files\arc\generic</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib-ng\arch\x86\adler32_avx2.c">
+      <Filter>Source Files\arc</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib-ng\arch\x86\adler32_avx2_vnni.c">
+      <Filter>Source Files\arc</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib-ng\arch\x86\adler32_avx512.c">
+      <Filter>Source Files\arc</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib-ng\arch\x86\adler32_avx512_vnni.c">
+      <Filter>Source Files\arc</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib-ng\arch\x86\adler32_sse42.c">
+      <Filter>Source Files\arc</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib-ng\arch\x86\adler32_ssse3.c">
+      <Filter>Source Files\arc</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib-ng\arch\x86\chunkset_avx2.c">
+      <Filter>Source Files\arc</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib-ng\arch\x86\chunkset_avx512.c">
+      <Filter>Source Files\arc</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib-ng\arch\x86\chunkset_sse2.c">
+      <Filter>Source Files\arc</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib-ng\arch\x86\chunkset_ssse3.c">
+      <Filter>Source Files\arc</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib-ng\arch\x86\compare256_avx2.c">
+      <Filter>Source Files\arc</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib-ng\arch\x86\compare256_avx512.c">
+      <Filter>Source Files\arc</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib-ng\arch\x86\compare256_sse2.c">
+      <Filter>Source Files\arc</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib-ng\arch\x86\crc32_chorba_sse2.c">
+      <Filter>Source Files\arc</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib-ng\arch\x86\crc32_chorba_sse41.c">
+      <Filter>Source Files\arc</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib-ng\arch\x86\crc32_pclmulqdq.c">
+      <Filter>Source Files\arc</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib-ng\arch\x86\crc32_vpclmulqdq_avx2.c">
+      <Filter>Source Files\arc</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib-ng\arch\x86\crc32_vpclmulqdq_avx512.c">
+      <Filter>Source Files\arc</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib-ng\arch\x86\slide_hash_avx2.c">
+      <Filter>Source Files\arc</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib-ng\arch\x86\slide_hash_sse2.c">
+      <Filter>Source Files\arc</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib-ng\arch\x86\x86_features.c">
+      <Filter>Source Files\arc</Filter>
+    </ClCompile>
     <ClCompile Include="zlib-ng\compress.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib-ng\cpu_features.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib-ng\crc32.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib-ng\crc32_braid_comb.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="zlib-ng\deflate.c">
@@ -30,13 +120,22 @@
     <ClCompile Include="zlib-ng\deflate_fast.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="zlib-ng\deflate_huff.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="zlib-ng\deflate_medium.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="zlib-ng\deflate_quick.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="zlib-ng\deflate_rle.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="zlib-ng\deflate_slow.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib-ng\deflate_stored.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="zlib-ng\functable.c">
@@ -63,165 +162,21 @@
     <ClCompile Include="zlib-ng\zutil.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="zlib-ng\deflate_stored.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="zlib-ng\deflate_huff.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="zlib-ng\deflate_rle.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="zlib-ng\insert_string_roll.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="zlib-ng\cpu_features.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="zlib-ng\crc32_braid_comb.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="zlib-ng\arch\x86\x86_features.c">
-      <Filter>Source Files\arc</Filter>
-    </ClCompile>
-    <ClCompile Include="zlib-ng\arch\x86\adler32_avx2.c">
-      <Filter>Source Files\arc</Filter>
-    </ClCompile>
-    <ClCompile Include="zlib-ng\arch\x86\adler32_avx512.c">
-      <Filter>Source Files\arc</Filter>
-    </ClCompile>
-    <ClCompile Include="zlib-ng\arch\x86\adler32_avx512_vnni.c">
-      <Filter>Source Files\arc</Filter>
-    </ClCompile>
-    <ClCompile Include="zlib-ng\arch\x86\adler32_sse42.c">
-      <Filter>Source Files\arc</Filter>
-    </ClCompile>
-    <ClCompile Include="zlib-ng\arch\x86\adler32_ssse3.c">
-      <Filter>Source Files\arc</Filter>
-    </ClCompile>
-    <ClCompile Include="zlib-ng\arch\x86\chunkset_avx2.c">
-      <Filter>Source Files\arc</Filter>
-    </ClCompile>
-    <ClCompile Include="zlib-ng\arch\x86\chunkset_sse2.c">
-      <Filter>Source Files\arc</Filter>
-    </ClCompile>
-    <ClCompile Include="zlib-ng\arch\x86\chunkset_ssse3.c">
-      <Filter>Source Files\arc</Filter>
-    </ClCompile>
-    <ClCompile Include="zlib-ng\arch\x86\compare256_avx2.c">
-      <Filter>Source Files\arc</Filter>
-    </ClCompile>
-    <ClCompile Include="zlib-ng\arch\x86\compare256_sse2.c">
-      <Filter>Source Files\arc</Filter>
-    </ClCompile>
-    <ClCompile Include="zlib-ng\arch\x86\crc32_pclmulqdq.c">
-      <Filter>Source Files\arc</Filter>
-    </ClCompile>
-    <ClCompile Include="zlib-ng\arch\x86\crc32_vpclmulqdq.c">
-      <Filter>Source Files\arc</Filter>
-    </ClCompile>
-    <ClCompile Include="zlib-ng\arch\x86\slide_hash_avx2.c">
-      <Filter>Source Files\arc</Filter>
-    </ClCompile>
-    <ClCompile Include="zlib-ng\arch\x86\slide_hash_sse2.c">
-      <Filter>Source Files\arc</Filter>
-    </ClCompile>
-    <ClCompile Include="zlib-ng\crc32.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="zlib-ng\arch\generic\adler32_c.c">
-      <Filter>Source Files\arc\generic</Filter>
-    </ClCompile>
-    <ClCompile Include="zlib-ng\arch\generic\adler32_fold_c.c">
-      <Filter>Source Files\arc\generic</Filter>
-    </ClCompile>
-    <ClCompile Include="zlib-ng\arch\generic\chunkset_c.c">
-      <Filter>Source Files\arc\generic</Filter>
-    </ClCompile>
-    <ClCompile Include="zlib-ng\arch\generic\compare256_c.c">
-      <Filter>Source Files\arc\generic</Filter>
-    </ClCompile>
-    <ClCompile Include="zlib-ng\arch\generic\crc32_braid_c.c">
-      <Filter>Source Files\arc\generic</Filter>
-    </ClCompile>
-    <ClCompile Include="zlib-ng\arch\generic\crc32_fold_c.c">
-      <Filter>Source Files\arc\generic</Filter>
-    </ClCompile>
-    <ClCompile Include="zlib-ng\arch\generic\slide_hash_c.c">
-      <Filter>Source Files\arc\generic</Filter>
-    </ClCompile>
-    <ClCompile Include="zlib-ng\arch\x86\chunkset_avx512.c">
-      <Filter>Source Files\arc</Filter>
-    </ClCompile>
-    <ClCompile Include="zlib-ng\arch\generic\crc32_c.c">
-      <Filter>Source Files\arc\generic</Filter>
-    </ClCompile>
-    <ClCompile Include="zlib-ng\arch\generic\crc32_chorba_c.c">
-      <Filter>Source Files\arc\generic</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="zlib-ng\adler32_p.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="zlib-ng\arch_functions.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib-ng\arch_natives.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="zlib-ng\chunkset_tpl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="zlib-ng\deflate.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="zlib-ng\deflate_p.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="zlib-ng\fallback_builtins.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="zlib-ng\functable.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="zlib-ng\inffixed_tbl.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="zlib-ng\inflate.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="zlib-ng\inflate_p.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="zlib-ng\inftrees.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="zlib-ng\insert_string_tpl.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="zlib-ng\match_tpl.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="zlib-ng\trees.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="zlib-ng\trees_emit.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="zlib-ng\trees_tbl.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="zlib-ng\zbuild.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="zlib-ng\zconf-ng.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="zlib-ng\zendian.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="zlib-ng\zlib-ng.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="zlib-ng\zutil.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="zlib-ng\zutil_p.h">
+    <ClInclude Include="zlib-ng\compare256_rle.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="zlib-ng\cpu_features.h">
@@ -236,28 +191,103 @@
     <ClInclude Include="zlib-ng\crc32_braid_tbl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="zlib-ng\crc32_fold.h">
+    <ClInclude Include="zlib-ng\crc32_chorba_p.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="zlib-ng\arch\x86\adler32_avx2_p.h">
+    <ClInclude Include="zlib-ng\crc32_p.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib-ng\deflate.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib-ng\deflate_medium_tpl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib-ng\deflate_p.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib-ng\fallback_builtins.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib-ng\functable.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib-ng\gzguts.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib-ng\inffast_tpl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib-ng\inffixed_tbl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib-ng\inflate.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib-ng\inflate_p.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib-ng\inftrees.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib-ng\insert_string_p.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib-ng\match_tpl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib-ng\trees.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib-ng\trees_emit.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib-ng\trees_tbl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib-ng\zarch.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib-ng\zbuild.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib-ng\zconf-ng.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib-ng\zendian.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib-ng\zlib-ng.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib-ng\zlib_name_mangling-ng.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib-ng\zmemory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib-ng\zsanitizer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib-ng\zutil.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib-ng\zutil_p.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib-ng\arch\generic\compare256_p.h">
       <Filter>Header Files\arch</Filter>
     </ClInclude>
-    <ClInclude Include="zlib-ng\arch\x86\adler32_avx2_tpl.h">
+    <ClInclude Include="zlib-ng\arch\generic\generic_functions.h">
+      <Filter>Header Files\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib-ng\arch\x86\adler32_avx2_p.h">
       <Filter>Header Files\arch</Filter>
     </ClInclude>
     <ClInclude Include="zlib-ng\arch\x86\adler32_avx512_p.h">
       <Filter>Header Files\arch</Filter>
     </ClInclude>
-    <ClInclude Include="zlib-ng\arch\x86\adler32_avx512_tpl.h">
-      <Filter>Header Files\arch</Filter>
-    </ClInclude>
     <ClInclude Include="zlib-ng\arch\x86\adler32_ssse3_p.h">
-      <Filter>Header Files\arch</Filter>
-    </ClInclude>
-    <ClInclude Include="zlib-ng\arch\x86\crc32_fold_pclmulqdq_tpl.h">
-      <Filter>Header Files\arch</Filter>
-    </ClInclude>
-    <ClInclude Include="zlib-ng\arch\x86\crc32_fold_vpclmulqdq_tpl.h">
       <Filter>Header Files\arch</Filter>
     </ClInclude>
     <ClInclude Include="zlib-ng\arch\x86\crc32_pclmulqdq_tpl.h">
@@ -266,10 +296,28 @@
     <ClInclude Include="zlib-ng\arch\x86\x86_features.h">
       <Filter>Header Files\arch</Filter>
     </ClInclude>
-    <ClInclude Include="zlib-ng\crc32.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="zlib-ng\arch\x86\x86_functions.h">
+      <Filter>Header Files\arch</Filter>
     </ClInclude>
-    <ClInclude Include="zlib-ng\arch\x86\avx2_tables.h">
+    <ClInclude Include="zlib-ng\arch\x86\x86_intrins.h">
+      <Filter>Header Files\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib-ng\arch\x86\x86_natives.h">
+      <Filter>Header Files\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib-ng\arch\shared\chunk_128bit_perm_idx_lut.h">
+      <Filter>Header Files\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib-ng\arch\shared\chunk_256bit_perm_idx_lut.h">
+      <Filter>Header Files\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib-ng\arch\shared\chunk_permute_table.h">
+      <Filter>Header Files\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib-ng\arch\shared\crc32_hw_common_tpl.h">
+      <Filter>Header Files\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib-ng\arch\shared\crc32_hw_copy_impl_tpl.h">
       <Filter>Header Files\arch</Filter>
     </ClInclude>
   </ItemGroup>

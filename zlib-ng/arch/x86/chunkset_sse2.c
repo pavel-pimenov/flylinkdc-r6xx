@@ -2,10 +2,11 @@
  * For conditions of distribution and use, see copyright notice in zlib.h
  */
 
+#ifdef X86_SSE2
+
 #include "zbuild.h"
 #include "zmemory.h"
 
-#ifdef X86_SSE2
 #include <immintrin.h>
 
 typedef __m128i chunk_t;
@@ -43,6 +44,11 @@ static inline void storechunk(uint8_t *out, chunk_t *chunk) {
 #include "chunkset_tpl.h"
 
 #define INFLATE_FAST     inflate_fast_sse2
+
+#include "inffast_tpl.h"
+
+#define INFLATE_FAST     inflate_fast_safe_sse2
+#define USE_SAFE_MODE
 
 #include "inffast_tpl.h"
 

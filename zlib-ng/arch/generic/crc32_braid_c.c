@@ -8,8 +8,13 @@
  */
 
 #include "zbuild.h"
-#include "crc32_braid_p.h"
+#include "arch_functions.h"
+
+/* Used by chorba fallback and by arch-specific implementations (s390 vx, risc-v zbc). */
+#ifdef CRC32_BRAID_FALLBACK
+
 #include "crc32_braid_tbl.h"
+#include "crc32_p.h"
 
 /*
   A CRC of a message is computed on BRAID_N braids of words in the message, where
@@ -60,7 +65,8 @@ static z_word_t crc_word(z_word_t data) {
 #endif /* BRAID_W */
 
 /* ========================================================================= */
-Z_INTERNAL uint32_t crc32_braid_internal(uint32_t c, const uint8_t *buf, size_t len) {
+Z_INTERNAL uint32_t crc32_braid(uint32_t crc, const uint8_t *buf, size_t len) {
+    crc = ~crc;
 
 #ifdef BRAID_W
     /* If provided enough bytes, do a braided CRC calculation. */
@@ -70,9 +76,11 @@ Z_INTERNAL uint32_t crc32_braid_internal(uint32_t c, const uint8_t *buf, size_t 
         int k;
 
         /* Compute the CRC up to a z_word_t boundary. */
-        while (len && ((uintptr_t)buf & (BRAID_W - 1)) != 0) {
-            len--;
-            CRC_DO1;
+        size_t align_diff = (size_t)MIN(ALIGN_DIFF(buf, BRAID_W), len);
+        if (align_diff) {
+            crc = crc32_copy_small(crc, NULL, buf, align_diff, BRAID_W - 1, 0);
+            len -= align_diff;
+            buf += align_diff;
         }
 
         /* Compute the CRC on as many BRAID_N z_word_t blocks as are available. */
@@ -97,7 +105,7 @@ Z_INTERNAL uint32_t crc32_braid_internal(uint32_t c, const uint8_t *buf, size_t 
 #endif
 #endif
         /* Initialize the CRC for each braid. */
-        crc0 = ZSWAPWORD(c);
+        crc0 = Z_WORD_FROM_LE(crc);
 #if BRAID_N > 1
         crc1 = 0;
 #if BRAID_N > 2
@@ -190,7 +198,7 @@ Z_INTERNAL uint32_t crc32_braid_internal(uint32_t c, const uint8_t *buf, size_t 
 #endif
         words += BRAID_N;
         Assert(comb <= UINT32_MAX, "comb should fit in uint32_t");
-        c = (uint32_t)ZSWAPWORD(comb);
+        crc = (uint32_t)Z_WORD_FROM_LE(comb);
 
         /* Update the pointer to the remaining bytes to process. */
         buf = (const unsigned char *)words;
@@ -199,24 +207,13 @@ Z_INTERNAL uint32_t crc32_braid_internal(uint32_t c, const uint8_t *buf, size_t 
 #endif /* BRAID_W */
 
     /* Complete the computation of the CRC on any remaining bytes. */
-    while (len >= 8) {
-        len -= 8;
-        CRC_DO8;
-    }
-    while (len) {
-        len--;
-        CRC_DO1;
-    }
-
-    /* Return the CRC, post-conditioned. */
-    return c;
+    return ~crc32_copy_small(crc, NULL, buf, len, (BRAID_N * BRAID_W) - 1, 0);
 }
 
-Z_INTERNAL uint32_t crc32_braid(uint32_t c, const uint8_t *buf, size_t len) {
-    c = (~c) & 0xffffffff;
-
-    c = crc32_braid_internal(c, buf, len);
-
-    /* Return the CRC, post-conditioned. */
-    return c ^ 0xffffffff;
+Z_INTERNAL uint32_t crc32_copy_braid(uint32_t crc, uint8_t *dst, const uint8_t *src, size_t len) {
+    crc = crc32_braid(crc, src, len);
+    memcpy(dst, src, len);
+    return crc;
 }
+
+#endif /* CRC32_BRAID_FALLBACK */

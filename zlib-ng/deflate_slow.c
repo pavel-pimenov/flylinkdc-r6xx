@@ -7,7 +7,7 @@
 #include "zbuild.h"
 #include "deflate.h"
 #include "deflate_p.h"
-#include "functable.h"
+#include "insert_string_p.h"
 
 /* ===========================================================================
  * Same as deflate_medium, but achieves better compression. We use a lazy
@@ -15,16 +15,17 @@
  * no better match at the next window position.
  */
 Z_INTERNAL block_state deflate_slow(deflate_state *s, int flush) {
-    Pos hash_head;           /* head of hash chain */
+    longest_match_func longest_match = s->longest_match;
+    insert_batch_func insert_batch = s->insert_batch;
+    unsigned char *window = s->window;
     int bflush;              /* set if current block must be flushed */
-    int64_t dist;
-    uint32_t match_len;
-    match_func longest_match;
+    int level = s->level;
 
-    if (s->max_chain_length <= 1024)
-        longest_match = FUNCTABLE_FPTR(longest_match);
-    else
-        longest_match = FUNCTABLE_FPTR(longest_match_slow);
+    /* Matches this long or shorter are discarded. Z_FILTERED ignores lengths up to 5, other
+     * strategies discard nothing. */
+    const uint32_t match_discard = (s->strategy == Z_FILTERED) ? 5 : 0;
+    /* Same floor for longest_match, kept below good_match. */
+    const uint32_t match_floor = MIN(match_discard, s->good_match - 1);
 
     /* Process the input block. */
     for (;;) {
@@ -33,7 +34,7 @@ Z_INTERNAL block_state deflate_slow(deflate_state *s, int flush) {
          * for the next match, plus WANT_MIN_MATCH bytes to insert the
          * string following the next match.
          */
-        if (s->lookahead < MIN_LOOKAHEAD) {
+        if (UNLIKELY(s->lookahead < MIN_LOOKAHEAD)) {
             PREFIX(fill_window)(s);
             if (UNLIKELY(s->lookahead < MIN_LOOKAHEAD && flush == Z_NO_FLUSH)) {
                 return need_more;
@@ -45,29 +46,37 @@ Z_INTERNAL block_state deflate_slow(deflate_state *s, int flush) {
         /* Insert the string window[strstart .. strstart+2] in the
          * dictionary, and set hash_head to the head of the hash chain:
          */
-        hash_head = 0;
+        uint32_t hash_head = 0;
         if (LIKELY(s->lookahead >= WANT_MIN_MATCH)) {
-            hash_head = s->quick_insert_string(s, s->strstart);
+            if (level >= MIN_ROLL_LEVEL)
+                hash_head = insert_roll(s, window, s->strstart);
+            else
+                hash_head = insert_knuth(s, window, s->strstart);
         }
 
         /* Find the longest match, discarding those <= prev_length.
          */
-        s->prev_match = (Pos)s->match_start;
-        match_len = STD_MIN_MATCH - 1;
-        dist = (int64_t)s->strstart - hash_head;
+        s->prev_match = s->match_start;
+        uint32_t prev_length = s->prev_length;
+        uint32_t match_len = STD_MIN_MATCH - 1;
+        int64_t dist = (int64_t)s->strstart - hash_head;
 
-        if (dist <= MAX_DIST(s) && dist > 0 && s->prev_length < s->max_lazy_match && hash_head != 0) {
+        if (dist <= MAX_DIST(s) && dist > 0 && prev_length < s->max_lazy_match && hash_head != 0) {
             /* To simplify the code, we prevent matches with the string
              * of window index 0 (in particular we have to avoid a match
              * of the string with itself at the start of the input file).
              */
+
+            /* longest_match only looks for matches longer than s->prev_length. */
+            s->prev_length = MAX(prev_length, match_floor);
             match_len = longest_match(s, hash_head);
+            /* Restore the real previous length, the lazy evaluation below relies on it. */
+            s->prev_length = prev_length;
             /* longest_match() sets match_start */
 
-            if (match_len <= 5 && (s->strategy == Z_FILTERED)) {
-                /* If prev_match is also WANT_MIN_MATCH, match_start is garbage
-                 * but we will ignore the current match anyway.
-                 */
+            if (match_len <= match_discard) {
+                /* Match not long enough, treat it as no match found, which makes a garbage
+                 * match_start that is harmless. */
                 match_len = STD_MIN_MATCH - 1;
             }
         }
@@ -79,7 +88,7 @@ Z_INTERNAL block_state deflate_slow(deflate_state *s, int flush) {
             /* Do not insert strings in hash table beyond this. */
 
             Assert((s->strstart-1) <= UINT16_MAX, "strstart-1 should fit in uint16_t");
-            check_match(s, (Pos)(s->strstart - 1), s->prev_match, s->prev_length);
+            check_match(s, s->strstart - 1, s->prev_match, s->prev_length);
 
             bflush = zng_tr_tally_dist(s, s->strstart -1 - s->prev_match, s->prev_length - STD_MIN_MATCH);
 
@@ -96,23 +105,23 @@ Z_INTERNAL block_state deflate_slow(deflate_state *s, int flush) {
                 unsigned int insert_cnt = mov_fwd;
                 if (UNLIKELY(insert_cnt > max_insert - s->strstart))
                     insert_cnt = max_insert - s->strstart;
-                s->insert_string(s, s->strstart + 1, insert_cnt);
+                insert_batch(s, window, s->strstart + 1, insert_cnt);
             }
             s->prev_length = 0;
             s->match_available = 0;
             s->strstart += mov_fwd + 1;
 
             if (UNLIKELY(bflush))
-                FLUSH_BLOCK(s, 0);
+                FLUSH_BLOCK(s, window, 0);
 
         } else if (s->match_available) {
             /* If there was no match at the previous position, output a
              * single literal. If there was a match but the current match
              * is longer, truncate the previous match to a single literal.
              */
-            bflush = zng_tr_tally_lit(s, s->window[s->strstart-1]);
+            bflush = zng_tr_tally_lit(s, window[s->strstart-1]);
             if (UNLIKELY(bflush))
-                FLUSH_BLOCK_ONLY(s, 0);
+                FLUSH_BLOCK_ONLY(s, window, 0);
             s->prev_length = match_len;
             s->strstart++;
             s->lookahead--;
@@ -130,15 +139,15 @@ Z_INTERNAL block_state deflate_slow(deflate_state *s, int flush) {
     }
     Assert(flush != Z_NO_FLUSH, "no flush?");
     if (UNLIKELY(s->match_available)) {
-        Z_UNUSED(zng_tr_tally_lit(s, s->window[s->strstart-1]));
+        Z_UNUSED(zng_tr_tally_lit(s, window[s->strstart-1]));
         s->match_available = 0;
     }
     s->insert = s->strstart < (STD_MIN_MATCH - 1) ? s->strstart : (STD_MIN_MATCH - 1);
     if (UNLIKELY(flush == Z_FINISH)) {
-        FLUSH_BLOCK(s, 1);
+        FLUSH_BLOCK(s, window, 1);
         return finish_done;
     }
     if (UNLIKELY(s->sym_next))
-        FLUSH_BLOCK(s, 0);
+        FLUSH_BLOCK(s, window, 0);
     return block_done;
 }

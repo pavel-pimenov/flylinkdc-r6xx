@@ -13,29 +13,25 @@
  * Copy without compression as much as possible from the input stream, return
  * the current block state.
  *
- * In case deflateParams() is used to later switch to a non-zero compression
- * level, s->matches (otherwise unused when storing) keeps track of the number
- * of hash table slides to perform. If s->matches is 1, then one hash table
- * slide will be done when switching. If s->matches is 2, the maximum value
- * allowed here, then the hash table will be cleared, since two or more slides
- * is the same as a clear.
- *
  * deflate_stored() is written to minimize the number of times an input byte is
  * copied. It is most efficient with large input and output buffers, which
  * maximizes the opportunities to have a single copy from next_in to next_out.
  */
 Z_INTERNAL block_state deflate_stored(deflate_state *s, int flush) {
+    unsigned char *window = s->window;
     /* Smallest worthy block size when not flushing or finishing. By default
      * this is 32K. This can be as small as 507 bytes for memLevel == 1. For
      * large input and output buffers, the stored block size will be larger.
      */
-    unsigned min_block = MIN(s->pending_buf_size - 5, s->w_size);
+    unsigned int w_size = s->w_size;
+    unsigned min_block = MIN(s->pending_buf_size - 5, w_size);
 
     /* Copy as many min_block or larger stored blocks directly to next_out as
      * possible. If flushing, copy the remaining available input to next_out as
      * stored blocks, if there is enough space.
      */
-    unsigned len, left, have, last = 0;
+    int last = 0;
+    unsigned len, left, have;
     unsigned used = s->strm->avail_in;
     do {
         /* Set len to the maximum size block that we can copy directly with the
@@ -65,7 +61,7 @@ Z_INTERNAL block_state deflate_stored(deflate_state *s, int flush) {
          * including any pending bits. This also updates the debugging counts.
          */
         last = flush == Z_FINISH && len == left + s->strm->avail_in ? 1 : 0;
-        zng_tr_stored_block(s, (char *)0, 0L, last);
+        zng_tr_stored_block(s, NULL, 0L, last);
 
         /* Replace the lengths in the dummy stored block with len. */
         s->pending -= 4;
@@ -82,7 +78,7 @@ Z_INTERNAL block_state deflate_stored(deflate_state *s, int flush) {
         /* Copy uncompressed bytes from the window to next_out. */
         if (left) {
             left = MIN(left, len);
-            memcpy(s->strm->next_out, s->window + s->block_start, left);
+            memcpy(s->strm->next_out, window + s->block_start, left);
             s->strm->next_out += left;
             s->strm->avail_out -= left;
             s->strm->total_out += left;
@@ -94,7 +90,7 @@ Z_INTERNAL block_state deflate_stored(deflate_state *s, int flush) {
          * the check value.
          */
         if (len) {
-            PREFIX(read_buf)(s->strm, s->strm->next_out, len);
+            read_buf(s->strm, s->strm->next_out, len);
             s->strm->next_out += len;
             s->strm->avail_out -= len;
             s->strm->total_out += len;
@@ -105,38 +101,38 @@ Z_INTERNAL block_state deflate_stored(deflate_state *s, int flush) {
      * data, or append all of the copied data to the existing window if less
      * than s->w_size bytes were copied. Also update the number of bytes to
      * insert in the hash tables, in the event that deflateParams() switches to
-     * a non-zero compression level.
+     * a non-zero compression level. Skip the update when the last block was
+     * written, since the window is never read after the stream is finished.
      */
     used -= s->strm->avail_in;      /* number of input bytes directly copied */
-    if (used) {
+    if (used && !last) {
         /* If any input was used, then no unused input remains in the window,
          * therefore s->block_start == s->strstart.
          */
-        if (used >= s->w_size) {    /* supplant the previous history */
-            s->matches = 2;         /* clear hash */
-            memcpy(s->window, s->strm->next_in - s->w_size, s->w_size);
-            s->strstart = s->w_size;
+        if (used >= w_size) {    /* supplant the previous history */
+            memcpy(window, s->strm->next_in - w_size, w_size);
+            s->strstart = w_size;
             s->insert = s->strstart;
         } else {
             if (s->window_size - s->strstart <= used) {
                 /* Slide the window down. */
-                s->strstart -= s->w_size;
-                memcpy(s->window, s->window + s->w_size, s->strstart);
-                if (s->matches < 2)
-                    s->matches++;   /* add a pending slide_hash() */
+                s->strstart -= w_size;
+                memcpy(window, window + w_size, s->strstart);
                 s->insert = MIN(s->insert, s->strstart);
             }
-            memcpy(s->window + s->strstart, s->strm->next_in - used, used);
+            memcpy(window + s->strstart, s->strm->next_in - used, used);
             s->strstart += used;
-            s->insert += MIN(used, s->w_size - s->insert);
+            s->insert += MIN(used, w_size - s->insert);
         }
         s->block_start = (int)s->strstart;
     }
     s->high_water = MAX(s->high_water, s->strstart);
 
     /* If the last block was written to next_out, then done. */
-    if (last)
+    if (last) {
+        s->bi_used = 8;
         return finish_done;
+    }
 
     /* If flushing and all input has been consumed, then done. */
     if (flush != Z_NO_FLUSH && flush != Z_FINISH && s->strm->avail_in == 0 && (int)s->strstart == s->block_start)
@@ -144,22 +140,20 @@ Z_INTERNAL block_state deflate_stored(deflate_state *s, int flush) {
 
     /* Fill the window with any remaining input. */
     have = s->window_size - s->strstart;
-    if (s->strm->avail_in > have && s->block_start >= (int)s->w_size) {
+    if (s->strm->avail_in > have && s->block_start >= (int)w_size) {
         /* Slide the window down. */
-        s->block_start -= (int)s->w_size;
-        s->strstart -= s->w_size;
-        memcpy(s->window, s->window + s->w_size, s->strstart);
-        if (s->matches < 2)
-            s->matches++;           /* add a pending slide_hash() */
-        have += s->w_size;          /* more space now */
+        s->block_start -= (int)w_size;
+        s->strstart -= w_size;
+        memcpy(window, window + w_size, s->strstart);
+        have += w_size;          /* more space now */
         s->insert = MIN(s->insert, s->strstart);
     }
 
     have = MIN(have, s->strm->avail_in);
     if (have) {
-        PREFIX(read_buf)(s->strm, s->window + s->strstart, have);
+        read_buf(s->strm, window + s->strstart, have);
         s->strstart += have;
-        s->insert += MIN(have, s->w_size - s->insert);
+        s->insert += MIN(have, w_size - s->insert);
     }
     s->high_water = MAX(s->high_water, s->strstart);
 
@@ -171,16 +165,20 @@ Z_INTERNAL block_state deflate_stored(deflate_state *s, int flush) {
     have = (s->bi_valid + 42) >> 3;         /* number of header bytes */
         /* maximum stored block length that will fit in pending: */
     have = MIN(s->pending_buf_size - have, MAX_STORED);
-    min_block = MIN(have, s->w_size);
+    min_block = MIN(have, w_size);
     left = (int)s->strstart - s->block_start;
     if (left >= min_block || ((left || flush == Z_FINISH) && flush != Z_NO_FLUSH && s->strm->avail_in == 0 && left <= have)) {
         len = MIN(left, have);
         last = flush == Z_FINISH && s->strm->avail_in == 0 && len == left ? 1 : 0;
-        zng_tr_stored_block(s, (char *)s->window + s->block_start, len, last);
+        zng_tr_stored_block(s, window + s->block_start, len, last);
         s->block_start += (int)len;
         PREFIX(flush_pending)(s->strm);
     }
 
     /* We've done all we can with the available input and output. */
-    return last ? finish_started : need_more;
+    if (last) {
+        s->bi_used = 8;
+        return finish_started;
+    }
+    return need_more;
 }

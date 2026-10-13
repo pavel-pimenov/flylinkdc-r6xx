@@ -1,21 +1,15 @@
 /* zconf-ng.h -- configuration of the zlib-ng compression library
- * Copyright (C) 1995-2016 Jean-loup Gailly, Mark Adler
+ * Copyright (C) 1995-2026 Jean-loup Gailly, Mark Adler
  * For conditions of distribution and use, see copyright notice in zlib.h
  */
 
 #ifndef ZCONFNG_H
 #define ZCONFNG_H
 
+#include "zlib_name_mangling-ng.h"
+
 #if !defined(_WIN32) && defined(__WIN32__)
 #  define _WIN32
-#endif
-
-#ifdef __STDC_VERSION__
-#  if __STDC_VERSION__ >= 199901L
-#    ifndef STDC99
-#      define STDC99
-#    endif
-#  endif
 #endif
 
 /* Clang macro for detecting declspec support
@@ -25,7 +19,8 @@
 #  define __has_declspec_attribute(x) 0
 #endif
 
-/* Always define z_const as const */
+/* Always define z_const as const.
+ * Only for use on API-visible variables. */
 #define z_const const
 
 /* Maximum value for memLevel in deflateInit2 */
@@ -97,6 +92,15 @@
 #  define Z_EXPORTVA
 #endif
 
+/* API deprecated warning support */
+#if defined(__clang__) || (defined(__GNUC__) && (__GNUC__ >= 4))
+    #define Z_DEPRECATED(msg) __attribute__((deprecated(msg)))
+#elif defined(_MSC_VER) && (_MSC_VER >= 1400)
+    #define Z_DEPRECATED(msg) __declspec(deprecated(msg))
+#else
+    #define Z_DEPRECATED(msg)
+#endif
+
 /* Conditional exports */
 #define ZNG_CONDEXPORT Z_EXPORT
 
@@ -116,16 +120,11 @@ typedef void const *voidpc;
 typedef void       *voidpf;
 typedef void       *voidp;
 
-#ifdef HAVE_UNISTD_H    /* may be set to #if 1 by configure/cmake/etc */
+#if 0    /* was set to #if 0 by configure/cmake/etc */
 #  define Z_HAVE_UNISTD_H
 #endif
 
-#ifdef NEED_PTRDIFF_T    /* may be set to #if 1 by configure/cmake/etc */
-typedef PTRDIFF_TYPE ptrdiff_t;
-#endif
-
 #include <sys/types.h>      /* for off_t */
-#include <stdarg.h>         /* for va_list */
 
 #include <stddef.h>         /* for wchar_t and NULL */
 
@@ -139,7 +138,7 @@ typedef PTRDIFF_TYPE ptrdiff_t;
 #  undef _LARGEFILE64_SOURCE
 #endif
 
-#if defined(Z_HAVE_UNISTD_H) || defined(_LARGEFILE64_SOURCE)
+#if defined(Z_HAVE_UNISTD_H)
 #  include <unistd.h>         /* for SEEK_*, off_t, and _LFS64_LARGEFILE */
 #  ifndef z_off_t
 #    define z_off_t off_t

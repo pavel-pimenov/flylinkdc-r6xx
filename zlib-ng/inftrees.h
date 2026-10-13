@@ -2,7 +2,7 @@
 #define INFTREES_H_
 
 /* inftrees.h -- header to use inftrees.c
- * Copyright (C) 1995-2022 Mark Adler
+ * Copyright (C) 1995-2026 Mark Adler
  * For conditions of distribution and use, see copyright notice in zlib.h
  */
 
@@ -25,15 +25,15 @@
    of a literal, the base length or distance, or the offset from
    the current table to the next table.  Each entry is four bytes. */
 typedef struct {
-    unsigned char op;         /* operation, extra bits, table bits */
     unsigned char bits;       /* bits in this part of the code */
+    unsigned char op;         /* operation, extra bits, table bits */
     uint16_t val;             /* offset in table or code value */
 } code;
 
 /* op values as set by inflate_table():
     00000000 - literal
     0000tttt - table link, tttt != 0 is the number of table index bits
-    0001eeee - length or distance, eeee is the number of extra bits
+    0001eeee - length or distance, eeee is the number of non-extra bits
     01100000 - end of block
     01000000 - invalid code
  */

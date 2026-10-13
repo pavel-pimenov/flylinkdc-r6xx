@@ -23,6 +23,25 @@
 - Аудит отрисовки: в коде приложения не осталось прямых вызовов `::GetSysColor`/`FillRect(COLOR_*)` — все через фасад `Colors::getSysColor`/`FlyTheme::getSysColor`; owner-draw и таб-бар темизированы.
 - Сборка MSVC Debug и Release x64 после изменений — 0 предупреждений/0 ошибок.
 
+### Обновление zlib-ng: develop-пин (2.3.90), переход на курируемый манифест
+- zlib-ng обновлён до пина `f18efb82` (версия 2.3.90). upstream реструктурировал дерево:
+  `zlib-ng.h`/`zconf-ng.h` стали генерируемыми из `*.h.in`, добавлен
+  `zlib_name_mangling-ng.h`; удалены `crc32.h`, `crc32_fold*`, `insert_string_roll.c`,
+  `insert_string_tpl.h`, `arch/generic/{adler32_fold_c,crc32_c,crc32_fold_c}.c`,
+  `arch/x86/{chorba_sse2,chorba_sse41,crc32_vpclmulqdq}.c`. Добавлены
+  `zconf-ng.h.in`/`zlib-ng.h.in`/`zlib_name_mangling-ng.h(.in)`, `gzread.c`,
+  `zarch.h`, `zsanitizer.h`, `arch_natives.h`, `arch/shared/*`,
+  `arch/x86/{adler32_avx2_vnni,crc32_chorba_sse2,crc32_chorba_sse41,
+  crc32_vpclmulqdq_avx2,crc32_vpclmulqdq_avx512}.c`. Заголовки сгенерированы CMake
+  (`-G "Visual Studio 18 2026" -DZLIB_COMPAT=OFF`) и сохранены в LF.
+- `zlib-ng_2022.vcxproj` (+`.filters`) пересобран под новый набор исходников
+  (ClCompile 48, ClInclude 52).
+- Введён курируемый манифест `vendor-manifests/zlib-ng.txt` (только library-исходники,
+  без test/tools/CMakeLists/чужих архитектур); `vendor-update.py` для zlib-ng переведён
+  с `'tree': True` на `'select'`. Воспроизведение: add=0 update=0 delete=0 unchanged=106.
+- Сборка MSVC (VS 18 Insiders): Debug x64 Rebuild — 0 предупреждений/0 ошибок
+  (exe 54457856); Release x64 Rebuild — 0/0 (exe 20656640).
+
 ## 2026-10-12
 ### Обновление вендорных библиотек до актуальных версий (vendor-update.py)
 - Обновлены и выверены 1:1 (upstream + патч == дерево, 0 расхождений): lua 5.4.6 -> 5.4.9 (патч — только восстановление $Id: в lzio.c/lzio.h), unrar 6.23 -> 6.24 (unrarsrc-6.2.12; патч — UnRAR.vcxproj, win32stm.cpp), jsoncpp 1.9.6 -> 1.9.8, snappy 1.2.0 -> 1.3.1.

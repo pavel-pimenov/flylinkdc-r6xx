@@ -11,11 +11,21 @@
 #ifdef __OpenBSD__
 #  define _BSD_SOURCE 1
 #endif
+#ifndef _LARGEFILE64_SOURCE
+#  define _LARGEFILE64_SOURCE 1 /* request off64_t, lseek64 on glibc; check _LFS64_LARGEFILE */
+#endif
 
 #include <stddef.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdio.h>
+
+#ifdef _AIX
+#  include <sys/stdint.h>
+#endif
+
+#include "zarch.h"
 
 /* Determine compiler version of C Standard */
 #ifdef __STDC_VERSION__
@@ -44,6 +54,21 @@
 #    define Z_FALLTHROUGH __attribute__((__fallthrough__))
 #  else
 #    define Z_FALLTHROUGH do {} while(0) /* fallthrough */
+#  endif
+#endif
+
+/* Hint to compiler that a block of code is unreachable, typically in a switch default condition */
+#ifndef Z_UNREACHABLE
+#  if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
+#    if !defined(unreachable) && defined(_MSC_VER)
+#      define Z_UNREACHABLE() __assume(0)
+#    else
+#      define Z_UNREACHABLE() unreachable()           // C23 approach
+#    endif
+#  elif (defined(__GNUC__) && (__GNUC__ >= 5)) || defined(__clang__)
+#    define Z_UNREACHABLE() __builtin_unreachable()
+#  else
+#    define Z_UNREACHABLE()
 #  endif
 #endif
 
@@ -108,12 +133,35 @@
 #  define z_uintmax_t size_t
 #endif
 
+/* In zlib-compat headers some function return values and parameter types use int or unsigned, but zlib-ng headers use
+   int32_t and uint32_t, which will cause type mismatch when compiling zlib-ng if int32_t is long and uint32_t is
+   unsigned long */
+#if defined(ZLIB_COMPAT)
+#  define z_int32_t int
+#  define z_uint32_t unsigned int
+#else
+#  define z_int32_t int32_t
+#  define z_uint32_t uint32_t
+#endif
+
 /* Minimum of a and b. */
 #define MIN(a, b) ((a) > (b) ? (b) : (a))
 /* Maximum of a and b. */
 #define MAX(a, b) ((a) < (b) ? (b) : (a))
+/* Absolute value of a. */
+#define ABS(a) ((a) < 0 ? -(a) : (a))
 /* Ignore unused variable warning */
 #define Z_UNUSED(var) (void)(var)
+
+/* Force the compiler to treat variable as modified. Empty asm statement with a "+r" constraint prevents
+   the compiler from reordering or eliminating loads into the variable. This can help keep critical latency
+   chains in the hot path from being shortened or optimized away. */
+#if (defined(__GNUC__) || defined(__clang__)) && !defined(__NVCOMPILER) && \
+        (defined(ARCH_X86) || (defined(ARCH_ARM) && defined(ARCH_64BIT)))
+#  define Z_TOUCH(var) __asm__ ("" : "+r"(var))
+#else
+#  define Z_TOUCH(var) (void)(var)
+#endif
 
 #if defined(HAVE_VISIBILITY_INTERNAL)
 #  define Z_INTERNAL __attribute__((visibility ("internal")))
@@ -141,6 +189,14 @@
 #  define Z_REGISTER register
 #else
 #  define Z_REGISTER
+#endif
+
+#if defined(_MSC_VER)
+#  define Z_RESTRICT __restrict
+#elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
+#  define Z_RESTRICT restrict
+#else
+#  define Z_RESTRICT __restrict__
 #endif
 
 /* Reverse the bytes in a value. Use compiler intrinsics when
@@ -224,6 +280,18 @@
 #define HINT_ALIGNED_64(p) HINT_ALIGNED((p),64)
 #define HINT_ALIGNED_4096(p) HINT_ALIGNED((p),4096)
 
+/* Number of bytes needed to align ptr to the next alignment boundary */
+#define ALIGN_DIFF(ptr, align) \
+    (((uintptr_t)(align) - ((uintptr_t)(ptr) & ((align) - 1))) & ((align) - 1))
+
+/* Round up value to the nearest multiple of align (align must be power of 2) */
+#define ALIGN_UP(value, align) \
+    (((value) + ((align) - 1)) & ~((align) - 1))
+
+/* Round down value to the nearest multiple of align (align must be power of 2) */
+#define ALIGN_DOWN(value, align) \
+    ((value) & ~((align) - 1))
+
 /* PADSZ returns needed bytes to pad bpos to pad size
  * PAD_NN calculates pad size and adds it to bpos, returning the result.
  * All take an integer or a pointer as bpos input.
@@ -235,10 +303,9 @@
 
 /* Diagnostic functions */
 #ifdef ZLIB_DEBUG
-#  include <stdio.h>
    extern int Z_INTERNAL z_verbose;
    extern void Z_INTERNAL z_error(const char *m);
-#  define Assert(cond, msg) {int _cond = (cond); if (!_cond) z_error(msg);}
+#  define Assert(cond, msg) {int _cond = (cond); if (!(_cond)) z_error(msg);}
 #  define Trace(x) {if (z_verbose >= 0) fprintf x;}
 #  define Tracev(x) {if (z_verbose > 0) fprintf x;}
 #  define Tracevv(x) {if (z_verbose > 1) fprintf x;}
@@ -263,91 +330,30 @@
  *       utilizing unaligned C pointers that are known to have undefined behavior.
  */
 #if !defined(OPTIMAL_CMP)
-#  if defined(__x86_64__) || defined(_M_X64) || defined(__amd64__) || defined(_M_AMD64)
-#    define OPTIMAL_CMP 64
-#  elif defined(__i386__) || defined(__i486__) || defined(__i586__) || \
-        defined(__i686__) || defined(_X86_) || defined(_M_IX86)
-#    define OPTIMAL_CMP 32
-#  elif defined(__aarch64__) || defined(_M_ARM64) || defined(_M_ARM64EC)
-#    if defined(__ARM_FEATURE_UNALIGNED) || defined(_WIN32)
+#  ifdef ARCH_64BIT
+#    ifdef ARCH_ARM
+#      if defined(__ARM_FEATURE_UNALIGNED) || defined(_WIN32)
+#        define OPTIMAL_CMP 64
+#      else
+#        define OPTIMAL_CMP 8
+#      endif
+#    else
 #      define OPTIMAL_CMP 64
-#    else
-#      define OPTIMAL_CMP 8
 #    endif
-#  elif defined(__arm__) || defined(_M_ARM)
-#    if defined(__ARM_FEATURE_UNALIGNED) || defined(_WIN32)
+#  elif defined(ARCH_32BIT)
+#    ifdef ARCH_ARM
+#      if defined(__ARM_FEATURE_UNALIGNED) || defined(_WIN32)
+#        define OPTIMAL_CMP 32
+#      else
+#        define OPTIMAL_CMP 8
+#      endif
+#    else
 #      define OPTIMAL_CMP 32
-#    else
-#      define OPTIMAL_CMP 8
 #    endif
-#  elif defined(__powerpc64__) || defined(__ppc64__)
-#    define OPTIMAL_CMP 64
-#  elif defined(__powerpc__) || defined(__ppc__) || defined(__PPC__)
-#    define OPTIMAL_CMP 32
 #  endif
 #endif
 #if !defined(OPTIMAL_CMP)
 #  define OPTIMAL_CMP 16
 #endif
-
-#if defined(__has_feature)
-#  if __has_feature(address_sanitizer)
-#    define Z_ADDRESS_SANITIZER 1
-#  endif
-#elif defined(__SANITIZE_ADDRESS__)
-#  define Z_ADDRESS_SANITIZER 1
-#endif
-
-/*
- * __asan_loadN() and __asan_storeN() calls are inserted by compilers in order to check memory accesses.
- * They can be called manually too, with the following caveats:
- * gcc says: "warning: implicit declaration of function '...'"
- * g++ says: "error: new declaration '...' ambiguates built-in declaration '...'"
- * Accommodate both.
- */
-#ifdef Z_ADDRESS_SANITIZER
-#ifndef __cplusplus
-void __asan_loadN(void *, long);
-void __asan_storeN(void *, long);
-#endif
-#else
-#  define __asan_loadN(a, size) do { Z_UNUSED(a); Z_UNUSED(size); } while (0)
-#  define __asan_storeN(a, size) do { Z_UNUSED(a); Z_UNUSED(size); } while (0)
-#endif
-
-#if defined(__has_feature)
-#  if __has_feature(memory_sanitizer)
-#    define Z_MEMORY_SANITIZER 1
-#    include <sanitizer/msan_interface.h>
-#  endif
-#endif
-
-#ifndef Z_MEMORY_SANITIZER
-#  define __msan_check_mem_is_initialized(a, size) do { Z_UNUSED(a); Z_UNUSED(size); } while (0)
-#  define __msan_unpoison(a, size) do { Z_UNUSED(a); Z_UNUSED(size); } while (0)
-#endif
-
-/* Notify sanitizer runtime about an upcoming read access. */
-#define instrument_read(a, size) do {             \
-    void *__a = (void *)(a);                      \
-    long __size = size;                           \
-    __asan_loadN(__a, __size);                    \
-    __msan_check_mem_is_initialized(__a, __size); \
-} while (0)
-
-/* Notify sanitizer runtime about an upcoming write access. */
-#define instrument_write(a, size) do { \
-   void *__a = (void *)(a);            \
-   long __size = size;                 \
-   __asan_storeN(__a, __size);         \
-} while (0)
-
-/* Notify sanitizer runtime about an upcoming read/write access. */
-#define instrument_read_write(a, size) do {       \
-    void *__a = (void *)(a);                      \
-    long __size = size;                           \
-    __asan_storeN(__a, __size);                   \
-    __msan_check_mem_is_initialized(__a, __size); \
-} while (0)
 
 #endif

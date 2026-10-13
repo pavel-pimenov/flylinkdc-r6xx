@@ -1,66 +1,69 @@
-#if !defined(WITHOUT_CHORBA) && defined(X86_SSE41)
-
 #include "zbuild.h"
-#include "crc32_braid_p.h"
+#include "arch_functions.h"
+
+#if defined(X86_SSE41) && defined(CRC32_CHORBA_SSE_FALLBACK)
+
+#include "crc32_chorba_p.h"
 #include "crc32_braid_tbl.h"
-#include "crc32.h"
 #include <emmintrin.h>
 #include <smmintrin.h>
 #include "arch/x86/x86_intrins.h"
-#include "arch/generic/generic_functions.h"
-#include <assert.h>
 
-uint32_t crc32_braid_base(uint32_t c, const uint8_t *buf, size_t len);
-uint32_t chorba_small_nondestructive_sse2(uint32_t c, const uint64_t *aligned_buf, size_t aligned_len);
-
-#define READ_NEXT(in, off, a, b) do { \
+#define READ_NEXT(in, off, a, b) \
+    do { \
         a = _mm_load_si128((__m128i*)(in + off / sizeof(uint64_t))); \
         b = _mm_load_si128((__m128i*)(in + off / sizeof(uint64_t) + 2)); \
-        } while (0);
+    } while (0)
 
-#define NEXT_ROUND(invec, a, b, c, d) do { \
+#define NEXT_ROUND(invec, a, b, c, d) \
+    do { \
         a = _mm_xor_si128(_mm_slli_epi64(invec, 17), _mm_slli_epi64(invec, 55)); \
         b = _mm_xor_si128(_mm_xor_si128(_mm_srli_epi64(invec, 47), _mm_srli_epi64(invec, 9)), _mm_slli_epi64(invec, 19)); \
         c = _mm_xor_si128(_mm_srli_epi64(invec, 45), _mm_slli_epi64(invec, 44)); \
         d  = _mm_srli_epi64(invec, 20); \
-        } while (0);
+    } while (0)
 
-#define REALIGN_CHORBA(in0, in1, in2, in3, out0, out1, out2, out3, out4, shift) do { \
+#define REALIGN_CHORBA(in0, in1, in2, in3, out0, out1, out2, out3, out4, shift) \
+    do { \
         out0 = _mm_slli_si128(in0, shift); \
         out1 = _mm_alignr_epi8(in1, in0, shift); \
         out2 = _mm_alignr_epi8(in2, in1, shift); \
         out3 = _mm_alignr_epi8(in3, in2, shift); \
         out4 = _mm_srli_si128(in3, shift); \
-        } while (0)
+    } while (0)
 
-#define STORE4(out0, out1, out2, out3, out) do { \
+#define STORE4(out0, out1, out2, out3, out) \
+    do { \
         _mm_store_si128(out++, out0); \
         _mm_store_si128(out++, out1); \
         _mm_store_si128(out++, out2); \
         _mm_store_si128(out++, out3); \
     } while (0)
 
-#define READ4(out0, out1, out2, out3, in) do { \
-    out0 = _mm_load_si128(in++); \
-    out1 = _mm_load_si128(in++); \
-    out2 = _mm_load_si128(in++); \
-    out3 = _mm_load_si128(in++); \
+#define READ4(out0, out1, out2, out3, in) \
+    do { \
+        out0 = _mm_load_si128(in++); \
+        out1 = _mm_load_si128(in++); \
+        out2 = _mm_load_si128(in++); \
+        out3 = _mm_load_si128(in++); \
     } while (0)
 
 /* This is intentionally shifted one down to compensate for the deferred store from
  * the last iteration */
-#define READ4_WITHXOR(out0, out1, out2, out3, xor0, xor1, xor2, xor3, in) do { \
-    out0 = _mm_xor_si128(in[1], xor0); \
-    out1 = _mm_xor_si128(in[2], xor1); \
-    out2 = _mm_xor_si128(in[3], xor2); \
-    out3 = _mm_xor_si128(in[4], xor3); \
+#define READ4_WITHXOR(out0, out1, out2, out3, xor0, xor1, xor2, xor3, in) \
+    do { \
+        out0 = _mm_xor_si128(in[1], xor0); \
+        out1 = _mm_xor_si128(in[2], xor1); \
+        out2 = _mm_xor_si128(in[3], xor2); \
+        out3 = _mm_xor_si128(in[4], xor3); \
     } while (0)
 
-static Z_FORCEINLINE uint32_t crc32_chorba_32768_nondestructive_sse41(uint32_t crc, const uint64_t* buf, size_t len) {
-    const uint64_t* input = buf;
+Z_FORCEINLINE static uint32_t crc32_chorba_32768_nondestructive_sse41(uint32_t crc, const uint8_t *buf, size_t len) {
+    /* The calling function ensured that this is aligned correctly */
+    const uint64_t* input = (const uint64_t*)buf;
     ALIGNED_(16) uint64_t bitbuffer[32768 / sizeof(uint64_t)];
     __m128i *bitbuffer_v = (__m128i*)bitbuffer;
-    const uint8_t* bitbufferbytes = (const uint8_t*) bitbuffer;
+    const uint8_t *bitbuffer_bytes = (const uint8_t*)bitbuffer;
     __m128i z = _mm_setzero_si128();
 
     __m128i *bitbuf128 = &bitbuffer_v[64];
@@ -93,7 +96,7 @@ static Z_FORCEINLINE uint32_t crc32_chorba_32768_nondestructive_sse41(uint32_t c
     }
 
     /* We need to mix this in */
-    __m128i init_crc = _mm_cvtsi64_si128(crc);
+    __m128i init_crc = _mm_cvtsi64_si128(~crc);
     crc = 0;
 
     size_t i = 0;
@@ -103,7 +106,7 @@ static Z_FORCEINLINE uint32_t crc32_chorba_32768_nondestructive_sse41(uint32_t c
     __m128i buf182 = z;
     __m128i buf210 = z;
 
-    for(; i + 300*8+64 < len && i < 22 * 8; i += 64) {
+    for (; i + 300*8+64 < len && i < 22 * 8; i += 64) {
         __m128i in12, in34, in56, in78,
                 in_1, in23, in45, in67, in8_;
 
@@ -132,7 +135,7 @@ static Z_FORCEINLINE uint32_t crc32_chorba_32768_nondestructive_sse41(uint32_t c
         STORE4(in12, in34, in56, in78, bitbuf300);
     }
 
-    for(; i + 300*8+64 < len && i < 32 * 8; i += 64) {
+    for (; i + 300*8+64 < len && i < 32 * 8; i += 64) {
         __m128i in12, in34, in56, in78,
                 in_1, in23, in45, in67, in8_;
         READ4(in12, in34, in56, in78, inptr);
@@ -157,7 +160,7 @@ static Z_FORCEINLINE uint32_t crc32_chorba_32768_nondestructive_sse41(uint32_t c
         STORE4(in12, in34, in56, in78, bitbuf300);
     }
 
-    for(; i + 300*8+64 < len && i < 84 * 8; i += 64) {
+    for (; i + 300*8+64 < len && i < 84 * 8; i += 64) {
         __m128i in12, in34, in56, in78,
                 in_1, in23, in45, in67, in8_;
         READ4(in12, in34, in56, in78, inptr);
@@ -182,7 +185,7 @@ static Z_FORCEINLINE uint32_t crc32_chorba_32768_nondestructive_sse41(uint32_t c
         STORE4(in12, in34, in56, in78, bitbuf300);
     }
 
-    for(; i + 300*8+64 < len; i += 64) {
+    for (; i + 300*8+64 < len; i += 64) {
         __m128i in12, in34, in56, in78,
                 in_1, in23, in45, in67, in8_;
 
@@ -259,7 +262,7 @@ static Z_FORCEINLINE uint32_t crc32_chorba_32768_nondestructive_sse41(uint32_t c
     next34 = z;
     next56 = z;
 
-    for(; (i + 72 < len); i += 32) {
+    for (; (i + 72 < len); i += 32) {
         __m128i in1in2, in3in4;
         __m128i in1in2_, in3in4_;
         __m128i ab1, ab2, ab3, ab4;
@@ -300,43 +303,36 @@ static Z_FORCEINLINE uint32_t crc32_chorba_32768_nondestructive_sse41(uint32_t c
     ++final128;
     _mm_store_si128(final128, _mm_xor_si128(_mm_load_si128(final128), next56));
 
-    uint8_t* final_bytes = (uint8_t*) final;
+    uint8_t *final_bytes = (uint8_t*)final;
 
-    for(size_t j = 0; j < (len-i); j++) {
-        crc = crc_table[(crc ^ final_bytes[j] ^ bitbufferbytes[(j+i)]) & 0xff] ^ (crc >> 8);
+    for (size_t j = 0; j < (len-i); j++) {
+        crc = crc_table[(crc ^ final_bytes[j] ^ bitbuffer_bytes[(j+i)]) & 0xff] ^ (crc >> 8);
     }
-    return crc;
+    return ~crc;
 }
 
 Z_INTERNAL uint32_t crc32_chorba_sse41(uint32_t crc, const uint8_t *buf, size_t len) {
-    uint32_t c;
-    uint64_t* aligned_buf;
-    size_t aligned_len;
+    uintptr_t align_diff = ALIGN_DIFF(buf, 16);
+    if (len <= align_diff + CHORBA_SMALL_THRESHOLD_64BIT)
+        return crc32_braid(crc, buf, len);
 
-    c = (~crc) & 0xffffffff;
-    uintptr_t algn_diff = ((uintptr_t)16 - ((uintptr_t)buf & 15)) & 15;
-    if (algn_diff < len) {
-        if (algn_diff) {
-            c = crc32_braid_internal(c, buf, algn_diff);
-        }
-        aligned_buf = (uint64_t*) (buf + algn_diff);
-        aligned_len = len - algn_diff;
-        if(aligned_len > CHORBA_LARGE_THRESHOLD) {
-            c = crc32_chorba_118960_nondestructive(c, (z_word_t*) aligned_buf, aligned_len);
-        } else if (aligned_len > CHORBA_MEDIUM_LOWER_THRESHOLD &&
-                   aligned_len <= CHORBA_MEDIUM_UPPER_THRESHOLD) {
-            c = crc32_chorba_32768_nondestructive_sse41(c, aligned_buf, aligned_len);
-        } else if (aligned_len > CHORBA_SMALL_THRESHOLD_64BIT) {
-            c = chorba_small_nondestructive_sse2(c, aligned_buf, aligned_len);
-        } else {
-            c = crc32_braid_internal(c, (uint8_t*) aligned_buf, aligned_len);
-        }
+    if (align_diff) {
+        crc = crc32_braid(crc, buf, align_diff);
+        len -= align_diff;
+        buf += align_diff;
     }
-    else {
-        c = crc32_braid_internal(c, buf, len);
-    }
+#ifdef CRC32_CHORBA_FALLBACK
+    if (len > CHORBA_LARGE_THRESHOLD)
+        return crc32_chorba_118960_nondestructive(crc, buf, len);
+#endif
+    if (len > CHORBA_MEDIUM_LOWER_THRESHOLD && len <= CHORBA_MEDIUM_UPPER_THRESHOLD)
+        return crc32_chorba_32768_nondestructive_sse41(crc, buf, len);
+    return chorba_small_nondestructive_sse2(crc, buf, len);
+}
 
-    /* Return the CRC, post-conditioned. */
-    return c ^ 0xffffffff;
+Z_INTERNAL uint32_t crc32_copy_chorba_sse41(uint32_t crc, uint8_t *dst, const uint8_t *src, size_t len) {
+    crc = crc32_chorba_sse41(crc, src, len);
+    memcpy(dst, src, len);
+    return crc;
 }
 #endif

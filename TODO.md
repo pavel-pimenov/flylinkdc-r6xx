@@ -45,13 +45,16 @@
   в sqlite3.c, `#pragma once` + `sqlite_fly.h` в sqlite3.h) переносятся скриптом.
 - [x] wtl: 10.0 -> 10.0 (10.0.10320) — сравнение с upstream и применение всех
   5 локальных патчей даёт 1:1 воспроизведение текущего дерева, commit не нужен.
-- [ ] zlib-ng: пин develop f18efb822a2fc24a1209a836d51bb217476fc08e (HEAD).
-  Сухие изменения (dry-run): add=326 update=84 delete=14. НЕ закоммичено:
-  upstream перестроил дерево (zlib-ng.h/zconf-ng.h стали генерируемыми .in,
-  файлы crc32.h/insert_string_roll.c переименованы), обновление ломает сборку
-  без правки zlib-ng_2022.vcxproj. Перед коммитом: проверить сборку MSVC
-  (Debug/Release x64), при необходимости добавить/убрать исходники в vcxproj,
-  решить судьбу генерируемых заголовков.
+- [x] zlib-ng: пин develop f18efb822a2fc24a1209a836d51bb217476fc08e (2.3.90).
+  Обновление выполнено. upstream перестроил дерево: `zlib-ng.h`/`zconf-ng.h` стали
+  генерируемыми из `*.h.in`, добавлен `zlib_name_mangling-ng.h`; `crc32.h`,
+  `crc32_fold*`, `insert_string_roll.c`/`insert_string_tpl.h` удалены/переименованы.
+  Заголовки сгенерированы CMake (`-DZLIB_COMPAT=OFF`) и положены в LF.
+  `zlib-ng_2022.vcxproj` (+`.filters`) пересобран: ClCompile 48 / ClInclude 52.
+  Введён курируемый манифест `vendor-manifests/zlib-ng.txt` (только library-исходники,
+  без test/tools/CMakeLists/чужих архитектур) — `vendor-update.py` переведён с
+  `'tree': True` на `'select'`. Воспроизведение: add=0 update=0 delete=0 unchanged=106.
+  Debug x64 Rebuild 0/0 (exe 54457856); Release x64 Rebuild 0/0 (exe 20656640).
 - [x] Остальные вендоры в конфиг скрипта (по аналогии).
 - [x] jsoncpp (база 1.9.6, амальгамация `amalgamate.py`), maxminddb 1.7.1,
   boost 1.88, leveldb 1.23, ZenLib 0.4.41 — заведены в конфиг (`select` +
