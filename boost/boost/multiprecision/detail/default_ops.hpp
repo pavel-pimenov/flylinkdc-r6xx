@@ -499,7 +499,7 @@ inline BOOST_MP_CXX14_CONSTEXPR typename std::enable_if< !std::is_same<T, U>::va
    T t;
    t = number<T>::canonical_value(u);
    return t;
-}
+} // LCOV_EXCL_LINE
 template <class T>
 inline BOOST_MP_CXX14_CONSTEXPR const T& make_T(const T& t)
 {
@@ -1803,6 +1803,7 @@ BOOST_MP_CXX14_CONSTEXPR void eval_karatsuba_sqrt(Backend& result, const Backend
    result = s;
 }
 
+#ifndef BOOST_MP_NO_CONSTEXPR_DETECTION
 template <class B>
 void BOOST_MP_CXX14_CONSTEXPR eval_integer_sqrt_bitwise(B& s, B& r, const B& x)
 {
@@ -1860,6 +1861,7 @@ void BOOST_MP_CXX14_CONSTEXPR eval_integer_sqrt_bitwise(B& s, B& r, const B& x)
       --g;
    } while (g >= 0);
 }
+#endif // !BOOST_MP_NO_CONSTEXPR_DETECTION
 
 template <class Backend>
 BOOST_MP_CXX14_CONSTEXPR void eval_integer_sqrt(Backend& result, Backend& r, const Backend& x)
@@ -1868,7 +1870,8 @@ BOOST_MP_CXX14_CONSTEXPR void eval_integer_sqrt(Backend& result, Backend& r, con
    // recursive Karatsuba sqrt can cause issues in constexpr context:
    if (BOOST_MP_IS_CONST_EVALUATED(result.size()))
       return eval_integer_sqrt_bitwise(result, r, x);
-#endif
+#endif // !BOOST_MP_NO_CONSTEXPR_DETECTION
+
    using small_uint = typename std::tuple_element<0, typename Backend::unsigned_types>::type;
 
    constexpr small_uint zero = 0u;
@@ -2623,7 +2626,7 @@ template <class tag, class A1, class A2, class A3, class A4>
 inline BOOST_MP_CXX14_CONSTEXPR typename multiprecision::detail::expression<tag, A1, A2, A3, A4>::result_type erf BOOST_PREVENT_MACRO_SUBSTITUTION(const multiprecision::detail::expression<tag, A1, A2, A3, A4>& arg)
 {
    using value_type = typename multiprecision::detail::expression<tag, A1, A2, A3, A4>::result_type;
-   detail::scoped_default_precision<value_type>                                          precision_guard(arg);
+   detail::scoped_default_precision<value_type> precision_guard(arg);
    return erf(value_type(arg));
 }
 template <class Backend, multiprecision::expression_template_option ExpressionTemplates>
@@ -2843,7 +2846,7 @@ template <class tag, class A1, class A2, class A3, class A4, class Policy>
 inline BOOST_MP_CXX14_CONSTEXPR typename detail::expression<tag, A1, A2, A3, A4>::result_type trunc(const detail::expression<tag, A1, A2, A3, A4>& v, const Policy& pol)
 {
    using number_type = typename detail::expression<tag, A1, A2, A3, A4>::result_type;
-   return std::move(trunc(number_type(v), pol));
+   return trunc(number_type(v), pol);
 }
 
 template <class Backend, expression_template_option ExpressionTemplates, class Policy>
@@ -2943,7 +2946,7 @@ template <class tag, class A1, class A2, class A3, class A4, class Policy>
 inline BOOST_MP_CXX14_CONSTEXPR typename detail::expression<tag, A1, A2, A3, A4>::result_type round(const detail::expression<tag, A1, A2, A3, A4>& v, const Policy& pol)
 {
    using number_type = typename detail::expression<tag, A1, A2, A3, A4>::result_type;
-   return std::move(round(static_cast<number_type>(v), pol));
+   return round(static_cast<number_type>(v), pol);
 }
 template <class T, expression_template_option ExpressionTemplates, class Policy>
 inline BOOST_MP_CXX14_CONSTEXPR number<T, ExpressionTemplates> round(const number<T, ExpressionTemplates>& v, const Policy&)
@@ -3057,7 +3060,7 @@ inline BOOST_MP_CXX14_CONSTEXPR typename std::enable_if<number_category<typename
 frexp(const detail::expression<tag, A1, A2, A3, A4>& v, short* pint)
 {
    using number_type = typename detail::expression<tag, A1, A2, A3, A4>::result_type;
-   return std::move(frexp(static_cast<number_type>(v), pint));
+   return frexp(static_cast<number_type>(v), pint);
 }
 template <class T, expression_template_option ExpressionTemplates>
 inline BOOST_MP_CXX14_CONSTEXPR typename std::enable_if<number_category<T>::value == number_kind_floating_point, number<T, ExpressionTemplates> >::type frexp(const number<T, ExpressionTemplates>& v, int* pint)
@@ -3073,7 +3076,7 @@ inline BOOST_MP_CXX14_CONSTEXPR typename std::enable_if<number_category<typename
 frexp(const detail::expression<tag, A1, A2, A3, A4>& v, int* pint)
 {
    using number_type = typename detail::expression<tag, A1, A2, A3, A4>::result_type;
-   return std::move(frexp(static_cast<number_type>(v), pint));
+   return frexp(static_cast<number_type>(v), pint);
 }
 template <class T, expression_template_option ExpressionTemplates>
 inline BOOST_MP_CXX14_CONSTEXPR typename std::enable_if<number_category<T>::value == number_kind_floating_point, number<T, ExpressionTemplates> >::type frexp(const number<T, ExpressionTemplates>& v, long* pint)
@@ -3089,7 +3092,7 @@ inline BOOST_MP_CXX14_CONSTEXPR typename std::enable_if<number_category<typename
 frexp(const detail::expression<tag, A1, A2, A3, A4>& v, long* pint)
 {
    using number_type = typename detail::expression<tag, A1, A2, A3, A4>::result_type;
-   return std::move(frexp(static_cast<number_type>(v), pint));
+   return frexp(static_cast<number_type>(v), pint);
 }
 template <class T, expression_template_option ExpressionTemplates>
 inline BOOST_MP_CXX14_CONSTEXPR typename std::enable_if<number_category<T>::value == number_kind_floating_point, number<T, ExpressionTemplates> >::type frexp(const number<T, ExpressionTemplates>& v, long long* pint)
@@ -3105,7 +3108,7 @@ inline BOOST_MP_CXX14_CONSTEXPR typename std::enable_if<number_category<typename
 frexp(const detail::expression<tag, A1, A2, A3, A4>& v, long long* pint)
 {
    using number_type = typename detail::expression<tag, A1, A2, A3, A4>::result_type;
-   return std::move(frexp(static_cast<number_type>(v), pint));
+   return frexp(static_cast<number_type>(v), pint);
 }
 //
 // modf does not return an expression template since we require the
@@ -3867,7 +3870,7 @@ conj(const number<Backend, et_off>& arg)
    using default_ops::eval_conj;
    eval_conj(result.backend(), arg.backend());
    return result;
-}
+} // LCOV_EXCL_LINE
 
 template <class tag, class A1, class A2, class A3, class A4>
 inline BOOST_MP_CXX14_CONSTEXPR detail::expression<

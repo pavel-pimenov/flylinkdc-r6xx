@@ -1,4 +1,4 @@
-// Copyright Antony Polukhin, 2016-2025.
+// Copyright Antony Polukhin, 2016-2026.
 //
 // Distributed under the Boost Software License, Version 1.0. (See
 // accompanying file LICENSE_1_0.txt or copy at
@@ -12,12 +12,13 @@
 #   pragma once
 #endif
 
-#include <boost/stacktrace/safe_dump_to.hpp>
-
+#if !defined(BOOST_STACKTRACE_INTERFACE_UNIT)
 #include <unistd.h>     // ::write
 #include <fcntl.h>      // ::open
 #include <sys/stat.h>   // S_IWUSR and friends
+#endif // !defined(BOOST_STACKTRACE_INTERFACE_UNIT)
 
+#include <boost/stacktrace/safe_dump_to.hpp>
 
 namespace boost { namespace stacktrace { namespace detail {
 

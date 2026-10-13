@@ -35,3 +35,19 @@
 2026-10-13 05:54:14,Release,Build,FlyLinkDC_2022.sln,0,44,0,0,20656640,0,maxminddb 1.14.1 upgrade
 2026-10-13 05:56:14,Debug,Rebuild,FlyLinkDC_2022.sln,1,37,0,0,54460416,0,maxminddb 1.14.1 upgrade verify
 2026-10-13 05:58:53,Release,Rebuild,FlyLinkDC_2022.sln,2,14,0,0,20656640,0,maxminddb 1.14.1 upgrade verify
+2026-10-13 18:29:32,Release,Rebuild,FlyLinkDC_2022.sln,2,21,0,0,20656640,0,baseline before MTT refactor
+2026-10-13 18:33,Release,Rebuild,FlyLinkDC_2022.sln,2.66,0,0,20656640,0,MTT mode (UseMultiToolTask+EnforceProcessCountAcrossBuilds) - slower, reverted
+2026-10-13 18:29,Release,Rebuild,FlyLinkDC_2022.sln,2.21,0,0,20656640,0,baseline before MTT refactor
+2026-10-13 18:37,Release,Rebuild,FlyLinkDC_2022.sln,2.66,0,0,20656640,0,EnableClServerMode - slower than baseline, dropped
+2026-10-13 18:40,Release,Rebuild,FlyLinkDC_2022.sln,2.68,0,0,20656640,0,BuildPassReferences - slower than baseline, dropped
+2026-10-13 19:00:21,Release,Rebuild,FlyLinkDC_2022.sln,2,39,0,0,20656640,0,/CGTHREADS:8 on flylinkdc Release Link (LTCG codegen threads)
+2026-10-13 19:00:21,Release,Rebuild,FlyLinkDC_2022.sln,2.39,0,0,20656640,0,/CGTHREADS:8 on flylinkdc Release Link - slower than baseline (2.21), reverted
+2026-10-13 19:04:35,Release,Rebuild,FlyLinkDC_2022.sln,2,16,0,0,20656640,0,baseline re-check (variance control)
+2026-10-13 19:18:32,Release,Rebuild,FlyLinkDC_2022.sln,2,14,0,0,20656640,0,/PROFILE removed from flylinkdc Release Link (experiment)
+2026-10-13 19:18:32,Release,Rebuild,FlyLinkDC_2022.sln,2.14,0,0,20656640,0,/PROFILE removed: no gain (Link 91.5s vs 92.6s), reverted
+2026-10-13 19:41:03,Release,ClCompile,FlyLinkDC_2022.sln,2.05,0,0,20656640,0,PCH/include audit: removed dup includes Resource.h/PrivateFrame.h in MainFrm.cpp (CP1251-safe); PCH optimal
+2026-10-13 19:56:02,Release,Build,FlyLinkDC_2022.sln,0,47,0,0,20656640,0,incremental Build: MainFrm.cpp edited (dup includes removed), IPDB 19:18 preser'
+2026-10-13 19:56:48,Release,Build,FlyLinkDC_2022.sln,0,01,0,0,20656640,0,no-op Build: nothing changed since last incremental link
+2026-10-13 20:22:30,Release,Build,FlyLinkDC_2022.sln,0,02,0,0,20656640,0,vendor unrar removed; solution unaffected
+2026-10-13 23:58:13,Release,Rebuild,FlyLinkDC_2022.sln,2,17,0,0,20656640,0,boost 1.92 upgrade
+2026-10-13 23:59:44,Debug,Rebuild,FlyLinkDC_2022.sln,0,86,0,0,54560768,0,boost 1.92 upgrade

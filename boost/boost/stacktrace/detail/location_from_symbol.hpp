@@ -1,4 +1,4 @@
-// Copyright Antony Polukhin, 2016-2025.
+// Copyright Antony Polukhin, 2016-2026.
 //
 // Distributed under the Boost Software License, Version 1.0. (See
 // accompanying file LICENSE_1_0.txt or copy at
@@ -12,11 +12,13 @@
 #   pragma once
 #endif
 
+#if !defined(BOOST_STACKTRACE_INTERFACE_UNIT)
 #if !defined(BOOST_WINDOWS) && !defined(__CYGWIN__)
 #   include <dlfcn.h>
 #else
 #   include <boost/winapi/dll.hpp>
 #endif
+#endif // !defined(BOOST_STACKTRACE_INTERFACE_UNIT)
 
 #ifdef _AIX
 /* AIX doesn't provide dladdr syscall.
@@ -26,6 +28,7 @@
 
 #include <sys/ldr.h>
 #include <sys/debug.h>
+
 #include <cstring>
 #include <string>
 #include <vector>

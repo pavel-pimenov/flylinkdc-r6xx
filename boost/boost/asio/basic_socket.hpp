@@ -2,7 +2,7 @@
 // basic_socket.hpp
 // ~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2025 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2026 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -43,6 +43,7 @@
 
 namespace boost {
 namespace asio {
+BOOST_ASIO_INLINE_NAMESPACE_BEGIN
 
 #if !defined(BOOST_ASIO_BASIC_SOCKET_FWD_DECL)
 #define BOOST_ASIO_BASIC_SOCKET_FWD_DECL
@@ -990,22 +991,22 @@ public:
    *
    * @throws boost::system::system_error Thrown on failure.
    *
-   * @sa SettableSocketOption @n
-   * boost::asio::socket_base::broadcast @n
-   * boost::asio::socket_base::do_not_route @n
-   * boost::asio::socket_base::keep_alive @n
-   * boost::asio::socket_base::linger @n
-   * boost::asio::socket_base::receive_buffer_size @n
-   * boost::asio::socket_base::receive_low_watermark @n
-   * boost::asio::socket_base::reuse_address @n
-   * boost::asio::socket_base::send_buffer_size @n
-   * boost::asio::socket_base::send_low_watermark @n
-   * boost::asio::ip::multicast::join_group @n
-   * boost::asio::ip::multicast::leave_group @n
-   * boost::asio::ip::multicast::enable_loopback @n
-   * boost::asio::ip::multicast::outbound_interface @n
-   * boost::asio::ip::multicast::hops @n
-   * boost::asio::ip::tcp::no_delay
+   * @sa
+   * @li boost::asio::socket_base::broadcast
+   * @li boost::asio::socket_base::do_not_route
+   * @li boost::asio::socket_base::keep_alive
+   * @li boost::asio::socket_base::linger
+   * @li boost::asio::socket_base::receive_buffer_size
+   * @li boost::asio::socket_base::receive_low_watermark
+   * @li boost::asio::socket_base::reuse_address
+   * @li boost::asio::socket_base::send_buffer_size
+   * @li boost::asio::socket_base::send_low_watermark
+   * @li boost::asio::ip::multicast::join_group
+   * @li boost::asio::ip::multicast::leave_group
+   * @li boost::asio::ip::multicast::enable_loopback
+   * @li boost::asio::ip::multicast::outbound_interface
+   * @li boost::asio::ip::multicast::hops
+   * @li boost::asio::ip::tcp::no_delay
    *
    * @par Example
    * Setting the IPPROTO_TCP/TCP_NODELAY option:
@@ -1032,22 +1033,22 @@ public:
    *
    * @param ec Set to indicate what error occurred, if any.
    *
-   * @sa SettableSocketOption @n
-   * boost::asio::socket_base::broadcast @n
-   * boost::asio::socket_base::do_not_route @n
-   * boost::asio::socket_base::keep_alive @n
-   * boost::asio::socket_base::linger @n
-   * boost::asio::socket_base::receive_buffer_size @n
-   * boost::asio::socket_base::receive_low_watermark @n
-   * boost::asio::socket_base::reuse_address @n
-   * boost::asio::socket_base::send_buffer_size @n
-   * boost::asio::socket_base::send_low_watermark @n
-   * boost::asio::ip::multicast::join_group @n
-   * boost::asio::ip::multicast::leave_group @n
-   * boost::asio::ip::multicast::enable_loopback @n
-   * boost::asio::ip::multicast::outbound_interface @n
-   * boost::asio::ip::multicast::hops @n
-   * boost::asio::ip::tcp::no_delay
+   * @sa
+   * @li boost::asio::socket_base::broadcast
+   * @li boost::asio::socket_base::do_not_route
+   * @li boost::asio::socket_base::keep_alive
+   * @li boost::asio::socket_base::linger
+   * @li boost::asio::socket_base::receive_buffer_size
+   * @li boost::asio::socket_base::receive_low_watermark
+   * @li boost::asio::socket_base::reuse_address
+   * @li boost::asio::socket_base::send_buffer_size
+   * @li boost::asio::socket_base::send_low_watermark
+   * @li boost::asio::ip::multicast::join_group
+   * @li boost::asio::ip::multicast::leave_group
+   * @li boost::asio::ip::multicast::enable_loopback
+   * @li boost::asio::ip::multicast::outbound_interface
+   * @li boost::asio::ip::multicast::hops
+   * @li boost::asio::ip::tcp::no_delay
    *
    * @par Example
    * Setting the IPPROTO_TCP/TCP_NODELAY option:
@@ -1079,22 +1080,22 @@ public:
    *
    * @throws boost::system::system_error Thrown on failure.
    *
-   * @sa GettableSocketOption @n
-   * boost::asio::socket_base::broadcast @n
-   * boost::asio::socket_base::do_not_route @n
-   * boost::asio::socket_base::keep_alive @n
-   * boost::asio::socket_base::linger @n
-   * boost::asio::socket_base::receive_buffer_size @n
-   * boost::asio::socket_base::receive_low_watermark @n
-   * boost::asio::socket_base::reuse_address @n
-   * boost::asio::socket_base::send_buffer_size @n
-   * boost::asio::socket_base::send_low_watermark @n
-   * boost::asio::ip::multicast::join_group @n
-   * boost::asio::ip::multicast::leave_group @n
-   * boost::asio::ip::multicast::enable_loopback @n
-   * boost::asio::ip::multicast::outbound_interface @n
-   * boost::asio::ip::multicast::hops @n
-   * boost::asio::ip::tcp::no_delay
+   * @sa
+   * @li boost::asio::socket_base::broadcast
+   * @li boost::asio::socket_base::do_not_route
+   * @li boost::asio::socket_base::keep_alive
+   * @li boost::asio::socket_base::linger
+   * @li boost::asio::socket_base::receive_buffer_size
+   * @li boost::asio::socket_base::receive_low_watermark
+   * @li boost::asio::socket_base::reuse_address
+   * @li boost::asio::socket_base::send_buffer_size
+   * @li boost::asio::socket_base::send_low_watermark
+   * @li boost::asio::ip::multicast::join_group
+   * @li boost::asio::ip::multicast::leave_group
+   * @li boost::asio::ip::multicast::enable_loopback
+   * @li boost::asio::ip::multicast::outbound_interface
+   * @li boost::asio::ip::multicast::hops
+   * @li boost::asio::ip::tcp::no_delay
    *
    * @par Example
    * Getting the value of the SOL_SOCKET/SO_KEEPALIVE option:
@@ -1122,22 +1123,22 @@ public:
    *
    * @param ec Set to indicate what error occurred, if any.
    *
-   * @sa GettableSocketOption @n
-   * boost::asio::socket_base::broadcast @n
-   * boost::asio::socket_base::do_not_route @n
-   * boost::asio::socket_base::keep_alive @n
-   * boost::asio::socket_base::linger @n
-   * boost::asio::socket_base::receive_buffer_size @n
-   * boost::asio::socket_base::receive_low_watermark @n
-   * boost::asio::socket_base::reuse_address @n
-   * boost::asio::socket_base::send_buffer_size @n
-   * boost::asio::socket_base::send_low_watermark @n
-   * boost::asio::ip::multicast::join_group @n
-   * boost::asio::ip::multicast::leave_group @n
-   * boost::asio::ip::multicast::enable_loopback @n
-   * boost::asio::ip::multicast::outbound_interface @n
-   * boost::asio::ip::multicast::hops @n
-   * boost::asio::ip::tcp::no_delay
+   * @sa
+   * @li boost::asio::socket_base::broadcast
+   * @li boost::asio::socket_base::do_not_route
+   * @li boost::asio::socket_base::keep_alive
+   * @li boost::asio::socket_base::linger
+   * @li boost::asio::socket_base::receive_buffer_size
+   * @li boost::asio::socket_base::receive_low_watermark
+   * @li boost::asio::socket_base::reuse_address
+   * @li boost::asio::socket_base::send_buffer_size
+   * @li boost::asio::socket_base::send_low_watermark
+   * @li boost::asio::ip::multicast::join_group
+   * @li boost::asio::ip::multicast::leave_group
+   * @li boost::asio::ip::multicast::enable_loopback
+   * @li boost::asio::ip::multicast::outbound_interface
+   * @li boost::asio::ip::multicast::hops
+   * @li boost::asio::ip::tcp::no_delay
    *
    * @par Example
    * Getting the value of the SOL_SOCKET/SO_KEEPALIVE option:
@@ -1170,9 +1171,8 @@ public:
    *
    * @throws boost::system::system_error Thrown on failure.
    *
-   * @sa IoControlCommand @n
-   * boost::asio::socket_base::bytes_readable @n
-   * boost::asio::socket_base::non_blocking_io
+   * @sa
+   * @li boost::asio::socket_base::bytes_readable
    *
    * @par Example
    * Getting the number of bytes ready to read:
@@ -1200,9 +1200,8 @@ public:
    *
    * @param ec Set to indicate what error occurred, if any.
    *
-   * @sa IoControlCommand @n
-   * boost::asio::socket_base::bytes_readable @n
-   * boost::asio::socket_base::non_blocking_io
+   * @sa
+   * @li boost::asio::socket_base::bytes_readable
    *
    * @par Example
    * Getting the number of bytes ready to read:
@@ -1930,6 +1929,7 @@ private:
   };
 };
 
+BOOST_ASIO_INLINE_NAMESPACE_END
 } // namespace asio
 } // namespace boost
 

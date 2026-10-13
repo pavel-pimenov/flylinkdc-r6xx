@@ -2,7 +2,7 @@
 // detail/reactive_socket_service_base.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2025 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2026 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -44,6 +44,7 @@
 
 namespace boost {
 namespace asio {
+BOOST_ASIO_INLINE_NAMESPACE_BEGIN
 namespace detail {
 
 class reactive_socket_service_base
@@ -201,7 +202,7 @@ public:
       socket_base::wait_type w, Handler& handler, const IoExecutor& io_ex)
   {
     bool is_continuation =
-      boost_asio_handler_cont_helpers::is_continuation(handler);
+      BOOST_ASIO_VERSIONED_NAME(handler_cont_helpers)::is_continuation(handler);
 
     associated_cancellation_slot_t<Handler> slot
       = boost::asio::get_associated_cancellation_slot(handler);
@@ -289,7 +290,7 @@ public:
       Handler& handler, const IoExecutor& io_ex)
   {
     bool is_continuation =
-      boost_asio_handler_cont_helpers::is_continuation(handler);
+      BOOST_ASIO_VERSIONED_NAME(handler_cont_helpers)::is_continuation(handler);
 
     associated_cancellation_slot_t<Handler> slot
       = boost::asio::get_associated_cancellation_slot(handler);
@@ -316,7 +317,8 @@ public:
     start_op(impl, reactor::write_op, p.p, is_continuation, true,
         ((impl.state_ & socket_ops::stream_oriented)
           && buffer_sequence_adapter<boost::asio::const_buffer,
-            ConstBufferSequence>::all_empty(buffers)), true, &io_ex, 0);
+            ConstBufferSequence>::all_empty(buffers)),
+        BOOST_ASIO_OS_DEF(MSG_DONTWAIT) == 0, &io_ex, 0);
     p.v = p.p = 0;
   }
 
@@ -326,7 +328,7 @@ public:
       socket_base::message_flags, Handler& handler, const IoExecutor& io_ex)
   {
     bool is_continuation =
-      boost_asio_handler_cont_helpers::is_continuation(handler);
+      BOOST_ASIO_VERSIONED_NAME(handler_cont_helpers)::is_continuation(handler);
 
     associated_cancellation_slot_t<Handler> slot
       = boost::asio::get_associated_cancellation_slot(handler);
@@ -395,7 +397,7 @@ public:
       Handler& handler, const IoExecutor& io_ex)
   {
     bool is_continuation =
-      boost_asio_handler_cont_helpers::is_continuation(handler);
+      BOOST_ASIO_VERSIONED_NAME(handler_cont_helpers)::is_continuation(handler);
 
     associated_cancellation_slot_t<Handler> slot
       = boost::asio::get_associated_cancellation_slot(handler);
@@ -426,7 +428,8 @@ public:
         (flags & socket_base::message_out_of_band) == 0,
         ((impl.state_ & socket_ops::stream_oriented)
           && buffer_sequence_adapter<boost::asio::mutable_buffer,
-            MutableBufferSequence>::all_empty(buffers)), true, &io_ex, 0);
+            MutableBufferSequence>::all_empty(buffers)),
+        BOOST_ASIO_OS_DEF(MSG_DONTWAIT) == 0, &io_ex, 0);
     p.v = p.p = 0;
   }
 
@@ -437,7 +440,7 @@ public:
       Handler& handler, const IoExecutor& io_ex)
   {
     bool is_continuation =
-      boost_asio_handler_cont_helpers::is_continuation(handler);
+      BOOST_ASIO_VERSIONED_NAME(handler_cont_helpers)::is_continuation(handler);
 
     associated_cancellation_slot_t<Handler> slot
       = boost::asio::get_associated_cancellation_slot(handler);
@@ -506,7 +509,7 @@ public:
       const IoExecutor& io_ex)
   {
     bool is_continuation =
-      boost_asio_handler_cont_helpers::is_continuation(handler);
+      BOOST_ASIO_VERSIONED_NAME(handler_cont_helpers)::is_continuation(handler);
 
     associated_cancellation_slot_t<Handler> slot
       = boost::asio::get_associated_cancellation_slot(handler);
@@ -535,7 +538,7 @@ public:
           ? reactor::except_op : reactor::read_op,
         p.p, is_continuation,
         (in_flags & socket_base::message_out_of_band) == 0,
-        false, true, &io_ex, 0);
+        false, BOOST_ASIO_OS_DEF(MSG_DONTWAIT) == 0, &io_ex, 0);
     p.v = p.p = 0;
   }
 
@@ -547,7 +550,7 @@ public:
       const IoExecutor& io_ex)
   {
     bool is_continuation =
-      boost_asio_handler_cont_helpers::is_continuation(handler);
+      BOOST_ASIO_VERSIONED_NAME(handler_cont_helpers)::is_continuation(handler);
 
     associated_cancellation_slot_t<Handler> slot
       = boost::asio::get_associated_cancellation_slot(handler);
@@ -738,9 +741,13 @@ protected:
 
   // Cached success value to avoid accessing category singleton.
   const boost::system::error_code success_ec_;
+
+  // Extra state flags to be applied to newly opened sockets.
+  socket_ops::state_type extra_state_;
 };
 
 } // namespace detail
+BOOST_ASIO_INLINE_NAMESPACE_END
 } // namespace asio
 } // namespace boost
 

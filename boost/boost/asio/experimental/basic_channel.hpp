@@ -2,7 +2,7 @@
 // experimental/basic_channel.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2025 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2026 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -27,6 +27,7 @@
 
 namespace boost {
 namespace asio {
+BOOST_ASIO_INLINE_NAMESPACE_BEGIN
 namespace experimental {
 namespace detail {
 
@@ -93,6 +94,8 @@ namespace detail {
  * thread or in the same strand. Consider using @ref basic_concurrent_channel,
  * and its alias template @c experimental::concurrent_channel, to pass messages
  * between code running in different threads.
+ *
+ * @sa @ref overview_channels "Channels"
  */
 template <typename Executor, typename Traits, typename... Signatures>
 class basic_channel
@@ -508,6 +511,7 @@ private:
 };
 
 } // namespace experimental
+BOOST_ASIO_INLINE_NAMESPACE_END
 } // namespace asio
 } // namespace boost
 

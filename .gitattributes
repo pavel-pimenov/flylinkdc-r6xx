@@ -1,0 +1,3 @@
+# Vendor patch files must stay LF: vendor-update.py applies them with git apply
+# while forcing core.autocrlf=false, so CRLF in a checked-out patch breaks it.
+vendor-patches/*.patch text eol=lf

@@ -2,7 +2,7 @@
 // redirect_error.hpp
 // ~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2025 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2026 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -23,12 +23,15 @@
 
 namespace boost {
 namespace asio {
+BOOST_ASIO_INLINE_NAMESPACE_BEGIN
 
 /// A @ref completion_token adapter used to specify that an error produced by an
 /// asynchronous operation is captured to an error_code variable.
 /**
  * The redirect_error_t class is used to indicate that any error_code produced
  * by an asynchronous operation is captured to a specified variable.
+ *
+ * @sa @ref overview_token_adapters "Completion token adapters"
  */
 template <typename CompletionToken>
 class redirect_error_t
@@ -96,6 +99,7 @@ redirect_error(CompletionToken&& completion_token,
       static_cast<CompletionToken&&>(completion_token), ec);
 }
 
+BOOST_ASIO_INLINE_NAMESPACE_END
 } // namespace asio
 } // namespace boost
 

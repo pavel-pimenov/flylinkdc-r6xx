@@ -2,7 +2,7 @@
 // buffer_registration.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2025 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2026 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -36,6 +36,18 @@
 
 namespace boost {
 namespace asio {
+BOOST_ASIO_INLINE_NAMESPACE_BEGIN
+
+#if !defined(BOOST_ASIO_BUFFER_REGISTRATION_FWD_DECL)
+#define BOOST_ASIO_BUFFER_REGISTRATION_FWD_DECL
+
+// Forward declaration with defaulted arguments.
+template <typename MutableBufferSequence,
+    typename Allocator = std::allocator<void>>
+class buffer_registration;
+
+#endif // !defined(BOOST_ASIO_BUFFER_REGISTRATION_FWD_DECL)
+
 namespace detail {
 
 class buffer_registration_base
@@ -55,8 +67,7 @@ protected:
  * For portability, applications should assume that only one registration is
  * permitted per execution context.
  */
-template <typename MutableBufferSequence,
-    typename Allocator = std::allocator<void>>
+template <typename MutableBufferSequence, typename Allocator>
 class buffer_registration
   : detail::buffer_registration_base
 {
@@ -312,6 +323,7 @@ register_buffers(ExecutionContext& ctx,
       ctx, buffer_sequence, alloc);
 }
 
+BOOST_ASIO_INLINE_NAMESPACE_END
 } // namespace asio
 } // namespace boost
 

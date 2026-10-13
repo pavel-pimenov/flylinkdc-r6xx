@@ -18,6 +18,7 @@
 
 namespace boost {
 namespace asio {
+BOOST_ASIO_INLINE_NAMESPACE_BEGIN
 namespace experimental {
 namespace detail {
 
@@ -63,7 +64,7 @@ void deallocate_coroutine(void* raw_, const std::size_t size)
 template <typename T>
 constexpr std::size_t variadic_first(std::size_t = 0u)
 {
-  return std::numeric_limits<std::size_t>::max();
+  return (std::numeric_limits<std::size_t>::max)();
 }
 
 template <typename T, typename First, typename... Args>
@@ -137,6 +138,7 @@ struct coro_promise_allocator<std::allocator<void>>
 
 } // namespace detail
 } // namespace experimental
+BOOST_ASIO_INLINE_NAMESPACE_END
 } // namespace asio
 } // namespace boost
 

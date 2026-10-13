@@ -151,7 +151,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\boost\libs\system\src\error_code.cpp" />
     <ClCompile Include="..\client\BaseUtil.cpp" />
     <ClCompile Include="..\client\debug.cpp" />
     <ClCompile Include="..\client\Exception.cpp" />
@@ -163,7 +162,6 @@
     <ClCompile Include="..\client\Text.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\boost\libs\system\src\local_free_on_destruction.hpp" />
     <ClInclude Include="..\client\BaseUtil.h" />
     <ClInclude Include="..\client\debug.h" />
     <ClInclude Include="..\client\Exception.h" />

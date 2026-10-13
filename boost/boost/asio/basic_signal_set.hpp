@@ -2,7 +2,7 @@
 // basic_signal_set.hpp
 // ~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2025 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2026 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -33,6 +33,16 @@
 
 namespace boost {
 namespace asio {
+BOOST_ASIO_INLINE_NAMESPACE_BEGIN
+
+#if !defined(BOOST_ASIO_BASIC_SIGNAL_SET_FWD_DECL)
+#define BOOST_ASIO_BASIC_SIGNAL_SET_FWD_DECL
+
+// Forward declaration with defaulted arguments.
+template <typename Executor = any_io_executor>
+class basic_signal_set;
+
+#endif // !defined(BOOST_ASIO_BASIC_SIGNAL_SET_FWD_DECL)
 
 /// Provides signal functionality.
 /**
@@ -93,8 +103,10 @@ namespace asio {
  * and @c pthread_sigmask(). For signals to be delivered, programs must ensure
  * that any signals registered using signal_set objects are unblocked in at
  * least one thread.
+ *
+ * @sa @ref overview_signals "Signal handling"
  */
-template <typename Executor = any_io_executor>
+template <typename Executor>
 class basic_signal_set : public signal_set_base
 {
 private:
@@ -588,6 +600,11 @@ public:
    * @li @c cancellation_type::partial
    *
    * @li @c cancellation_type::total
+   *
+   * @note Unlike the POSIX function @c signal, @c async_wait executes its
+   * completion handler as specified in the @ref async_op_requirements. This
+   * means it places no async-signal safety restrictions on what work can be
+   * performed in a completion handler.
    */
   template <
     BOOST_ASIO_COMPLETION_TOKEN_FOR(void (boost::system::error_code, int))
@@ -642,6 +659,7 @@ private:
   detail::io_object_impl<detail::signal_set_service, Executor> impl_;
 };
 
+BOOST_ASIO_INLINE_NAMESPACE_END
 } // namespace asio
 } // namespace boost
 

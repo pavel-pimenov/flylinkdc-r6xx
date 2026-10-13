@@ -2,7 +2,7 @@
 // basic_serial_port.hpp
 // ~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2025 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2026 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 // Copyright (c) 2008 Rep Invariant Systems, Inc. (info@repinvariant.com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
@@ -43,6 +43,16 @@
 
 namespace boost {
 namespace asio {
+BOOST_ASIO_INLINE_NAMESPACE_BEGIN
+
+#if !defined(BOOST_ASIO_BASIC_SERIAL_PORT_FWD_DECL)
+#define BOOST_ASIO_BASIC_SERIAL_PORT_FWD_DECL
+
+// Forward declaration with defaulted arguments.
+template <typename Executor = any_io_executor>
+class basic_serial_port;
+
+#endif // !defined(BOOST_ASIO_BASIC_SERIAL_PORT_FWD_DECL)
 
 /// Provides serial port functionality.
 /**
@@ -52,8 +62,10 @@ namespace asio {
  * @par Thread Safety
  * @e Distinct @e objects: Safe.@n
  * @e Shared @e objects: Unsafe.
+ *
+ * @sa @ref overview_serial_ports "Serial ports"
  */
-template <typename Executor = any_io_executor>
+template <typename Executor>
 class basic_serial_port
   : public serial_port_base
 {
@@ -555,12 +567,12 @@ public:
    *
    * @throws boost::system::system_error Thrown on failure.
    *
-   * @sa SettableSerialPortOption @n
-   * boost::asio::serial_port_base::baud_rate @n
-   * boost::asio::serial_port_base::flow_control @n
-   * boost::asio::serial_port_base::parity @n
-   * boost::asio::serial_port_base::stop_bits @n
-   * boost::asio::serial_port_base::character_size
+   * @sa
+   * @li boost::asio::serial_port_base::baud_rate
+   * @li boost::asio::serial_port_base::flow_control
+   * @li boost::asio::serial_port_base::parity
+   * @li boost::asio::serial_port_base::stop_bits
+   * @li boost::asio::serial_port_base::character_size
    */
   template <typename SettableSerialPortOption>
   void set_option(const SettableSerialPortOption& option)
@@ -578,12 +590,12 @@ public:
    *
    * @param ec Set to indicate what error occurred, if any.
    *
-   * @sa SettableSerialPortOption @n
-   * boost::asio::serial_port_base::baud_rate @n
-   * boost::asio::serial_port_base::flow_control @n
-   * boost::asio::serial_port_base::parity @n
-   * boost::asio::serial_port_base::stop_bits @n
-   * boost::asio::serial_port_base::character_size
+   * @sa
+   * @li boost::asio::serial_port_base::baud_rate
+   * @li boost::asio::serial_port_base::flow_control
+   * @li boost::asio::serial_port_base::parity
+   * @li boost::asio::serial_port_base::stop_bits
+   * @li boost::asio::serial_port_base::character_size
    */
   template <typename SettableSerialPortOption>
   BOOST_ASIO_SYNC_OP_VOID set_option(const SettableSerialPortOption& option,
@@ -602,12 +614,12 @@ public:
    *
    * @throws boost::system::system_error Thrown on failure.
    *
-   * @sa GettableSerialPortOption @n
-   * boost::asio::serial_port_base::baud_rate @n
-   * boost::asio::serial_port_base::flow_control @n
-   * boost::asio::serial_port_base::parity @n
-   * boost::asio::serial_port_base::stop_bits @n
-   * boost::asio::serial_port_base::character_size
+   * @sa
+   * @li boost::asio::serial_port_base::baud_rate
+   * @li boost::asio::serial_port_base::flow_control
+   * @li boost::asio::serial_port_base::parity
+   * @li boost::asio::serial_port_base::stop_bits
+   * @li boost::asio::serial_port_base::character_size
    */
   template <typename GettableSerialPortOption>
   void get_option(GettableSerialPortOption& option) const
@@ -626,12 +638,12 @@ public:
    *
    * @param ec Set to indicate what error occurred, if any.
    *
-   * @sa GettableSerialPortOption @n
-   * boost::asio::serial_port_base::baud_rate @n
-   * boost::asio::serial_port_base::flow_control @n
-   * boost::asio::serial_port_base::parity @n
-   * boost::asio::serial_port_base::stop_bits @n
-   * boost::asio::serial_port_base::character_size
+   * @sa
+   * @li boost::asio::serial_port_base::baud_rate
+   * @li boost::asio::serial_port_base::flow_control
+   * @li boost::asio::serial_port_base::parity
+   * @li boost::asio::serial_port_base::stop_bits
+   * @li boost::asio::serial_port_base::character_size
    */
   template <typename GettableSerialPortOption>
   BOOST_ASIO_SYNC_OP_VOID get_option(GettableSerialPortOption& option,
@@ -978,6 +990,7 @@ private:
 #endif
 };
 
+BOOST_ASIO_INLINE_NAMESPACE_END
 } // namespace asio
 } // namespace boost
 

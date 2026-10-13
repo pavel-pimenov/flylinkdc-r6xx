@@ -2,7 +2,7 @@
 // io_context.hpp
 // ~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2025 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2026 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -28,7 +28,7 @@
 #include <boost/asio/execution.hpp>
 #include <boost/asio/execution_context.hpp>
 
-#if defined(BOOST_ASIO_WINDOWS) || defined(__CYGWIN__)
+#if defined(BOOST_ASIO_WINDOWS) || defined(BOOST_ASIO_CYGWIN_W32_SOCKETS)
 # include <boost/asio/detail/winsock_init.hpp>
 #elif defined(__sun) || defined(__QNX__) || defined(__hpux) || defined(_AIX) \
   || defined(__osf__)
@@ -45,6 +45,7 @@
 
 namespace boost {
 namespace asio {
+BOOST_ASIO_INLINE_NAMESPACE_BEGIN
 
 namespace detail {
 #if defined(BOOST_ASIO_HAS_IOCP)
@@ -224,12 +225,35 @@ public:
 
   /// Constructor.
   /**
+   * @param a An allocator that will be used for allocating objects that are
+   * associated with the context, such as services and internal state for I/O
+   * objects.
+   */
+  template <typename Allocator>
+  io_context(allocator_arg_t, const Allocator& a);
+
+  /// Constructor.
+  /**
    * Construct with a hint about the required level of concurrency.
    *
    * @param concurrency_hint A suggestion to the implementation on how many
    * threads it should allow to run simultaneously.
    */
   BOOST_ASIO_DECL explicit io_context(int concurrency_hint);
+
+  /// Constructor.
+  /**
+   * Construct with a hint about the required level of concurrency.
+   *
+   * @param a An allocator that will be used for allocating objects that are
+   * associated with the context, such as services and internal state for I/O
+   * objects.
+   *
+   * @param concurrency_hint A suggestion to the implementation on how many
+   * threads it should allow to run simultaneously.
+   */
+  template <typename Allocator>
+  io_context(allocator_arg_t, const Allocator& a, int concurrency_hint);
 
   /// Constructor.
   /**
@@ -241,6 +265,22 @@ public:
    */
   BOOST_ASIO_DECL explicit io_context(
       const execution_context::service_maker& initial_services);
+
+  /// Constructor.
+  /**
+   * Construct with a service maker, to create an initial set of services that
+   * will be installed into the execution context at construction time.
+   *
+   * @param a An allocator that will be used for allocating objects that are
+   * associated with the context, such as services and internal state for I/O
+   * objects.
+   *
+   * @param initial_services Used to create the initial services. The @c make
+   * function will be called once at the end of execution_context construction.
+   */
+  template <typename Allocator>
+  io_context(allocator_arg_t, const Allocator& a,
+      const service_maker& initial_services);
 
   /// Destructor.
   /**
@@ -460,6 +500,7 @@ public:
    *     boost::bind(f, a1, ... an)); @endcode
    */
   template <typename Handler>
+  BOOST_ASIO_DEPRECATED_MSG("Use boost::asio::bind_executor()")
 #if defined(GENERATING_DOCUMENTATION)
   unspecified
 #else
@@ -472,15 +513,12 @@ private:
   io_context(const io_context&) = delete;
   io_context& operator=(const io_context&) = delete;
 
-  // Helper function to add the implementation.
-  BOOST_ASIO_DECL impl_type& add_impl(impl_type* impl);
-
   // Backwards compatible overload for use with services derived from
   // io_context::service.
   template <typename Service>
   friend Service& use_service(io_context& ioc);
 
-#if defined(BOOST_ASIO_WINDOWS) || defined(__CYGWIN__)
+#if defined(BOOST_ASIO_WINDOWS) || defined(BOOST_ASIO_CYGWIN_W32_SOCKETS)
   detail::winsock_init<> init_;
 #elif defined(__sun) || defined(__QNX__) || defined(__hpux) || defined(_AIX) \
   || defined(__osf__)
@@ -532,8 +570,8 @@ public:
 
 #if !defined(GENERATING_DOCUMENTATION)
 private:
-  friend struct boost_asio_require_fn::impl;
-  friend struct boost_asio_prefer_fn::impl;
+  friend struct BOOST_ASIO_VERSIONED_NAME(require_fn)::impl;
+  friend struct BOOST_ASIO_VERSIONED_NAME(prefer_fn)::impl;
 #endif // !defined(GENERATING_DOCUMENTATION)
 
   /// Obtain an executor with the @c blocking.possibly property.
@@ -674,8 +712,9 @@ private:
 
 #if !defined(GENERATING_DOCUMENTATION)
 private:
-  friend struct boost_asio_query_fn::impl;
+  friend struct BOOST_ASIO_VERSIONED_NAME(query_fn)::impl;
   friend struct boost::asio::execution::detail::mapping_t<0>;
+  friend struct boost::asio::execution::detail::inline_exception_handling_t<0>;
   friend struct boost::asio::execution::detail::outstanding_work_t<0>;
 #endif // !defined(GENERATING_DOCUMENTATION)
 
@@ -693,6 +732,24 @@ private:
   static constexpr execution::mapping_t query(execution::mapping_t) noexcept
   {
     return execution::mapping.thread;
+  }
+
+  /// Query the current value of the @c inline_exception_handling property.
+  /**
+   * Do not call this function directly. It is intended for use with the
+   * boost::asio::query customisation point.
+   *
+   * For example:
+   * @code auto ex = my_io_context.get_executor();
+   * if (boost::asio::query(ex,
+   *       boost::asio::execution::inline_exception_handling)
+   *     == boost::asio::execution::inline_exception_handling.capture)
+   *   ... @endcode
+   */
+  static constexpr execution::inline_exception_handling_t query(
+      execution::inline_exception_handling_t) noexcept
+  {
+    return execution::inline_exception_handling.capture;
   }
 
   /// Query the current value of the @c context property.
@@ -1180,6 +1237,29 @@ struct query_static_constexpr_member<
   }
 };
 
+template <typename Allocator, uintptr_t Bits, typename Property>
+struct query_static_constexpr_member<
+    boost::asio::io_context::basic_executor_type<Allocator, Bits>,
+    Property,
+    typename boost::asio::enable_if<
+      boost::asio::is_convertible<
+        Property,
+        boost::asio::execution::inline_exception_handling_t
+      >::value
+    >::type
+  >
+{
+  static constexpr bool is_valid = true;
+  static constexpr bool is_noexcept = true;
+  typedef boost::asio::execution::inline_exception_handling_t::capture_t
+    result_type;
+
+  static constexpr result_type value() noexcept
+  {
+    return result_type();
+  }
+};
+
 #endif // !defined(BOOST_ASIO_HAS_DEDUCED_QUERY_STATIC_CONSTEXPR_MEMBER_TRAIT)
 
 #if !defined(BOOST_ASIO_HAS_DEDUCED_QUERY_MEMBER_TRAIT)
@@ -1266,6 +1346,7 @@ struct is_executor<io_context> : false_type
 
 #endif // !defined(GENERATING_DOCUMENTATION)
 
+BOOST_ASIO_INLINE_NAMESPACE_END
 } // namespace asio
 } // namespace boost
 

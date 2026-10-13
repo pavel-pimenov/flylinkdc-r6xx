@@ -2,9 +2,6 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="test-console.cpp" />
-    <ClCompile Include="..\boost\libs\system\src\error_code.cpp">
-      <Filter>boost</Filter>
-    </ClCompile>
     <ClCompile Include="..\boost\libs\iostreams\src\mapped_file.cpp">
       <Filter>boost</Filter>
     </ClCompile>

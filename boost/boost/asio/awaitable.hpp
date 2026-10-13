@@ -2,7 +2,7 @@
 // awaitable.hpp
 // ~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2025 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2026 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -32,6 +32,7 @@
 
 namespace boost {
 namespace asio {
+BOOST_ASIO_INLINE_NAMESPACE_BEGIN
 namespace detail {
 
 #if defined(BOOST_ASIO_HAS_STD_COROUTINE)
@@ -48,6 +49,9 @@ template <typename, typename> class awaitable_frame;
 } // namespace detail
 
 /// The return type of a coroutine or asynchronous operation.
+/**
+ * @sa @ref overview_cpp20_coroutines "C++20 coroutines support"
+ */
 template <typename T, typename Executor = any_io_executor>
 class BOOST_ASIO_NODISCARD awaitable
 {
@@ -81,7 +85,11 @@ public:
   awaitable& operator=(awaitable&& other) noexcept
   {
     if (this != &other)
+    {
+      if (frame_)
+        frame_->destroy();
       frame_ = std::exchange(other.frame_, nullptr);
+    }
     return *this;
   }
 
@@ -132,12 +140,16 @@ private:
   detail::awaitable_frame<T, Executor>* frame_;
 };
 
+BOOST_ASIO_INLINE_NAMESPACE_END
 } // namespace asio
 } // namespace boost
 
 #include <boost/asio/detail/pop_options.hpp>
 
 #include <boost/asio/impl/awaitable.hpp>
+#if defined(BOOST_ASIO_HEADER_ONLY)
+# include <boost/asio/impl/awaitable.ipp>
+#endif // defined(BOOST_ASIO_HEADER_ONLY)
 
 #endif // defined(BOOST_ASIO_HAS_CO_AWAIT) || defined(GENERATING_DOCUMENTATION)
 

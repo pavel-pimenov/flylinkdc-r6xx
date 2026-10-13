@@ -2,7 +2,7 @@
 // use_future.hpp
 // ~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2025 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2026 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -28,6 +28,7 @@
 
 namespace boost {
 namespace asio {
+BOOST_ASIO_INLINE_NAMESPACE_BEGIN
 namespace detail {
 
 template <typename Function, typename Allocator>
@@ -54,6 +55,8 @@ class packaged_handler;
  * future that will receive the result of the operation. If the operation
  * completes with an error_code indicating failure, it is converted into a
  * system_error and passed back to the caller via the future.
+ *
+ * @sa @ref overview_futures "Futures"
  */
 template <typename Allocator = std::allocator<void>>
 class use_future_t
@@ -139,6 +142,7 @@ private:
  */
 BOOST_ASIO_INLINE_VARIABLE constexpr use_future_t<> use_future;
 
+BOOST_ASIO_INLINE_NAMESPACE_END
 } // namespace asio
 } // namespace boost
 

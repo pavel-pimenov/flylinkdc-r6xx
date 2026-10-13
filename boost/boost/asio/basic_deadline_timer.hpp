@@ -2,7 +2,7 @@
 // basic_deadline_timer.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2025 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2026 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -37,6 +37,7 @@
 
 namespace boost {
 namespace asio {
+BOOST_ASIO_INLINE_NAMESPACE_BEGIN
 
 /// (Deprecated: Use basic_waitable_timer.) Provides waitable timer
 /// functionality.
@@ -130,7 +131,7 @@ namespace asio {
 template <typename Time,
     typename TimeTraits = boost::asio::time_traits<Time>,
     typename Executor = any_io_executor>
-class basic_deadline_timer
+class BOOST_ASIO_DEPRECATED_MSG("Use basic_waitable_timer") basic_deadline_timer
 {
 private:
   class initiate_async_wait;
@@ -704,6 +705,7 @@ private:
     detail::deadline_timer_service<TimeTraits>, Executor> impl_;
 };
 
+BOOST_ASIO_INLINE_NAMESPACE_END
 } // namespace asio
 } // namespace boost
 

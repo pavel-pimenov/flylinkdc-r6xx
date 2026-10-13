@@ -1,5 +1,5 @@
 // Copyright 2014 Renato Tegon Forti, Antony Polukhin.
-// Copyright Antony Polukhin, 2015-2025.
+// Copyright Antony Polukhin, 2015-2026.
 //
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE_1_0.txt
@@ -13,7 +13,9 @@
 #   pragma once
 #endif
 
+#if !defined(BOOST_STACKTRACE_INTERFACE_UNIT) && !defined(BOOST_STACKTRACE_USE_STD_MODULE)
 #include <type_traits>
+#endif // !defined(BOOST_STACKTRACE_INTERFACE_UNIT) && !defined(BOOST_STACKTRACE_USE_STD_MODULE)
 
 #if defined(__GNUC__) && defined(__GNUC_MINOR__) && (__GNUC__ * 100 + __GNUC_MINOR__ > 301)
 #   pragma GCC system_header
@@ -22,7 +24,7 @@
 namespace boost { namespace stacktrace { namespace detail {
 
 // GCC warns when reinterpret_cast between function pointer and object pointer occur.
-// This functionsuppress the warnings and ensures that such casts are safe.
+// This function suppress the warnings and ensures that such casts are safe.
 template <class To, class From>
 To void_ptr_cast(From* v) noexcept {
     static_assert(

@@ -1,4 +1,4 @@
-// Copyright Antony Polukhin, 2016-2025.
+// Copyright Antony Polukhin, 2016-2026.
 //
 // Distributed under the Boost Software License, Version 1.0. (See
 // accompanying file LICENSE_1_0.txt or copy at
@@ -12,9 +12,7 @@
 #   pragma once
 #endif
 
-#include <boost/stacktrace/detail/to_hex_array.hpp>
-#include <boost/stacktrace/detail/to_dec_array.hpp>
-#include <boost/stacktrace/detail/location_from_symbol.hpp>
+#if !defined(BOOST_STACKTRACE_INTERFACE_UNIT)
 #include <boost/core/demangle.hpp>
 
 #ifdef BOOST_STACKTRACE_BACKTRACE_INCLUDE_FILE
@@ -22,6 +20,11 @@
 #else
 #   include <backtrace.h>
 #endif
+#endif // !defined(BOOST_STACKTRACE_INTERFACE_UNIT)
+
+#include <boost/stacktrace/detail/to_hex_array.hpp>
+#include <boost/stacktrace/detail/to_dec_array.hpp>
+#include <boost/stacktrace/detail/location_from_symbol.hpp>
 
 namespace boost { namespace stacktrace { namespace detail {
 
@@ -83,7 +86,7 @@ BOOST_SYMBOL_VISIBLE inline ::backtrace_state* construct_state(const program_loc
     //
     // Unfortunately, that solution segfaults when `construct_state()` function is in .so file
     // and multiple threads concurrently work with state. I failed to localize the root cause:
-    // https://gcc.gnu.org/bugzilla//show_bug.cgi?id=87653
+    // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=87653
 
 #define BOOST_STACKTRACE_DETAIL_IS_MT 1
 

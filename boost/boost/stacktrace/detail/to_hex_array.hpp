@@ -1,4 +1,4 @@
-// Copyright Antony Polukhin, 2016-2025.
+// Copyright Antony Polukhin, 2016-2026.
 //
 // Distributed under the Boost Software License, Version 1.0. (See
 // accompanying file LICENSE_1_0.txt or copy at
@@ -12,8 +12,10 @@
 #   pragma once
 #endif
 
+#if !defined(BOOST_STACKTRACE_INTERFACE_UNIT) && !defined(BOOST_STACKTRACE_USE_STD_MODULE)
 #include <array>
 #include <type_traits>
+#endif // !defined(BOOST_STACKTRACE_INTERFACE_UNIT) && !defined(BOOST_STACKTRACE_USE_STD_MODULE)
 
 namespace boost { namespace stacktrace { namespace detail {
 

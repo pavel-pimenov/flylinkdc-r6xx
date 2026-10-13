@@ -1,6 +1,6 @@
 /* Fast open-addressing hash table.
  *
- * Copyright 2022-2024 Joaquin M Lopez Munoz.
+ * Copyright 2022-2026 Joaquin M Lopez Munoz.
  * Copyright 2023 Christian Mazakas.
  * Copyright 2024 Braden Ganetsky.
  * Distributed under the Boost Software License, Version 1.0.
@@ -422,9 +422,9 @@ public:
   }
 
   /* Optimizations for maps for (k,v) to avoid eagerly constructing value */
-  template <typename K, typename V>
+  template <typename K, typename V, typename Table = table>
   BOOST_FORCEINLINE
-    typename std::enable_if<is_emplace_kv_able<table, K>::value,
+    typename std::enable_if<is_emplace_kv_able<Table, K>::value,
       std::pair<iterator, bool> >::type
     emplace(K&& k, V&& v)
   {
@@ -493,6 +493,14 @@ public:
       return 1;
     }
     else return 0;
+  }
+
+  BOOST_FORCEINLINE init_type pull(const_iterator pos)
+  {
+    BOOST_ASSERT(pos!=end());
+    erase_on_exit e{*this,pos};
+    (void)e;
+    return type_policy::move(type_policy::value_from(*pos.p()));
   }
 
   void swap(table& x)

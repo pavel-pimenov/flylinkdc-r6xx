@@ -2,7 +2,7 @@
 // experimental/impl/parallel_group.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2025 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2026 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -30,6 +30,7 @@
 
 namespace boost {
 namespace asio {
+BOOST_ASIO_INLINE_NAMESPACE_BEGIN
 namespace experimental {
 namespace detail {
 
@@ -344,12 +345,13 @@ struct parallel_group_cancellation_handler
 
   void operator()(cancellation_type_t cancel_type)
   {
-    // If we are the first place to request cancellation, i.e. no operation has
-    // yet completed and requested cancellation, emit a signal for each
-    // operation in the group.
+    // If we are the first place to request terminal cancellation, i.e. no
+    // operation has yet completed and requested cancellation, emit a signal for
+    // each operation in the group.
     if (cancel_type != cancellation_type::none)
       if (auto state = state_.lock())
-        if (state->cancellations_requested_++ == 0)
+        if (!(cancel_type & cancellation_type::terminal)
+            || state->cancellations_requested_++ == 0)
           for (std::size_t i = 0; i < sizeof...(Ops); ++i)
             state->cancellation_signals_[i].emit(cancel_type);
   }
@@ -670,12 +672,13 @@ struct ranged_parallel_group_cancellation_handler
 
   void operator()(cancellation_type_t cancel_type)
   {
-    // If we are the first place to request cancellation, i.e. no operation has
-    // yet completed and requested cancellation, emit a signal for each
-    // operation in the group.
+    // If we are the first place to request terminal cancellation, i.e. no
+    // operation has yet completed and requested cancellation, emit a signal for
+    // each operation in the group.
     if (cancel_type != cancellation_type::none)
       if (auto state = state_.lock())
-        if (state->cancellations_requested_++ == 0)
+        if (!(cancel_type & cancellation_type::terminal)
+            || state->cancellations_requested_++ == 0)
           for (std::size_t i = 0; i < state->cancellation_signals_.size(); ++i)
             state->cancellation_signals_[i].emit(cancel_type);
   }
@@ -783,6 +786,7 @@ struct associator<Associator,
   }
 };
 
+BOOST_ASIO_INLINE_NAMESPACE_END
 } // namespace asio
 } // namespace boost
 

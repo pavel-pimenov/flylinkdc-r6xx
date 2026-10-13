@@ -2,7 +2,7 @@
 // detail/impl/scheduler.ipp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2025 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2026 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -34,6 +34,7 @@
 
 namespace boost {
 namespace asio {
+BOOST_ASIO_INLINE_NAMESPACE_BEGIN
 namespace detail {
 
 class scheduler::thread_function
@@ -113,39 +114,56 @@ scheduler::scheduler(boost::asio::execution_context& ctx,
     bool own_thread, get_task_func_type get_task)
   : boost::asio::detail::execution_context_service_base<scheduler>(ctx),
     one_thread_(config(ctx).get("scheduler", "concurrency_hint", 0) == 1),
+    assume_continuation_(config(ctx).get("scheduler",
+          "assume_continuation", one_thread_)),
     mutex_(config(ctx).get("scheduler", "locking", true),
         config(ctx).get("scheduler", "locking_spin_count", 0)),
     task_(0),
     get_task_(get_task),
     task_interrupted_(true),
-    outstanding_work_(0),
     stopped_(false),
     shutdown_(false),
-    concurrency_hint_(config(ctx).get("scheduler", "concurrency_hint", 0)),
+    outstanding_work_(0),
     task_usec_(config(ctx).get("scheduler", "task_usec", -1L)),
     wait_usec_(config(ctx).get("scheduler", "wait_usec", -1L)),
-    thread_(0)
+    thread_()
 {
   BOOST_ASIO_HANDLER_TRACKING_INIT;
 
   if (own_thread)
   {
     ++outstanding_work_;
-    boost::asio::detail::signal_blocker sb;
-    thread_ = new boost::asio::detail::thread(thread_function(this));
+    signal_blocker sb;
+    thread_ = thread(thread_function(this));
   }
+}
+
+scheduler::scheduler(scheduler::internal, boost::asio::execution_context& ctx)
+  : boost::asio::detail::execution_context_service_base<scheduler>(ctx),
+    one_thread_(false),
+    assume_continuation_(false),
+    mutex_(true, 0),
+    task_(0),
+    get_task_(&scheduler::get_default_task),
+    task_interrupted_(true),
+    stopped_(false),
+    shutdown_(false),
+    outstanding_work_(0),
+    task_usec_(-1L),
+    wait_usec_(-1L)
+{
+  BOOST_ASIO_HANDLER_TRACKING_INIT;
 }
 
 scheduler::~scheduler()
 {
-  if (thread_)
+  if (thread_.joinable())
   {
     mutex::scoped_lock lock(mutex_);
     shutdown_ = true;
     stop_all_threads(lock);
     lock.unlock();
-    thread_->join();
-    delete thread_;
+    thread_.join();
   }
 }
 
@@ -153,17 +171,12 @@ void scheduler::shutdown()
 {
   mutex::scoped_lock lock(mutex_);
   shutdown_ = true;
-  if (thread_)
+  if (thread_.joinable())
     stop_all_threads(lock);
   lock.unlock();
 
   // Join thread to ensure task operation is returned to queue.
-  if (thread_)
-  {
-    thread_->join();
-    delete thread_;
-    thread_ = 0;
-  }
+  thread_.join();
 
   // Destroy handler objects.
   while (!op_queue_.empty())
@@ -345,7 +358,7 @@ void scheduler::post_immediate_completion(
     scheduler::operation* op, bool is_continuation)
 {
 #if defined(BOOST_ASIO_HAS_THREADS)
-  if (one_thread_ || is_continuation)
+  if (assume_continuation_ || is_continuation)
   {
     if (thread_info_base* this_thread = thread_call_stack::contains(this))
     {
@@ -368,7 +381,7 @@ void scheduler::post_immediate_completions(std::size_t n,
     op_queue<scheduler::operation>& ops, bool is_continuation)
 {
 #if defined(BOOST_ASIO_HAS_THREADS)
-  if (one_thread_ || is_continuation)
+  if (assume_continuation_ || is_continuation)
   {
     if (thread_info_base* this_thread = thread_call_stack::contains(this))
     {
@@ -391,7 +404,7 @@ void scheduler::post_immediate_completions(std::size_t n,
 void scheduler::post_deferred_completion(scheduler::operation* op)
 {
 #if defined(BOOST_ASIO_HAS_THREADS)
-  if (one_thread_)
+  if (assume_continuation_)
   {
     if (thread_info_base* this_thread = thread_call_stack::contains(this))
     {
@@ -412,7 +425,7 @@ void scheduler::post_deferred_completions(
   if (!ops.empty())
   {
 #if defined(BOOST_ASIO_HAS_THREADS)
-    if (one_thread_)
+    if (assume_continuation_)
     {
       if (thread_info_base* this_thread = thread_call_stack::contains(this))
       {
@@ -615,7 +628,8 @@ std::size_t scheduler::do_poll_one(mutex::scoped_lock& lock,
     o = op_queue_.front();
     if (o == &task_operation_)
     {
-      wakeup_event_.maybe_unlock_and_signal_one(lock);
+      if (!one_thread_)
+        wakeup_event_.maybe_unlock_and_signal_one(lock);
       return 0;
     }
   }
@@ -681,6 +695,7 @@ scheduler_task* scheduler::get_default_task(boost::asio::execution_context& ctx)
 }
 
 } // namespace detail
+BOOST_ASIO_INLINE_NAMESPACE_END
 } // namespace asio
 } // namespace boost
 

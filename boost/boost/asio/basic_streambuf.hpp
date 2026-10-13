@@ -2,7 +2,7 @@
 // basic_streambuf.hpp
 // ~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2025 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2026 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -34,6 +34,7 @@
 
 namespace boost {
 namespace asio {
+BOOST_ASIO_INLINE_NAMESPACE_BEGIN
 
 /// Automatically resizable buffer class based on std::streambuf.
 /**
@@ -234,7 +235,7 @@ public:
   void commit(std::size_t n)
   {
     n = std::min<std::size_t>(n, epptr() - pptr());
-    pbump(static_cast<int>(n));
+    setp(pptr() + n, epptr());
     setg(eback(), gptr(), pptr());
   }
 
@@ -251,7 +252,7 @@ public:
       setg(&buffer_[0], gptr(), pptr());
     if (gptr() + n > pptr())
       n = pptr() - gptr();
-    gbump(static_cast<int>(n));
+    setg(eback(), gptr() + n, egptr());
   }
 
 protected:
@@ -442,6 +443,7 @@ private:
   basic_streambuf<Allocator>& sb_;
 };
 
+BOOST_ASIO_INLINE_NAMESPACE_END
 } // namespace asio
 } // namespace boost
 

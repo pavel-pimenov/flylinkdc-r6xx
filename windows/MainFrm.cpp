@@ -74,7 +74,6 @@
 #ifdef SSA_WIZARD_FEATURE
 # include "Wizards/FlyWizard.h"
 #endif
-#include "PrivateFrame.h"
 #include "PreviewLogDlg.h"
 #include "PublicHubsFrm.h"
 
@@ -91,7 +90,6 @@
 // #include "../doctor-dump/CrashRpt.h"
 #endif
 
-#include "Resource.h"
 
 
 #define FLYLINKDC_CALC_MEMORY_USAGE // TODO: move to CompatibilityManager

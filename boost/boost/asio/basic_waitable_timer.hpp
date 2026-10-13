@@ -2,7 +2,7 @@
 // basic_waitable_timer.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2025 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2026 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -32,6 +32,7 @@
 
 namespace boost {
 namespace asio {
+BOOST_ASIO_INLINE_NAMESPACE_BEGIN
 
 #if !defined(BOOST_ASIO_BASIC_WAITABLE_TIMER_FWD_DECL)
 #define BOOST_ASIO_BASIC_WAITABLE_TIMER_FWD_DECL
@@ -135,6 +136,8 @@ class basic_waitable_timer;
  *
  * @li If a wait handler is cancelled, the boost::system::error_code passed to
  * it contains the value boost::asio::error::operation_aborted.
+ *
+ * @sa @ref overview_timers "Timers"
  */
 template <typename Clock, typename WaitTraits, typename Executor>
 class basic_waitable_timer
@@ -639,6 +642,7 @@ private:
     executor_type > impl_;
 };
 
+BOOST_ASIO_INLINE_NAMESPACE_END
 } // namespace asio
 } // namespace boost
 

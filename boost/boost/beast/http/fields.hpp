@@ -22,6 +22,7 @@
 #include <boost/intrusive/list.hpp>
 #include <boost/intrusive/set.hpp>
 #include <boost/optional.hpp>
+#include <boost/type_traits/type_with_alignment.hpp>
 #include <cctype>
 #include <cstring>
 #include <memory>
@@ -646,6 +647,20 @@ public:
     // Lookup
     //
     //--------------------------------------------------------------------------
+
+    /** Returns `true` if there is a field with the specified name.
+
+        @param name The field name.
+    */
+    bool
+    contains(field name) const;
+
+    /** Returns `true` if there is a field with the specified name.
+
+        @param name The field name. It is interpreted as a case-insensitive string.
+    */
+    bool
+    contains(string_view name) const;
 
     /** Return the number of fields with the specified name.
 

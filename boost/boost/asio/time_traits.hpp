@@ -2,7 +2,7 @@
 // time_traits.hpp
 // ~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2025 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2026 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -28,14 +28,17 @@
 
 namespace boost {
 namespace asio {
+BOOST_ASIO_INLINE_NAMESPACE_BEGIN
 
 /// (Deprecated) Time traits suitable for use with the deadline timer.
 template <typename Time>
-struct time_traits;
+struct BOOST_ASIO_DEPRECATED_MSG("Use basic_waitable_timer and wait_traits")
+  time_traits;
 
 /// (Deprecated) Time traits specialised for posix_time.
 template <>
-struct time_traits<boost::posix_time::ptime>
+struct BOOST_ASIO_DEPRECATED_MSG("Use basic_waitable_timer and wait_traits")
+  time_traits<boost::posix_time::ptime>
 {
   /// The time type.
   typedef boost::posix_time::ptime time_type;
@@ -79,6 +82,7 @@ struct time_traits<boost::posix_time::ptime>
   }
 };
 
+BOOST_ASIO_INLINE_NAMESPACE_END
 } // namespace asio
 } // namespace boost
 

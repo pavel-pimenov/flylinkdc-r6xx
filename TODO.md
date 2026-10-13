@@ -127,11 +127,34 @@
   задаёт MMDB_UINT128_IS_BYTE_ARRAY=1 и PACKAGE_VERSION "1.14.1". upstream убрал `projects/VS12/maxminddb_config.h`.
   Версия читается теперь из maxminddb_config.h. Debug x64 Rebuild 0/0 (exe 54460416); Release x64 Rebuild 0/0 (exe 20656640).
   Закоммичено.
-- [ ] boost 1.88.0 -> 1.92.0 (доступно, крупный манифест/патч — отложено).
-- [ ] lua 5.4.9 -> 5.5.1 (мажор 5.5, отложено); unrar 6.24 -> 7.x (мажор/формат, отложено).
+- [x] Удалён неиспользуемый вендор unrar (153 файла + проект UnRAR.vcxproj): не входит ни в
+  одно решение, не линкуется и не вызывается из кода. Убраны каталог, манифест, патч, запись
+  в vendor-update.py (14 вендоров), кеш и артефакты. Release x64 Build 0/0. См. HISTORY.md.
+- [x] boost 1.88.0 -> 1.92.0. Манифест — по модулям (полные деревья 67 каталогов); новый
+  `vendor-manifests/boost.txt` = 7713 записей (7677 `boost/` + 36 `libs/`), удалены 98 файлов,
+  пропавших в 1.92 (regex/v4, smart_ptr/detail, asio/detail и т.п.), + `libs/system/src/error_code.cpp`
+  (System стал header-only в 1.92). Убраны ссылки на `error_code.cpp` в `boost-regex_2022`,
+  `MakeDefs`, `client_test`, `test-console` (+.filters/`local_free_on_destruction.hpp`). Патч
+  `boost.patch` (strtoll) актуализирован; исправлен баг CRLF в рабочей копии патча + добавлен
+  `.gitattributes` (`vendor-patches/*.patch text eol=lf`). Проверка: dry-run add=1410 update=4283;
+  повторный — update=2 unchanged=7711 (стабильно). Debug|x64 и Release|x64 Rebuild — 0/0, exit=0.
+  См. HISTORY.md. Коммит НЕ создан (правило: только по запросу).
+- [ ] lua 5.4.9 -> 5.5.1 (мажор 5.5, отложено).
+- [ ] Коммит обновления boost (boost/ + манифест/патч/vcxproj/.gitattributes) — по запросу пользователя.
 
 ## История / статус прошлых сессий
 
+- [x] Аудит PCH/дублей инклудов: PCH уже оптимален во всех проектах (Create+Use),
+  дублей фактически нет; убраны 2 повтора в windows/MainFrm.cpp. ClCompile не узкое
+  место (см. запись в HISTORY.md).
+- [x] Ускорение сборки MSVC (Release Rebuild): протестированы MTT, EnableClServerMode,
+  BuildPassReferences, /CGTHREADS:8 и снятие /PROFILE — все медленнее или без выигрыша
+  относительно базы 2.16-2.21 мин; стандартные /m + /MP + /LTCG:incremental оптимальны.
+  Метрики в build-win/build-stats.csv, запись в HISTORY.md.
+- [x] Инкрементальная Build vs Rebuild: Build перелинковывает только затронутое (LTCG
+  «1768 of 152382 functions (1.2%) were compiled»), что даёт 0.47 мин на правку 1 файла
+  и 0.01 мин на no-op против ~2.2 мин Rebuild. Рекомендация: в повседневной работе
+  использовать цель Build, Rebuild только для чистых/контрольных прогонов (HISTORY.md).
 - [x] WPO (/GL + /LTCG) для Release|x64, /analyze доведён до 0/0 (см. HISTORY.md).
 - [x] Сборка Release|x64 в VS 18 Insiders: 0 предупреждений/0 ошибок
   (см. HISTORY.md).

@@ -2,7 +2,7 @@
 // buffer.hpp
 // ~~~~~~~~~~
 //
-// Copyright (c) 2003-2025 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2026 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -53,6 +53,7 @@
 
 namespace boost {
 namespace asio {
+BOOST_ASIO_INLINE_NAMESPACE_BEGIN
 namespace detail {
 
 #if defined(BOOST_ASIO_MSVC)
@@ -112,6 +113,8 @@ class const_buffer;
  *
  * The @c data() member function permits violations of type safety, so uses of
  * it in application code should be carefully considered.
+ *
+ * @sa @ref overview_buffers "Buffers"
  */
 class mutable_buffer
 {
@@ -225,6 +228,8 @@ private:
  *
  * The @c data() member function permits violations of type safety, so uses of
  * it in application code should be carefully considered.
+ *
+ * @sa @ref overview_buffers "Buffers"
  */
 class const_buffer
 {
@@ -329,7 +334,9 @@ private:
 /// (Deprecated: Use the socket/descriptor wait() and async_wait() member
 /// functions.) An implementation of both the ConstBufferSequence and
 /// MutableBufferSequence concepts to represent a null buffer sequence.
-class null_buffers
+class BOOST_ASIO_DEPRECATED_MSG(
+  "Use the socket/descriptor wait() and async_wait() member functions")
+null_buffers
 {
 public:
   /// The type for each element in the list of buffers.
@@ -771,13 +778,13 @@ private:
  *
  * For the boost::asio::buffer overloads that accept an argument of type
  * std::vector, the buffer objects returned are invalidated by any vector
- * operation that also invalidates all references, pointers and iterators
- * referring to the elements in the sequence (C++ Std, 23.2.4)
+ * operation that invalidates any of the references, pointers or iterators
+ * referring to the elements in the vector (C++ Std, [sequence.reqmts]).
  *
  * For the boost::asio::buffer overloads that accept an argument of type
  * std::basic_string, the buffer objects returned are invalidated according to
  * the rules defined for invalidation of references, pointers and iterators
- * referring to elements of the sequence (C++ Std, 21.3).
+ * referring to elements of the string (C++ Std, [string.require]).
  *
  * @par Buffer Arithmetic
  *
@@ -1015,7 +1022,7 @@ BOOST_ASIO_NODISCARD inline mutable_buffer buffer(
     boost::array<PodType, N>& data) noexcept
 {
   return mutable_buffer(
-      data.c_array(), data.size() * sizeof(PodType));
+      data.data(), data.size() * sizeof(PodType));
 }
 
 /// Create a new modifiable buffer that represents the given POD array.
@@ -1030,7 +1037,7 @@ BOOST_ASIO_NODISCARD inline mutable_buffer buffer(
     boost::array<PodType, N>& data,
     std::size_t max_size_in_bytes) noexcept
 {
-  return mutable_buffer(data.c_array(),
+  return mutable_buffer(data.data(),
       data.size() * sizeof(PodType) < max_size_in_bytes
       ? data.size() * sizeof(PodType) : max_size_in_bytes);
 }
@@ -1197,8 +1204,9 @@ BOOST_ASIO_NODISCARD inline const_buffer buffer(
  *     data.size() ? &data[0] : 0,
  *     data.size() * sizeof(PodType)); @endcode
  *
- * @note The buffer is invalidated by any vector operation that would also
- * invalidate iterators.
+ * @note The buffer is invalidated by any vector operation that invalidates
+ * any of the references, pointers or iterators referring to the elements in
+ * the vector.
  */
 template <typename PodType, typename Allocator>
 BOOST_ASIO_NODISCARD inline mutable_buffer buffer(
@@ -1221,8 +1229,9 @@ BOOST_ASIO_NODISCARD inline mutable_buffer buffer(
  *     data.size() ? &data[0] : 0,
  *     min(data.size() * sizeof(PodType), max_size_in_bytes)); @endcode
  *
- * @note The buffer is invalidated by any vector operation that would also
- * invalidate iterators.
+ * @note The buffer is invalidated by any vector operation that invalidates
+ * any of the references, pointers or iterators referring to the elements in
+ * the vector.
  */
 template <typename PodType, typename Allocator>
 BOOST_ASIO_NODISCARD inline mutable_buffer buffer(
@@ -1247,8 +1256,9 @@ BOOST_ASIO_NODISCARD inline mutable_buffer buffer(
  *     data.size() ? &data[0] : 0,
  *     data.size() * sizeof(PodType)); @endcode
  *
- * @note The buffer is invalidated by any vector operation that would also
- * invalidate iterators.
+ * @note The buffer is invalidated by any vector operation that invalidates
+ * any of the references, pointers or iterators referring to the elements in
+ * the vector.
  */
 template <typename PodType, typename Allocator>
 BOOST_ASIO_NODISCARD inline const_buffer buffer(
@@ -1271,8 +1281,9 @@ BOOST_ASIO_NODISCARD inline const_buffer buffer(
  *     data.size() ? &data[0] : 0,
  *     min(data.size() * sizeof(PodType), max_size_in_bytes)); @endcode
  *
- * @note The buffer is invalidated by any vector operation that would also
- * invalidate iterators.
+ * @note The buffer is invalidated by any vector operation that invalidates
+ * any of the references, pointers or iterators referring to the elements in
+ * the vector.
  */
 template <typename PodType, typename Allocator>
 BOOST_ASIO_NODISCARD inline const_buffer buffer(
@@ -2641,6 +2652,7 @@ inline std::size_t buffer_copy(const MutableBufferSequence& target,
 
 /*@}*/
 
+BOOST_ASIO_INLINE_NAMESPACE_END
 } // namespace asio
 } // namespace boost
 
@@ -2650,6 +2662,7 @@ inline std::size_t buffer_copy(const MutableBufferSequence& target,
 
 namespace boost {
 namespace asio {
+BOOST_ASIO_INLINE_NAMESPACE_BEGIN
 
 /// Trait to determine whether a type satisfies the MutableBufferSequence
 /// requirements.
@@ -2877,6 +2890,7 @@ inline const_buffer operator ""_buf()
 }
 
 } // namespace buffer_literals
+BOOST_ASIO_INLINE_NAMESPACE_END
 } // namespace asio
 } // namespace boost
 

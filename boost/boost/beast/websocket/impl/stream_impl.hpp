@@ -825,8 +825,7 @@ parse_fh(
     {
     case 126:
     {
-
-        std::uint16_t len_be;
+        std::uint16_t len_be = {};
         BOOST_ASSERT(buffer_bytes(cb) >= sizeof(len_be));
         cb.consume(net::buffer_copy(
             net::mutable_buffer(&len_be, sizeof(len_be)), cb));
@@ -841,7 +840,7 @@ parse_fh(
     }
     case 127:
     {
-        std::uint64_t len_be;
+        std::uint64_t len_be = {};
         BOOST_ASSERT(buffer_bytes(cb) >= sizeof(len_be));
         cb.consume(net::buffer_copy(
             net::mutable_buffer(&len_be, sizeof(len_be)), cb));
@@ -852,12 +851,18 @@ parse_fh(
             BOOST_BEAST_ASSIGN_EC(ec, error::bad_size);
             return false;
         }
+        if(fh.len >> 63)
+        {
+            // most significant bit must be 0
+            BOOST_BEAST_ASSIGN_EC(ec, error::bad_size);
+            return false;
+        }
         break;
     }
     }
     if(fh.mask)
     {
-        std::uint32_t key_le;
+        std::uint32_t key_le = {};
         BOOST_ASSERT(buffer_bytes(cb) >= sizeof(key_le));
         cb.consume(net::buffer_copy(
             net::mutable_buffer(&key_le, sizeof(key_le)), cb));

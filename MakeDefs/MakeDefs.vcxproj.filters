@@ -32,9 +32,6 @@
     <ClCompile Include="..\client\Text.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\boost\libs\system\src\error_code.cpp">
-      <Filter>Source Files\boost-system</Filter>
-    </ClCompile>
     <ClCompile Include="..\client\Exception.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -51,9 +48,6 @@
     </ClInclude>
     <ClInclude Include="..\client\Text.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\boost\libs\system\src\local_free_on_destruction.hpp">
-      <Filter>Source Files\boost-system</Filter>
     </ClInclude>
     <ClInclude Include="..\client\Exception.h">
       <Filter>Header Files</Filter>

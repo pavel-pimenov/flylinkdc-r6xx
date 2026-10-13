@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////
-//  Copyright 2013 - 2022 John Maddock.
-//  Copyright 2022 Christopher Kormanyos.
+//  Copyright 2013 - 2025 John Maddock.
+//  Copyright 2022 - 2025 Christopher Kormanyos.
 //  Distributed under the Boost Software License,
 //  Version 1.0. (See accompanying file LICENSE_1_0.txt
 //  or copy at https://www.boost.org/LICENSE_1_0.txt)
@@ -1255,7 +1255,7 @@ inline void eval_divide(cpp_bin_float<Digits, DigitBase, Allocator, Exponent, Mi
    //
    // q * v + r = u
    //
-   // and hense:
+   // and hence:
    //
    // q + r/v = u/v
    //
@@ -1408,7 +1408,7 @@ inline typename std::enable_if<boost::multiprecision::detail::is_unsigned<U>::va
    //
    // q * v + r = u
    //
-   // and hense:
+   // and hence:
    //
    // q + r/v = u/v
    //
@@ -1614,6 +1614,10 @@ inline void convert_to_unsigned_int(I* res, const cpp_bin_float<Digits, DigitBas
       return;
    case cpp_bin_float<Digits, DigitBase, Allocator, Exponent, MinE, MaxE>::exponent_nan:
       BOOST_MP_THROW_EXCEPTION(std::runtime_error("Could not convert NaN to integer."));
+      #if defined(BOOST_NO_EXCEPTIONS)
+      *res = max_val;
+      return;
+      #endif
    case cpp_bin_float<Digits, DigitBase, Allocator, Exponent, MinE, MaxE>::exponent_infinity:
       *res = max_val;
       return;
@@ -1622,15 +1626,34 @@ inline void convert_to_unsigned_int(I* res, const cpp_bin_float<Digits, DigitBas
    }
    typename cpp_bin_float<Digits, DigitBase, Allocator, Exponent, MinE, MaxE>::rep_type                                                                                                                                                              man(arg.bits());
    using shift_type = typename std::conditional<sizeof(typename cpp_bin_float<Digits, DigitBase, Allocator, Exponent, MinE, MaxE>::exponent_type) < sizeof(int), int, typename cpp_bin_float<Digits, DigitBase, Allocator, Exponent, MinE, MaxE>::exponent_type>::type;
-   shift_type                                                                                                                                                                                                                                        shift = (shift_type)cpp_bin_float<Digits, DigitBase, Allocator, Exponent, MinE, MaxE>::bit_count - 1 - arg.exponent();
-   if (shift > (shift_type)cpp_bin_float<Digits, DigitBase, Allocator, Exponent, MinE, MaxE>::bit_count - 1)
+
+   const shift_type shift = (shift_type)cpp_bin_float<Digits, DigitBase, Allocator, Exponent, MinE, MaxE>::bit_count - 1 - arg.exponent();
+
+   if (arg.sign())
+   {
+      using si_type = typename boost::multiprecision::detail::make_signed<I>::type;
+
+      si_type val;
+
+      convert_to_signed_int(&val, arg);
+
+      *res = static_cast<I>(val);
+
+      return;
+   }
+   else if (shift > (shift_type)cpp_bin_float<Digits, DigitBase, Allocator, Exponent, MinE, MaxE>::bit_count - 1)
    {
       *res = 0;
       return;
    }
+   else if (arg.compare(max_val) >= 0)
+   {
+      *res = max_val;
+      return;
+   }
    else if (shift < 0)
    {
-      if (cpp_bin_float<Digits, DigitBase, Allocator, Exponent, MinE, MaxE>::bit_count - shift <= digits)
+      if ((shift_type)cpp_bin_float<Digits, DigitBase, Allocator, Exponent, MinE, MaxE>::bit_count - shift <= (shift_type)digits)
       {
          // We have more bits in ulong_long_type than the float, so it's OK to left shift:
          eval_convert_to(res, man);
@@ -1640,7 +1663,7 @@ inline void convert_to_unsigned_int(I* res, const cpp_bin_float<Digits, DigitBas
       *res = max_val;
       return;
    }
-   eval_right_shift(man, shift);
+   eval_right_shift(man, static_cast<unsigned>(shift));
    eval_convert_to(res, man);
 }
 
@@ -2031,18 +2054,18 @@ inline void eval_ceil(cpp_bin_float<Digits, DigitBase, Allocator, Exponent, MinE
    }
    bool fractional = (shift_type)eval_lsb(arg.bits()) < shift;
    res             = arg;
-   eval_right_shift(res.bits(), shift);
+   eval_right_shift(res.bits(), static_cast<unsigned>(shift));
    if (fractional && !res.sign())
    {
       eval_increment(res.bits());
-      if ((std::ptrdiff_t)eval_msb(res.bits()) != cpp_bin_float<Digits, DigitBase, Allocator, Exponent, MinE, MaxE>::bit_count - 1 - shift)
+      if ((std::ptrdiff_t)eval_msb(res.bits()) != (std::ptrdiff_t)(static_cast<shift_type>(cpp_bin_float<Digits, DigitBase, Allocator, Exponent, MinE, MaxE>::bit_count) - 1 - shift))
       {
          // Must have extended result by one bit in the increment:
          --shift;
          ++res.exponent();
       }
    }
-   eval_left_shift(res.bits(), shift);
+   eval_left_shift(res.bits(), static_cast<unsigned>(shift));
 }
 
 template <unsigned D1, backends::digit_base_type B1, class A1, class E1, E1 M1, E1 M2>
@@ -2250,12 +2273,17 @@ class numeric_limits<boost::multiprecision::number<boost::multiprecision::cpp_bi
    static constexpr bool                                                                                                             has_quiet_NaN     = true;
    static constexpr bool                                                                                                             has_signaling_NaN = false;
 #ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable:4996)
+#  pragma warning(push)
+#  pragma warning(disable : 4996)
+#elif (defined(__clang__) && (__clang_major__ >= 17))
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #endif
    static constexpr float_denorm_style has_denorm                                                                                                      = denorm_absent;
 #ifdef _MSC_VER
 #pragma warning(pop)
+#elif (defined(__clang__) && (__clang_major__ >= 17))
+#  pragma clang diagnostic pop
 #endif
    static constexpr bool               has_denorm_loss                                                                                                 = false;
    static number_type infinity()
@@ -2312,13 +2340,18 @@ constexpr bool numeric_limits<boost::multiprecision::number<boost::multiprecisio
 template <unsigned Digits, boost::multiprecision::backends::digit_base_type DigitBase, class Allocator, class Exponent, Exponent MinE, Exponent MaxE, boost::multiprecision::expression_template_option ExpressionTemplates>
 constexpr bool numeric_limits<boost::multiprecision::number<boost::multiprecision::cpp_bin_float<Digits, DigitBase, Allocator, Exponent, MinE, MaxE>, ExpressionTemplates> >::has_signaling_NaN;
 #ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable:4996)
+#  pragma warning(push)
+#  pragma warning(disable : 4996)
+#elif (defined(__clang__) && (__clang_major__ >= 17))
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #endif
 template <unsigned Digits, boost::multiprecision::backends::digit_base_type DigitBase, class Allocator, class Exponent, Exponent MinE, Exponent MaxE, boost::multiprecision::expression_template_option ExpressionTemplates>
 constexpr float_denorm_style numeric_limits<boost::multiprecision::number<boost::multiprecision::cpp_bin_float<Digits, DigitBase, Allocator, Exponent, MinE, MaxE>, ExpressionTemplates> >::has_denorm;
 #ifdef _MSC_VER
 #pragma warning(pop)
+#elif (defined(__clang__) && (__clang_major__ >= 17))
+#  pragma clang diagnostic pop
 #endif
 template <unsigned Digits, boost::multiprecision::backends::digit_base_type DigitBase, class Allocator, class Exponent, Exponent MinE, Exponent MaxE, boost::multiprecision::expression_template_option ExpressionTemplates>
 constexpr bool numeric_limits<boost::multiprecision::number<boost::multiprecision::cpp_bin_float<Digits, DigitBase, Allocator, Exponent, MinE, MaxE>, ExpressionTemplates> >::has_denorm_loss;

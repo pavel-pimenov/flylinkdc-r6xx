@@ -2,7 +2,7 @@
 // executor.hpp
 // ~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2025 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2026 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -31,6 +31,7 @@
 
 namespace boost {
 namespace asio {
+BOOST_ASIO_INLINE_NAMESPACE_BEGIN
 
 /// Exception thrown when trying to access an empty polymorphic executor.
 class bad_executor
@@ -38,11 +39,20 @@ class bad_executor
 {
 public:
   /// Constructor.
-  BOOST_ASIO_DECL bad_executor() noexcept;
+  bad_executor() noexcept
+  {
+  }
+
+  /// Destructor.
+  virtual ~bad_executor() noexcept
+  {
+  }
 
   /// Obtain message associated with exception.
-  BOOST_ASIO_DECL virtual const char* what() const
-    noexcept;
+  virtual const char* what() const noexcept
+  {
+    return "bad executor";
+  }
 };
 
 /// Polymorphic wrapper for executors.
@@ -348,6 +358,7 @@ private:
 #endif // !defined(GENERATING_DOCUMENTATION)
 };
 
+BOOST_ASIO_INLINE_NAMESPACE_END
 } // namespace asio
 } // namespace boost
 
@@ -356,9 +367,6 @@ BOOST_ASIO_USES_ALLOCATOR(boost::asio::executor)
 #include <boost/asio/detail/pop_options.hpp>
 
 #include <boost/asio/impl/executor.hpp>
-#if defined(BOOST_ASIO_HEADER_ONLY)
-# include <boost/asio/impl/executor.ipp>
-#endif // defined(BOOST_ASIO_HEADER_ONLY)
 
 #endif // !defined(BOOST_ASIO_NO_TS_EXECUTORS)
 

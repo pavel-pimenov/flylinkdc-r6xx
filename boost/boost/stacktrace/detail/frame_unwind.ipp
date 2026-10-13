@@ -1,4 +1,4 @@
-// Copyright Antony Polukhin, 2016-2025.
+// Copyright Antony Polukhin, 2016-2026.
 //
 // Distributed under the Boost Software License, Version 1.0. (See
 // accompanying file LICENSE_1_0.txt or copy at
@@ -12,15 +12,20 @@
 #   pragma once
 #endif
 
+#if !defined(BOOST_STACKTRACE_INTERFACE_UNIT)
+#include <boost/core/demangle.hpp>
+
+#if !defined(BOOST_STACKTRACE_USE_STD_MODULE)
+#include <cstdio>
+#endif // !defined(BOOST_STACKTRACE_USE_STD_MODULE)
+#endif // !defined(BOOST_STACKTRACE_INTERFACE_UNIT)
+
 #include <boost/stacktrace/frame.hpp>
 
 #include <boost/stacktrace/detail/to_hex_array.hpp>
 #include <boost/stacktrace/detail/location_from_symbol.hpp>
 #include <boost/stacktrace/detail/to_dec_array.hpp>
 #include <boost/stacktrace/detail/addr_base.hpp>
-#include <boost/core/demangle.hpp>
-
-#include <cstdio>
 
 #ifdef BOOST_STACKTRACE_USE_BACKTRACE
 #   include <boost/stacktrace/detail/libbacktrace_impls.hpp>

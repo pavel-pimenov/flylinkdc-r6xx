@@ -125,7 +125,7 @@ VENDORS = (
     },
     {
         'name': 'boost',
-        'url': 'https://archives.boost.io/release/1.88.0/source/boost_1_88_0.tar.gz',
+        'url': 'https://archives.boost.io/release/1.92.0/source/boost_1_92_0.tar.gz',
         'local': 'boost',
         'strip': 1,
         'select': 'vendor-manifests/boost.txt',
@@ -176,16 +176,6 @@ VENDORS = (
                     'pattern': r'LUA_VERSION_MAJOR\s+"(\d+)"[\s\S]*?'
                                r'LUA_VERSION_MINOR\s+"(\d+)"[\s\S]*?'
                                r'LUA_VERSION_RELEASE\s+"(\d+)"'},
-    },
-    {
-        'name': 'unrar',
-        'url': 'https://www.rarlab.com/rar/unrarsrc-6.2.12.tar.gz',
-        'local': 'unrar',
-        'strip': 1,
-        'select': 'vendor-manifests/unrar.txt',
-        'diff': ['vendor-patches/unrar.patch'],
-        'version': {'paths': ['version.hpp'],
-                    'pattern': r'RARVER_MAJOR\s+(\d+)[\s\S]*?RARVER_MINOR\s+(\d+)'},
     },
     {
         'name': 'libtorrent',

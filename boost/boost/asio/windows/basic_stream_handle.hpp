@@ -2,7 +2,7 @@
 // windows/basic_stream_handle.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2025 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2026 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -25,7 +25,17 @@
 
 namespace boost {
 namespace asio {
+BOOST_ASIO_INLINE_NAMESPACE_BEGIN
 namespace windows {
+
+#if !defined(BOOST_ASIO_WINDOWS_BASIC_STREAM_HANDLE_FWD_DECL)
+#define BOOST_ASIO_WINDOWS_BASIC_STREAM_HANDLE_FWD_DECL
+
+// Forward declaration with defaulted arguments.
+template <typename Executor = any_io_executor>
+class basic_stream_handle;
+
+#endif // !defined(BOOST_ASIO_WINDOWS_BASIC_STREAM_HANDLE_FWD_DECL)
 
 /// Provides stream-oriented handle functionality.
 /**
@@ -38,8 +48,10 @@ namespace windows {
  *
  * @par Concepts:
  * AsyncReadStream, AsyncWriteStream, Stream, SyncReadStream, SyncWriteStream.
+ *
+ * @sa @ref overview_windows_stream_handle "Stream-oriented HANDLEs"
  */
-template <typename Executor = any_io_executor>
+template <typename Executor>
 class basic_stream_handle
   : public basic_overlapped_handle<Executor>
 {
@@ -542,6 +554,7 @@ private:
 };
 
 } // namespace windows
+BOOST_ASIO_INLINE_NAMESPACE_END
 } // namespace asio
 } // namespace boost
 

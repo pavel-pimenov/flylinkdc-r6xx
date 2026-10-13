@@ -2,7 +2,7 @@
 // cancel_at.hpp
 // ~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2025 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2026 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -26,11 +26,14 @@
 
 namespace boost {
 namespace asio {
+BOOST_ASIO_INLINE_NAMESPACE_BEGIN
 
 /// A @ref completion_token adapter that cancels an operation at a given time.
 /**
  * The cancel_at_t class is used to indicate that an asynchronous operation
  * should be cancelled if not complete at the specified absolute time.
+ *
+ * @sa @ref overview_token_adapters "Completion token adapters"
  */
 template <typename CompletionToken, typename Clock,
     typename WaitTraits = boost::asio::wait_traits<Clock>>
@@ -286,6 +289,7 @@ cancel_at(basic_waitable_timer<Clock, WaitTraits, Executor>& timer,
       timer, expiry, cancel_type);
 }
 
+BOOST_ASIO_INLINE_NAMESPACE_END
 } // namespace asio
 } // namespace boost
 

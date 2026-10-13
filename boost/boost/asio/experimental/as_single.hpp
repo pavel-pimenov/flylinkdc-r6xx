@@ -2,7 +2,7 @@
 // experimental/as_single.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2025 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2026 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -22,6 +22,7 @@
 
 namespace boost {
 namespace asio {
+BOOST_ASIO_INLINE_NAMESPACE_BEGIN
 namespace experimental {
 
 /// A @ref completion_token adapter used to specify that the completion handler
@@ -32,6 +33,8 @@ namespace experimental {
  * If there is already one argument, that argument is passed as-is. If
  * there is more than argument, the arguments are first moved into a
  * @c std::tuple and that tuple is then passed to the completion handler.
+ *
+ * @sa @ref overview_token_adapters "Completion token adapters"
  */
 template <typename CompletionToken>
 class as_single_t
@@ -124,6 +127,7 @@ as_single(CompletionToken&& completion_token)
 }
 
 } // namespace experimental
+BOOST_ASIO_INLINE_NAMESPACE_END
 } // namespace asio
 } // namespace boost
 

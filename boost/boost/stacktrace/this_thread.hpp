@@ -1,4 +1,4 @@
-// Copyright Antony Polukhin, 2023-2025.
+// Copyright Antony Polukhin, 2023-2026.
 //
 // Distributed under the Boost Software License, Version 1.0. (See
 // accompanying file LICENSE_1_0.txt or copy at
@@ -7,12 +7,17 @@
 #ifndef BOOST_STACKTRACE_THIS_THREAD_HPP
 #define BOOST_STACKTRACE_THIS_THREAD_HPP
 
-#include <boost/config.hpp>
+#include <boost/stacktrace/detail/backend_config.hpp>
+
+#if !defined(BOOST_USE_MODULES) || defined(BOOST_STACKTRACE_INTERFACE_UNIT)
+
 #ifdef BOOST_HAS_PRAGMA_ONCE
 #   pragma once
 #endif
 
 #include <boost/stacktrace/stacktrace.hpp>
+
+BOOST_STACKTRACE_BEGIN_MODULE_EXPORT
 
 namespace boost { namespace stacktrace { namespace this_thread {
 
@@ -58,5 +63,9 @@ inline bool get_capture_stacktraces_at_throw() noexcept {
 }
 
 }}} // namespace boost::stacktrace::this_thread
+
+BOOST_STACKTRACE_END_MODULE_EXPORT
+
+#endif // !defined(BOOST_USE_MODULES) || defined(BOOST_STACKTRACE_INTERFACE_UNIT)
 
 #endif // BOOST_STACKTRACE_THIS_THREAD_HPP

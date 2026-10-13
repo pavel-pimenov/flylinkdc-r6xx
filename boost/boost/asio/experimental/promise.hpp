@@ -33,6 +33,7 @@
 
 namespace boost {
 namespace asio {
+BOOST_ASIO_INLINE_NAMESPACE_BEGIN
 namespace experimental {
 
 template <typename T>
@@ -91,6 +92,8 @@ struct promise_value_type<>
  *   co_await p;
  * }
  * @endcode
+ *
+ * @sa @ref overview_promises "Promises"
  */
 template<typename Signature = void(),
     typename Executor = boost::asio::any_io_executor,
@@ -218,6 +221,7 @@ private:
 
 } // namespace experimental
 
+BOOST_ASIO_INLINE_NAMESPACE_END
 } // namespace asio
 } // namespace boost
 
