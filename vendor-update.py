@@ -110,18 +110,17 @@ VENDORS = (
     },
     {
         'name': 'maxminddb',
-        'url': 'https://github.com/maxmind/libmaxminddb/releases/download/1.7.1/'
-               'libmaxminddb-1.7.1.tar.gz',
+        'url': 'https://github.com/maxmind/libmaxminddb/releases/download/1.14.1/'
+               'libmaxminddb-1.14.1.tar.gz',
         'local': 'maxminddb',
         'strip': 1,
         'select': {'src/data-pool.c': 'data-pool.c',
                    'src/data-pool.h': 'data-pool.h',
                    'src/maxminddb.c': 'maxminddb.c',
                    'src/maxminddb-compat-util.h': 'maxminddb-compat-util.h',
-                   'include/maxminddb.h': 'maxminddb.h',
-                   'projects/VS12/maxminddb_config.h': 'maxminddb_config.h'},
+                   'include/maxminddb.h': 'maxminddb.h'},
         'diff': ['vendor-patches/maxminddb.patch'],
-        'version': {'paths': ['include/maxminddb.h', 'maxminddb.h'],
+        'version': {'paths': ['maxminddb_config.h', 'include/maxminddb.h'],
                     'pattern': r'#define\s+PACKAGE_VERSION\s+"([^"]+)"'},
     },
     {

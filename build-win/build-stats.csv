@@ -31,3 +31,7 @@
 2026-10-13 04:31:44,Release,Build,FlyLinkDC_2022.sln,0,55,0,0,20656640,0,zlib-ng update 2.3.90
 2026-10-13 04:38:42,Debug,Rebuild,FlyLinkDC_2022.sln,1,33,0,0,54457856,0,zlib-ng 2.3.90 update
 2026-10-13 04:43:11,Release,Rebuild,FlyLinkDC_2022.sln,2,17,0,0,20656640,0,zlib-ng 2.3.90 update
+2026-10-13 05:53:19,Debug,Build,FlyLinkDC_2022.sln,0,53,0,0,54460416,0,maxminddb 1.14.1 update
+2026-10-13 05:54:14,Release,Build,FlyLinkDC_2022.sln,0,44,0,0,20656640,0,maxminddb 1.14.1 upgrade
+2026-10-13 05:56:14,Debug,Rebuild,FlyLinkDC_2022.sln,1,37,0,0,54460416,0,maxminddb 1.14.1 upgrade verify
+2026-10-13 05:58:53,Release,Rebuild,FlyLinkDC_2022.sln,2,14,0,0,20656640,0,maxminddb 1.14.1 upgrade verify

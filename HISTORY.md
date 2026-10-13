@@ -42,6 +42,21 @@
 - Сборка MSVC (VS 18 Insiders): Debug x64 Rebuild — 0 предупреждений/0 ошибок
   (exe 54457856); Release x64 Rebuild — 0/0 (exe 20656640).
 
+### Обновление вендора maxminddb 1.7.1 -> 1.14.1
+- Аудит upstream-релизов: большинство вендоров актуальны; единственное применённое
+  обновление — maxminddb. boost 1.92 / lua 5.5 / unrar 7.x доступны, но отложены (мажор/крупно).
+- maxminddb 1.7.1 -> 1.14.1. upstream уже содержит почти весь форк-харденинг:
+  `can_multiply` (не-статический + декларация), `SSIZE_MAX`, `sa_family_t` = ADDRESS_FAMILY,
+  проверки overflow (`data_section_size`, `uint64_t value`, `right_record_offset`), clang-pragma.
+  Поэтому новый патч свёлся к минимуму: `#pragma warning(push/disable:4201/pop)`
+  в `maxminddb.h` для анонимного union (MSVC).
+- upstream удалил `projects/VS12/maxminddb_config.h`; локальный `maxminddb/maxminddb_config.h`
+  больше не синкается (extra-файл) и задаёт `MMDB_UINT128_IS_BYTE_ARRAY=1` и
+  `PACKAGE_VERSION "1.14.1"` (в upstream последний берётся из autoconf config.h). В `vendor-update.py` select
+  обновлён (убран projects/VS12), URL -> 1.14.1, version-путь -> maxminddb_config.h.
+- Сборка MSVC (VS 18 Insiders): Debug x64 Rebuild — 0/0 (exe 54460416);
+  Release x64 Rebuild — 0/0 (exe 20656640). maxminddb компилируется в client_2022.vcxproj.
+
 ## 2026-10-12
 ### Обновление вендорных библиотек до актуальных версий (vendor-update.py)
 - Обновлены и выверены 1:1 (upstream + патч == дерево, 0 расхождений): lua 5.4.6 -> 5.4.9 (патч — только восстановление $Id: в lzio.c/lzio.h), unrar 6.23 -> 6.24 (unrarsrc-6.2.12; патч — UnRAR.vcxproj, win32stm.cpp), jsoncpp 1.9.6 -> 1.9.8, snappy 1.2.0 -> 1.3.1.

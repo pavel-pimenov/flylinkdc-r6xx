@@ -116,6 +116,20 @@
 - [ ] При успешной линковке: проверка импортов `x86_64-w64-mingw32-objdump -p`
   и проверка запуска EXE на Windows.
 
+## Аудит апгрейдов вендоров (2026-10-13)
+
+- [x] Проверены upstream-релизы всех вендоров. Актуальны: sqlite 3.54.0, zlib-ng 2.3.90 (develop-pin),
+  jsoncpp 1.9.8, libtorrent 2.1.2, mediainfolib 26.10, snappy 1.3.1, wtl 10.0.10320,
+  bzip2 1.0.8, leveldb 1.23, ZenLib 0.4.41. Запинены: selene/openssl.
+- [x] maxminddb 1.7.1 -> 1.14.1. upstream уже содержит большинство форк-харденинга
+  (can_multiply, SSIZE_MAX, sa_family_t, проверки overflow, clang-pragma). Новый патч минимальный:
+  `#pragma warning(4201)` для MSVC в maxminddb.h; локальный `maxminddb_config.h` (не синкается)
+  задаёт MMDB_UINT128_IS_BYTE_ARRAY=1 и PACKAGE_VERSION "1.14.1". upstream убрал `projects/VS12/maxminddb_config.h`.
+  Версия читается теперь из maxminddb_config.h. Debug x64 Rebuild 0/0 (exe 54460416); Release x64 Rebuild 0/0 (exe 20656640).
+  Закоммичено.
+- [ ] boost 1.88.0 -> 1.92.0 (доступно, крупный манифест/патч — отложено).
+- [ ] lua 5.4.9 -> 5.5.1 (мажор 5.5, отложено); unrar 6.24 -> 7.x (мажор/формат, отложено).
+
 ## История / статус прошлых сессий
 
 - [x] WPO (/GL + /LTCG) для Release|x64, /analyze доведён до 0/0 (см. HISTORY.md).
