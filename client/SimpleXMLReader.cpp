@@ -395,7 +395,7 @@ bool SimpleXMLReader::declVersionNum()
 				return true;
 			}
 			
-			if (!inRange(c, 0, 9))
+			if (!inRange(c, '0', '9'))
 			{
 				return false;
 			}

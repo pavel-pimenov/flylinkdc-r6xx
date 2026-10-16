@@ -33,9 +33,10 @@ void  TraceManager::print(const string& msg)
 	
 	time_t now = time(NULL);
 //+BugMaster: fix
-	if (!strftime(buf, 21, "%Y-%m-%d %H:%M:%S ", localtime(&now)))
+	if (!strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S ", localtime(&now)))
 	{
-		strcpy(buf, "xxxx-xx-xx xx:xx:xx ");
+		_snprintf(buf, sizeof(buf), "xxxx-xx-xx xx:xx:xx ");
+		buf[sizeof(buf) - 1] = 0;
 	}
 //-BugMaster: fix
 

@@ -222,7 +222,7 @@ SearchFrame::~SearchFrame()
 	dcassert(m_closed);
 	images.Destroy();
 	m_searchTypesImageList.Destroy();
-// пока не знаю OperaColors::ClearCache();
+// пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ OperaColors::ClearCache();
 }
 inline static bool isTTHChar(const TCHAR c)
 {
@@ -287,12 +287,12 @@ LRESULT SearchFrame::onCreate(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*
 	CFlyServerConfig::loadTorrentSearchEngine();
 	// CompatibilityManager::isWine()
 	/*
-	* Исправлены случайные падения под wine при активации списка поиска. (ctrl+s)
-	  Поправил хиругическим путем. если запускаемя под Linux не заполняю список хабов вообще- ищем на всех сразу.
-	  сам ListView прячется
+	* пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ wine пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ. (ctrl+s)
+	  пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ. пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ Linux пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ- пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ.
+	  пїЅпїЅпїЅ ListView пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	p.s.
-	Падение вглядит так: Ubuntu wine 1.4 rc5
-	listview.c:6651: LISTVIEW_GetItemT: Проверочное утверждение «lpItem» не выполнено.
+	пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ: Ubuntu wine 1.4 rc5
+	listview.c:6651: LISTVIEW_GetItemT: пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅlpItemпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ.
 	fixme:dbghelp:elf_search_auxv can't find symbol in module
 	fixme:dbghelp:MiniDumpWriteDump NIY MiniDumpWithHandleData
 	fixme:dbghelp:elf_search_auxv can't find symbol in module
@@ -1334,7 +1334,7 @@ bool SearchFrame::registerVirusLevel(const string& p_file, const TTHValue& p_tth
 	dcassert(!p_file.empty());
 	const auto l_res_map = g_virus_level_tth_map.insert(make_pair(p_tth, p_level));
 	const auto l_res_set = g_virus_file_set.insert(Text::lowercase(p_file));
-	return l_res_map.second || l_res_set.second; // Если файлы повторяются - не шлем на базу
+	return l_res_map.second || l_res_set.second; // пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ - пїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ
 }
 bool SearchFrame::registerVirusLevel(const SearchResult &p_result, int p_level)
 {
@@ -1374,7 +1374,7 @@ void SearchFrame::on(SearchManagerListener::SR, const std::unique_ptr<SearchResu
 				return;
 			}
 			// Level 4
-			// тут не учитываем ников - aResult.getUser()->getLastNick()
+			// пїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ - aResult.getUser()->getLastNick()
 			size_t l_count = check_antivirus_level(make_pair(aResult->getTTH(),  aResult->getHubName() + " ( " + aResult->getHubUrl() + " ) "), *aResult, 4);
 			if (l_count > CFlyServerConfig::g_unique_files_for_virus_detect && l_is_executable)
 			{
@@ -1419,13 +1419,13 @@ void SearchFrame::on(SearchManagerListener::SR, const std::unique_ptr<SearchResu
 					}
 				}
 #if 0
-				// TODO - Включить блокировку поисковой выдачи return;
+				// TODO - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ return;
 				// Level 2
 				l_count = check_antivirus_level(make_pair(aResult->getTTH(), "."), *aResult, 2);
 				if (l_count)
 				{
 					const int l_virus_level = 2;
-					// TODO - Включить блокировку поисковой выдачи return;
+					// TODO - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ return;
 				}
 #endif
 			}
@@ -1475,8 +1475,9 @@ void SearchFrame::on(SearchManagerListener::SR, const std::unique_ptr<SearchResu
 #if 0/*_DEBUG*/
 	const auto l_size = aResult->getSize();
 	char l_buf[1000] = {0};
-	sprintf(l_buf, "Name = %s, size = %lld Mb limit = %lld Mb m_sizeMode = %d\r\n",
-	        aResult->getFileName().c_str(), l_size, m_exactSize2, m_sizeMode);
+	_snprintf(l_buf, sizeof(l_buf), "Name = %s, size = %lld Mb limit = %lld Mb m_sizeMode = %d\r\n",
+	          aResult->getFileName().c_str(), l_size, m_exactSize2, m_sizeMode);
+	l_buf[sizeof(l_buf) - 1] = 0;
 	LogManager::message(l_buf);
 	dcdebug("Name = %s, size = %lld Mb limit = %lld Mb, m_sizeMode = %d\r\n",
 	        aResult->getFileName().c_str(), l_size / 1024 / 1024, m_exactSize2 / 1024 / 1024, m_sizeMode);
@@ -1542,33 +1543,33 @@ bool SearchFrame::scan_list_view_from_merge()
 			SearchInfo* l_item_info = ctrlResults.getItemData(j);
 			if (l_item_info == nullptr || l_item_info->m_already_processed ||
 			        l_item_info->parent ||
-			        l_item_info->m_is_torrent) // Уже не первый раз или это дочерний узел по TTH?
+			        l_item_info->m_is_torrent) // пїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅ TTH?
 				continue;
 			l_item_info->m_already_processed = true;
 			const auto& sr2 = l_item_info->m_sr;
 			const auto l_file_size = sr2.getSize();
 			if (l_file_size)
 			{
-				const string l_file_ext = Text::toLower(Util::getFileExtWithoutDot(sr2.getFileName())); // TODO - расширение есть в Columns но в T-формате
+				const string l_file_ext = Text::toLower(Util::getFileExtWithoutDot(sr2.getFileName())); // TODO - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅ Columns пїЅпїЅ пїЅ T-пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 				if (g_fly_server_config.isSupportFile(l_file_ext, l_file_size))
 				{
 					const TTHValue& l_tth = sr2.getTTH();
 					CFlyServerKey l_info(l_tth, l_file_size);
 					CFlyLock(g_cs_fly_server);
 					const auto l_find_ratio = g_fly_server_cache.find(l_tth);
-					if (l_find_ratio == g_fly_server_cache.end()) // Если значение рейтинга есть в кэше то не запрашиваем о нем инфу с сервера
+					if (l_find_ratio == g_fly_server_cache.end()) // пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 					{
 						CFlyServerCache l_fly_server_cache;
 						if (CFlylinkDBManager::getInstance()->find_fly_server_cache(l_tth, l_fly_server_cache))
 						{
-							l_info.m_only_counter = true; // Нашли информацию в локальной базе.
-							l_info.m_is_cache = true; // Для статистики
+							l_info.m_only_counter = true; // пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ.
+							l_info.m_is_cache = true; // пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 						}
 						m_merge_item_map.insert(make_pair(l_tth, make_pair(l_item_info, l_fly_server_cache)));
 						if (l_info.m_only_counter)
 						{
 							CFlyLock(g_cs_tth_media_map);
-							g_tth_media_file_map[l_tth] = l_file_size; // Регистрируем кандидата на передачу информации
+							g_tth_media_file_map[l_tth] = l_file_size; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 						}
 						{
 							CFlyLock(g_cs_get_array_fly_server);
@@ -1630,12 +1631,12 @@ LRESULT SearchFrame::onMergeFlyServerResult(UINT /*uMsg*/, WPARAM wParam, LPARAM
 					const Json::Value& l_result_base_media = l_cur_item_in["media"];
 					const int l_count_media = Util::toInt(l_result_counter["count_media"].asString());
 					//dcassert(l_count_media == 0 && l_result_counter["count_media"].asString() == "0")
-					if (l_count_media > 0) // Медиаинфа на сервере уже лежит? - не пытаемся ее послать снова
+					if (l_count_media > 0) // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ? - пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 					{
 						l_is_know_tth |= true;
 					}
 					CFlyServerCache& l_mediainfo_cache = l_si_find->second.second;
-					if (l_mediainfo_cache.m_audio.empty()) // В локальной базе пусто?
+					if (l_mediainfo_cache.m_audio.empty()) // пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ?
 					{
 						l_mediainfo_cache.m_audio     = l_result_base_media["fly_audio"].asString();
 						l_mediainfo_cache.m_audio_br  = l_result_base_media["fly_audio_br"].asString();
@@ -1651,7 +1652,7 @@ LRESULT SearchFrame::onMergeFlyServerResult(UINT /*uMsg*/, WPARAM wParam, LPARAM
 					l_si->columns[COLUMN_MEDIA_VIDEO] =  Text::toT(l_mediainfo_cache.m_video);
 					if (!l_mediainfo_cache.m_audio.empty())
 						l_is_know_tth |= true;
-					// TODO - убрать копи-паст
+					// TODO - пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ-пїЅпїЅпїЅпїЅ
 					CFlyMediaInfo::translateDuration(l_mediainfo_cache.m_audio, l_si->columns[COLUMN_MEDIA_AUDIO], l_si->columns[COLUMN_DURATION]);
 					const string l_count_query = l_result_counter["count_query"].asString();
 					const string l_count_download = l_result_counter["count_download"].asString();
@@ -1673,22 +1674,22 @@ LRESULT SearchFrame::onMergeFlyServerResult(UINT /*uMsg*/, WPARAM wParam, LPARAM
 							SearchFrame::registerVirusLevel(l_si->m_sr, 1000);
 						}
 						if (l_count_query == "1")
-							l_is_know_tth = false; // Файл на сервер первый раз появился.
+							l_is_know_tth = false; // пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ.
 					}
 					CFlyServerCache l_cache = l_mediainfo_cache;
 					l_cache.m_ratio = Text::fromT(l_si->columns[COLUMN_FLY_SERVER_RATING]);
 					l_cache.m_antivirus = l_count_antivirus;
-					g_fly_server_cache[l_tth] = std::make_pair(l_si_find->second.first, l_cache); // Сохраняем рейтинг и медиаинфу в кэше
+					g_fly_server_cache[l_tth] = std::make_pair(l_si_find->second.first, l_cache); // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ
 				}
 			}
-			if (l_is_know_tth) // Если сервер расказал об этом TTH с медиаинфой, то не шлем ему ничего
+			if (l_is_know_tth) // пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ TTH пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 			{
 				CFlyLock(g_cs_tth_media_map);
 				g_tth_media_file_map.erase(l_tth);
 			}
 		}
 	}
-	prepare_mediainfo_to_fly_serverL(); // Соберем TTH, которые нужно отправить на флай-сервер в обмен на инфу.
+	prepare_mediainfo_to_fly_serverL(); // пїЅпїЅпїЅпїЅпїЅпїЅпїЅ TTH, пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ-пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ.
 	m_merge_item_map.clear();
 	update_column_after_merge(l_update_index);
 	return 0;
@@ -1697,7 +1698,7 @@ LRESULT SearchFrame::onMergeFlyServerResult(UINT /*uMsg*/, WPARAM wParam, LPARAM
 void SearchFrame::update_column_after_merge(std::vector<int> p_update_index)
 {
 #if 0
-//			TODO - апдейты по колонкам не пашут иногда
+//			TODO - пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 	static const int l_array[] =
 	{
 		COLUMN_BITRATE, COLUMN_MEDIA_XY, COLUMN_MEDIA_VIDEO, COLUMN_MEDIA_AUDIO, COLUMN_DURATION, COLUMN_FLY_SERVER_RATING
@@ -1771,7 +1772,7 @@ void SearchFrame::runTestPort()
 {
 	if (boost::logic::indeterminate(SettingsManager::g_TestUDPSearchLevel))
 	{
-		g_isUDPTestOK = false; // TODO - убрать этот флаг
+		g_isUDPTestOK = false; // TODO - пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
 		SearchManager::runTestUDPPort();
 	}
 }
@@ -1814,7 +1815,7 @@ void SearchFrame::on(TimerManagerListener::Second, uint64_t aTick) noexcept
 			const bool l_is_force_for_udp_test = boost::logic::indeterminate(SettingsManager::g_TestUDPSearchLevel);
 			if (scan_list_view_from_merge() || l_is_force_for_udp_test)
 			{
-				// Проверить перед тем как запускать
+				// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 				addFlyServerTask(l_tick, l_is_force_for_udp_test);
 			}
 #endif
@@ -1840,7 +1841,7 @@ void SearchFrame::on(TimerManagerListener::Second, uint64_t aTick) noexcept
 			}
 			else
 			{
-				m_statusLine =  TSTRING(SEARCHING_FOR) + _T(' ') + m_target + _T(" … ")
+				m_statusLine =  TSTRING(SEARCHING_FOR) + _T(' ') + m_target + _T(" пїЅ ")
 				                + Util::toStringW(percent) + _T("% ") +
 				                Text::toT(Client::g_last_search_string);
 			}
@@ -1878,7 +1879,7 @@ int SearchFrame::SearchInfo::compareItems(const SearchInfo* a, const SearchInfo*
 				return compare(a->m_sr.getSize(), b->m_sr.getSize());
 			else
 				return (a->m_sr.getType() == SearchResult::TYPE_DIRECTORY) ? -1 : 1;
-		case COLUMN_FLY_SERVER_RATING: // TODO - распарсить x/y
+		case COLUMN_FLY_SERVER_RATING: // TODO - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ x/y
 		case COLUMN_BITRATE:
 			return compare(Util::toInt64(a->columns[col]), Util::toInt64(b->columns[col]));
 		case COLUMN_MEDIA_XY:
@@ -1927,7 +1928,7 @@ void SearchFrame::SearchInfo::calcImageIndex()
 			{
 				if (m_sr.m_virus_level > 0 || is_virus_tth)
 				{
-					g_fileImage.getVirusIconIndex("x.avi.exe", m_icon_index); // TODO генерируем иконку - вируса
+					g_fileImage.getVirusIconIndex("x.avi.exe", m_icon_index); // TODO пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ - пїЅпїЅпїЅпїЅпїЅпїЅ
 					//if (m_icon_index == FileImage::g_virus_exe_icon_index)
 					//{
 					//  sr.m_virus_level = 1;
@@ -2127,8 +2128,8 @@ void SearchFrame::SearchInfo::Download::operator()(const SearchInfo* si)
 			const string target = Text::fromT(m_tgt + si->getText(COLUMN_FILENAME));
 			QueueManager::getInstance()->add(0, target, si->m_sr.getSize(), si->m_sr.getTTH(), si->m_sr.getHintedUser(), mask);
 			
-			const auto l_children = m_sf->getUserList().findChildren(si->getGroupCond()); // Ссылку делать нельзя
-			for (auto i = l_children.cbegin(); i != l_children.cend(); ++i)  // Тут вектор иногда инвалидирует
+			const auto l_children = m_sf->getUserList().findChildren(si->getGroupCond()); // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
+			for (auto i = l_children.cbegin(); i != l_children.cend(); ++i)  // пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 			{
 				const SearchInfo* j = *i;
 				try
@@ -2657,23 +2658,23 @@ void SearchFrame::UpdateLayout(BOOL bResizeBars)
 		rc = l_tmp_rc;
 		
 		// "Size".
-		// Выпадающий список условия.
+		// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ.
 		int w2 = width - lMargin - rMargin;
 		rc.top += spacing - 7;
 		rc.bottom = rc.top + comboH;
 		rc.right = w2 / 2;
 		ctrlMode.MoveWindow(rc);
 		
-		// Надпись "Размер": (левая, верхняя, правая, нижняя границы).
+		// пїЅпїЅпїЅпїЅпїЅпїЅпїЅ "пїЅпїЅпїЅпїЅпїЅпїЅ": (пїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ).
 		sizeLabel.MoveWindow(rc.left + lMargin, rc.top - labelH, 40 /* width - rMargin */, labelH - 1);
 		
-		// Поле для ввода.
+		// пїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ.
 		rc.left = rc.right + lMargin;
 		rc.right += w2 / 4;
 		rc.bottom = rc.top + 22;
 		ctrlSize.MoveWindow(rc);
 		
-		// Выпадающий список величины измерения.
+		// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ.
 		rc.left = rc.right + lMargin;
 		rc.right = width - rMargin;
 		rc.bottom = rc.top + comboH;
@@ -2796,7 +2797,7 @@ void SearchFrame::UpdateLayout(BOOL bResizeBars)
 	
 	CRect rc = rect;
 	rc.bottom -= 26;
-	// Текст "Искать в найденном"
+	// пїЅпїЅпїЅпїЅпїЅ "пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ"
 	rc.left += lMargin * 2;
 	if (m_showUI)
 		rc.left += width;
@@ -2804,11 +2805,11 @@ void SearchFrame::UpdateLayout(BOOL bResizeBars)
 	rc.bottom = rc.top + 22;
 	rc.right = rc.left + WinUtil::getTextWidth(CTSTRING(SEARCH_IN_RESULTS), m_hWnd) - 20;
 	srLabel.MoveWindow(rc.left, rc.top + 4, rc.right - rc.left, rc.bottom - rc.top);
-	// Поле ввода
+	// пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 	rc.left = rc.right + lMargin;
 	rc.right = rc.left + 150;
 	ctrlFilter.MoveWindow(rc);
-	// Выпадающий список.
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ.
 	rc.left = rc.right + lMargin;
 	rc.right = rc.left + 120;
 	ctrlFilterSel.MoveWindow(rc);
@@ -3411,7 +3412,7 @@ void SearchFrame::addSearchResult(SearchInfo* si)
 								"VHSRip",
 								"iTunes",
 								"Amedia",
-								"КПК"
+								"пїЅпїЅпїЅ"
 							};
 							for (const auto r : l_type_rip_array)
 							{
@@ -4789,8 +4790,8 @@ LRESULT SearchFrame::onEditChange(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWn
 		}
 		if (m_lastFindTTH)
 		{
-			//В диалоге поиска очень хорошо сделано, что при вставке хэша автоматически подставляется тип файла TTH. Но если после этого попробовать
-			//найти по имени, то приходится убирать TTH вручную --> соответственно требуется при несовпадении с шаблоном TTH ставить обратно "Любой".
+			//пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ TTH. пїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+			//пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ, пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ TTH пїЅпїЅпїЅпїЅпїЅпїЅпїЅ --> пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ TTH пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ "пїЅпїЅпїЅпїЅпїЅ".
 			ctrlFiletype.SetCurSel(ctrlFiletype.FindStringExact(0, CTSTRING(ANY)));
 			m_lastFindTTH = false;
 		}

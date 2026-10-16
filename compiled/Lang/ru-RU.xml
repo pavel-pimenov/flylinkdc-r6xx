@@ -1800,6 +1800,8 @@ Raw: отослать raw-команду хабу (только для эксп�
 		<String Name="ThemeChangeTheme">Тема изменена</String>
 		<String Name="ThemeChangeThemeInfo">Перезапустите программу, чтобы изменить тему</String>
 		<String Name="ThemeDefaultName">Тема по умолчанию</String>
+		<String Name="ThemeDark">Тёмная</String>
+		<String Name="ThemeLight">Светлая</String>
 		<String Name="ThisFileWasInMyShare">Был у меня в шаре</String>
 		<String Name="ThisFunctionalIsDisabled">Этот функционал находится в разработке либо отключён в текущей версии</String>
 		<String Name="ThisVersionReleased">Есть релиз этой версии или более новый</String>

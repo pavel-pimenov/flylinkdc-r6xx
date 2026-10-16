@@ -1274,8 +1274,8 @@ LRESULT QueueFrame::onContextMenu(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, B
 						const QueueItemPtr qi = ii->getQueueItem();
 						if (qi)
 						{
-							const auto& sources = ii->getQueueItem()->getSourcesL(); // Делать копию нельзя
-							// ниже сохраняем адрес итератора
+							const auto& sources = ii->getQueueItem()->getSourcesL(); // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
+							// пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 							for (auto i = sources.cbegin(); i != sources.cend(); ++i)
 							{
 								const auto user = i->first;
@@ -1311,8 +1311,8 @@ LRESULT QueueFrame::onContextMenu(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, B
 								menuItems++;
 							}
 							readdItems = 0;
-							const auto& badSources = ii->getQueueItem()->getBadSourcesL(); // Делать копию нельзя
-							// ниже сохраняем адрес итератора
+							const auto& badSources = ii->getQueueItem()->getBadSourcesL(); // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
+							// пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 							for (auto i = badSources.cbegin(); i != badSources.cend(); ++i)
 							{
 								const auto user = i->first;
@@ -1551,7 +1551,7 @@ LRESULT QueueFrame::onReadd(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BO
 			if (omi)
 			{
 				const UserPtr s = *(UserPtr*)omi->m_data; // TODO - https://crash-server.com/Problem.aspx?ClientID=guest&ProblemID=62702
-				// Мертвый юзер
+				// пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
 				try
 				{
 					QueueManager::getInstance()->readd(ii->getTarget(), s);
@@ -1713,7 +1713,7 @@ LRESULT QueueFrame::onPriority(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/,
 		int i = -1;
 		while ((i = ctrlQueue.GetNextItem(i, LVNI_SELECTED)) != -1)
 		{
-			// TODO - двойное обращение к менеджеру - склеить вместе
+			// TODO - пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ - пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 			const auto l_target = ctrlQueue.getItemData(i)->getTarget();
 			QueueManager::getInstance()->setAutoPriority(l_target, false);
 			QueueManager::getInstance()->setPriority(l_target, p);
@@ -1783,7 +1783,7 @@ void QueueFrame::changePriority(bool inc)
 				dcassert(false);
 				break;
 		}
-		// TODO - двойное обращение к менеджеру - склеить вместе
+		// TODO - пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ - пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 		const auto l_target = ctrlQueue.getItemData(i)->getTarget();
 		QueueManager::getInstance()->setAutoPriority(l_target, false);
 		QueueManager::getInstance()->setPriority(l_target, p);
@@ -1805,8 +1805,8 @@ void QueueFrame::setPriority(HTREEITEM ht, const QueueItem::Priority& p)
 	const auto dp = m_directories.equal_range(name);
 	for (auto i = dp.first; i != dp.second; ++i)
 	{
-		// TODO - двойное обращение к менеджеру - склеить вместе
-		// + внутри нет лока
+		// TODO - пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ - пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
+		// + пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
 		QueueManager::getInstance()->setAutoPriority(i->second->getTarget(), false);
 		QueueManager::getInstance()->setPriority(i->second->getTarget(), p);
 	}
@@ -2305,7 +2305,8 @@ void QueueFrame::onRechecked(const string& target, const string& message)
 	{
 		string buf;
 		buf.resize(STRING(INTEGRITY_CHECK).length() + message.length() + target.length() + 16);
-		sprintf(&buf[0], CSTRING(INTEGRITY_CHECK), message.c_str(), target.c_str());
+		_snprintf(&buf[0], buf.size(), CSTRING(INTEGRITY_CHECK), message.c_str(), target.c_str());
+		if (buf.size() > 0) buf[buf.size() - 1] = 0;
 		m_tasks.add(UPDATE_STATUS, new StringTask(buf));
 	}
 }

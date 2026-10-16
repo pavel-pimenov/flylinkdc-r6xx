@@ -389,6 +389,7 @@ void VideoPreview::SetDownloadSegment(int64_t pos, int64_t size)
 			
 		LocalArray<CHAR, 256>buff;
 		_snprintf(buff.data(), buff.size(), "ask segment: %s / %s", Util::toString(posNew).c_str(), Util::toString(sizeNew).c_str());
+		buff[buff.size() - 1] = 0;
 		string loginfo = buff.data();
 		VideoPreview::getInstance()->AddLogInfo(loginfo);
 		_ask2Download.push_back(FileRoadMapItem(posNew, sizeNew));
@@ -414,6 +415,7 @@ void VideoPreview::on(QueueManagerListener::FileMoved, const string& n) noexcept
 		_canUseFile = true;
 		LocalArray<CHAR, 256>buff;
 		_snprintf(buff.data(), buff.size(), "All file %s now available", n.c_str());
+		buff[buff.size() - 1] = 0;
 		VideoPreview::getInstance()->AddLogInfo(buff.data());
 		
 	}
@@ -467,10 +469,13 @@ int VideoPreviewSocketProcessor::run()
 		}
 	}
 	if (size == SOCKET_ERROR)
+	{
+		::closesocket(sock);
+		inProcess = false;
 		return 0;
+	}
 		
-	string header = buff.data();
-	header = header.substr(0, static_cast<size_t>(size));
+	string header(buff.data(), static_cast<size_t>(size));
 	
 	VideoPreview::getInstance()->AddLogInfo("Header = " + header);
 	parseHeader(header);
@@ -521,6 +526,7 @@ int VideoPreviewSocketProcessor::run()
 		clientName = iter->second;
 		
 	_snprintf(buff.data(), buff.size(), "Client %s asks range " I64_FMT " - " I64_FMT, clientName.c_str(), startValue, endValue);
+	buff[buff.size() - 1] = 0;
 	string loginfo = buff.data();
 	VideoPreview::getInstance()->AddLogInfo(loginfo);
 	
@@ -565,6 +571,7 @@ int VideoPreviewSocketProcessor::run()
 				if (filePosition >= endValue)
 				{
 					_snprintf(buff.data(), buff.size(), "Finished sending for client %s (" I64_FMT " - " I64_FMT ")", clientName.c_str(), startValue, endValue);
+					buff[buff.size() - 1] = 0;
 					loginfo = buff.data();
 					VideoPreview::getInstance()->AddLogInfo(loginfo);
 					break;
@@ -581,6 +588,7 @@ int VideoPreviewSocketProcessor::run()
 								if (dataAsks)
 								{
 									_snprintf(buff.data(), buff.size(), "Data was downloaded for client %s (" I64_FMT " - " I64_FMT ")", clientName.c_str(), startValue, endValue);
+									buff[buff.size() - 1] = 0;
 									loginfo = buff.data();
 									VideoPreview::getInstance()->AddLogInfo(loginfo);
 								}
@@ -594,6 +602,7 @@ int VideoPreviewSocketProcessor::run()
 								if (readSize == 0)
 								{
 									_snprintf(buff.data(), buff.size(), "Finished sending for client %s (" I64_FMT " - " I64_FMT ")", clientName.c_str(), startValue, endValue);
+									buff[buff.size() - 1] = 0;
 									loginfo = buff.data();
 									VideoPreview::getInstance()->AddLogInfo(loginfo);
 									break;
@@ -601,6 +610,7 @@ int VideoPreviewSocketProcessor::run()
 								
 								// dcdebug("VideoPreviewSocketProcessor SENDING Ranger: %s - %s\n", Util::toString(filePosition).c_str(), Util::toString(readSize).c_str());
 								_snprintf(buff.data(), buff.size(), "Sending " I64_FMT " - %u for client %s (" I64_FMT " - " I64_FMT ")", filePosition, unsigned(readSize), clientName.c_str(), startValue, endValue);
+								buff[buff.size() - 1] = 0;
 								loginfo = buff.data();
 								VideoPreview::getInstance()->AddLogInfo(loginfo);
 								
@@ -655,6 +665,7 @@ int VideoPreviewSocketProcessor::run()
 	inProcess = false;
 	
 	_snprintf(buff.data(), buff.size(), "SOCKET Closed by Client %s range " I64_FMT " - " I64_FMT, clientName.c_str(), startValue, endValue);
+	buff[buff.size() - 1] = 0;
 	loginfo = buff.data();
 	VideoPreview::getInstance()->AddLogInfo(loginfo);
 	return 0;

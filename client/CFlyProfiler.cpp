@@ -360,7 +360,8 @@ struct ColorRamp
 		}
 		u8 r = u8(base.r * 255.0f), g = u8(base.g * 255.0f), b = u8(base.b * 255.0f);
 		static threadlocal char buffer[8][32], bufferon = 0;
-		sprintf(buffer[bufferon & 7], "#%02x%02x%02x", r, g, b);
+		_snprintf(buffer[bufferon & 7], sizeof(buffer[0]), "#%02x%02x%02x", r, g, b);
+		buffer[bufferon & 7][sizeof(buffer[0]) - 1] = 0;
 		return buffer[bufferon++ & 7];
 	}
 	

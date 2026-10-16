@@ -125,7 +125,7 @@ class ATL_NO_VTABLE CGradientLabelImpl : public CWindowImpl< T, TBase, TWinTrait
 			int nLen = GetWindowTextLength();
 			if (nLen > 0)
 			{
-				LPTSTR lpszText = (LPTSTR) _alloca((nLen + 1) * sizeof(TCHAR));
+				LPTSTR lpszText = (LPTSTR) _alloca((static_cast<size_t>(nLen) + 1) * sizeof(TCHAR));
 				if (GetWindowText(lpszText, nLen + 1))
 				{
 					// create a tool tip
@@ -241,7 +241,7 @@ class ATL_NO_VTABLE CGradientLabelImpl : public CWindowImpl< T, TBase, TWinTrait
 			int nLen = GetWindowTextLength();
 			if (nLen > 0)
 			{
-				LPTSTR lpszText = (LPTSTR) _alloca((nLen + 1) * sizeof(TCHAR));
+				LPTSTR lpszText = (LPTSTR) _alloca((static_cast<size_t>(nLen) + 1) * sizeof(TCHAR));
 				if (GetWindowText(lpszText, nLen + 1))
 				{
 					DWORD dwStyle = GetStyle();

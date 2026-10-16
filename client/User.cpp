@@ -581,6 +581,7 @@ string Identity::getTag() const
 		          getHubRegister(),
 		          getHubOperator(),
 		          getSlots());
+		l_tagItem[sizeof(l_tagItem) - 1] = 0;
 		return l_tagItem;
 	}
 	else

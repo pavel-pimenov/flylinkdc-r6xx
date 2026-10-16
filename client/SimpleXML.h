@@ -52,6 +52,22 @@ class CompareFirst
 STANDARD_EXCEPTION(SimpleXMLException);
 
 /**
+ * Безопасная пустая строка для значений атрибутов по умолчанию.
+ *
+ * Раньше default-аргумент `string()` создавал временный объект прямо в месте
+ * вызова, и getChildAttrib/getAttrib возвращали ссылку на него. Если атрибут
+ * отсутствовал, вызывающий код (`const string& x = xml.getChildAttrib(...)`)
+ * получал висячую ссылку на уже разрушенный временный объект
+ * (AddressSanitizer: stack-use-after-scope). Здесь возвращается ссылка на
+ * статическую строку, время жизни которой не ограничено выражением.
+ */
+inline const string& getEmptyString()
+{
+	static const string l_empty;
+	return l_empty;
+}
+
+/**
  * A simple XML class that loads an XML-ish structure into an internal tree
  * and allows easy access to each element through a "current location".
  */
@@ -123,7 +139,7 @@ class SimpleXML
 			return (*currentChild)->data;
 		}
 		
-		const string& getChildAttrib(const string& aName, const string& aDefault = string()) const
+		const string& getChildAttrib(const string& aName, const string& aDefault = getEmptyString()) const
 		{
 			checkChildSelected();
 			return (*currentChild)->getAttrib(aName, aDefault);
@@ -298,7 +314,7 @@ class SimpleXML
 				{
 				}
 				
-				const string& getAttrib(const string& aName, const string& aDefault = string()) const
+				const string& getAttrib(const string& aName, const string& aDefault = getEmptyString()) const
 				{
 					StringPairList::const_iterator i = find_if(attribs.begin(), attribs.end(), CompareFirst<string, string>(aName));
 					return i == attribs.end() ? aDefault : i->second;

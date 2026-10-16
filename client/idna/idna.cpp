@@ -142,7 +142,11 @@ static char *StrLcpy (char *dst, const char *src, size_t len)
   assert (len > 0);
 
   if (strlen(src) < len)
-     return strcpy (dst, src);
+  {
+    _snprintf(dst, len, "%s", src);
+    dst[len - 1] = 0;
+    return dst;
+  }
 
   memcpy (dst, src, len);
   dst [len-1] = '\0';
@@ -399,16 +403,16 @@ static char *convert_from_ACE (const char *name)
 
 
 /*
- * E.g. convert "www.tromsø.no" to ACE:
+ * E.g. convert "www.tromsï¿½.no" to ACE:
  *
- * 1) Convert each label separately. "www", "tromsø" and "no"
- * 2) "tromsø" -> u+0074 u+0072 u+006F u+006D u+0073 u+00F8
+ * 1) Convert each label separately. "www", "tromsï¿½" and "no"
+ * 2) "tromsï¿½" -> u+0074 u+0072 u+006F u+006D u+0073 u+00F8
  * 3) Pass this through 'punycode_encode()' which gives "troms-zua".
  * 4) Repeat for all labels with non-ASCII letters.
  * 5) Prepending "xn--" for each converted label gives "www.xn--troms-zua.no".
  *
  * E.g. 2:
- *   "www.blåbærsyltetøy.no" -> "www.xn--blbrsyltety-y8aO3x.no"
+ *   "www.blï¿½bï¿½rsyltetï¿½y.no" -> "www.xn--blbrsyltety-y8aO3x.no"
  *
  * Ref. http://www.imc.org/idna/do-idna.cgi
  *      http://www.norid.no/domenenavnbaser/ace/ace_technical.en.html
@@ -449,7 +453,9 @@ BOOL IDNA_convert_to_ACE (
 		dcassert(0);
         goto quit;
       }
-	  name += sprintf (name, "xn--%s.", ace);
+	  name += _snprintf(name, MAX_COPY_SIZE, "xn--%s.", ace);
+	  if (name > in_name + *size - 1) name = in_name + *size - 1; // safety
+	  if (*name) name[strlen(name)] = 0;
     }
     else  /* pass through unchanged */
     {
@@ -461,7 +467,9 @@ BOOL IDNA_convert_to_ACE (
 		dcassert(0);
         goto quit;
       }
-      name += sprintf (name, "%s.", labels[i]);
+      name += _snprintf(name, MAX_COPY_SIZE, "%s.", labels[i]);
+      if (name > in_name + *size - 1) name = in_name + *size - 1; // safety
+      if (*name) name[strlen(name)] = 0;
     }
   }
   if (in_name > name)   /* drop trailing '.' */
@@ -507,7 +515,9 @@ BOOL IDNA_convert_from_ACE (
       if (!ascii)
          goto quit;
     }
-    name += sprintf_s (name, MAX_COPY_SIZE, "%s.", ascii ? ascii : label);
+    name += sprintf_s(name, MAX_COPY_SIZE, "%s.", ascii ? ascii : label);
+    if (name < in_name) name = in_name;
+    if (name - in_name >= (ptrdiff_t)*size) name = in_name + (*size > 0 ? *size - 1 : 0);
   }
   if (name > in_name)
      name--;

@@ -667,8 +667,10 @@ void NmdcHub::searchParse(const string& param, bool p_is_passive)
 #endif
 		return;
 	}
-	const int l_type_search = atoi(param.c_str() + i);
-	l_search_param.m_file_type = Search::TypeModes(l_type_search - 1);
+	const int l_type_search = atoi(param.c_str() + i) - 1;
+	l_search_param.m_file_type = (l_type_search >= 0 && l_type_search < Search::TYPE_LAST_MODE)
+	                                 ? static_cast<Search::TypeModes>(l_type_search)
+	                                 : Search::TYPE_ANY;
 	i = j + 1;
 	
 	if (l_search_param.m_file_type == Search::TYPE_TTH && (param.size() - i) == 39 + 4) // 39+4 = strlen("TTH:VGUKIR6NLP6LQB7P5NDCZGUSR3MFHRMRO3VJLWY")
@@ -807,6 +809,8 @@ void NmdcHub::connectToMeParse(const string& param)
 			port = param.substr(j + 1, i - j - 1);
 		}
 		
+		if (port.empty())
+			break;
 		bool secure = false;
 		if (port[port.size() - 1] == 'S')
 		{
@@ -817,6 +821,8 @@ void NmdcHub::connectToMeParse(const string& param)
 			}
 		}
 		
+		if (port.empty())
+			break;
 		if (BOOLSETTING(ALLOW_NAT_TRAVERSAL))
 		{
 			if (port[port.size() - 1] == 'N')

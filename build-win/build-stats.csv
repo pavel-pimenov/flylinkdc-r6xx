@@ -51,3 +51,12 @@
 2026-10-13 20:22:30,Release,Build,FlyLinkDC_2022.sln,0,02,0,0,20656640,0,vendor unrar removed; solution unaffected
 2026-10-13 23:58:13,Release,Rebuild,FlyLinkDC_2022.sln,2,17,0,0,20656640,0,boost 1.92 upgrade
 2026-10-13 23:59:44,Debug,Rebuild,FlyLinkDC_2022.sln,0,86,0,0,54560768,0,boost 1.92 upgrade
+2026-10-14 20:02:51,Release,Build,flylinkdc_2022.vcxproj,0,06,0,38,20656640,1,sentry inproc
+2026-10-14 20:03:43,Release,Build,FlyLinkDC_2022.sln,0,29,0,21,0,1,sentry inproc via sln
+2026-10-14 20:05:11,Release,Build,FlyLinkDC_2022.sln,0,57,0,0,20683776,0,sentry inproc static define
+2026-10-14 20:31:05,Release,Build,FlyLinkDC_2022.sln,0,36,0,0,20737024,0,sentry runtime dsn guard
+2026-10-14 20:34:48,Debug,Build,FlyLinkDC_2022.sln,0,36,0,0,54879232,0,sentry debug config
+2026-10-14 22:16:40,Release,Build,FlyLinkDC_2022.sln,0,84,32,0,20734976,0,SimpleXML empty-string default fix
+2026-10-14 22:19:07,Release,Build,FlyLinkDC_2022.sln,0,34,32,0,20734976,0,lua.pdb restored
+2026-10-14 22:21:04,Release,Build,FlyLinkDC_2022.sln,0,33,32,0,20734976,0,lua rebuild via sln
+2026-10-14 22:25:02,Release,Build,FlyLinkDC_2022.sln,0,01,0,0,20734976,0,post lua+app combined rebuild

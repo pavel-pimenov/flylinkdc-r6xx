@@ -267,14 +267,14 @@ class Identity
 #endif
 		void calcP2PGuard();
 		
-// Нужна ли тут блокировка?
-// L: с одной стороны надо блокировать такие операции,
-// а с другой эти данные всегда изменяются в одном потоке,
-// в потоке хаба, т.е. в потоке сокета.
-// А вот читать их могут одновременно многие,
-// однако, поскольку, чтение происходит побитно,
-// то можно считать данную операцию атомарной, и не блокировать,
-// но при этом куски, которые больше чем int для платформы надо блокировать обязательно.
+// пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ?
+// L: пїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ,
+// пїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ,
+// пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ, пїЅ.пїЅ. пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ.
+// пїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ,
+// пїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ,
+// пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ,
+// пїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ int пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ.
 
 #define GSUINTC(bits, x, c)\
 	uint##bits##_t get##x() const  { return get_uint##bits##(e_##x); }\
@@ -345,16 +345,16 @@ class Identity
 	
 		enum eTypeUint8Attr
 		{
-			e_ClientType, // 7 бит
+			e_ClientType, // 7 пїЅпїЅпїЅ
 #ifdef FLYLINKDC_USE_DETECT_CHEATING
-			e_FakeCard,   // 6 бит
+			e_FakeCard,   // 6 пїЅпїЅпїЅ
 #endif
 			e_ConnectionTimeouts,
 			e_FileListDisconnects,
 			e_FreeSlots,
-			e_KnownSupports, // 1 бит для ADC, 0 для NMDC
-			e_KnownUcSupports, // 7 бит вперемешку.
-			e_NotEmptyString, // 2 бита
+			e_KnownSupports, // 1 пїЅпїЅпїЅ пїЅпїЅпїЅ ADC, 0 пїЅпїЅпїЅ NMDC
+			e_KnownUcSupports, // 7 пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ.
+			e_NotEmptyString, // 2 пїЅпїЅпїЅпїЅ
 			e_TypeUInt8AttrLast
 		};
 		GSUINTBITS(8);
@@ -526,7 +526,7 @@ class Identity
 		
 		//GSUINT(32, ExtJSONGDI);
 		
-		GSUINTC(32, HubNormalRegOper, CHANGES_HUBS); // "HN"/"HR"/"HO" - Экономим RAM - 32 бита по 10 бит каждому значению
+		GSUINTC(32, HubNormalRegOper, CHANGES_HUBS); // "HN"/"HR"/"HO" - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ RAM - 32 пїЅпїЅпїЅпїЅ пїЅпїЅ 10 пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 		uint16_t getHubNormal() const // "HN"
 		{
 			return (getHubNormalRegOper() >> 20) & 0x3FF;
@@ -653,15 +653,15 @@ class Identity
 			{
 				if (getExtJSONRAMWorkingSet())
 				{
-					l_res = Util::formatBytes(int64_t(getExtJSONRAMWorkingSet() * 1024 * 1024));
+					l_res = Util::formatBytes(int64_t(getExtJSONRAMWorkingSet()) * 1024 * 1024);
 				}
 				if (getExtJSONRAMPeakWorkingSet() != getExtJSONRAMWorkingSet())
 				{
-					l_res += " [Max: " + Util::formatBytes(int64_t(getExtJSONRAMPeakWorkingSet() * 1024 * 1024)) + "]";
+					l_res += " [Max: " + Util::formatBytes(int64_t(getExtJSONRAMPeakWorkingSet()) * 1024 * 1024) + "]";
 				}
 				if (getExtJSONRAMFree())
 				{
-					l_res += " [Free: " + Util::formatBytes(int64_t(getExtJSONRAMFree() * 1024 * 1024)) + "]";
+					l_res += " [Free: " + Util::formatBytes(int64_t(getExtJSONRAMFree()) * 1024 * 1024) + "]";
 				}
 			}
 			return l_res;

@@ -243,7 +243,8 @@ string CompatibilityManager::getIncompatibleSoftwareMessage()
 	{
 		string temp;
 		temp.resize(32768);
-		temp.resize(sprintf_s(&temp[0], temp.size() - 1, CSTRING(INCOMPATIBLE_SOFTWARE_FOUND), g_incopatibleSoftwareList.c_str())); //-V111
+		const int l_msg_len = sprintf_s(&temp[0], temp.size() - 1, CSTRING(INCOMPATIBLE_SOFTWARE_FOUND), g_incopatibleSoftwareList.c_str()); //-V111
+		temp.resize(l_msg_len > 0 ? static_cast<size_t>(l_msg_len) : 0);
 		temp += ' ' + Util::getWikiLink() + "incompatiblesoftware";
 		return temp;
 	}

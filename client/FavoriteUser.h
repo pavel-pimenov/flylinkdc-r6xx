@@ -62,7 +62,7 @@ class FavoriteUser : public Flags
 					return ("BAN");
 			}
 			if (lim > 0)
-				return Util::formatBytes(int64_t(lim * 1024)) + '/' + STRING(S);
+				return Util::formatBytes(int64_t(lim) * 1024) + '/' + STRING(S);
 				
 			return BaseUtil::emptyString;
 		}

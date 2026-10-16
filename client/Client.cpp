@@ -840,6 +840,7 @@ bool Client::allowPrivateMessagefromUser(const ChatMessage& message)
 			{
 				LocalArray<char, 200> l_buf;
 				_snprintf(l_buf.data(), l_buf.size(), CSTRING(LOG_IF_SUPPRESS_PMS), message.m_replyTo->getIdentity().getNick().c_str(), getHubName().c_str(), getHubUrl().c_str());
+				l_buf[l_buf.size() - 1] = 0;
 				LogManager::message(l_buf.data());
 			}
 			return false;
@@ -974,6 +975,7 @@ void Client::messageYouHaweRightOperatorOnThisHub()
 {
 	AutoArray<char> buf(512);
 	_snprintf(buf.data(), 512, CSTRING(AT_HUB_YOU_HAVE_RIGHT_OPERATOR), getHubUrl().c_str());
+	buf.data()[511] = 0;
 	LogManager::message(buf.data());
 }
 bool  Client::isInOperatorList(const string& userName) const

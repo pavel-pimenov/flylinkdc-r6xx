@@ -23,6 +23,7 @@
 
 #include "Resource.h"
 #include "MainFrm.h"
+#include "CrashReporter.h"
 #include "ResourceLoader.h"
 #include "PopupManager.h"
 #include "ToolbarManager.h"
@@ -536,6 +537,8 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
 	
 	SettingsManager::newInstance();
 	SettingsManager::getInstance()->load();
+
+	CrashReporter::init();
 	
 	LogManager::init();
 	
@@ -633,6 +636,7 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
 	::CoUninitialize();
 	DestroySplash();
 	LogManager::flush_all_log();
+	CrashReporter::shutdown();
 	//leveldb::LevelDBDestoyModule();
 	return nRet;
 }

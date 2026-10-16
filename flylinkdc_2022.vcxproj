@@ -91,7 +91,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(SolutionDir)\boost;$(SolutionDir)\openssl\include;$(SolutionDir)\wtl;$(SolutionDir)\zlib-ng;$(SolutionDir)\windows;$(SolutionDir)\bzip2;$(SolutionDir)\leveldb\include;$(SolutionDir)\client;$(SolutionDir)\libtorrent\include;$(SolutionDir)\selene\include;$(SolutionDir)\lua;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\boost;$(SolutionDir)\openssl\include;$(SolutionDir)\wtl;$(SolutionDir)\zlib-ng;$(SolutionDir)\windows;$(SolutionDir)\bzip2;$(SolutionDir)\leveldb\include;$(SolutionDir)\client;$(SolutionDir)\libtorrent\include;$(SolutionDir)\selene\include;$(SolutionDir)\lua;$(SolutionDir)\sentry-native\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>UNICODE;_UNICODE;WIN32;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <ExceptionHandling>Sync</ExceptionHandling>
@@ -129,10 +129,10 @@
     </PreLinkEvent>
     <Link>
       <AdditionalOptions>/FIXED:NO /SAFESEH:NO %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalDependencies>Imagehlp.lib;shfolder.lib;ws2_32.lib;winmm.lib;powrprof.lib;gdiplus.lib;delayimp.lib;msimg32.lib;Wininet.lib;shell32.lib;Comdlg32.lib;uxtheme.lib</AdditionalDependencies>
+      <AdditionalDependencies>Imagehlp.lib;shfolder.lib;ws2_32.lib;winmm.lib;powrprof.lib;gdiplus.lib;delayimp.lib;msimg32.lib;Wininet.lib;shell32.lib;Comdlg32.lib;uxtheme.lib;sentry-native.lib;dbghelp.lib;Winhttp.lib;version.lib</AdditionalDependencies>
       <OutputFile>$(SolutionDir)compiled\FlylinkDC_Debug_x64.exe</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)vc17\$(Platform)\$(Configuration)\sentry-native;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
       <IgnoreSpecificDefaultLibraries>opengl32.lib</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -158,7 +158,7 @@
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>false</OmitFramePointers>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
-      <AdditionalIncludeDirectories>$(SolutionDir)\boost;$(SolutionDir)\openssl\include;$(SolutionDir)\wtl;$(SolutionDir)\zlib-ng;$(SolutionDir)\windows;$(SolutionDir)\bzip2;$(SolutionDir)\leveldb\include;$(SolutionDir)\client;$(SolutionDir)\libtorrent\include;$(SolutionDir)\selene\include;$(SolutionDir)\lua;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\boost;$(SolutionDir)\openssl\include;$(SolutionDir)\wtl;$(SolutionDir)\zlib-ng;$(SolutionDir)\windows;$(SolutionDir)\bzip2;$(SolutionDir)\leveldb\include;$(SolutionDir)\client;$(SolutionDir)\libtorrent\include;$(SolutionDir)\selene\include;$(SolutionDir)\lua;$(SolutionDir)\sentry-native\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>UNICODE;_UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <ExceptionHandling>Sync</ExceptionHandling>
@@ -196,12 +196,12 @@
     </PreLinkEvent>
     <Link>
       <AdditionalOptions>/FIXED:NO /SAFESEH:NO %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalDependencies>Imagehlp.lib;shfolder.lib;ws2_32.lib;winmm.lib;powrprof.lib;gdiplus.lib;delayimp.lib;msimg32.lib;Wininet.lib;shell32.lib;Comdlg32.lib;uxtheme.lib</AdditionalDependencies>
+      <AdditionalDependencies>Imagehlp.lib;shfolder.lib;ws2_32.lib;winmm.lib;powrprof.lib;gdiplus.lib;delayimp.lib;msimg32.lib;Wininet.lib;shell32.lib;Comdlg32.lib;uxtheme.lib;sentry-native.lib;dbghelp.lib;Winhttp.lib;version.lib</AdditionalDependencies>
       <OutputFile>$(SolutionDir)compiled\FlylinkDC_x64.exe</OutputFile>
       <Version>
       </Version>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)vc17\$(Platform)\$(Configuration)\sentry-native;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
       <IgnoreSpecificDefaultLibraries>opengl32.lib</IgnoreSpecificDefaultLibraries>
       <DelayLoadDLLs>%(DelayLoadDLLs)</DelayLoadDLLs>
@@ -266,6 +266,7 @@
     <ClCompile Include="windows\ChatCtrl.cpp" />
     <ClCompile Include="windows\CheckTargetDlg.cpp" />
     <ClCompile Include="windows\CommandDlg.cpp" />
+    <ClCompile Include="windows\CrashReporter.cpp" />
     <ClCompile Include="windows\dclstGenDlg.cpp" />
     <ClCompile Include="windows\DCLSTPage.cpp" />
     <ClCompile Include="windows\DefaultClickPage.cpp" />
@@ -699,6 +700,9 @@
     </Xml>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="sentry-native\sentry-native_2022.vcxproj">
+      <Project>{7f4c5a26-9b1d-4e6a-8c3f-2a5e1d0b7c94}</Project>
+    </ProjectReference>
     <ProjectReference Include="boost-regex_2022.vcxproj">
       <Project>{d1095e8a-63a5-4592-ae93-2d638f20f66a}</Project>
     </ProjectReference>

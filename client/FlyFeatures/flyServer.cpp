@@ -108,14 +108,14 @@ FastCriticalSection CFlyServerJSON::g_cs_test_port;
 #endif // FLYLINKDC_USE_MEDIAINFO_SERVER
 
 FastCriticalSection CFlyServerConfig::g_cs_block_ip;
-uint16_t CFlyServerConfig::g_max_ddos_connect_to_me = 10; // Не более 10 коннектов на один IP в течении минуты
-uint16_t CFlyServerConfig::g_ban_ddos_connect_to_me = 10; // Блокируем подключения к этому IP в течении 10 минут
+uint16_t CFlyServerConfig::g_max_ddos_connect_to_me = 10; // пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ 10 пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ IP пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
+uint16_t CFlyServerConfig::g_ban_ddos_connect_to_me = 10; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅ IP пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ 10 пїЅпїЅпїЅпїЅпїЅ
 
-uint16_t CFlyServerConfig::g_interval_flood_command = 1;  // Сколько секунд агрегируем одинаковые команды
-uint16_t CFlyServerConfig::g_max_flood_command = 100;       // Не более 100 одинаковых команд в секунду
-uint16_t CFlyServerConfig::g_ban_flood_command = 10;      // Блокируем на 10 секунд команды если попали в бан
+uint16_t CFlyServerConfig::g_interval_flood_command = 1;  // пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+uint16_t CFlyServerConfig::g_max_flood_command = 100;       // пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ 100 пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+uint16_t CFlyServerConfig::g_ban_flood_command = 10;      // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ 10 пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅ
 uint16_t CFlyServerConfig::g_unique_files_for_virus_detect = 2;
-bool     CFlyServerConfig::g_is_append_cid_error_log = true; // Добавлять ID к логу ошибок
+bool     CFlyServerConfig::g_is_append_cid_error_log = true; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ ID пїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 bool     CFlyServerConfig::g_is_use_hit_media_files = false;
 bool     CFlyServerConfig::g_is_use_hit_binary_files = false;
 bool     CFlyServerConfig::g_is_use_statistics = false;
@@ -125,8 +125,8 @@ DWORD CFlyServerConfig::g_max_size_for_virus_detect = 10 * 1024 * 1024;
 DWORD CFlyServerConfig::g_max_size_search_v_detect = 3 * 1024 * 1024;
 
 
-uint16_t CFlyServerConfig::g_max_unique_tth_search  = 10; // Не принимаем в течении 10 секунд одинаковых поисков по TTH для одного и того-же целевого IP:PORT (UDP)
-uint16_t CFlyServerConfig::g_max_unique_file_search = 10; // Не принимаем в течении 10 секунд одинаковых поисков по File для одного и того-же целевого IP:PORT (UDP)
+uint16_t CFlyServerConfig::g_max_unique_tth_search  = 10; // пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ 10 пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ TTH пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ-пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ IP:PORT (UDP)
+uint16_t CFlyServerConfig::g_max_unique_file_search = 10; // пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ 10 пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ File пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ-пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ IP:PORT (UDP)
 string CFlyServerConfig::g_regex_find_ip = "(\\d\\d?\\d?\\.\\d\\d?\\d?\\.\\d\\d?\\d?\\.\\d\\d?\\d?)";
 std::vector<std::string> CFlyServerConfig::g_mapping_hubs;
 //std::unordered_set<unsigned long> CFlyServerConfig::g_block_ip;
@@ -176,7 +176,7 @@ const std::vector<CServerItem> CFlyServerConfig::getMirrorTestPortServerArray()
 	dcassert(!g_mirror_test_port_servers.empty() || !g_local_test_server.getIp().empty());
 	if (g_mirror_test_port_servers.empty())
 	{
-		// Если определен локальный тест-сервер - используем на него
+		// пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ-пїЅпїЅпїЅпїЅпїЅпїЅ - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ
 		if (!g_local_test_server.getIp().empty())
 		{
 			g_mirror_test_port_servers.push_back(g_local_test_server);
@@ -196,7 +196,7 @@ const CServerItem& CFlyServerConfig::getRandomMirrorServer(bool p_is_set)
 		const int l_id = Util::rand(g_mirror_read_only_servers.size());
 		return g_mirror_read_only_servers[l_id];
 	}
-	else // Вернем пишущий сервер
+	else // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 	{
 		return g_main_server;
 	}
@@ -312,7 +312,7 @@ inline static void checkStrKey(const string& p_str) // TODO: move to Util.
 //======================================================================================================
 void CFlyServerConfig::ConvertInform(string& p_inform) const
 {
-	// TODO - убрать лишние строки из результата
+	// TODO - пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	if (!g_exclude_tag_inform.empty())
 	{
 		string l_result_line;
@@ -324,15 +324,15 @@ void CFlyServerConfig::ConvertInform(string& p_inform) const
 			if (l_end_line != string::npos)
 			{
 				string l_cur_line = p_inform.substr(l_start_line, l_end_line - l_start_line);
-				// Фильтруем строчку через маски
+				// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 				bool l_ignore_tag = false;
 				for (auto i = g_exclude_tag_inform.cbegin(); i != g_exclude_tag_inform.cend(); ++i)
 				{
 					const auto l_tag_begin = l_cur_line.find(*i);
 					const auto l_end_index  = i->size() + 1;
-					if (l_tag_begin == 0  // Тэг в начале строки?
-					        && l_cur_line.size() > l_end_index // После него есть место?
-					        && (l_cur_line[l_end_index] == ':' || l_cur_line[l_end_index] == ' ') // После тэга пробел или ':'
+					if (l_tag_begin == 0  // пїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ?
+					        && l_cur_line.size() > l_end_index // пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ?
+					        && (l_cur_line[l_end_index] == ':' || l_cur_line[l_end_index] == ' ') // пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ ':'
 					   )
 					{
 						l_ignore_tag = true;
@@ -431,7 +431,7 @@ void CFlyServerConfig::loadConfig()
 					g_main_server.setPort(Util::toInt(l_xml.getChildAttrib("port")));
 					dcassert(g_main_server.getPort());
 #ifdef FLYLINKDC_USE_GATHER_STATISTICS
-					// Предусматриваем альтернативный сервер статистики
+					// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 					g_stat_server.setIp(l_xml.getChildAttrib("stat_server_ip"));
 					if (!g_stat_server.getIp().empty())
 					{
@@ -506,9 +506,9 @@ void CFlyServerConfig::loadConfig()
                     initUINT16("use_log_redirect", l_int_flag, 0);
                     g_is_use_log_redirect = l_int_flag != 0;
 					
-					m_min_file_size = Util::toInt64(l_xml.getChildAttrib("min_file_size")); // В конфиге min_size - переименовать
+					m_min_file_size = Util::toInt64(l_xml.getChildAttrib("min_file_size")); // пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ min_size - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 					dcassert(m_min_file_size);
-					//m_max_size_value = Util::toInt(l_xml.getChildAttrib("max_size_value")); // Не используется но есть в конфиге - убрать везде
+					//m_max_size_value = Util::toInt(l_xml.getChildAttrib("max_size_value")); // пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ - пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 					//dcassert(m_max_size_value);
 					m_zlib_compress_level = Util::toInt(l_xml.getChildAttrib("zlib_compress_level"));
 					dcassert(m_zlib_compress_level >= Z_NO_COMPRESSION && m_zlib_compress_level <= Z_BEST_COMPRESSION);
@@ -575,7 +575,7 @@ void CFlyServerConfig::loadConfig()
 						checkStrKey(n);
 						g_mapping_hubs.push_back(n);
 					}
-					, false); // Дубли тут не проверяем
+					, false); // пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 					dcassert(g_mapping_hubs.size() % 2 == 0);
 					
 					l_xml.getChildAttribSplit("block_hubs", g_block_hubs, [this](const string & n)
@@ -626,15 +626,15 @@ void CFlyServerConfig::loadConfig()
 					{
 						g_exclude_cid_error_log.insert(Util::toInt(n));
 					});
-					// Достанем RO-зеркала
+					// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ RO-пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 					l_xml.getChildAttribSplit("mirror_read_only_server", g_mirror_read_only_servers, [this](const string & n)
 					{
 						const auto l_port_pos = n.find(':');
 						if (l_port_pos != string::npos)
 							g_mirror_read_only_servers.push_back(CServerItem(n.substr(0, l_port_pos), atoi(n.c_str() + l_port_pos + 1)));
 					});
-					// Достанем зеркала серверов для тестов
-					if (g_local_test_server.getIp().empty()) // (если нет переопределения локального)
+					// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
+					if (g_local_test_server.getIp().empty()) // (пїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ)
 					{
 						CFlyFastLock(g_cs_mirror_test_port);
 						l_xml.getChildAttribSplit("mirror_test_port_server", g_mirror_test_port_servers, [this](const string & n)
@@ -872,7 +872,7 @@ bool CFlyServerConfig::SyncAntivirusDB(bool& p_is_need_reload)
 				if (l_is_remove_priv_ip)
 					l_http_downloader.m_get_http_header_item.push_back("Avdb-Private-Count");
 					
-				//TODO - пока не пашет
+				//TODO - пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 				// l_http_downloader.m_get_http_header_item.push_back("Content-Length");
 				
 				l_cur_merge_counter = CFlylinkDBManager::getInstance()->get_registry_variable_int64(e_MergeCounterAntivirusDB);
@@ -963,7 +963,7 @@ bool CFlyServerConfig::SyncAntivirusDB(bool& p_is_need_reload)
 			}
 			if (l_cur_merge_counter)
 			{
-				// TODO Добавилось N-записей к базе - перегрузить их в кэш
+				// TODO пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ N-пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅ пїЅпїЅпїЅ
 				l_log.step("Antivirus DB version: " + Util::toString(l_cur_merge_counter) + " Count virus record:" + Util::toString(l_count_record));
 			}
 #ifdef FLYLINKDC_USE_ANTIVIRUS_DB
@@ -1071,12 +1071,12 @@ bool CFlyServerConfig::torrentSearchParser(HWND p_wnd, int p_message, string p_s
 						CFlyServerJSON::pushError(84, "[lua-check_error]:" + l_html_result);
 					}
 				}
-				return false; // Кончились странички поиска
+				return false; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 			}
 #ifdef _DEBUG
 			//LogManager::message("l_magnet_result = " + l_magnet_result);
 #endif
-			l_count_mirror = 2; // TODO - забирать число зеркал из lua
+			l_count_mirror = 2; // TODO - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ lua
 			try
 			{
 				Json::Value l_root;
@@ -1415,19 +1415,19 @@ bool CFlyServerConfig::isBlockShareExt(const string& p_name, const string& p_ext
 {
 	dcassert(Text::toLower(p_name) == p_name);
 	
-	if (isCheckName(g_block_share_ext, p_ext)) // Контроль по расширениям
+	if (isCheckName(g_block_share_ext, p_ext)) // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	{
 		return true;
 	}
-	else if (isCheckName(g_block_share_name, p_name)) // Контроль по файлам на точное соотвествие
+	else if (isCheckName(g_block_share_name, p_name)) // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	{
 		return true;
 	}
-	else if (Wildcard::patternMatchLowerCase(p_name, g_block_share_mask)) // Попал под маску плохую
+	else if (Wildcard::patternMatchLowerCase(p_name, g_block_share_mask)) // пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 	{
 		return true;
 	}
-	return false; // Файл хороший
+	return false; // пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 }
 
 string CFlyServerConfig::DBDelete()
@@ -1461,7 +1461,7 @@ void CFlyServerAdapter::waitForFlyServerStop()
     dcdrun(m_debugWaits = true;)
         if (m_query_thread)
         {
-            m_query_thread->join(m_dwMilliseconds); // Дождемся завершения но не более 10 сек
+            m_query_thread->join(m_dwMilliseconds); // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ 10 пїЅпїЅпїЅ
         }
 }
 //===================================================================================================================================
@@ -1497,7 +1497,7 @@ void CFlyServerAdapter::clear_tth_media_map()
 void CFlyServerAdapter::post_message_for_update_mediainfo(const HWND p_hMediaWnd)
 {
 #ifdef _DEBUG
-	// TODO - эмулируем тормозной инет ::Sleep(10000);
+	// TODO - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ ::Sleep(10000);
 #endif
 	dcassert(::IsWindow(p_hMediaWnd));
     dcassert(!ClientManager::isBeforeShutdown());
@@ -1509,7 +1509,7 @@ void CFlyServerAdapter::post_message_for_update_mediainfo(const HWND p_hMediaWnd
 			l_copy_array.swap(g_GetFlyServerArray);
 		}
 		const string l_json_result = CFlyServerJSON::connect(l_copy_array, false); 
-		// TODO - сохранить m_GetFlyServerArray в другом месте?
+		// TODO - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ m_GetFlyServerArray пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ?
 		dcassert(::IsWindow(p_hMediaWnd));
 		dcassert(!ClientManager::isBeforeShutdown());
         if (!ClientManager::isBeforeShutdown() && !l_json_result.empty() && ::IsWindow(p_hMediaWnd))
@@ -1544,7 +1544,7 @@ void CFlyServerAdapter::post_message_for_update_mediainfo(const HWND p_hMediaWnd
             clear_tth_media_map();
 		}
 	}
-    CFlyServerAdapter::push_mediainfo_to_fly_server(); // Сбросим на флай-сервер новую медиаинфу, которую нашли у себя
+    CFlyServerAdapter::push_mediainfo_to_fly_server(); // пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ-пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ
 }
 //===================================================================================================================================
 void CFlyServerAdapter::push_mediainfo_to_fly_server()
@@ -1566,8 +1566,8 @@ void CFlyServerAdapter::push_mediainfo_to_fly_server()
 //======================================================================================================
 void CFlyServerAdapter::prepare_mediainfo_to_fly_serverL()
 {
-	// Обойдем кандидатов для предачи на сервер.
-	// Массив - есть у нас в базе, но нет на fly-server
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ.
+	// пїЅпїЅпїЅпїЅпїЅпїЅ - пїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ, пїЅпїЅ пїЅпїЅпїЅ пїЅпїЅ fly-server
     std::unordered_map<TTHValue, uint64_t> l_tth_map;
     {
         CFlyLock(g_cs_tth_media_map);
@@ -1578,13 +1578,13 @@ void CFlyServerAdapter::prepare_mediainfo_to_fly_serverL()
 		CFlyMediaInfo l_media_info;
 		if (CFlylinkDBManager::getInstance()->load_media_info(i->first, l_media_info, false))
 		{
-			bool l_is_send_info = l_media_info.isMedia() && g_fly_server_config.isFullMediainfo() == false; // Есть медиаинфа и сервер не ждет полный комплект?
-			if (g_fly_server_config.isFullMediainfo()) // Если сервер ждет от нас только полный комплект - проверим наличие атрибутной составялющей
+			bool l_is_send_info = l_media_info.isMedia() && g_fly_server_config.isFullMediainfo() == false; // пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ?
+			if (g_fly_server_config.isFullMediainfo()) // пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 				l_is_send_info = l_media_info.isMediaAttrExists();
 			if (l_is_send_info)
 			{
 				CFlyServerKey l_info(i->first, i->second);
-				l_info.m_media = l_media_info; // Получили медиаинформацию с локальной базы
+				l_info.m_media = l_media_info; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
                 {
                     CFlyLock(g_cs_set_array_fly_server);
                     g_SetFlyServerArray.push_back(l_info);
@@ -1673,7 +1673,7 @@ static void getDiskAndMemoryStat(Json::Value& p_info)
 		l_disk_info["DBTransfer"] = getFileSize(l_path + _T("\\FlylinkDC_transfers.sqlite"));
 		l_disk_info["DBQueue"] = getFileSize(l_path + _T("\\FlylinkDC_queue.sqlite"));
 		
-		// TODO - сделать обоход общего массива
+		// TODO - пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 		
 		DWORD l_cluster, l_sector_size, l_freeclustor;
 		int64_t l_space;
@@ -1690,7 +1690,7 @@ static void getDiskAndMemoryStat(Json::Value& p_info)
 	PROCESS_MEMORY_COUNTERS l_pmc = {0};
 	const auto l_mem_ok = GetProcessMemoryInfo(GetCurrentProcess(), &l_pmc, sizeof(l_pmc));
 	dcassert(l_mem_ok);
-	if (l_mem_ok) // Под Wine может не работать
+	if (l_mem_ok) // пїЅпїЅпїЅ Wine пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	{
 		Json::Value& l_mem_info = p_info["Memory"];
 		l_mem_info["WorkingSetSize"]     = int64_t(l_pmc.WorkingSetSize);
@@ -1703,7 +1703,7 @@ static void getDiskAndMemoryStat(Json::Value& p_info)
 		const auto l_hc_ok = GetProcessHandleCount(GetCurrentProcess(), &l_handle_count);
 		dcassert(l_hc_ok);
 		(void)l_hc_ok;
-		l_handle_info["Handle"] = int(l_handle_count); // TODO научить jsoncpp понимать DWORD
+		l_handle_info["Handle"] = int(l_handle_count); // TODO пїЅпїЅпїЅпїЅпїЅпїЅпїЅ jsoncpp пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ DWORD
 		auto getResourceCounter = [](int p_type_object) -> unsigned
 		{
 			const unsigned l_res_count = GetGuiResources(GetCurrentProcess(), p_type_object);
@@ -1721,7 +1721,7 @@ static void getDiskAndMemoryStat(Json::Value& p_info)
 		l_handle_info["GDIPeak"]      = getResourceCounter(GR_GDIOBJECTS_PEAK);
 		l_handle_info["UserObjPeak"]  = getResourceCounter(GR_USEROBJECTS_PEAK);
 	}
-	// TODO - Свободное место на диске системном и том, где стоит флай-база
+	// TODO - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅ, пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ-пїЅпїЅпїЅпїЅ
 	{
 		//Json::Value& l_disk_info = l_info["Disk"];
 		//l_disk_info["SysFree"] =
@@ -1736,7 +1736,7 @@ static void getDiskAndMemoryStat(Json::Value& p_info)
 		}
 		l_screen_info["X"] = g_desktop.right;
 		l_screen_info["Y"] = g_desktop.bottom;
-		// TODO - определять тип NAT
+		// TODO - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ NAT
 		//  http://ilya-314.livejournal.com/109479.html
 		//  http://system-administrators.info/?p=1468
 		//  https://github.com/limlabs/stunclient
@@ -1825,7 +1825,7 @@ bool CFlyServerJSON::isTestPortOK(unsigned short p_port, const std::string& p_ty
 			if (!g_is_first)
 			{
 				g_is_first = true;
-				// TODO - много спама - разобраться почему.
+				// TODO - пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ.
 				// CFlyServerJSON::pushError(57, "Call isTestPortOK before test port " + p_type + " = " + Util::toString(p_port));
 			}
 		}
@@ -1895,7 +1895,7 @@ bool CFlyServerJSON::pushTestPort(
 	bool l_is_send = false;
 	bool l_is_error = false;
 	p_external_ip.clear();
-	// Регистрируем факт начала запроса на тест портов
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 	const auto l_cur_time = GET_TICK();
 	{
 		CFlyFastLock(g_cs_test_port);
@@ -1910,11 +1910,11 @@ bool CFlyServerJSON::pushTestPort(
 	}
 	const auto l_result = postQueryTestPort(l_log, l_post_query, l_is_send, l_is_error);
 	//dcassert(!l_result.empty());
-	// TODO - приделать счетчик таймаута и передавать его в статистику или в след пакет?
+	// TODO - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ?
 	if (!l_is_send)
 	{
 		l_log.step("Error POST query");
-		// TODO - почистить g_test_port_map ?
+		// TODO - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ g_test_port_map ?
 	}
 	else
 	{
@@ -1940,7 +1940,7 @@ bool CFlyServerJSON::pushTestPort(
 	return l_is_send;
 }
 //======================================================================================================
-bool CFlyServerJSON::pushError(unsigned p_error_code, string p_error, bool p_is_include_disk_info /* = false*/) // Last Code = 92 (36,58,44,49,83 - устарели)
+bool CFlyServerJSON::pushError(unsigned p_error_code, string p_error, bool p_is_include_disk_info /* = false*/) // Last Code = 92 (36,58,44,49,83 - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ)
 {
 	bool l_is_send  = false;
 	bool l_is_error = false;
@@ -1988,7 +1988,7 @@ bool CFlyServerJSON::pushError(unsigned p_error_code, string p_error, bool p_is_
 				postQuery(true, true, false, false, "fly-error-sql", l_post_query, l_is_send, l_is_error, 2000);
 				if (!l_is_send)
 				{
-					// TODO Передача не удалась - скинем данные в файлы
+					// TODO пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ - пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅ
 				}
 				g_count_dup_error_string = 0;
 				g_last_error_string = p_error;
@@ -2019,14 +2019,14 @@ bool CFlyServerJSON::pushStatistic(const bool p_is_sync_run)
 		CFlyLog l_log("");
 		l_log.m_skip_stop = true;
 		Json::Value  l_info;
-		if (p_is_sync_run == false && l_is_flush_error == false) // При останове не делаем этого + если была ошибка логина - тоже скипаем
+		if (p_is_sync_run == false && l_is_flush_error == false) // пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ + пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ - пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 		{
-			// Сбросим 50 записей отложенной статистики если накопилась
+			// пїЅпїЅпїЅпїЅпїЅпїЅпїЅ 50 пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 			CFlylinkDBManager::getInstance()->flush_lost_json_statistic(l_is_flush_error);
 		}
 		else
 		{
-			l_info["IsShutdown"] = "1"; // Поставим маркер останова флая
+			l_info["IsShutdown"] = "1"; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
 		}
 		//dcassert(!g_fly_server_id.empty());
 		
@@ -2090,7 +2090,7 @@ bool CFlyServerJSON::pushStatistic(const bool p_is_sync_run)
 			l_locator["ISP"] = SETTING(FLY_LOCATOR_ISP);
 		}
 #endif
-		// Агрегационные параметры
+		// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 		{
 			Json::Value& l_stat_info = l_info["Stat"];
 			l_stat_info["Files"] = Util::toString(ShareManager::getLastSharedFiles());
@@ -2099,7 +2099,7 @@ bool CFlyServerJSON::pushStatistic(const bool p_is_sync_run)
             l_stat_info["SizeNotExistsCache"] = ShareManager::get_cache_size_file_not_exists_set();
             l_stat_info["SizeSearchFileCache"] = ShareManager::get_cache_file_map();
 			l_stat_info["Size"] = ShareManager::getShareSizeString();
-			// TODO - эти параметры можно посчитать из массива Clients
+			// TODO - пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ Clients
 			l_stat_info["Users"] = Util::toString(ClientManager::getTotalUsers());
 			l_stat_info["Hubs"] = Util::toString(Client::getTotalCounts());
 			{
@@ -2130,7 +2130,7 @@ bool CFlyServerJSON::pushStatistic(const bool p_is_sync_run)
 			l_stat_info["FavUsers"] = FavoriteManager::getCountFavsUsers();
 			l_stat_info["Threads"] = Thread::getThreadsCount();
 		}
-		// Статистика по временым меткам
+		// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 		{
 			static string g_first_time = Util::formatDigitalClock(time(nullptr));
 			Json::Value& l_time_info = l_info["Time"];
@@ -2144,13 +2144,13 @@ bool CFlyServerJSON::pushStatistic(const bool p_is_sync_run)
 				g_is_first = true;
 				Json::Value l_error_info;
 				{
-					// Сохраним ошибки
+					// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 					auto appendError = [&l_error_info](const wchar_t * p_reg_value, const char * p_json_key)
 					{
 						const string l_reg_value = Util::getRegistryValueString(p_reg_value);
 						if (!l_reg_value.empty())
 						{
-							Util::deleteRegistryValue(p_reg_value); // TODO - удалять сразу после чтения пока открыт ключик
+							Util::deleteRegistryValue(p_reg_value); // TODO - пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 							l_error_info[p_json_key] = l_reg_value;
 						}
 					};
@@ -2164,10 +2164,10 @@ bool CFlyServerJSON::pushStatistic(const bool p_is_sync_run)
 					l_info["Error"] = l_error_info;
 					CFlyServerJSON::pushError(76, "Error from registry: " + l_error_info.toStyledString());
 				}
-				// Статистику
+				// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 				l_time_info["StartGUI"] = Util::toString(g_fly_server_stat.m_time_mark[CFlyServerStatistics::TIME_START_GUI]);
 				l_time_info["StartCore"] = Util::toString(g_fly_server_stat.m_time_mark[CFlyServerStatistics::TIME_START_CORE]);
-				// Заберем предыдущие маркеры завершения
+				// пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 				try
 				{
 					const string l_marker_file_name = Util::getConfigPath() + FLY_SHUTDOWN_FILE_MARKER_NAME;
@@ -2189,7 +2189,7 @@ bool CFlyServerJSON::pushStatistic(const bool p_is_sync_run)
 				}
 			}
 		}
-		// Сетевые настройки
+		// пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 		{
 			Json::Value& l_net_info = l_info["Net"];
 			if (BOOLSETTING(AUTO_DETECT_CONNECTION))
@@ -2209,7 +2209,7 @@ bool CFlyServerJSON::pushStatistic(const bool p_is_sync_run)
 		const std::string l_post_query = l_info.toStyledString();
 		bool l_is_send = false;
 		bool l_is_error = false;
-		if (l_is_flush_error == false) // Если не удалось сбросить первый раз - нет инета.
+		if (l_is_flush_error == false) // пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ - пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ.
 		{
 			if (BOOLSETTING(USE_FLY_SERVER_STATICTICS_SEND) && p_is_sync_run == false)
 			{
@@ -2221,8 +2221,8 @@ bool CFlyServerJSON::pushStatistic(const bool p_is_sync_run)
 			//l_log.step("Skip stat-POST (internet error...)");
 		}
 		if (!l_is_send || p_is_sync_run)
-			// Если не удалось отправить или отключено/отложено.
-			// собираем стату локально (чтобы в будущем построить аналитику на клиенте)
+			// пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ/пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ.
+			// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ)
 		{
 			CFlylinkDBManager::getInstance()->push_json_statistic(l_post_query, "fly-stat", true);
 		}
@@ -2251,7 +2251,7 @@ string CFlyServerJSON::postQuery(bool p_is_set,
 	dcassert(!l_Server.getIp().empty());
 	if (!g_debug_fly_server_url.empty())
 	{
-		l_Server.setIp(g_debug_fly_server_url); // Перекрываем адрес флай-сервера для всех сервисов на отладочный
+		l_Server.setIp(g_debug_fly_server_url); // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ-пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	}
 	//const string l_log_marker = "[" + l_Server.getServerAndPort() + "]";
 	const string l_log_marker;
@@ -2265,7 +2265,7 @@ string CFlyServerJSON::postQuery(bool p_is_set,
 	}
 	std::vector<uint8_t> l_post_compress_query;
 	string l_log_string;
-	if (g_fly_server_config.getZlibCompressLevel() > Z_NO_COMPRESSION) // Выполняем сжатие запроса?
+	if (g_fly_server_config.getZlibCompressLevel() > Z_NO_COMPRESSION) // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ?
 	{
 		if (p_is_disable_zlib_in == false)
 		{
@@ -2274,13 +2274,13 @@ string CFlyServerJSON::postQuery(bool p_is_set,
 			const auto l_zlib_result = zng_compress2(l_post_compress_query.data(), &l_dest_length,
 			                                    (uint8_t*)p_body.data(),
 			                                    p_body.length(), g_fly_server_config.getZlibCompressLevel());
-			// На клиенте пока жмем по максимуму - нагрузка мелкая.
-			// если декомпрессия будет сажать CPU сервера можем отключить через конфиг (но маловероятно)
+			// пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ.
+			// пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ CPU пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ)
 			if (l_zlib_result == Z_OK)
 			{
-				if (l_dest_length < p_body.length()) // мелкие пакеты могут стать больше - отказываемся от сжатия.
+				if (l_dest_length < p_body.length()) // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ.
 				{
-					l_post_compress_query.resize(l_dest_length); // TODO - нужен ли этот релокейт?
+					l_post_compress_query.resize(l_dest_length); // TODO - пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ?
 					l_log_string = "Request:  " + Util::toString(p_body.length()) + " / " + Util::toString(l_dest_length);
 				}
 				else
@@ -2296,7 +2296,7 @@ string CFlyServerJSON::postQuery(bool p_is_set,
 		}
 	}
 	const bool l_is_zlib = !l_post_compress_query.empty();
-// Передача
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	CInternetHandle hSession(InternetOpen(g_full_user_agent.c_str(), INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0));
 	DWORD l_timeOut = p_time_out ? p_time_out : CFlyServerConfig::g_winet_connect_timeout;
 	if (l_timeOut < 500)
@@ -2372,14 +2372,15 @@ string CFlyServerJSON::postQuery(bool p_is_set,
 					                    if(i % 10 == 0)
 					                        l_hex_dump += "\r\n";
 					                    char b[7] = {0};
-					                    sprintf(b, "%#x ", (unsigned char)l_zlib_blob[i] & 0xFF);
+					                    _snprintf(b, sizeof(b), "%#x ", (unsigned char)l_zlib_blob[i] & 0xFF);
+					                    b[sizeof(b) - 1] = 0;
 					                    l_hex_dump += b;
 					                }
 					                    l_fly_server_log.step( "l_hex_dump = " + l_hex_dump);
 					*/
 #endif
-					// TODO обобщить в утилитную функцию и подменить в области DHT с другим стартовым коэф-центом. для уменьшения кол-ва релокаций
-					// TODO коэф. можно высчитывать динамические и не делалать 10-кой
+					// TODO пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ DHT пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ-пїЅпїЅпїЅпїЅпїЅпїЅ. пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ-пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+					// TODO пїЅпїЅпїЅпїЅ. пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ 10-пїЅпїЅпїЅ
 					if (l_zlib_blob.size())
 					{
 						if (p_is_disable_zlib_out == true)
@@ -2393,30 +2394,43 @@ string CFlyServerJSON::postQuery(bool p_is_set,
 						}
 						else
 						{
-							std::vector<unsigned char> l_decompress; // TODO расширять динамически
-							auto l_decompress_size = l_zlib_blob.size() * 10;
-							l_decompress.resize(l_decompress_size);
-							while (true)
+							std::vector<unsigned char> l_decompress; // TODO пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+							const auto l_blob_data = reinterpret_cast<const uint8_t*>(l_zlib_blob.data());
+							const size_t l_blob_size = l_zlib_blob.size();
+							const bool l_is_gzip_data = l_blob_size >= 2 && l_blob_data[0] == 0x1f && l_blob_data[1] == 0x8b;
+							const bool l_is_zlib_data = l_blob_size >= 2 && (l_blob_data[0] & 0x0f) == 0x08 && ((static_cast<uint16_t>(l_blob_data[0]) << 8 | l_blob_data[1]) % 31) == 0;
+							if (l_is_zlib_data || l_is_gzip_data)
 							{
-								const int l_un_compress_result = zng_uncompress(l_decompress.data(), &l_decompress_size, (uint8_t*)l_zlib_blob.data(), l_zlib_blob.size());
-								//l_fly_server_log.step(l_log_string + ", Response: " + Util::toString(l_zlib_blob.size()) + " / " +  Util::toString(l_decompress_size));
-								if (l_un_compress_result == Z_BUF_ERROR)
+								zng_stream l_stream = {};
+								if (zng_inflateInit2(&l_stream, MAX_WBITS + 32) == Z_OK)
 								{
-									l_decompress_size *= 2;
-									l_decompress.resize(l_decompress_size);
-									continue;
+									l_stream.next_in = l_blob_data;
+									l_stream.avail_in = static_cast<uint32_t>(l_blob_size);
+									unsigned char l_buf[1 << 16];
+									int l_inflate_result = Z_OK;
+									do
+									{
+										l_stream.next_out = l_buf;
+										l_stream.avail_out = sizeof(l_buf);
+										l_inflate_result = zng_inflate(&l_stream, Z_NO_FLUSH);
+										l_decompress.insert(l_decompress.end(), l_buf, l_buf + (sizeof(l_buf) - l_stream.avail_out));
+									} while (l_stream.avail_out == 0 && l_inflate_result == Z_OK);
+									zng_inflateEnd(&l_stream);
+									if (l_inflate_result != Z_STREAM_END)
+									{
+										l_decompress.clear();
+										l_fly_server_log.step("InternetReadFile - uncompress error! code = " + Util::toString(l_inflate_result) + ", size = " + Util::toString(l_blob_size));
+									}
 								}
-								
-								if (l_un_compress_result == Z_OK)
-								{
-									l_result_query = (const char*) l_decompress.data();
-								}
-								else
-								{
-									l_fly_server_log.step("InternetReadFile - uncompress error! error = " + Util::toString(l_un_compress_result));
-									dcassert(l_un_compress_result == Z_OK);
-								}
-								break;
+							}
+							if (l_decompress.empty() && !l_is_zlib_data && !l_is_gzip_data)
+							{
+								l_decompress.assign(l_blob_data, l_blob_data + l_blob_size);
+							}
+							if (!l_decompress.empty())
+							{
+								l_decompress.push_back(0);
+								l_result_query = reinterpret_cast<const char*>(l_decompress.data());
 							}
 						}
 					}
@@ -2529,7 +2543,7 @@ bool CFlyServerJSON::sendAntivirusCounter(bool p_is_only_db_if_network_error)
 					if (!j->m_ip_from_user.empty())
 						l_file_array_item["ip_user"] = j->m_ip_from_user;
 				}
-				if (j->m_hub_url.empty() && !j->m_hub_name.empty()) // Пишем имя если адреса не оказалось.
+				if (j->m_hub_url.empty() && !j->m_hub_name.empty()) // пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ.
 					l_file_array_item["hub"] = j->m_hub_name;
 				if (!j->m_hub_url.empty())
 					l_file_array_item["hub_url"] = j->m_hub_url;
@@ -2538,7 +2552,7 @@ bool CFlyServerJSON::sendAntivirusCounter(bool p_is_only_db_if_network_error)
 					if (!j->m_hub_name.empty())
 						l_file_array_item["hub"] = j->m_hub_name;
 				}
-				// Не нужен l_file_array_item["count_file"] = j->m_count_file;
+				// пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ l_file_array_item["count_file"] = j->m_count_file;
 				l_file_array_item["level"] = j->m_virus_level;
 				if (!j->m_virus_path.empty())
 				{
@@ -2732,15 +2746,15 @@ bool CFlyServerJSON::sendDownloadCounter(bool p_is_only_db_if_network_error)
 			}
 		}
 	}
-	// TODO - словить исключение и если нужно сохранить l_copy_array в базе.
-	// чтобы не потерять счетчики.
+	// TODO - пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ l_copy_array пїЅ пїЅпїЅпїЅпїЅ.
+	// пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ.
 	return l_is_error;
 }
 //======================================================================================================
 string CFlyServerJSON::connect(const CFlyServerKeyArray& p_fileInfoArray, bool p_is_fly_set_query, bool p_is_ext_info_for_single_file /* = false*/)
 {
 	dcassert(!p_fileInfoArray.empty());
-	bool l_is_error = login(); // Запросим свой ИД у сервера
+	bool l_is_error = login(); // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	string l_result_query;
 	if (l_is_error == false)
 	{
@@ -2754,7 +2768,7 @@ string CFlyServerJSON::connect(const CFlyServerKeyArray& p_fileInfoArray, bool p
 		int  l_count_cache  = 0;
 		bool is_all_file_only_ext_info = false;
 		bool is_all_file_only_counter  = false;
-		if (!p_is_fly_set_query) // Для get-запроса все записи хотят только расширенную инфу?
+		if (!p_is_fly_set_query) // пїЅпїЅпїЅ get-пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ?
 		{
 			for (auto i = p_fileInfoArray.cbegin(); i != p_fileInfoArray.cend(); ++i)
 			{
@@ -2768,7 +2782,7 @@ string CFlyServerJSON::connect(const CFlyServerKeyArray& p_fileInfoArray, bool p
 			if (l_count_only_counter == p_fileInfoArray.size())
 			{
 				is_all_file_only_counter = true;
-				l_root["only_counter"] = 1; // Поместим признак в корень чтобы не размножать запрос всем.
+				l_root["only_counter"] = 1; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ.
 			}
 			if (l_count_only_counter > 0 && l_count_only_counter != p_fileInfoArray.size())
 			{
@@ -2776,25 +2790,25 @@ string CFlyServerJSON::connect(const CFlyServerKeyArray& p_fileInfoArray, bool p
 			}
 			if (l_count_cache)
 			{
-				l_root["cache"] = l_count_cache;  // Для статистики TODO - позже убрать
+				l_root["cache"] = l_count_cache;  // пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ TODO - пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 			}
-			if (is_all_file_only_counter == false) // Если не просят только счетчики - проставим запросы на расширенную инфу
+			if (is_all_file_only_counter == false) // пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
 			{
-				if (l_count_only_ext_info == p_fileInfoArray.size()) // Полную инфу отдаем только для точечных запросов
+				if (l_count_only_ext_info == p_fileInfoArray.size()) // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 				{
 					is_all_file_only_ext_info = true;
-					l_root["only_ext_info"] = 1; // Поместим признак в корень чтобы не размножать запрос всем.
+					l_root["only_ext_info"] = 1; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ.
 				}
 				if (l_count_only_ext_info > 0 && l_count_only_ext_info != p_fileInfoArray.size())
 				{
-					l_root["different_ext_info"] = 1; // Поместим признак различных способов запроса к медиаинфе
-					// чтобы на стороне сервера не делать лишний поиск параметра для каждого файла.
+					l_root["different_ext_info"] = 1; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+					// пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ.
 				}
 			}
 		}
 		for (auto i = p_fileInfoArray.cbegin(); i != p_fileInfoArray.cend(); ++i)
 		{
-			// Начинаем создавать JSON пакет для передачи на сервер.
+			// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ JSON пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ.
 			const string l_tth_base32 = i->m_tth.toBase32();
 			dcassert(i->m_file_size && !l_tth_base32.empty());
 			if (!i->m_file_size || l_tth_base32.empty())
@@ -2807,8 +2821,8 @@ string CFlyServerJSON::connect(const CFlyServerKeyArray& p_fileInfoArray, bool p
 			Json::Value& l_array_item = l_arrays[l_count++];
 			l_array_item["tth"]  = l_tth_base32;
 			l_array_item["size"] = Util::toString(i->m_file_size);
-			// TODO - l_array_item["name"] = i->m_file_name;  имя пока не помнить. оно разное всегда
-			/* Проброс хитов и времени хеша/файла так-же исключаем
+			// TODO - l_array_item["name"] = i->m_file_name;  пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ. пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
+			/* пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ/пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ-пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 			if(i->m_hit)
 			 l_array_item["hit"] = i->m_hit;
 			if(i->m_time_hash)
@@ -2903,7 +2917,7 @@ string CFlyServerJSON::connect(const CFlyServerKeyArray& p_fileInfoArray, bool p
 									}
 									else
 									{
-										// Определяем, в какую секцию канала должна попасть информация.
+										// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ.
 										uint8_t l_channel_num = j->m_channel;
 										const auto l_ch_item = l_cache_audio_channel.find(l_channel_num);
 										Json::Value* l_channel_info = 0;
@@ -2932,7 +2946,7 @@ string CFlyServerJSON::connect(const CFlyServerKeyArray& p_fileInfoArray, bool p
 									}
 									else
 									{
-										// Определяем, в какую секцию канала должна попасть информация.
+										// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ.
 										uint8_t l_channel_num = j->m_channel;
 										const auto l_ch_item = l_cache_text_channel.find(l_channel_num);
 										Json::Value* l_channel_info = 0;
@@ -2958,7 +2972,7 @@ string CFlyServerJSON::connect(const CFlyServerKeyArray& p_fileInfoArray, bool p
 			}
 		}
 // string l_tmp;
-		if (l_count > 0)  // Есть что передавать на сервер?
+		if (l_count > 0)  // пїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ?
 		{
 #define FLYLINKDC_USE_HTTP_SERVER
 #ifdef FLYLINKDC_USE_HTTP_SERVER
@@ -3021,7 +3035,7 @@ string CFlyServerJSON::connect(const CFlyServerKeyArray& p_fileInfoArray, bool p
 //======================================================================================================
 static bool getEnumChannelKeyAndNames(string& p_inform, const Json::Value& p_item, const string& p_caption, const string& p_channel_name)
 {
-	// Соберем общий контент для каналов - TODO - фикс копипасты
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ - TODO - пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	const Json::Value& l_attrs_channel = p_item["channel-" + p_channel_name];
 	const auto l_keys = l_attrs_channel.getMemberNames();
 	if (!l_keys.empty())
@@ -3046,7 +3060,7 @@ string CFlyServerInfo::getMediaInfoAsText(const TTHValue& p_tth, int64_t p_file_
 {
 	CFlyServerKeyArray l_get_array;
 	CFlyServerKey l_info(p_tth, p_file_size);
-	l_info.m_only_ext_info = true; // Запросим с сервера только расширенную.
+	l_info.m_only_ext_info = true; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ.
 	l_get_array.push_back(l_info);
 	const string l_json_result = CFlyServerJSON::connect(l_get_array, false, true);
 #ifdef _DEBUG
@@ -3086,7 +3100,7 @@ string CFlyServerInfo::getMediaInfoAsText(const TTHValue& p_tth, int64_t p_file_
 			for (; getEnumChannelKeyAndNames(l_Infrom, l_attrs_audio, "Audio property for channel " + Util::toString(i) , Util::toString(i)); ++i)
 			{
 			}
-			if (i == 0) // Каналов нет?
+			if (i == 0) // пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ?
 			{
 				const string l_audio = l_attrs_audio["Inform"].asString();
 				if (!l_audio.empty())
@@ -3104,7 +3118,7 @@ string CFlyServerInfo::getMediaInfoAsText(const TTHValue& p_tth, int64_t p_file_
 			for (; getEnumChannelKeyAndNames(l_Infrom, l_attrs_text, "Text property for channel " + Util::toString(i), Util::toString(i)); ++i)
 			{
 			}
-			if (i == 0) // Каналов нет?
+			if (i == 0) // пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ?
 			{
 				const string l_text = l_attrs_text["Inform"].asString();
 				if (!l_text.empty())
@@ -3132,7 +3146,7 @@ static void getExtMediaInfo(const string& p_file_ext_wo_dot,
 	if (const size_t l_count = p_media_info_dll.Count_Get(p_stream_type))
 	{
 		int l_count_audio_channel = 0;
-		if (p_stream_type == MediaInfoLib::Stream_Audio  || p_stream_type ==  MediaInfoLib::Stream_Text) // Число каналов считаем только для Audio и Text
+		if (p_stream_type == MediaInfoLib::Stream_Audio  || p_stream_type ==  MediaInfoLib::Stream_Text) // пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ Audio пїЅ Text
 		{
 			l_count_audio_channel = l_count;
 		}
@@ -3152,7 +3166,7 @@ static void getExtMediaInfo(const string& p_file_ext_wo_dot,
 						l_ext_item.m_channel = uint8_t(j);
 						l_ext_item.m_param = l_str_param_name;
 						l_ext_item.m_value = Text::fromT(l_value);
-						// Inform - Сводный параметр - распарсим его для удаления лишних записей и пробелов.
+						// Inform - пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ.
 						if (l_str_param_name.compare(0, 6, "Inform", 6) == 0)
 						{
 							g_fly_server_config.ConvertInform(l_ext_item.m_value);
@@ -3162,24 +3176,24 @@ static void getExtMediaInfo(const string& p_file_ext_wo_dot,
 				}
 			}
 		}
-		if (p_compress_channel_attr && l_count_audio_channel > 1) // Если аудио-каналов несколько. дополнительно обработаем массив
+		if (p_compress_channel_attr && l_count_audio_channel > 1) // пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ-пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ. пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 		{
-			// Упакуем массив каналов если их несколько и значения признаков одинаковое для всех.
-			// Пока алгоритм обработки двух-проходный
-			// избыточные атрибуты для каналов пометим флажком чтобы не писать в базу.
-			// TODO - протестировать и физическое удаление лишних записей из вектора
+			// пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ.
+			// пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ-пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+			// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ.
+			// TODO - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 			std::map <std::string, std::pair< std::string, int> > l_channel_dup_filter;
-			// Параметр MI - пара - { значение параметра + счетчик различных вариантов для значений }
+			// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ MI - пїЅпїЅпїЅпїЅ - { пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ + пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ }
 			for (auto j = p_media.m_ext_array.cbegin(); j != p_media.m_ext_array.cend(); ++j)
-				// TODO [!] этот проход можно поместить внуть основного алгоритма заполнения.
-				// ведь нам известно заранее что на Audio - несколько каналов будет
+				// TODO [!] пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ.
+				// пїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅ Audio - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 			{
 				if (j->m_stream_type == p_stream_type)
 				{
 					auto& l_value = l_channel_dup_filter[j->m_param];
 					if (l_value.first != j->m_value)
 					{
-						if (l_value.first.empty()) // Первый параметр?
+						if (l_value.first.empty()) // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ?
 						{
 							l_value.first  = j->m_value;
 						}
@@ -3187,23 +3201,23 @@ static void getExtMediaInfo(const string& p_file_ext_wo_dot,
 					}
 				}
 			}
-			// Расчитали статистику по атрибутам.
-			// Отметим дубликатные записи флажком для последующего игнора при записи в базу данных.
+			// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ.
+			// пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ.
 			for (auto k = p_media.m_ext_array.begin(); k != p_media.m_ext_array.end(); ++k)
 			{
 				if (k->m_stream_type == p_stream_type)
 				{
 					auto l_channel_filter = l_channel_dup_filter.find(k->m_param);
 					dcassert(l_channel_filter != l_channel_dup_filter.end());
-					if (l_channel_filter->second.second == 1) // Для всех каналов значения параметра одинаковое?
+					if (l_channel_filter->second.second == 1) // пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ?
 					{
-						k->m_channel  = CFlyMediaInfo::ExtItem::channel_all; // Канал для первого вхождения делаем 255 (channel-All)
-						l_channel_filter->second.second = -1; // Скидываем счетчик в -1 чтобы на следуещем проходе удалить запись
+						k->m_channel  = CFlyMediaInfo::ExtItem::channel_all; // пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ 255 (channel-All)
+						l_channel_filter->second.second = -1; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ -1 пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 						continue;
 					}
-					if (l_channel_filter->second.second == -1) // Значение параметра уже перенесено в общий канал с кодом 255 на предыдущей итеррации
-						// а текущая запись избыточная и ее писать в базу не нужно.
-						// TODO - удаление из vector-а пока не делаем. позже эта запись всеравно не загрузится
+					if (l_channel_filter->second.second == -1) // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅ 255 пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+						// пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ.
+						// TODO - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ vector-пїЅ пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ. пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 					{
 						k->m_is_delete = true;
 					}
@@ -3265,15 +3279,15 @@ bool getMediaInfo(const string& p_name, CFlyMediaInfo& p_media, int64_t p_size, 
 		{
 			// const bool l_is_media_info_fly_server = g_fly_server_config.isSupportFile(l_file_ext, p_size);
 			// if (l_is_media_info_fly_server)
-			// Локально собираем медиаинфу всегда - чтобы проще расширять поддерживаемые расширения на флай сервере в будущем.
+			// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ - пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ.
 			{
-				// TODO - желательно звать со сжатием каналов первым (будет быстрее из-за подсказки p_compress_channel_attr)
-				getExtMediaInfo(l_file_ext, p_size, g_media_info_lib, MediaInfoLib::Stream_Audio, p_media, true); // Сожмем дубликаты в каналах
+				// TODO - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ-пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ p_compress_channel_attr)
+				getExtMediaInfo(l_file_ext, p_size, g_media_info_lib, MediaInfoLib::Stream_Audio, p_media, true); // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 				getExtMediaInfo(l_file_ext, p_size, g_media_info_lib, MediaInfoLib::Stream_General, p_media, false);
 				getExtMediaInfo(l_file_ext, p_size, g_media_info_lib, MediaInfoLib::Stream_Video, p_media, false);
 				getExtMediaInfo(l_file_ext, p_size, g_media_info_lib, MediaInfoLib::Stream_Text, p_media, true);
 				getExtMediaInfo(l_file_ext, p_size, g_media_info_lib, MediaInfoLib::Stream_Menu, p_media, false);
-				// Это пока лишнее
+				// пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 				//          getExtMediaInfo(l_file_ext, p_size, g_media_info_lib,MediaInfoLib::Stream_Chapters,p_media);
 //			getExtMediaInfo(l_file_ext, p_size, g_media_info_lib,MediaInfoLib::Stream_Image,p_media);
 			}
@@ -3281,7 +3295,7 @@ bool getMediaInfo(const string& p_name, CFlyMediaInfo& p_media, int64_t p_size, 
 			p_media.m_bitrate  = 0;
 			std::unordered_map<string, uint16_t> l_audio_dup_filter;
 			// AC-3, 5.1, 448 Kbps | AC-3, 5.1, 640 Kbps | TrueHD / AC-3, 5.1, 640 Kbps | AC-3, 5.1, 448 Kbps | AC-3, 5.1, 448 Kbps | AC-3, 5.1, 448 Kbps | AC-3, 5.1, 448 Kbps | AC-3, 5.1, 448 Kbps | AC-3, 5.1, 448 Kbps"
-			// Превращаем в
+			// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ
 			// AC-3, 5.1, 640 Kbps | TrueHD / AC-3, 5.1, 640 Kbps | AC-3, 5.1, 448 Kbps (x7)
 			// dcassert(audioCount);
 			for (size_t i = 0; i < audioCount; i++)
@@ -3451,7 +3465,7 @@ bool getMediaInfo(const string& p_name, CFlyMediaInfo& p_media, int64_t p_size, 
 	}
 	catch (...)
 	{
-		// TODO сюда не попадаем если SEH - найти способ и поправить
+		// TODO пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ SEH - пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 		Util::deleteRegistryValue(FLYLINKDC_REGISTRY_MEDIAINFO_FREEZE_KEY);
 		Util::setRegistryValueString(FLYLINKDC_REGISTRY_MEDIAINFO_CRASH_KEY, Text::toT(g_cur_mediainfo_file + " catch(...) "));
 		CFlyServerJSON::pushError(15, "error getmediainfo[2] " + g_cur_mediainfo_file + " TTH:" + p_tth.toBase32() + " catch(...)");

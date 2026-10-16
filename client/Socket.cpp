@@ -96,6 +96,7 @@ string SocketException::errorToString(int aError) noexcept
 		char tmp[64];
 		tmp[0] = 0;
 		_snprintf(tmp, _countof(tmp), CSTRING(UNKNOWN_ERROR), aError);
+		tmp[_countof(tmp) - 1] = 0;
 		msg = tmp;
 	}
 	
@@ -186,8 +187,8 @@ uint16_t Socket::bind(uint16_t aPort, string aIp /* = 0.0.0.0 */)
 		dcdebug("Bind failed, ip = %s error: %s\n", aIp.c_str(), l_error.c_str());
 #endif
 		sock_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-		//TODO - обработать ошибку с 10048 - занят порт
-		// - отключил спам
+		//TODO - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ 10048 - пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
+		// - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
 		// LogManager::message("uint16_t Socket::bind Error! IP = " + aIp + " aPort=" + Util::toString(aPort) + " Error = " + l_error);
 		check(::bind(m_sock, (sockaddr *)&sock_addr, sizeof(sock_addr)));
 	}
@@ -393,7 +394,7 @@ int Socket::getSocketOptInt(int p_option) const
 void Socket::setSocketOpt(int option, int val)
 {
 	dcassert(val > 0);
-	int len = sizeof(val); // x64 - x86 int разный размер
+	int len = sizeof(val); // x64 - x86 int пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 	check(::setsockopt(m_sock, SOL_SOCKET, option, (char*)&val, len));
 }
 
@@ -900,7 +901,8 @@ string Socket::getDefaultGateWay(boost::logic::tribool& p_is_wifi_router)
 	for (int iCnt = 0; (pHost->h_addr_list[iCnt]) && (iCnt < 10); ++iCnt)
 	{
 		memcpy(&socketAddress.sin_addr, pHost->h_addr_list[iCnt], pHost->h_length);
-		strcpy(ppszIPAddresses[iCnt], inet_ntoa(socketAddress.sin_addr));
+		_snprintf(ppszIPAddresses[iCnt], sizeof(ppszIPAddresses[iCnt]), "%s", inet_ntoa(socketAddress.sin_addr));
+		ppszIPAddresses[iCnt][sizeof(ppszIPAddresses[iCnt]) - 1] = 0;
 		
 		//printf("Found interface address: %s\n", ppszIPAddresses[iCnt]);
 	}

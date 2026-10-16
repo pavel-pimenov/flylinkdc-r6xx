@@ -673,13 +673,14 @@ XMLNode XMLNode::openFileHelper(FILEAPICSTR filename, XMLCSTR tag)
 			s2 = tag;
 			s3 = (char*)"'.\n";
 		}
-		sprintf(message,
+		_snprintf(message, sizeof(message),
 #ifdef _XMLWIDECHAR
-		        "XML Parsing error inside file '%S'.\n%S\nAt line %i, column %i.\n%s%S%s"
+		          "XML Parsing error inside file '%S'.\n%S\nAt line %i, column %i.\n%s%S%s"
 #else
-		        "XML Parsing error inside file '%s'.\n%s\nAt line %i, column %i.\n%s%s%s"
+		          "XML Parsing error inside file '%s'.\n%s\nAt line %i, column %i.\n%s%s%s"
 #endif
-		        , filename, XMLNode::getError(pResults.error), pResults.nLine, pResults.nColumn, s1, s2, s3);
+		          , filename, XMLNode::getError(pResults.error), pResults.nLine, pResults.nColumn, s1, s2, s3);
+		message[sizeof(message) - 1] = 0;
 		        
 		// display message
 #if defined(_XMLWINDOWS) && !defined(UNDER_CE) && !defined(_XMLPARSER_NO_MESSAGEBOX_)

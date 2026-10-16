@@ -208,6 +208,15 @@ VENDORS = (
         'select': 'vendor-manifests/snappy.txt',
     },
     {
+        'name': 'sentry-native',
+        'url': 'https://github.com/getsentry/sentry-native/archive/refs/tags/0.7.20.tar.gz',
+        'local': 'sentry-native',
+        'strip': 1,
+        'select': 'vendor-manifests/sentry-native.txt',
+        'version': {'paths': ['include/sentry.h'],
+                    'pattern': r'#define\s+SENTRY_SDK_VERSION\s+"([^"]+)"'},
+    },
+    {
         'name': 'selene',
         'url': 'https://github.com/jeremyong/Selene/archive/{pin}.tar.gz',
         'pin': '5cde61c6c021ad1c096b03cc41c7d2325e0ca4eb',

@@ -43,6 +43,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LevelDB", "leveldb\LevelDB_
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MakeDefs", "MakeDefs\MakeDefs.vcxproj", "{AEF82786-9DA2-4CDF-8602-02643CAFC727}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sentry-native", "sentry-native\sentry-native_2022.vcxproj", "{7F4C5A26-9B1D-4E6A-8C3F-2A5E1D0B7C94}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -101,6 +103,10 @@ Global
 		{AEF82786-9DA2-4CDF-8602-02643CAFC727}.Debug|x64.Build.0 = Debug|x64
 		{AEF82786-9DA2-4CDF-8602-02643CAFC727}.Release|x64.ActiveCfg = Release|x64
 		{AEF82786-9DA2-4CDF-8602-02643CAFC727}.Release|x64.Build.0 = Release|x64
+		{7F4C5A26-9B1D-4E6A-8C3F-2A5E1D0B7C94}.Debug|x64.ActiveCfg = Debug|x64
+		{7F4C5A26-9B1D-4E6A-8C3F-2A5E1D0B7C94}.Debug|x64.Build.0 = Debug|x64
+		{7F4C5A26-9B1D-4E6A-8C3F-2A5E1D0B7C94}.Release|x64.ActiveCfg = Release|x64
+		{7F4C5A26-9B1D-4E6A-8C3F-2A5E1D0B7C94}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

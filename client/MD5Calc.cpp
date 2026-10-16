@@ -26,7 +26,7 @@ char* MD5Calc::CalcMD5FromFile(const wchar_t *s8_Path)
 	const HANDLE h_File = CreateFile(s8_Path, GENERIC_READ, FILE_SHARE_READ, 0,
 	                                 OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 	                                 
-	if (h_File == INVALID_HANDLE_VALUE)
+	if (h_File != INVALID_HANDLE_VALUE)
 	{
 		// http://msdn.microsoft.com/en-us/library/aa364957(v=VS.85).aspx
 		int s32_Size = GetFileSize(h_File, 0);
@@ -156,8 +156,12 @@ char* MD5Calc::MD5FinalToString()
 	char s8_Temp[5];
 	for (int i = 0; i < 16; i++)
 	{
-		sprintf(s8_Temp, "%02X", signature[i]);
-		strcat(ms8_MD5, s8_Temp);
+		_snprintf(s8_Temp, sizeof(s8_Temp), "%02X", signature[i]);
+		s8_Temp[sizeof(s8_Temp) - 1] = 0;
+		if (strlen(ms8_MD5) + strlen(s8_Temp) < sizeof(ms8_MD5))
+			strcat(ms8_MD5, s8_Temp);
+		else
+			break;
 	}
 	
 	return ms8_MD5;

@@ -81,7 +81,7 @@ void FinishedManager::rotation_items(const FinishedItemPtr& p_item, eType p_type
 			fly_fire1(FinishedManagerListener::RemovedDl(), *l_item_array.cbegin());
 		else
 			fly_fire1(FinishedManagerListener::RemovedUl(), *l_item_array.cbegin());
-		delete *l_item_array.cbegin(); // Мутное место
+		delete *l_item_array.cbegin(); // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 		l_item_array.pop_front();
 	}
 #endif // FLYLINKDC_USE_ROTATION_FINISHED_MANAGER
@@ -150,7 +150,8 @@ string FinishedManager::log(const CID& p_CID, const string& p_path, const string
 		buf[0] = 0;
 		_snprintf(&buf[0], BUF_SIZE, p_message.c_str(), l_file_name.c_str(),
 		          Util::toString(ClientManager::getNicks(p_CID, BaseUtil::emptyString)).c_str());
-		          
+		if (BUF_SIZE > 0)
+			buf[BUF_SIZE - 1] = 0;
 		LogManager::message(&buf[0]);
 	}
 	return l_file_name;

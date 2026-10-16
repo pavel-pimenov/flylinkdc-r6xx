@@ -231,7 +231,11 @@ class AdcCommand
 		}
 		static uint32_t toSID(const string& aSID)
 		{
-			return *reinterpret_cast<const uint32_t*>(aSID.data());
+			if (aSID.size() < sizeof(uint32_t))
+				return 0;
+			uint32_t l_sid;
+			memcpy(&l_sid, aSID.data(), sizeof(uint32_t));
+			return l_sid;
 		}
 		static string fromSID(const uint32_t aSID)
 		{

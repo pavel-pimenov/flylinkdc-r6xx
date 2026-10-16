@@ -247,8 +247,10 @@ bool SearchParam::is_parse_nmdc_search(const string& p_raw_search)
 		m_error_level = 5;
 		return false;
 	}
-	const int l_type_search = atoi(param.c_str() + i);
-	m_file_type = Search::TypeModes(l_type_search - 1);
+	const int l_type_search = atoi(param.c_str() + i) - 1;
+	m_file_type = (l_type_search >= 0 && l_type_search < Search::TYPE_LAST_MODE)
+	              ? static_cast<Search::TypeModes>(l_type_search)
+	              : Search::TYPE_ANY;
 	i = j + 1;
 	
 	if (m_file_type == Search::TYPE_TTH && (param.size() - i) == 39 + 4) // 39+4 = strlen("TTH:VGUKIR6NLP6LQB7P5NDCZGUSR3MFHRMRO3VJLWY")

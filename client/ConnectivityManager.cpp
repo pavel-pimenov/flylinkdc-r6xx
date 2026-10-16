@@ -84,6 +84,7 @@ void ConnectivityManager::detectConnection()
 		
 		AutoArray<char> buf(512);
 		_snprintf(buf.data(), 512, CSTRING(UNABLE_TO_OPEN_PORT), e.getError().c_str());
+		buf.data()[511] = 0;
 		log(buf.data());
 		// FLYLINKDC_USE_DEAD_CODE fly_fire1(ConnectivityManagerListener::Finished());
 		g_is_running = false;

@@ -425,6 +425,7 @@ bool HashManager::Hasher::fastHash(const string& fname, uint8_t* buf, unsigned p
 					if (bRet == FALSE)
 					{
 						dcassert(0);
+						CloseHandle(h);
 						return false;
 					}
 					p_size = x.QuadPart; // fix https://github.com/pavel-pimenov/flylinkdc-r5xx/issues/14

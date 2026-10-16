@@ -201,7 +201,8 @@ CFontEx::CFontEx():handle(NULL)
 	lf.lfClipPrecision=CLIP_DEFAULT_PRECIS;
 	lf.lfQuality=PROOF_QUALITY;
 	lf.lfPitchAndFamily=VARIABLE_PITCH | FF_ROMAN;
-	strcpy(lf.lfFaceName, "MS Sans Serif");
+	_snprintf(lf.lfFaceName, sizeof(lf.lfFaceName), "%s", "MS Sans Serif");
+	lf.lfFaceName[sizeof(lf.lfFaceName) - 1] = 0;
 	
 	handle=CreateFontIndirect(&lf);
 	fontColor=0;
@@ -222,7 +223,8 @@ CFontEx::CFontEx(const CString & facename)
 	lf.lfClipPrecision=CLIP_DEFAULT_PRECIS;
 	lf.lfQuality=PROOF_QUALITY;
 	lf.lfPitchAndFamily=VARIABLE_PITCH | FF_ROMAN;
-	strcpy(lf.lfFaceName, (LPCSTR)facename);
+	_snprintf(lf.lfFaceName, sizeof(lf.lfFaceName), "%s", (LPCSTR)facename);
+	lf.lfFaceName[sizeof(lf.lfFaceName) - 1] = 0;
 	
 	handle=CreateFontIndirect(&lf);
 	
@@ -355,7 +357,8 @@ void CFontEx::set_PitchAndFamily(long paf)
 void CFontEx::set_FaceName(CString facename)
 {
 	DeleteObject(handle);
-	strcpy(lf.lfFaceName,(LPCSTR)facename);
+	_snprintf(lf.lfFaceName, sizeof(lf.lfFaceName), "%s", (LPCSTR)facename);
+	lf.lfFaceName[sizeof(lf.lfFaceName) - 1] = 0;
 	handle=CreateFontIndirect(&lf);
 	change(this);
 }

@@ -57,7 +57,7 @@ UploadManager::~UploadManager()
 	ClientManager::getInstance()->removeListener(this);
 	{
 		CFlyLock(m_csQueue);
-		m_slotQueue.clear(); // TODO - унести зачистку раньше в метод shutdown
+		m_slotQueue.clear(); // TODO - пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅ shutdown
 	}
 	while (true)
 	{
@@ -101,15 +101,14 @@ bool UploadManager::hasUpload(const UserConnection* p_newLeacher, const string& 
 			{
 #if defined(NIGHT_BUILD) || defined(_DEBUG) || defined(FLYLINKDC_BETA)
 				char bufNewLeacherShare[64];
-				bufNewLeacherShare[0] = 0;
 				char bufUploadUserShare[64];
-				bufUploadUserShare[0] = 0;
 				char bufShareDelta[64];
-				bufShareDelta[0] = 0;
-				
 				_snprintf(bufNewLeacherShare, sizeof(bufNewLeacherShare), "%I64d", newLeacherShare);
 				_snprintf(bufUploadUserShare, sizeof(bufUploadUserShare), "%I64d", uploadUserShare);
 				_snprintf(bufShareDelta, sizeof(bufShareDelta), "%I64d", int64_t(std::abs(long(newLeacherShare - uploadUserShare))));
+				bufNewLeacherShare[_countof(bufNewLeacherShare) - 1] = 0;
+				bufUploadUserShare[_countof(bufUploadUserShare) - 1] = 0;
+				bufShareDelta[_countof(bufShareDelta) - 1] = 0;
 #if 0
 				LogManager::ddos_message("[Drop duplicated connection] From IP =" + newLeacherIp
 				                         + ", share con = " + bufNewLeacherShare
@@ -218,7 +217,7 @@ bool UploadManager::prepareFile(UserConnection* aSource, const string& aType, co
 				{
 					/*
 					Fix
-					[2017-10-01 16:20:21] <MikeKMV> оказывается флай умеет флудить
+					[2017-10-01 16:20:21] <MikeKMV> пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 					[2017-10-01 16:20:25] <MikeKMV> Client: [Incoming][194.186.25.22]       $ADCGET list /music/Vangelis/[1988]\ Vangelis\ -\ Direct/ 0 -1 ZL1
 					Client: [Outgoing][194.186.25.22]       $ADCSND list /music/Vangelis/[1988]\ Vangelis\ -\ Direct/ 0 2029 ZL1|
 					Client: [Incoming][194.186.25.22]       $ADCGET list /music/Vangelis/[1988]\ Vangelis\ -\ Direct/ 0 -1 ZL1
@@ -1021,7 +1020,7 @@ void UploadManager::removeConnection(UserConnection* aSource, bool p_is_remove_l
 void UploadManager::notifyQueuedUsers(int64_t p_tick)
 {
 	dcassert(!ClientManager::isBeforeShutdown());
-	// Сверху лочится через m_csQueue
+	// пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ m_csQueue
 	if (m_slotQueue.empty())
 		return; //no users to notify
 	vector<WaitingUser> l_notifyList;
@@ -1039,7 +1038,7 @@ void UploadManager::notifyQueuedUsers(int64_t p_tick)
 				clearWaitingFilesL(wu);
 				if (g_count_WaitingUsersFrame)
 				{
-					fly_fire1(UploadManagerListener::QueueRemove(), wu.getUser()); // TODO унести из лока?
+					fly_fire1(UploadManagerListener::QueueRemove(), wu.getUser()); // TODO пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ?
 				}
 				if (wu.getUser()->isOnline())
 				{
@@ -1266,7 +1265,7 @@ void UploadManager::on(TimerManagerListener::Second, uint64_t aTick) noexcept
 		if (!l_tickList.empty())
 		{
 			fly_fire1(UploadManagerListener::Tick(), l_tickList);
-			// TODO - Выполняем под локом
+			// TODO - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 		}
 	}
 	notifyQueuedUsers(aTick);

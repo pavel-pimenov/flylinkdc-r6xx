@@ -626,7 +626,7 @@ bool AutoUpdate::prepareFile(const AutoUpdateFile& file, const string& tempFolde
 		fy.close();
 		*/
 		// Unpack if need
-		size_t outSize = file.m_size + 1;
+		size_t outSize = file.m_size;
 		unique_ptr<byte[]> out(new byte[file.m_size]);
 		bool unPacked = false;
 		if (file.m_packer == AutoUpdateFile::Zip)

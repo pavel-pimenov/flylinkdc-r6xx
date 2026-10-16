@@ -136,7 +136,7 @@ void ClientManager::shutdown()
 {
 	dcassert(!isShutdown());
 	::g_isShutdown = true;
-	::g_isBeforeShutdown = true; // Для надежности
+	::g_isBeforeShutdown = true; // пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 #ifdef FLYLINKDC_USE_ASYN_USER_UPDATE
 	{
 		CFlyWriteLock(*g_csOnlineUsersUpdateQueue);
@@ -230,7 +230,7 @@ void ClientManager::putClient(Client* p_client)
 		CFlyWriteLock(*g_csClients);
 		g_clients.erase(p_client->getHubUrl());
 	}
-	if (!isBeforeShutdown()) // При закрытии не шлем уведомление (на него подписан только фрейм поиска)
+	if (!isBeforeShutdown()) // пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ)
 	{
 		fly_fire1(ClientManagerListener::ClientDisconnected(), p_client);
 	}
@@ -312,7 +312,7 @@ StringList ClientManager::getAntivirusNicks(const CID& p_cid)
 	const auto op = g_onlineUsers.equal_range(p_cid);
 	for (auto i = op.first; i != op.second; ++i)
 	{
-		// Убрал обращение к базе данных - вешаемся
+		// пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 		//if (i->second->getIdentity().calcVirusType() & ~Identity::VT_CALC_AVDB)
 		{
 			ret.insert(i->second->getIdentity().getVirusDesc());
@@ -555,13 +555,13 @@ UserPtr ClientManager::getUser(const string& p_Nick, const string& p_HubURL, uin
 	{
 		const auto &l_user = l_result_insert.first->second;
 		l_user->setLastNick(p_Nick);
-		l_user->setFlag(User::NMDC); // TODO тут так можно? L: тут так обязательно нужно - этот метод только для nmdc протокола!
-		// TODO-2 зачем второй раз прописывать флаг на NMDC
+		l_user->setFlag(User::NMDC); // TODO пїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ? L: пїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ - пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ nmdc пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ!
+		// TODO-2 пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅ NMDC
 #ifdef FLYLINKDC_USE_LASTIP_AND_USER_RATIO
 		//dcassert(l_user->getHubID());
 		if (!l_user->getHubID())
 		{
-			l_user->setHubID(p_HubID); // TODO-3 а это зачем повторно. оно разве может поменяться?
+			l_user->setHubID(p_HubID); // TODO-3 пїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ. пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ?
 		}
 #endif
 		return l_user;
@@ -760,8 +760,8 @@ void ClientManager::connect(const HintedUser& p_user, const string& p_token, boo
 			p_is_active_client = u->getClientBase().isActive();
 			if (p_is_active_client && p_is_force_passive)
 			{
-				// (&u->getClientBase())->resendMyINFO(false,false); // Вернем активный режим
-				// Не делаем это - флуд получается
+				// (&u->getClientBase())->resendMyINFO(false,false); // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
+				// пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ - пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 			}
 		}
 	}
@@ -772,8 +772,8 @@ void ClientManager::privateMessage(const HintedUser& user, const string& msg, bo
 	const bool priv = FavoriteManager::isPrivate(user.hint);
 	OnlineUserPtr u;
 	{
-		// # u->getClientBase().privateMessage Нельзя выполнять под локом - там внутри есть fire
-		// Есть дампы от Mikhail Korbakov где вешаемся в дедлоке.
+		// # u->getClientBase().privateMessage пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ - пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ fire
+		// пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ Mikhail Korbakov пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ.
 		// http://www.flickr.com/photos/96019675@N02/11424193335/
 		CFlyReadLock(*g_csOnlineUsers);
 		u = findOnlineUserL(user, priv);
@@ -813,7 +813,7 @@ void ClientManager::userCommandL(const HintedUser& hintedUser, const UserCommand
 		l_client.getHubIdentity().getParams(params, "hub", false);
 		l_client.getMyIdentity().getParams(params, "my", compatibility);
 		l_client.escapeParams(params);
-		l_client.sendUserCmd(uc, params); // TODO - сеть зовем под Lock-ом
+		l_client.sendUserCmd(uc, params); // TODO - пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ Lock-пїЅпїЅ
 	}
 }
 
@@ -1290,7 +1290,7 @@ void ClientManager::updateNick(const OnlineUserPtr& p_online_user)
 	{
 		const string& l_nick_from_identity = p_online_user->getIdentity().getNick();
 		p_online_user->getUser()->setLastNick(l_nick_from_identity);
-		dcassert(p_online_user->getUser()->getLastNick() != l_nick_from_identity); // TODO поймать когда это бывает?
+		dcassert(p_online_user->getUser()->getLastNick() != l_nick_from_identity); // TODO пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ?
 	}
 	else
 	{
@@ -1399,7 +1399,7 @@ void ClientManager::connectionTimeout(const UserPtr& p)
 		{
 			auto ou = i->second;
 			
-			const auto connectionTimeouts = ou->getIdentity().incConnectionTimeouts(); // 8 бит не мало?
+			const auto connectionTimeouts = ou->getIdentity().incConnectionTimeouts(); // 8 пїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ?
 			
 			if (SETTING(ACCEPTED_TIMEOUTS) == 0)
 				return;
@@ -1459,6 +1459,7 @@ void ClientManager::checkCheating(const UserPtr& p, DirectoryListing* dl)
 				char buf[128];
 				buf[0] = 0;
 				_snprintf(buf, _countof(buf), CSTRING(CHECK_INFLATED), Util::toString(qwe).c_str()); //-V111
+				buf[_countof(buf) - 1] = 0;
 				detectString += buf;
 			}
 			detectString += STRING(CHECK_SHOW_REAL_SHARE);
@@ -1474,7 +1475,7 @@ void ClientManager::checkCheating(const UserPtr& p, DirectoryListing* dl)
 		
 		client = &(ou->getClient());
 	}
-	//client->updatedMyINFO(ou); // тут тоже не нужна нотификация всем подписчикам
+	//client->updatedMyINFO(ou); // пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	cheatMessage(client, report);
 }
 #endif // FLYLINKDC_USE_DETECT_CHEATING
