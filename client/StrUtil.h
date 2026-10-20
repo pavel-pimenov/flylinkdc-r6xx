@@ -3,6 +3,7 @@
 
 #include "Text.h"
 #include <locale.h>
+#include <limits>
 
 #ifdef _UNICODE
 #define toStringT toStringW
@@ -39,7 +40,8 @@ inline int_type stringToInt(const char_type* s)
 	// the value is accumulated in the unsigned domain: an overflow of a signed
 	// type would be undefined behaviour, the result is saturated instead
 	using utype = typename std::make_unsigned<int_type>::type;
-	const utype l_sign_bit = static_cast<utype>(~(utype)0) >> (sizeof(utype) * 8 - 1);
+	// the sign bit of the type: 0x80000000 for a 32 bit type
+	constexpr utype l_sign_bit = static_cast<utype>(std::numeric_limits<utype>::max() / 2 + 1);
 	const utype l_max = std::is_signed<int_type>::value
 	                    ? (negative ? l_sign_bit : (l_sign_bit - 1))
 	                    : static_cast<utype>(~(utype)0);

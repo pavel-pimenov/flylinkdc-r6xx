@@ -120,3 +120,12 @@
 2026-10-20 02:34:26,Release,Rebuild,FlyLinkDC_2022.sln,2,15,0,0,20761600,0,FINAL Release rebuild
 2026-10-20 02:41:24,Debug,Build,FlyLinkDC_2022.sln,0,56,0,0,54908928,0,final state
 2026-10-20 02:41:54,Release,Build,FlyLinkDC_2022.sln,0,48,0,0,20761600,0,final state
+2026-10-20 05:50:11,Debug,Build,FlyLinkDC_2022.sln,0,02,0,0,54908928,0,strutil sign bit fix
+2026-10-20 05:50:12,Release,Build,FlyLinkDC_2022.sln,0,02,0,0,20761600,0,strutil sign bit fix
+2026-10-20 05:52:50,Debug,Build,FlyLinkDC_2022.sln,1,09,1,0,54910464,0,util toint saturation
+2026-10-20 05:54:33,Debug,Build,FlyLinkDC_2022.sln,1,07,2,0,54910976,0,util toint saturation (no warning)
+2026-10-20 05:55:40,Release,Build,FlyLinkDC_2022.sln,1,08,0,0,20762624,0,util toint saturation (no warning)
+2026-10-20 05:57:27,Debug,Build,FlyLinkDC_2022.sln,1,10,0,0,54910464,0,util toint saturation (final)
+2026-10-20 05:58:18,Release,Build,FlyLinkDC_2022.sln,0,80,0,0,20762624,0,util toint saturation (final)
+2026-10-20 05:58:47,Debug,Build,FlyLinkDC_2022.sln,0,02,0,0,54910464,0,final
+2026-10-20 05:58:48,Release,Build,FlyLinkDC_2022.sln,0,02,0,0,20762624,0,final

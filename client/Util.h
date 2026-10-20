@@ -35,6 +35,8 @@
 #include "LogManager.h"
 #include "BaseUtil.h"
 #include <algorithm>
+#include <type_traits>
+#include <limits>
 
 # define PATH_SEPARATOR '\\'
 # define PATH_SEPARATOR_STR "\\"
@@ -606,13 +608,64 @@ class Util : public BaseUtil
 			return toInt64(aString.c_str());
 		}
 		
+		// Parses a decimal number. The value is saturated at the limits of the type:
+		// the overflow of a signed type would be undefined behaviour (atoi()).
+		template<typename int_type, typename char_type>
+		static int_type stringToInt(const char_type* p_text)
+		{
+			if (p_text == nullptr)
+				return 0;
+			while (isWhiteSpace(*p_text))
+				p_text++;
+			bool l_negative = false;
+			if (std::is_signed<int_type>::value && *p_text == '-')
+			{
+				l_negative = true;
+				p_text++;
+			}
+			else if (*p_text == '+')
+				p_text++;
+			using utype = typename std::make_unsigned<int_type>::type;
+			// the sign bit of the type: 0x80000000 for a 32 bit type
+			// (the value is a compile time constant, but the analyzer does not see it)
+			constexpr utype l_sign_bit = static_cast<utype>(std::numeric_limits<utype>::max() / 2 + 1);
+			const utype l_max = std::is_signed<int_type>::value
+			                    ? (l_negative ? l_sign_bit : (l_sign_bit - 1))
+			                    : static_cast<utype>(~(utype)0);
+			utype l_result = 0;
+			while (*p_text >= '0' && *p_text <= '9')
+			{
+				const utype l_digit = static_cast<utype>(*p_text - '0');
+				if (l_result > (l_max - l_digit) / 10)
+				{
+					l_result = l_max;
+					p_text++;
+					break;
+				}
+				l_result = l_result * 10 + l_digit;
+				p_text++;
+			}
+			if (!std::is_signed<int_type>::value)
+				return static_cast<int_type>(l_result);
+			if (l_negative)
+			{
+				if (l_result == 0)
+					return static_cast<int_type>(0);
+				// the magnitude of the most negative value is one bigger than the
+				// magnitude of the most positive one
+				return static_cast<int_type>(-static_cast<int_type>(l_result - 1) - 1);
+			}
+			return static_cast<int_type>(l_result);
+		}
+		
+		static bool isWhiteSpace(int c)
+		{
+			return c == ' ' || c == '\f' || c == '\n' || c == '\r' || c == '\t' || c == '\v';
+		}
+		
 		static int64_t toInt64(const char* aString)
 		{
-#ifdef _WIN32
-			return _atoi64(aString);
-#else
-			return strtoll(aString, (char **)NULL, 10);
-#endif
+			return stringToInt<int64_t, char>(aString);
 		}
 		
 		static int64_t toInt64(const wstring& aString)
@@ -625,11 +678,7 @@ class Util : public BaseUtil
 		
 		static int64_t toInt64(const wchar_t* aString)
 		{
-#ifdef _WIN32
-			return _wtoi64(aString);
-#else
-			// TODO return strtoll(aString, (char **)NULL, 10);
-#endif
+			return stringToInt<int64_t, wchar_t>(aString);
 		}
 		
 		static int toInt(const string& aString)
@@ -642,7 +691,7 @@ class Util : public BaseUtil
 		
 		static int toInt(const char* aString)
 		{
-			return atoi(aString);
+			return stringToInt<int, char>(aString);
 		}
 		
 		static int toInt(const wstring& aString)
@@ -655,7 +704,7 @@ class Util : public BaseUtil
 		
 		static int toInt(const wchar_t* aString)
 		{
-			return _wtoi(aString);
+			return stringToInt<int, wchar_t>(aString);
 		}
 		
 		static uint32_t toUInt32(const string& aString)
