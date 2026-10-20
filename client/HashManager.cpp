@@ -81,6 +81,10 @@ bool HashManager::StreamStore::loadTree(const string& p_filePath, TigerTree& p_T
 				return false;
 			if (uint64_t(l_fileSize) != h.fileSize || uint64_t(l_timeStamp) != uint64_t(h.timeStamp) || !validateCheckSum(h))
 				return false;
+			// the header is a file of the user: the block size must be sane, otherwise
+			// the calculation below divides by zero or allocates a huge buffer
+			if (h.blockSize <= 0 || h.fileSize <= 0)
+				return false;
 			const size_t l_datalen = TigerTree::calcBlocks(l_fileSize, h.blockSize) * TTHValue::BYTES;
 			l_sz = l_datalen;
 			AutoArray<uint8_t> buf(l_datalen);
@@ -129,9 +133,13 @@ bool HashManager::StreamStore::saveTree(const string& p_filePath, const TigerTre
 		h.blockSize = p_Tree.getBlockSize();
 		setCheckSum(h);
 		{
+			// the file can be smaller than the block size: there is no leaf then
+			const auto& l_leaves = p_Tree.getLeaves();
+			if (l_leaves.empty())
+				return false;
 			File stream(p_filePath + ":" + g_streamName, File::WRITE, File::CREATE | File::TRUNCATE);
 			stream.write(&h, sizeof(TTHStreamHeader));
-			stream.write(p_Tree.getLeaves()[0].data, p_Tree.getLeaves().size() * TTHValue::BYTES);
+			stream.write(l_leaves[0].data, l_leaves.size() * TTHValue::BYTES);
 		}
 		File::setTimeStamp(p_filePath, h.timeStamp);
 	}
@@ -436,6 +444,16 @@ bool HashManager::Hasher::fastHash(const string& fname, uint8_t* buf, unsigned p
 	}
 	DWORD hn = 0;
 	DWORD rn = 0;
+	// the buffer must be big enough for the two halves that are used below
+	if (buf == nullptr || p_buf_size < g_HashBufferSize * 2)
+	{
+		dcassert(0);
+		// the handle of the file must be closed here: the label "cleanup" is not
+		// reached on this path
+		if (h != INVALID_HANDLE_VALUE)
+			::CloseHandle(h);
+		return false;
+	}
 	uint8_t* hbuf = buf + g_HashBufferSize;
 	uint8_t* rbuf = buf;
 	
@@ -641,7 +659,9 @@ int HashManager::Hasher::run()
 					{
 						dcassert(g_HashBufferSize);
 						l_is_bad_alloc = false;
-						l_buf = new uint8_t[g_HashBufferSize];
+						// fastHash() uses two buffers: the data is read into the second half
+						// and processed into the first one
+						l_buf = new uint8_t[g_HashBufferSize * 2];
 					}
 					catch (std::bad_alloc&)
 					{
@@ -656,7 +676,7 @@ int HashManager::Hasher::run()
 					}
 				}
 				while (l_is_bad_alloc == true);
-				l_buf_size = g_HashBufferSize;
+				l_buf_size = g_HashBufferSize * 2;
 			}
 			try
 			{

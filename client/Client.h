@@ -285,7 +285,8 @@ class Client : public ClientBase, public Speaker<ClientListener>, public Buffere
 		{
 			getMyIdentity().setNick(p_nick);
 		}
-		const string& getMyNick() const
+		// the nick is returned by value: the identity of the hub can change it
+		string getMyNick() const
 		{
 			return getMyIdentity().getNick();
 		}

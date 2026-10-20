@@ -69,22 +69,26 @@ int ExListViewCtrl::moveItem(int oldPos, int newPos)
 
 int ExListViewCtrl::insert(TStringList& aList, int iImage, LPARAM lParam)
 {
+	if (aList.empty())
+		return -1;
 	LocalArray<TCHAR, 128> buf;
 	int loc = 0;
 	const int count = GetItemCount();
 	LVITEM a = {0};
 	a.mask = LVIF_IMAGE | LVIF_INDENT | LVIF_PARAM | LVIF_STATE | LVIF_TEXT;
 	a.iItem = -1;
-	a.iSubItem = sortColumn;
+	// the sort column comes from the settings file - it must be a valid index of the list
+	const int l_sortColumn = (sortColumn >= 0 && sortColumn < (int)aList.size()) ? sortColumn : -1;
+	a.iSubItem = l_sortColumn;
 	a.iImage = iImage;
 	a.state = 0;
 	a.stateMask = 0;
 	a.lParam = lParam;
 	a.iIndent = 0;
-	a.pszText = const_cast<TCHAR*>(sortColumn == -1 ? aList[0].c_str() : aList[sortColumn].c_str());
-	a.cchTextMax = sortColumn == -1 ? aList[0].size() : aList[sortColumn].size(); //-V103
+	a.pszText = const_cast<TCHAR*>(l_sortColumn == -1 ? aList[0].c_str() : aList[l_sortColumn].c_str());
+	a.cchTextMax = l_sortColumn == -1 ? aList[0].size() : aList[l_sortColumn].size(); //-V103
 	
-	if (sortColumn == -1)
+	if (l_sortColumn == -1)
 	{
 		loc = count;
 	}
@@ -95,7 +99,7 @@ int ExListViewCtrl::insert(TStringList& aList, int iImage, LPARAM lParam)
 	else
 	{
 	
-		const tstring& b = aList[sortColumn];
+		const tstring& b = aList[l_sortColumn];
 		const int c = _tstoi(b.c_str());
 		const double f = _tstof(b.c_str());
 		LPARAM data = NULL;
@@ -117,22 +121,22 @@ int ExListViewCtrl::insert(TStringList& aList, int iImage, LPARAM lParam)
 			
 			if (comp == SORT_STRING)
 			{
-				GetItemText(loc, sortColumn, buf.data(), 128);
+				GetItemText(loc, l_sortColumn, buf.data(), 128);
 				comp = compare(b, tstring(buf.data()));
 			}
 			else if (comp == SORT_STRING_NOCASE)
 			{
-				GetItemText(loc, sortColumn, buf.data(), 128);
+				GetItemText(loc, l_sortColumn, buf.data(), 128);
 				comp =  stricmp(b.c_str(), buf.data());
 			}
 			else if (comp == SORT_INT)
 			{
-				GetItemText(loc, sortColumn, buf.data(), 128);
+				GetItemText(loc, l_sortColumn, buf.data(), 128);
 				comp = compare(c, _tstoi(buf.data()));
 			}
 			else if (comp == SORT_FLOAT)
 			{
-				GetItemText(loc, sortColumn, buf.data(), 128);
+				GetItemText(loc, l_sortColumn, buf.data(), 128);
 				comp = compare(f, _tstof(buf.data()));
 			}
 			

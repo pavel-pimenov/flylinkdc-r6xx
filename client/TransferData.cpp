@@ -37,7 +37,8 @@ void TransferData::init(libtorrent::torrent_status const& s)
 	switch (s.state)
 	{
 		case  libtorrent::torrent_status::checking_files:
-			m_status_string += Text::tformat(TSTRING(CHECKED_BYTES), "", m_percent, "");
+			// the format string is wide: the arguments of the %s conversion must be wide too
+			m_status_string += Text::tformat(TSTRING(CHECKED_BYTES), L"", m_percent, L"");
 			break;
 		case  libtorrent::torrent_status::downloading_metadata:
 			m_status_string += TSTRING(DOWNLOADING_METADATA);
@@ -69,10 +70,11 @@ void TransferData::init(libtorrent::torrent_status const& s)
 		                    + _T("(Seedind: ") + Text::toT(Util::formatSeconds(s.seeding_duration.count())) + _T(")");
 	}
 	if (s.state == libtorrent::torrent_status::downloading ||
-	        s.state == libtorrent::torrent_status::finished)
+	        s.state == libtorrent::torrent_status::finished ||
+	        s.state == libtorrent::torrent_status::seeding)
 	{
 		const tstring l_peer_seed = _T(" Peers:") + Util::toStringT(s.num_peers) + _T(" Seeds:") + Util::toStringT(s.num_seeds) + _T(" ");
-		if (s.state == libtorrent::torrent_status::seeding) // TODO - false
+		if (s.state == libtorrent::torrent_status::seeding)
 		{
 			m_status_string = l_peer_seed + _T("  Download: ") +
 			                  Util::formatBytesW(s.total_download) + _T(" Upload: ") +

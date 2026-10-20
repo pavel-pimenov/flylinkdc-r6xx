@@ -63,14 +63,15 @@ LRESULT DCLSTPage::onInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lPara
 	magnetClick.AddString(CTSTRING(DOWNLOAD));
 	magnetClick.AddString(CTSTRING(OPEN));
 	
-//	if (SETTING(DCLST_ASK) == 1)
-//	{
-//		magnetClick.SetCurSel(0);
-//	}
-//	else
+	if (BOOLSETTING(DCLST_ASK))
 	{
+		magnetClick.SetCurSel(0);
+	}
+	else
+	{
+		// the combo has one item more ("Ask") than the values of the setting
 		const int action = SETTING(DCLST_ACTION);
-		magnetClick.SetCurSel(action);
+		magnetClick.SetCurSel((action >= SettingsManager::MAGNET_AUTO_SEARCH && action <= SettingsManager::MAGNET_AUTO_DOWNLOAD_AND_OPEN) ? action + 1 : 0);
 	}
 	magnetClick.Detach();
 	
@@ -84,7 +85,20 @@ void DCLSTPage::write()
 	PropPage::write(*this, items);
 	SET_SETTING(DCLST_CREATE_IN_SAME_FOLDER,    IsDlgButtonChecked(IDC_DCLS_CREATE_IN_FOLDER) == BST_CHECKED);
 	magnetClick.Attach(GetDlgItem(IDC_DCLST_CLICK));
-	g_settings->set(SettingsManager::DCLST_ACTION, magnetClick.GetCurSel());
+	{
+		// the first item of the combo is "Ask", the others are the actions of the
+		// setting (the indexes are shifted by one)
+		const int l_index = magnetClick.GetCurSel();
+		if (l_index <= 0)
+		{
+			g_settings->set(SettingsManager::DCLST_ASK, true);
+		}
+		else
+		{
+			g_settings->set(SettingsManager::DCLST_ASK, false);
+			g_settings->set(SettingsManager::DCLST_ACTION, l_index - 1);
+		}
+	}
 	magnetClick.Detach();
 	
 }

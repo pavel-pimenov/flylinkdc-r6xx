@@ -2288,7 +2288,17 @@ XMLNode XMLNode::parseFile(FILEAPICSTR filename, XMLCSTR tag, XMLResults *pResul
 		return emptyXMLNode;
 	}
 	_fseeki64(f, 0, SEEK_END);
-	int l = (int)_ftelli64(f), headerSz = 0;
+	// the file size is kept in 64 bit until it is checked to fit into an int:
+	// a truncated value would lead to a negative malloc() size and to a NULL
+	// buffer that is dereferenced by fread() below
+	const __int64 l_fileSize = _ftelli64(f);
+	if (l_fileSize <= 0 || l_fileSize > (__int64)(0x7FFFFFFF - 4))
+	{
+		if (pResults) pResults->error = eXMLErrorEmpty;
+		fclose(f);
+		return emptyXMLNode;
+	}
+	int l = (int)l_fileSize, headerSz = 0;
 	if (!l)
 	{
 		if (pResults) pResults->error = eXMLErrorEmpty;
@@ -2296,7 +2306,13 @@ XMLNode XMLNode::parseFile(FILEAPICSTR filename, XMLCSTR tag, XMLResults *pResul
 		return emptyXMLNode;
 	}
 	_fseeki64(f, 0, SEEK_SET);
-	unsigned char *buf = (unsigned char*)malloc(l + 4);
+	unsigned char *buf = (unsigned char*)malloc((size_t)l + 4);
+	if (buf == NULL)
+	{
+		if (pResults) pResults->error = eXMLErrorEmpty;
+		fclose(f);
+		return emptyXMLNode;
+	}
 	l = (int)fread(buf, 1, l, f);
 	fclose(f);
 	buf[l] = 0;

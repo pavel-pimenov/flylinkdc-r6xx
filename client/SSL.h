@@ -63,7 +63,8 @@ class scoped_handle {
 		}
 		
 		void reset(T* t_ = nullptr) {
-			Release(t);
+			if (t)
+				Release(t);
 			t = t_;
 		}
 		
@@ -72,6 +73,8 @@ class scoped_handle {
 		}
 		scoped_handle& operator=(scoped_handle&& rhs) {
 			if (&rhs != this) {
+				// the previously owned handle must be released
+				reset();
 				t = rhs.t;
 				rhs.t = nullptr;
 			}

@@ -81,7 +81,7 @@ void FinishedManager::rotation_items(const FinishedItemPtr& p_item, eType p_type
 			fly_fire1(FinishedManagerListener::RemovedDl(), *l_item_array.cbegin());
 		else
 			fly_fire1(FinishedManagerListener::RemovedUl(), *l_item_array.cbegin());
-		delete *l_item_array.cbegin(); // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
+		delete *l_item_array.cbegin(); // Мутное место
 		l_item_array.pop_front();
 	}
 #endif // FLYLINKDC_USE_ROTATION_FINISHED_MANAGER

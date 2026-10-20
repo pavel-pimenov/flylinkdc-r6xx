@@ -1036,7 +1036,7 @@ int FinishedFrameBase<T, title, id, icon>::columnIndexes[] = { FinishedItem::COL
                                                              };
 
 template <class T, int title, int id, int icon>
-int FinishedFrameBase<T, title, id, icon>::columnSizes[] = { 100, 110, 20, 290, 125, 80, 80, 80, 80, 80};
+int FinishedFrameBase<T, title, id, icon>::columnSizes[] = { 100, 110, 20, 290, 125, 80, 80, 80, 80, 80, 80};
 
 
 #endif // !defined(FINISHED_FRAME_BASE_H)

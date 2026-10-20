@@ -1077,6 +1077,9 @@ void FavoriteManager::load()
 		for (auto k = g_sync_hub_local.cbegin(); k != g_sync_hub_local.cend(); ++k)
 		{
 			FavoriteHubEntry* l_OldHubEntry = getFavoriteHubEntry(*k);
+			// the entry can be missing: it was removed by the ISP sync (ISPDelete)
+			if (!l_OldHubEntry)
+				continue;
 			l_OldHubEntry->setGroup("ISP Recycled");
 			l_OldHubEntry->setConnect(false);
 			LogManager::message("[ISPFavorite][Connect]: " + *k + "ISP Recycled");
@@ -1365,7 +1368,13 @@ void FavoriteManager::load(SimpleXML& aXml
 					e->setHeaderOrder(aXml.getChildAttrib("HeaderOrder", SETTING(HUBFRAME_ORDER)));
 					e->setHeaderWidths(aXml.getChildAttrib("HeaderWidths", SETTING(HUBFRAME_WIDTHS)));
 					e->setHeaderVisible(aXml.getChildAttrib("HeaderVisible", SETTING(HUBFRAME_VISIBLE)));
-					e->setHeaderSort(aXml.getIntChildAttrib("HeaderSort", "-1"));
+					// the value is used as an index of the column array of the user list
+					{
+						int l_header_sort = aXml.getIntChildAttrib("HeaderSort", "-1");
+						if (l_header_sort < -1 || l_header_sort > 31)
+							l_header_sort = -1;
+						e->setHeaderSort(l_header_sort);
+					}
 					e->setHeaderSortAsc(aXml.getBoolChildAttrib("HeaderSortAsc"));
 					e->setRawOne(aXml.getChildAttrib("RawOne"));
 					e->setRawTwo(aXml.getChildAttrib("RawTwo"));
@@ -1981,6 +1990,11 @@ PreviewApplication* FavoriteManager::getPreviewApp(const size_t index)
 
 void FavoriteManager::removeallRecent()
 {
+	// the entries are owned by the vector: they must be deleted explicitly
+	for (auto i = g_recentHubs.begin(); i != g_recentHubs.end(); ++i)
+	{
+		delete *i;
+	}
 	g_recentHubs.clear();
 	g_recent_dirty = true;
 }

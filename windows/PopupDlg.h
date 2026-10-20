@@ -59,6 +59,7 @@ class PopupWnd : public CWindowImpl<PopupWnd, CWindow>
 			DeleteObject(font);
 			DeleteObject(titlefont);
 		if (m_bgBrush) ::DeleteObject(m_bgBrush);
+		if (m_ctlBrush) ::DeleteObject(m_ctlBrush);
 		}
 		
 		LRESULT onLButtonDown(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& bHandled)
@@ -146,7 +147,11 @@ class PopupWnd : public CWindowImpl<PopupWnd, CWindow>
 			::SetTextColor(hDC, SETTING(POPUP_TEXTCOLOR));
 			if (hWnd == label1.m_hWnd)
 				::SelectObject(hDC, font);
-			return (LRESULT)CreateSolidBrush(SETTING(POPUP_BACKCOLOR));
+			// the brush must be created once: a new one on every WM_CTLCOLORSTATIC
+			// leaks a GDI object on every repaint of the popup
+			if (!m_ctlBrush)
+				m_ctlBrush = ::CreateSolidBrush(SETTING(POPUP_BACKCOLOR));
+			return (LRESULT)m_ctlBrush;
 		}
 		
 		LRESULT onPaint(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& bHandled)
@@ -211,6 +216,7 @@ class PopupWnd : public CWindowImpl<PopupWnd, CWindow>
 		HFONT   titlefont;
 		HBITMAP m_bmp;
 		HBRUSH m_bgBrush = nullptr;
+		HBRUSH m_ctlBrush = nullptr;
 };
 
 

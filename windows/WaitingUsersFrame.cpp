@@ -544,7 +544,8 @@ LRESULT WaitingUsersFrame::onSpeaker(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*
 					const int l_top_index = m_ctrlList.GetTopIndex();
 					const int l_count_per_page = m_ctrlList.GetCountPerPage();
 					int64_t itime = GET_TIME();
-					for (int i = l_top_index; i < l_count_per_page; i++)
+					// the visible rows are [l_top_index, l_top_index + l_count_per_page)
+				for (int i = l_top_index; i < l_item_count && i < l_top_index + l_count_per_page; ++i)
 					{
 						auto ii = m_ctrlList.getItemData(i);
 						if (ii)

@@ -352,6 +352,7 @@ LRESULT SpyFrame::onSpeaker(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/,
 				auto s = (Stats*)i->second;
 				LocalArray<TCHAR, 50> buf;
 				_snwprintf(buf.data(), buf.size(), CTSTRING(SEARCHES_PER), s->m_perS, s->m_perM);
+				buf.data()[buf.size() - 1] = 0;
 				ctrlStatus.SetText(2, (TSTRING(TOTAL) + _T(' ') + Util::toStringW(m_total)).c_str());
 				ctrlStatus.SetText(3, buf.data());
 				ctrlStatus.SetText(4, (TSTRING(HITS) + _T(' ') + Util::toStringW((size_t)(ShareManager::getHits()))).c_str());

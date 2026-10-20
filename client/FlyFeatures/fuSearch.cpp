@@ -29,9 +29,9 @@ bool FileUpdateSearch::Scan()
 	wstring searchPattern = _folderForUpdate;
 	searchPattern += L"\\";
 	
-	ProcessFolder(searchPattern);
-	
-	return false;
+	// the result of the search must be returned: the callers can not detect
+	// an error otherwise
+	return ProcessFolder(searchPattern);
 }
 
 // !!! Folder should always ends with "\" !!!

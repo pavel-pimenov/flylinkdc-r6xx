@@ -268,7 +268,7 @@ int MessagePanel::GetPanelWidth()
 {
 	int iButtonPanelLength = 0;
 	iButtonPanelLength += BOOLSETTING(SHOW_EMOTIONS_BTN) ? 22 : 0;
-	iButtonPanelLength += BOOLSETTING(SHOW_EMOTIONS_BTN) ? 22 : 0;
+	iButtonPanelLength += BOOLSETTING(SHOW_MULTI_CHAT_BTN) ? 22 : 0;
 	iButtonPanelLength += BOOLSETTING(SHOW_SEND_MESSAGE_BUTTON) ? 22 : 0;
 	iButtonPanelLength += BOOLSETTING(SHOW_BBCODE_PANEL) ? 22 *
 #ifdef SCALOLAZ_BB_COLOR_BUTTON

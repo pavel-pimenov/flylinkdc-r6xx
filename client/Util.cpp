@@ -106,7 +106,7 @@ static void sgenrand(unsigned long seed);
 extern "C" void bz_internal_error(int errcode)
 {
 	dcdebug("bzip2 internal error: %d\n", errcode);
-	// TODO - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ?
+	// TODO - логирование?
 }
 
 #if (_MSC_VER >= 1400 )
@@ -245,7 +245,7 @@ void Util::initialize()
 	
 #undef SYS_WIN_PATH_INIT
 	// Global config path is FlylinkDC++ executable path...
-#ifdef _DEBUG2 // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+#ifdef _DEBUG2 // Тестируем запрет доступа
 	//g_paths[PATH_EXE] = "C:\\Program Files (x86)\\f\\";
 	//g_paths[PATH_GLOBAL_CONFIG] = g_paths[PATH_EXE];
 #else
@@ -256,7 +256,7 @@ void Util::initialize()
 	        !(locatedInSysPath(PROGRAM_FILES, g_paths[PATH_EXE]) || locatedInSysPath(PROGRAM_FILESX86, g_paths[PATH_EXE]))
 	   )
 	{
-		// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
+		// Проверим права записи
 		g_paths[PATH_USER_CONFIG] = g_paths[PATH_GLOBAL_CONFIG] + "Settings" PATH_SEPARATOR_STR;
 		const auto l_marker_file = g_paths[PATH_USER_CONFIG] + ".flylinkdc-test-readonly.tmp";
 		try
@@ -275,7 +275,7 @@ void Util::initialize()
 				//CFlyServerJSON::pushError(11, "Error create/write + " + l_marker_file);
 #endif // FLYLINKDC_USE_MEDIAINFO_SERVER
 				intiProfileConfig();
-				// пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ)
+				// Если возможно уносим настройки в профиль (если их тамеще нет)
 				moveSettings();
 			}
 		}
@@ -1057,7 +1057,11 @@ void Util::decodeUrl(const string& url, string& protocol, string& host, uint16_t
 			LocalArray<char, MAX_HOST_LEN> buff;
 			size_t size = MAX_HOST_LEN;
 			memzero(buff.data(), buff.size());
-			memcpy(buff.data(), l_host_acp.c_str(), std::min(buff.size(), l_host_acp.size()));
+			// the buffer must stay zero terminated: IDNA_convert_to_ACE() and the
+			// assignment to "host" treat it as a C string
+			const size_t l_copy = std::min(buff.size() - 1, l_host_acp.size());
+			memcpy(buff.data(), l_host_acp.c_str(), l_copy);
+			buff.data()[l_copy] = 0;
 			if (IDNA_convert_to_ACE(buff.data(), &size))
 			{
 				host = buff.data();
@@ -1306,8 +1310,12 @@ wstring Util::formatExactSize(int64_t aBytes)
 	wchar_t l_buf_nf[64];
 	l_buf_nf[0] = 0;
 	GetNumberFormat(LOCALE_USER_DEFAULT, 0, l_number, &g_nf, l_buf_nf, _countof(l_buf_nf));
-	_snwprintf(l_buf_nf, _countof(l_buf_nf), _T("%s %s"), l_buf_nf, CWSTRING(B));
-	return l_buf_nf;
+	// the formatted number must not be written over itself: the source and the
+	// destination of the conversion must not overlap
+	wchar_t l_result[128];
+	l_result[0] = 0;
+	_snwprintf(l_result, _countof(l_result), _T("%s %s"), l_buf_nf, CWSTRING(B));
+	return l_result;
 #else
 	wchar_t buf[64];
 	_snwprintf(buf, _countof(buf), _T(I64_FMT), (long long int)aBytes);
@@ -1324,7 +1332,7 @@ static string findBindIP(const string& tmp, const string& p_gateway_mask, const 
 			return tmp2;
 		if (tmp2.find(p_gateway_mask) != string::npos)
 		{
-			if (Util::isPrivateIp(tmp2)) // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ Hamachi
+			if (Util::isPrivateIp(tmp2)) // Проблема с Hamachi
 			{
 				return tmp2;
 			}
@@ -1333,19 +1341,19 @@ static string findBindIP(const string& tmp, const string& p_gateway_mask, const 
 		{
 			continue;
 		}
-		// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ Hamachi - пїЅпїЅпїЅпїЅпїЅ 2
+		// Проблема с Hamachi - часть 2
 		//else if (isNotPrivateIpAndNot169(tmp2))
 		//{
 		//  tmp = tmp2;
 		//}
 		/*
-		 пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ UPnP, пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ Hamachi.
-		пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ win7. пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ ip пїЅпїЅпїЅпїЅпїЅпїЅпїЅ 25.41.14.130
+		 Выявилась проблема с UPnP, при установленной программе Hamachi.
+		У пользователя win7. Хамачи сделал свой сетевой интферфейс с ip адресом 25.41.14.130
 	
-		UPnP пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
-		пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ "пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ" 192.168.0.103 (пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ), пїЅпїЅ пїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ :(
+		UPnP пытается сделать перенаправление именно на этот адрес
+		если во флайлинке задать "сетевой интерфейс для всех соединений" 192.168.0.103 (адрес который дает ему роутер), то это не помогает :(
 	
-		пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ UPnP пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅ-пїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ.
+		К письму прикладываю вывод UPnP правил из роутера, для того что-бы ты понял о чем речь.
 		*/
 	}
 	return tmp;
@@ -1354,7 +1362,7 @@ string Util::getLocalOrBindIp(const bool p_check_bind_address)
 {
 	string tmp;
 	char buf[256];
-	if (!gethostname(buf, 255)) // пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
+	if (!gethostname(buf, 255)) // двойной вызов
 	{
 		boost::logic::tribool l_is_wifi_router;
 		string l_gateway_ip = Socket::getDefaultGateWay(l_is_wifi_router);
@@ -1720,7 +1728,7 @@ string Util::formatParams(const string& msg, const StringMap& params, bool filte
 			break;
 		}
 	}
-	if (l_find_alcohol) // пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ %[ пїЅ.пїЅ. пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ %
+	if (l_find_alcohol) // Не пытаемся искать %[ т.к. не нашли %
 	{
 		result = formatTime(result, t);
 		string::size_type i, j, k;
@@ -1826,7 +1834,7 @@ uint64_t Util::getDirSize(const string &sFullPath)
 			if (fData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
 			{
 				const string newName = sFullPath + PATH_SEPARATOR + name;
-				// TODO TEMP_DOWNLOAD_DIRECTORY пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ "[targetdrive]" пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
+				// TODO TEMP_DOWNLOAD_DIRECTORY может содержать шаблон "[targetdrive]" сравнивать с ним не всегда верно
 				if (stricmp(newName + PATH_SEPARATOR, l_tmp_path) != 0)
 				{
 					total += getDirSize(newName);
@@ -2023,7 +2031,7 @@ string Util::formatTime(uint64_t rest, const bool withSecond /*= true*/)
    matumoto@math.keio.ac.jp */
 /* Period parameters */
 	
-// TODO пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ!!!
+// TODO убрать магические числа!!!
 #define N 624
 #define M 397
 #define MATRIX_A 0x9908b0df   /* constant vector a */
@@ -2485,9 +2493,9 @@ uint64_t CFlyHTTPDownloader::getBinaryDataFromInetSafe(const string& p_url, std:
 		l_length = getBinaryDataFromInet(l_url, p_data_out, p_time_out, p_reporter);
 		if (l_length > 0)
 		{
-			if (i >= 4) // пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅ
+			if (i >= 4) // Если на зеркале скачали - остаемся на нем
 			{
-				g_last_stable_mirror = i - 1; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ.
+				g_last_stable_mirror = i - 1; // Продолжим пытаться качать с зеркала для этой сессии.
 			}
 			break;
 		}
@@ -2499,7 +2507,7 @@ uint64_t CFlyHTTPDownloader::getBinaryDataFromInetSafe(const string& p_url, std:
 			}
 			if (g_last_stable_mirror != 0)
 			{
-				g_last_stable_mirror = 0; // пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
+				g_last_stable_mirror = 0; // При ошибке на зеркале скидываемся обратно на главный хост
 				i = 2;
 				const char* l_base_url = ".fly-server.ru/";
 				Text::replace_all(l_url, "2.fly-server.ru/", l_base_url);
@@ -2583,9 +2591,9 @@ uint64_t CFlyHTTPDownloader::getBinaryDataFromInetArray(CFlyUrlItemArray& p_url_
 			break;
 		// https://github.com/ak48disk/simulationcraft/blob/392937fde95bdc4f13ccd3681e2fa61813856bb6/engine/interfaces/sc_http.cpp
 		// http://msdn.microsoft.com/en-us/library/ms906346.aspx
-		// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ: пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ?
-		// INTERNET_FLAG_NO_CACHE_WRITE - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
-		// INTERNET_FLAG_RESYNCHRONIZE - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ xml  + пїЅпїЅпїЅпїЅпїЅпїЅ
+		// Проверить: конфиг файл действительно меняется?
+		// INTERNET_FLAG_NO_CACHE_WRITE - использовать если файл большой
+		// INTERNET_FLAG_RESYNCHRONIZE - использовать для xml  + конфиг
 		DWORD l_cache_flag = INTERNET_FLAG_NO_UI | INTERNET_FLAG_NO_COOKIES; // | INTERNET_FLAG_CACHE_IF_NET_FAIL;
 #define FLYLINKDC_USE_CACHE_WININET
 #ifdef FLYLINKDC_USE_CACHE_WININET
@@ -2596,7 +2604,7 @@ uint64_t CFlyHTTPDownloader::getBinaryDataFromInetArray(CFlyUrlItemArray& p_url_
 			{
 				const auto l_ext3 = u.m_url.c_str() + u.m_url.size() - 4;
 				const auto l_ext4 = u.m_url.c_str() + u.m_url.size() - 5;
-				if (strcmp(l_ext3, ".xml") == 0 || // TODO - пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
+				if (strcmp(l_ext3, ".xml") == 0 || // TODO - Унести в конфиг
 				        strcmp(l_ext3, ".bz2") == 0 ||
 				        strcmp(l_ext4, ".sign") == 0)
 				{
@@ -2611,7 +2619,7 @@ uint64_t CFlyHTTPDownloader::getBinaryDataFromInetArray(CFlyUrlItemArray& p_url_
 			//dcassert(0);
 			create_error_message("InternetOpenUrlA", u.m_url);
 			LogManager::message(m_error_message);
-			// TODO - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
+			// TODO - залогировать коды ошибок для статы
 			return 0;
 		}
 		uint64_t totalBytesRead = 0;
@@ -2624,7 +2632,7 @@ uint64_t CFlyHTTPDownloader::getBinaryDataFromInetArray(CFlyUrlItemArray& p_url_
 				dcassert(0);
 				create_error_message("InternetReadFile", u.m_url);
 				LogManager::message(m_error_message);
-				//// TODO - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
+				//// TODO - залогировать коды ошибок для статы
 				return 0;
 			}
 			if (l_BytesRead == 0)
@@ -2720,9 +2728,9 @@ uint64_t CFlyHTTPDownloader::getBinaryDataFromInet(const string& p_url, std::vec
 	}
 	// https://github.com/ak48disk/simulationcraft/blob/392937fde95bdc4f13ccd3681e2fa61813856bb6/engine/interfaces/sc_http.cpp
 	// http://msdn.microsoft.com/en-us/library/ms906346.aspx
-	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ: пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ?
-	// INTERNET_FLAG_NO_CACHE_WRITE - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
-	// INTERNET_FLAG_RESYNCHRONIZE - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ xml  + пїЅпїЅпїЅпїЅпїЅпїЅ
+	// Проверить: конфиг файл действительно меняется?
+	// INTERNET_FLAG_NO_CACHE_WRITE - использовать если файл большой
+	// INTERNET_FLAG_RESYNCHRONIZE - использовать для xml  + конфиг
 	DWORD l_cache_flag = INTERNET_FLAG_NO_UI | INTERNET_FLAG_NO_COOKIES; // | INTERNET_FLAG_CACHE_IF_NET_FAIL;
 #define FLYLINKDC_USE_CACHE_WININET
 #ifdef FLYLINKDC_USE_CACHE_WININET
@@ -2733,7 +2741,7 @@ uint64_t CFlyHTTPDownloader::getBinaryDataFromInet(const string& p_url, std::vec
 		{
 			const auto l_ext3 = p_url.c_str() + p_url.size() - 4;
 			const auto l_ext4 = p_url.c_str() + p_url.size() - 5;
-			if (strcmp(l_ext3, ".xml") == 0 || // TODO - пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
+			if (strcmp(l_ext3, ".xml") == 0 || // TODO - Унести в конфиг
 			        strcmp(l_ext3, ".bz2") == 0 ||
 			        strcmp(l_ext4, ".sign") == 0)
 			{
@@ -2748,7 +2756,7 @@ uint64_t CFlyHTTPDownloader::getBinaryDataFromInet(const string& p_url, std::vec
 		//dcassert(0);
 		create_error_message("InternetOpenUrlA", p_url);
 		LogManager::message(m_error_message);
-		// TODO - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
+		// TODO - залогировать коды ошибок для статы
 		return 0;
 	}
 	bool isUserCancel = false;
@@ -2762,7 +2770,7 @@ uint64_t CFlyHTTPDownloader::getBinaryDataFromInet(const string& p_url, std::vec
 			dcassert(0);
 			create_error_message("InternetReadFile", p_url);
 			LogManager::message(m_error_message);
-			//// TODO - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
+			//// TODO - залогировать коды ошибок для статы
 			return 0;
 		}
 		if (l_BytesRead == 0)
@@ -3012,11 +3020,11 @@ string Util::ConvertFromHTML(const string &htmlString)
 	strRet = ConvertFromHTMLSymbol(htmlString, "&nbsp;", " ");
 	strRet = ConvertFromHTMLSymbol(strRet, "<br>", " \r\n");
 	strRet = ConvertFromHTMLSymbol(strRet, "&quot;", "\"");
-	strRet = ConvertFromHTMLSymbol(strRet, "&mdash;", "пїЅ");
-	strRet = ConvertFromHTMLSymbol(strRet, "&ndash;", "пїЅ");
-	strRet = ConvertFromHTMLSymbol(strRet, "&hellip;", "пїЅ");
-	strRet = ConvertFromHTMLSymbol(strRet, "&laquo;", "пїЅ");
-	strRet = ConvertFromHTMLSymbol(strRet, "&raquo;", "пїЅ");
+	strRet = ConvertFromHTMLSymbol(strRet, "&mdash;", "—");
+	strRet = ConvertFromHTMLSymbol(strRet, "&ndash;", "–");
+	strRet = ConvertFromHTMLSymbol(strRet, "&hellip;", "…");
+	strRet = ConvertFromHTMLSymbol(strRet, "&laquo;", "«");
+	strRet = ConvertFromHTMLSymbol(strRet, "&raquo;", "»");
 //	strRet = ConvertFromHTMLSymbol(strRet, "&lt;", "<");
 //	strRet = ConvertFromHTMLSymbol(strRet, "&gt;", ">");
 	return strRet;
@@ -3171,6 +3179,10 @@ string Util::getTempPath()
 {
 	LocalArray<TCHAR, MAX_PATH> buf;
 	DWORD x = GetTempPath(MAX_PATH, buf.data());
+	// GetTempPath returns the required buffer size (including the terminating null)
+	// when the buffer is too small - do not read past the end of buf in that case
+	if (x >= MAX_PATH)
+		return BaseUtil::emptyString;
 	return Text::fromT(tstring(buf.data(), static_cast<size_t>(x))); // [!] PVS V106 Implicit type conversion second argument 'x' of function 'tstring' to memsize type. util.h 558
 }
 bool Util::isTorrentFile(const tstring& file)

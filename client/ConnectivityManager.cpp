@@ -231,8 +231,8 @@ string ConnectivityManager::getInformation()
 	               "\tEncrypted transfer port: %4%\n"
 	               "\tSearch port: %5%\n"
 	               "\tTorrent port: %6%\n"
-	               "\tTorrent SSL port: %6%\n"
-	               "\tStatus: %7%"
+	               "\tTorrent SSL port: %7%\n"
+	               "\tStatus: %8%"
 	           ) %
 	           field(SETTING(EXTERNAL_IP)) %
 	           field(SETTING(BIND_ADDRESS)) %

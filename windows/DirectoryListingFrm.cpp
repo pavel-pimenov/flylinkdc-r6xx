@@ -1482,20 +1482,11 @@ LRESULT DirectoryListingFrame::onDownloadFavoriteDirs(WORD /*wNotifyCode*/, WORD
 		
 		if (ii->type == ItemInfo::FILE)
 		{
-			if (newId < (int)targets.size())
+			// the id of the menu item belongs to the list of the favourite dirs:
+			// the list of the targets of the queue has another base
+			dcassert(newId < (int)spl.size());
+			if (newId < (int)spl.size())
 			{
-				try
-				{
-					dl->download(ii->m_file, targets[newId], false, WinUtil::isShift(), QueueItem::DEFAULT);
-				}
-				catch (const Exception& e)
-				{
-					ctrlStatus.SetText(STATUS_TEXT, Text::toT(e.getError()).c_str());
-				}
-			}
-			else
-			{
-				newId -= (int)targets.size();
 				downloadList(spl, newId);
 			}
 		}

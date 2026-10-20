@@ -129,6 +129,8 @@ QueueItem::Priority QueueItem::calculateAutoPriority() const
 	if (getAutoPriority())
 	{
 		QueueItem::Priority p;
+		if (getSize() <= 0)
+			return QueueItem::NORMAL;
 		const int percent = static_cast<int>(getDownloadedBytes() * 10 / getSize());
 		switch (percent)
 		{
@@ -326,12 +328,10 @@ void QueueItem::resetDownloaded()
 
 bool QueueItem::isFinished() const
 {
-	if (m_done_segment.size() == 1)
-	{
-		CFlyFastLock(m_fcs_segment);
-		return m_done_segment.size() == 1 && m_done_segment.begin()->isSizeEqu(getSize());
-	}
-	return false;
+	// m_done_segment is modified by the download threads - the size must be read
+	// under the lock
+	CFlyFastLock(m_fcs_segment);
+	return m_done_segment.size() == 1 && m_done_segment.begin()->isSizeEqu(getSize());
 }
 
 bool QueueItem::isChunkDownloaded(int64_t startPos, int64_t& len) const

@@ -231,7 +231,9 @@ LRESULT SharePage::onClickedRename(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hW
 			virt.line = vName;
 			if (virt.DoModal(m_hWnd) == IDOK)
 			{
-				if (stricmp(buf.data(), virt.line) != 0)
+				// buf contains the path of the directory (subitem 1), the name of the
+				// virtual directory is in vName
+				if (stricmp(vName.c_str(), virt.line.c_str()) != 0)
 				{
 					ShareManager::getInstance()->renameDirectory(Text::fromT(rPath), Text::fromT(virt.line));
 					ctrlDirectories.SetItemText(i, 0, virt.line.c_str());

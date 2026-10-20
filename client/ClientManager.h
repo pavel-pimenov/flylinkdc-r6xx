@@ -65,6 +65,10 @@ class ClientManager : public Speaker<ClientManagerListener>,
 		static StringList getHubNames(const HintedUser& user);
 		static bool isConnected(const string& aUrl);
 		static Client* findClient(const string& p_Url);
+		/** Completes the autodetection of the hub with the given url. The list of the
+		    clients is locked while the hub is used, so it cannot be deleted in
+		    between. Returns true when the autodetection was completed. */
+		static bool completeAutodetect(const string& p_Url);
 		static bool isOnline(const UserPtr& aUser);
 		static uint8_t getSlots(const CID& cid);
 		static void search(const SearchParamOwner& p_search_param);

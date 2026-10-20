@@ -79,6 +79,9 @@ string& Encoder::toBase32(const uint8_t* src, size_t len, string& dst)
 
 void Encoder::fromBase32(const char* src, uint8_t* dst, size_t len)
 {
+	if (dst == nullptr || len == 0 || src == nullptr)
+		return;
+
 	size_t i, index, offset;
 	
 	memzero(dst, len);
@@ -119,9 +122,12 @@ void Encoder::fromBase32(const char* src, uint8_t* dst, size_t len)
 
 bool Encoder::isBase32(const char* src)
 {
+	if (src == nullptr)
+		return false;
+
 	for (size_t i = 0; src[i]; i++)
 	{
-		if (g_base32Table[src[i]] == -1)
+		if (g_base32Table[(unsigned char)src[i]] == -1)
 			return false;
 	}
 	

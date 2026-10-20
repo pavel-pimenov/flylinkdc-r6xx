@@ -677,7 +677,13 @@ struct HashContained
 		explicit HashContained(const DirectoryListing::Directory::TTHSet& l) : tl(l) { }
 		bool operator()(const DirectoryListing::File::Ptr i) const
 		{
-			return tl.count((i->getTTH())) && (DeleteFunction()(i), true);
+			if (tl.count(i->getTTH()))
+			{
+				// the file is not shared any more: it is deleted
+				DeleteFunction()(i);
+				return true;
+			}
+			return false;
 		}
 	private:
 		void operator=(HashContained&);

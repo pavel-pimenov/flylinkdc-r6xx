@@ -146,17 +146,17 @@ void Thread::start(unsigned int p_stack_size, const char* p_name /* = nullptr */
 #endif
 		}
 	}
-	else
-	{
-		m_threadHandle = h;
+	// the handle must be saved in both cases: when the first attempt fails and
+	// the second one succeeds, the handle of the thread was lost - the thread
+	// was never joined and its handle was leaked
+	m_threadHandle = h;
 #ifdef FLYLINKDC_USE_WIN_THREAD_NAME
-		if (p_name)
-		{
-			//SetThreadName(-1, p_name);
-		}
-		// TODO - SetThreadName http://msdn.microsoft.com/en-us/library/xcb2z8hs.aspx
-#endif
+	if (p_name)
+	{
+		//SetThreadName(-1, p_name);
 	}
+	// TODO - SetThreadName http://msdn.microsoft.com/en-us/library/xcb2z8hs.aspx
+#endif
 }
 
 int Thread::getThreadsCount()

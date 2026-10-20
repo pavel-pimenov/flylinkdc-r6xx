@@ -149,13 +149,16 @@ class User : public Flags
 			return m_cid.regenerate();
 		}
 #ifdef FLYLINKDC_USE_LASTIP_AND_USER_RATIO
-		const string& getLastNick() const
+		// the nick is returned by value: it is changed by the thread of the hub and
+		// a reference would be invalidated by the next change
+		string getLastNick() const
 		{
 #ifdef _DEBUG
 			static std::atomic<int> g_call_counts = 0;
 			if (++g_call_counts % 1000 == 0)
 				dcdebug("User::getLastNick() called %d\n", int(g_call_counts));
 #endif
+			CFlyFastLock(m_cs_nick);
 			return m_nick;
 		}
 		tstring getLastNickHubT() const;
@@ -195,6 +198,8 @@ class User : public Flags
 		GETSET(int64_t, m_bytesShared, BytesShared);
 		GETSET(uint32_t, m_limit, Limit);
 		GETSET(uint8_t, m_slots, Slots);
+		// protects the nick: it is changed by the thread of the hub
+		mutable FastCriticalSection m_cs_nick;
 		std::string m_nick;
 		
 		CFlyDirtyValue<boost::asio::ip::address_v4> m_last_ip_sql;

@@ -363,6 +363,13 @@ DCLSTGenDlg::onSaveAS(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL
 			File::renameFile(targetOld, target);
 			_mNameDCLST = Text::fromT(target);
 			
+			if (!_tth)
+			{
+				// the TTH was not calculated (the file could not be read) - the magnet
+				// link cannot be built
+				MessageBox(CTSTRING(DCLSTGEN_METAFILECANNOTBESHARED), CTSTRING(DCLSTGEN_TITLE), MB_OK | MB_ICONERROR);
+				return 0;
+			}
 			const string l_TTH_str = _tth.get()->getRoot().toBase32();
 			
 			_strMagnet = "magnet:?xt=urn:tree:tiger:" + l_TTH_str +

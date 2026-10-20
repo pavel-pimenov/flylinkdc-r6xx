@@ -116,7 +116,12 @@ LRESULT EmoticonsDlg::onInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lP
 			else nY = i;
 		}
 		if (Emoticons.empty() || !*Emoticons.begin())
+		{
+			// the dialog is hidden: it must be closed, otherwise it stays modal and
+			// the whole client is blocked
+			PostMessage(WM_CLOSE);
 			return 0;
+		}
 			
 		// If first icon failed to load, h_bm will be zero, and all icons will be drawn extremely small.
 		// So cycle through Emoticons and find first loaded icon.

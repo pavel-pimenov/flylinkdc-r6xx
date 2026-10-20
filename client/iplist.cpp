@@ -288,7 +288,10 @@ void IPList::addData(const std::string& Data, CFlyLog& p_log)
 		}
 		else
 		{
-			const string line = Data.substr(linestart, lineend - linestart - 1);
+			// strip the line terminator: '\r' for CRLF files, nothing for LF files
+			string line = Data.substr(linestart, lineend - linestart);
+			if (!line.empty() && line[line.size() - 1] == '\r')
+				line.erase(line.size() - 1);
 			if (!line.empty())
 			{
 				addLine(line, p_log);

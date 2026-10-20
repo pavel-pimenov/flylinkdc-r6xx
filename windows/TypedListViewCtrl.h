@@ -227,7 +227,14 @@ class TypedListViewCtrl : public CWindowImpl<TypedListViewCtrl<T, ctrlId>, CList
 		
 		void setText(LVITEM& i, const tstring &text)
 		{
-			wcsncpy(i.pszText, text.c_str(), static_cast<size_t>(i.cchTextMax));// [!] PVS V303 The function 'lstrcpyn' is deprecated in the Win64 system. It is safer to use the 'wcsncpy' function.
+			// the buffer belongs to the common control and is cchTextMax characters long:
+			// wcsncpy() does not terminate the string when the text is not shorter
+			// than the buffer
+			if (i.pszText == nullptr || i.cchTextMax <= 0)
+				return;
+			const size_t l_count = (std::min)(text.length(), static_cast<size_t>(i.cchTextMax - 1));
+			wcsncpy(i.pszText, text.c_str(), l_count);// [!] PVS V303 The function 'lstrcpyn' is deprecated in the Win64 system. It is safer to use the 'wcsncpy' function.
+			i.pszText[l_count] = 0;
 		}
 		void setText(LVITEM& i, const TCHAR* text)
 		{
@@ -639,6 +646,11 @@ class TypedListViewCtrl : public CWindowImpl<TypedListViewCtrl<T, ctrlId>, CList
 		
 		void setSortColumn(int aSortColumn)
 		{
+			// the value comes from the settings file: it must be a valid column index
+			if (aSortColumn < 0 || aSortColumn >= static_cast<int>(m_columnIndexes.size()))
+			{
+				aSortColumn = -1;
+			}
 			sortColumn = aSortColumn;
 			updateArrow();
 		}
@@ -652,7 +664,9 @@ class TypedListViewCtrl : public CWindowImpl<TypedListViewCtrl<T, ctrlId>, CList
 		}
 		uint8_t getRealSortColumn() const
 		{
-			return findColumn(sortColumn); //-V106
+			if (sortColumn < 0)
+				return 0;
+			return findColumn(static_cast<uint8_t>(sortColumn)); //-V106
 		}
 		bool isAscending() const
 		{
@@ -929,7 +943,8 @@ class TypedListViewCtrl : public CWindowImpl<TypedListViewCtrl<T, ctrlId>, CList
 		//find the original position of the column at the current position.
 		uint8_t findColumn(uint8_t p_col) const
 		{
-			dcassert(p_col < m_columnIndexes.size());
+			if (p_col >= m_columnIndexes.size())
+				return 0;
 			return m_columnIndexes[p_col];
 		}
 		

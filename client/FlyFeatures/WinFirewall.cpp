@@ -21,6 +21,54 @@
 #include <comutil.h>
 #include <comdef.h>
 
+namespace
+{
+	// Releases the COM interface when it goes out of scope - without it every query
+	// of the firewall leaked 2..5 COM references
+	template<class T>
+	class CFlyComPtr
+	{
+		public:
+			CFlyComPtr() : m_ptr(nullptr)
+			{
+			}
+			~CFlyComPtr()
+			{
+				reset();
+			}
+			void reset()
+			{
+				if (m_ptr)
+				{
+					m_ptr->Release();
+					m_ptr = nullptr;
+				}
+			}
+			// use it as the out parameter of the COM getters
+			T** getAddr()
+			{
+				reset();
+				return &m_ptr;
+			}
+			T* get() const
+			{
+				return m_ptr;
+			}
+			T* operator->() const
+			{
+				return m_ptr;
+			}
+			operator T*() const
+			{
+				return m_ptr;
+			}
+		private:
+			CFlyComPtr(const CFlyComPtr&);
+			CFlyComPtr& operator=(const CFlyComPtr&);
+			T* m_ptr;
+	};
+}
+
 // TODO - заменить на chromium\home\src_tarball\tarball\chromium\src\third_party\libjingle\source\talk\base
 // winfirewall.cc
 // winfirewall.h
@@ -30,18 +78,18 @@ BOOL WinFirewall::IsWindowsFirewallAppEnabled(const TCHAR* in_pAuthorizedFilenam
 	if (!in_pAuthorizedFilename) throw E_INVALIDARG;
 	try
 	{
-		INetFwProfile* pFwProfilePtr;
-		INetFwAuthorizedApplications* pFwAuthorizedApplicationsPtr;
-		INetFwAuthorizedApplication* pFwAuthorizedApplicationPtr;
-		HRESULT hr = GetFwProfile(&pFwProfilePtr);
+		CFlyComPtr<INetFwProfile> l_fwProfilePtr;
+		CFlyComPtr<INetFwAuthorizedApplications> l_fwAuthorizedApplicationsPtr;
+		CFlyComPtr<INetFwAuthorizedApplication> l_fwAuthorizedApplicationPtr;
+		HRESULT hr = GetFwProfile(l_fwProfilePtr.getAddr());
 		if (FAILED(hr)) throw hr;
-		hr = pFwProfilePtr->get_AuthorizedApplications(&pFwAuthorizedApplicationsPtr);
+		hr = l_fwProfilePtr->get_AuthorizedApplications(l_fwAuthorizedApplicationsPtr.getAddr());
 		if (FAILED(hr)) throw E_UNEXPECTED;
-		hr = pFwAuthorizedApplicationsPtr->Item(_bstr_t(in_pAuthorizedFilename), &pFwAuthorizedApplicationPtr);
+		hr = l_fwAuthorizedApplicationsPtr->Item(_bstr_t(in_pAuthorizedFilename), l_fwAuthorizedApplicationPtr.getAddr());
 		if (SUCCEEDED(hr))
 		{
 			VARIANT_BOOL fwEnabled;
-			hr = pFwAuthorizedApplicationPtr->get_Enabled(&fwEnabled);
+			hr = l_fwAuthorizedApplicationPtr->get_Enabled(&fwEnabled);
 			if (FAILED(hr)) throw E_UNEXPECTED;
 			bRet = (fwEnabled != VARIANT_FALSE) ? TRUE : FALSE;
 		}
@@ -75,32 +123,32 @@ void WinFirewall::WindowFirewallSetAppAuthorization(const TCHAR* in_pAuthorizedD
 		if (!bAppStatus && !bEnableService) // Already disabled
 			return;
 			
-		INetFwProfile* pFwProfilePtr;
-		INetFwAuthorizedApplications* pFwAuthorizedApplicationsPtr;
-		INetFwAuthorizedApplication* pFwAuthorizedApplicationPtr;
-		HRESULT hr = GetFwProfile(&pFwProfilePtr);
+		CFlyComPtr<INetFwProfile> l_fwProfilePtr;
+		CFlyComPtr<INetFwAuthorizedApplications> l_fwAuthorizedApplicationsPtr;
+		CFlyComPtr<INetFwAuthorizedApplication> l_fwAuthorizedApplicationPtr;
+		HRESULT hr = GetFwProfile(l_fwProfilePtr.getAddr());
 		if (FAILED(hr)) throw hr;
-		hr = pFwProfilePtr->get_AuthorizedApplications(&pFwAuthorizedApplicationsPtr);
+		hr = l_fwProfilePtr->get_AuthorizedApplications(l_fwAuthorizedApplicationsPtr.getAddr());
 		if (FAILED(hr)) throw E_UNEXPECTED;
 		//CLSID clsID;
 		//hr = CLSIDFromProgID(OLESTR("HNetCfg.FwAuthorizedApplication"),&clsID);
-		//if(FAILED(hr)) throw E_UNEXPECTED;
+		//if (FAILED(hr)) throw E_UNEXPECTED;
 		//hr = pFwAuthorizedApplicationPtr.CreateInstance(clsID);
 		hr = CoCreateInstance(
 		         __uuidof(NetFwAuthorizedApplication),
 		         NULL,
 		         CLSCTX_INPROC_SERVER,
 		         __uuidof(INetFwAuthorizedApplication),
-		         reinterpret_cast<void**>(static_cast<INetFwAuthorizedApplication**>(&pFwAuthorizedApplicationPtr)));
+		         reinterpret_cast<void**>(l_fwAuthorizedApplicationPtr.getAddr()));
 		if (FAILED(hr)) throw E_UNEXPECTED;
-		pFwAuthorizedApplicationPtr->put_Name(_bstr_t(in_pAuthorizedDisplayname));
-		pFwAuthorizedApplicationPtr->put_ProcessImageFileName(_bstr_t(in_pAuthorizedFilename));
+		l_fwAuthorizedApplicationPtr->put_Name(_bstr_t(in_pAuthorizedDisplayname));
+		l_fwAuthorizedApplicationPtr->put_ProcessImageFileName(_bstr_t(in_pAuthorizedFilename));
 		if (bEnableService)
-			pFwAuthorizedApplicationPtr->put_Enabled(VARIANT_TRUE);
+			l_fwAuthorizedApplicationPtr->put_Enabled(VARIANT_TRUE);
 		else
-			pFwAuthorizedApplicationPtr->put_Enabled(VARIANT_FALSE);
+			l_fwAuthorizedApplicationPtr->put_Enabled(VARIANT_FALSE);
 			
-		hr = pFwAuthorizedApplicationsPtr->Add(pFwAuthorizedApplicationPtr);
+		hr = l_fwAuthorizedApplicationsPtr->Add(l_fwAuthorizedApplicationPtr.get());
 		if (FAILED(hr)) throw E_UNEXPECTED;
 	}
 	catch (const HRESULT& getHResult)
@@ -122,10 +170,10 @@ BOOL WinFirewall::IsWindowsFirewallIsOn()
 	VARIANT_BOOL fwEnabled;
 	try
 	{
-		INetFwProfile* pFwProfilePtr;
-		hr = GetFwProfile(&pFwProfilePtr);
+		CFlyComPtr<INetFwProfile> l_fwProfilePtr;
+		hr = GetFwProfile(l_fwProfilePtr.getAddr());
 		if (FAILED(hr)) throw hr;
-		hr = pFwProfilePtr->get_FirewallEnabled(&fwEnabled);
+		hr = l_fwProfilePtr->get_FirewallEnabled(&fwEnabled);
 		if (FAILED(hr)) throw E_UNEXPECTED;
 		if (fwEnabled != VARIANT_FALSE)
 			bRet = TRUE;
@@ -149,18 +197,21 @@ BOOL WinFirewall::IsWindowsFirewallPortEnabled(long in_lPort, NET_FW_IP_PROTOCOL
 	BOOL bRet = FALSE;
 	try
 	{
-		INetFwProfile* pFwProfilePtr;
-		HRESULT hr = GetFwProfile(&pFwProfilePtr);
+		CFlyComPtr<INetFwProfile> l_fwProfilePtr;
+		HRESULT hr = GetFwProfile(l_fwProfilePtr.getAddr());
 		if (FAILED(hr)) throw hr;
-		INetFwOpenPort* fwOpenPort;
-		INetFwOpenPorts* fwOpenPorts;
-		pFwProfilePtr->get_GloballyOpenPorts(&fwOpenPorts);
-		if (FAILED(hr)) throw hr;
-		hr = fwOpenPorts->Item(in_lPort, in_protocol, &fwOpenPort);
+		CFlyComPtr<INetFwOpenPort> l_fwOpenPort;
+		CFlyComPtr<INetFwOpenPorts> l_fwOpenPorts;
+		// the result of the call must be checked - otherwise a failed call leaves
+		// the pointer uninitialized and it is dereferenced below
+		hr = l_fwProfilePtr->get_GloballyOpenPorts(l_fwOpenPorts.getAddr());
+		if (FAILED(hr)) throw E_UNEXPECTED;
+		if (!l_fwOpenPorts.get()) throw E_UNEXPECTED;
+		hr = l_fwOpenPorts->Item(in_lPort, in_protocol, l_fwOpenPort.getAddr());
 		if (SUCCEEDED(hr))
 		{
 			VARIANT_BOOL fwEnabled;
-			hr = fwOpenPort->get_Enabled(&fwEnabled);
+			hr = l_fwOpenPort->get_Enabled(&fwEnabled);
 			if (FAILED(hr)) throw hr;
 			bRet = (fwEnabled != VARIANT_FALSE) ? TRUE : FALSE;
 		}
@@ -192,10 +243,10 @@ void WinFirewall::TurnWindowsFirewall(bool bTurnOn /*= true*/)
 			return;
 		if (!bTurnOn && !bFireWallStatus) // Alreadt turn off
 			return;
-		INetFwProfile* pFwProfilePtr;
-		HRESULT hr = GetFwProfile(&pFwProfilePtr);
+		CFlyComPtr<INetFwProfile> l_fwProfilePtr;
+		HRESULT hr = GetFwProfile(l_fwProfilePtr.getAddr());
 		if (FAILED(hr)) throw hr;
-		pFwProfilePtr->put_FirewallEnabled(bTurnOn ? VARIANT_TRUE : VARIANT_FALSE);
+		l_fwProfilePtr->put_FirewallEnabled(bTurnOn ? VARIANT_TRUE : VARIANT_FALSE);
 	}
 	catch (const HRESULT& getHResult)
 	{
@@ -220,29 +271,29 @@ void WinFirewall::WindowsFirewallPortAdd(TCHAR* in_sportName, long in_portNumber
 			return;
 		if (!bEnable && !bIsPortEnable)
 			return;
-		INetFwProfile* pFwProfilePtr;
-		HRESULT hr = GetFwProfile(&pFwProfilePtr);
+		CFlyComPtr<INetFwProfile> l_fwProfilePtr;
+		HRESULT hr = GetFwProfile(l_fwProfilePtr.getAddr());
 		if (FAILED(hr)) throw hr;
-		INetFwOpenPort* fwOpenPort;
-		INetFwOpenPorts* fwOpenPorts;
-		hr = pFwProfilePtr->get_GloballyOpenPorts(&fwOpenPorts);
+		CFlyComPtr<INetFwOpenPort> l_fwOpenPort;
+		CFlyComPtr<INetFwOpenPorts> l_fwOpenPorts;
+		hr = l_fwProfilePtr->get_GloballyOpenPorts(l_fwOpenPorts.getAddr());
 		if (FAILED(hr)) throw E_UNEXPECTED;
 		//CLSID clsID;
 		//hr = CLSIDFromProgID(OLESTR("HNetCfg.FwOpenPort"),&clsID);
-		//if(FAILED(hr)) throw E_UNEXPECTED;
+		//if (FAILED(hr)) throw E_UNEXPECTED;
 		//hr = fwOpenPort.CreateInstance(clsID);
 		hr = CoCreateInstance(
 		         __uuidof(NetFwOpenPort),
 		         NULL,
 		         CLSCTX_INPROC_SERVER,
 		         __uuidof(INetFwOpenPort),
-		         reinterpret_cast<void**>(static_cast<INetFwOpenPort**>(&fwOpenPort)));
+		         reinterpret_cast<void**>(l_fwOpenPort.getAddr()));
 		if (FAILED(hr)) throw E_UNEXPECTED;
-		fwOpenPort->put_Port(in_portNumber);
-		fwOpenPort->put_Protocol(in_protocol);
-		fwOpenPort->put_Name(_bstr_t(in_sportName));
-		fwOpenPort->put_Enabled(bEnable);
-		hr = fwOpenPorts->Add(fwOpenPort);
+		l_fwOpenPort->put_Port(in_portNumber);
+		l_fwOpenPort->put_Protocol(in_protocol);
+		l_fwOpenPort->put_Name(_bstr_t(in_sportName));
+		l_fwOpenPort->put_Enabled(bEnable);
+		hr = l_fwOpenPorts->Add(l_fwOpenPort.get());
 		if (FAILED(hr)) throw E_UNEXPECTED;
 	}
 	catch (const HRESULT& getHResult)
@@ -263,8 +314,8 @@ HRESULT WinFirewall::GetFwProfile(INetFwProfile** out_fwProfile)
 	HRESULT hRet = S_OK;
 	try
 	{
-		INetFwMgr* pFwMgrPtr;
-		INetFwPolicy* pFwPolicyPtr;
+		CFlyComPtr<INetFwMgr> l_fwMgrPtr;
+		CFlyComPtr<INetFwPolicy> l_fwPolicyPtr;
 		// CLSID clsID;
 		//HRESULT hr= CLSIDFromProgID(OLESTR("HNetCfg.FwMgr"), &clsID);
 		//if(FAILED(hr)) throw E_NOINTERFACE;
@@ -274,12 +325,12 @@ HRESULT WinFirewall::GetFwProfile(INetFwProfile** out_fwProfile)
 		                 NULL,
 		                 CLSCTX_INPROC_SERVER,
 		                 __uuidof(INetFwMgr),
-		                 reinterpret_cast<void**>(static_cast<INetFwMgr**>(&pFwMgrPtr))
+		                 reinterpret_cast<void**>(l_fwMgrPtr.getAddr())
 		             );
 		if (FAILED(hr)) throw hr;
-		hr = pFwMgrPtr->get_LocalPolicy(&pFwPolicyPtr);
+		hr = l_fwMgrPtr->get_LocalPolicy(l_fwPolicyPtr.getAddr());
 		if (FAILED(hr)) throw E_UNEXPECTED;
-		hr = pFwPolicyPtr->get_CurrentProfile(out_fwProfile);
+		hr = l_fwPolicyPtr->get_CurrentProfile(out_fwProfile);
 		if (FAILED(hr)) throw E_UNEXPECTED;
 	}
 	catch (const HRESULT& getHResult)

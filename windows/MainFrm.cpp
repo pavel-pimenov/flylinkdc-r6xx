@@ -181,7 +181,7 @@ MainFrame::MainFrame() :
 	m_diff(GET_TICK()),
 	m_stopexit(false)
 {
-	m_bUpdateProportionalPos = false; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
+	m_bUpdateProportionalPos = false; // Исправил залипание сплиттера в верхней части
 	g_anyMF = this;
 	memzero(m_statusSizes, sizeof(m_statusSizes));
 }
@@ -407,8 +407,8 @@ void MainFrame::createMainMenu(void)
 	
 #ifdef FLYLINKDC_USE_DEAD_CODE
 	// TODO
-	// пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ. пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ - пїЅпїЅпїЅпїЅ пїЅ 4xx пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
-	// пїЅ ToolbarButtons[0].image пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ 0
+	// вот этот цикл ниразу не выполняется. пока не понял зачем сделали там - даже в 4xx это есть
+	// в ToolbarButtons[0].image лежит всегда 0
 	// Add fake items for unused icons, to save icons ids order
 	for (int i = 0; i < ToolbarButtons[0].image; i++)
 	{
@@ -600,7 +600,7 @@ LRESULT MainFrame::OnCreate(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/,
 	SetWindowText(getFlylinkDCAppCaptionWithVersionT().c_str());
 	createMainMenu();
 	
-	// [!] TODO пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ! пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅ, пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ.
+	// [!] TODO убрать флажки нафиг! Достаточно валидность указателя проверять, я уже молчу про то, что этот флажёк не гарнтирует вообще ничего.
 	m_is_tbarcreated = false;
 	m_is_wtbarcreated = false;
 	m_is_qtbarcreated = false;
@@ -732,7 +732,7 @@ LRESULT MainFrame::OnCreate(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/,
 		if (getPasswordInternal(l_do_modal_result) == false &&
 		        l_do_modal_result == IDOK)
 		{
-			ExitProcess(1); // пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ ExitProcess - http://blog.not-a-kernel-guy.com/2007/07/15/210
+			ExitProcess(1); // Опасная функция ExitProcess - http://blog.not-a-kernel-guy.com/2007/07/15/210
 		}
 	}
 	
@@ -815,7 +815,7 @@ LRESULT MainFrame::OnCreate(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/,
 #endif
 	return 0;
 }
-bool g_is_auto_open_queue = false; // пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ.
+bool g_is_auto_open_queue = false; // Флаг выставляется в потоке если он заканичвается раньше построения окна.
 void MainFrame::openDefaultWindows()
 {
 	if (BOOLSETTING(OPEN_FAVORITE_HUBS)) PostMessage(WM_COMMAND, IDC_FAVORITES);
@@ -849,7 +849,7 @@ int MainFrame::tuneTransferSplit()
 	m_nProportionalPos = l_split_size;
 	if (m_nProportionalPos < 3000 || m_nProportionalPos > 9400)
 	{
-		m_nProportionalPos = 9100; // TODO - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+		m_nProportionalPos = 9100; // TODO - пофиксить
 	}
 	SET_SETTING(TRANSFER_SPLIT_SIZE, m_nProportionalPos);
 	SetSplitterPanes(m_hWndMDIClient, m_transferView.m_hWnd);
@@ -965,8 +965,8 @@ LRESULT MainFrame::onTimer(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOOL
 		const wstring l_dlstr = Util::formatBytesW(g_downdiff);
 		const wstring l_ulstr = Util::formatBytesW(g_updiff);
 		
-		пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ.
-		if (BOOLSETTING(SHOW_CURRENT_SPEED_IN_TITLE)) // TODO пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ. пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ. L: пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ! пїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ.
+		Текущая скорость в заголовке.
+		if (BOOLSETTING(SHOW_CURRENT_SPEED_IN_TITLE)) // TODO похерить. нигде не видел в прогах чтобы скорость была в заголовке. L: нечего херить! Флай в первую очередь программа для файло обмена, торрент так же делать умеет.
 		{
 			const tstring* l_temp = new tstring(TSTRING(DL) + _T(' ') + (l_dlstr) + _T(" / ") + TSTRING(UP) + _T(' ') + (l_ulstr) + _T("  -  "));
 			*l_temp += getFlylinkDCAppCaptionWithVersionT();
@@ -978,7 +978,7 @@ LRESULT MainFrame::onTimer(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOOL
 		
 #endif // FLYLINKDC_CALC_MEMORY_USAGE
 		
-		if (g_CountSTATS == 0) // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+		if (g_CountSTATS == 0) // Генерируем статистику только когда предыдущая порция обработана
 		{
 			dcassert(!ClientManager::isStartup());
 			TStringList* Stats = new TStringList();
@@ -1010,7 +1010,7 @@ LRESULT MainFrame::onTimer(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOOL
 		}
 		else
 		{
-			// dcassert(0); // пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ.
+			// dcassert(0); // Тик пришел раньше чем успело обработать предыдущее событие.
 		}
 	}
 	return 0;
@@ -1036,7 +1036,7 @@ void MainFrame::onMinute(uint64_t aTick)
 HWND MainFrame::createToolbar()
 {
 #ifdef RIP_USE_PORTAL_BROWSER
-//	const size_t PortalsCount = GetPortalBrowserListCount(); //TODO - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ...
+//	const size_t PortalsCount = GetPortalBrowserListCount(); //TODO - переменная перестала использоваться...
 #endif
 
 	if (!m_is_tbarcreated)
@@ -1299,7 +1299,7 @@ LRESULT MainFrame::onWinampButton(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl
 	}
 	else if (SETTING(MEDIA_PLAYER) == SettingsManager::iTunes)
 	{
-		// Since i couldn't find out the appropriate window messages, we doing this пїЅ la COM
+		// Since i couldn't find out the appropriate window messages, we doing this а la COM
 		HWND hwndiTunes = FindWindow(_T("iTunes"), _T("iTunes"));
 		if (::IsWindow(hwndiTunes))
 		{
@@ -1516,8 +1516,10 @@ LRESULT MainFrame::onQuickSearchEditChange(WORD /*wNotifyCode*/, WORD /*wID*/, H
 			int nMatch = ::SendMessage(hWndCombo, CB_FINDSTRING, (WPARAM) - 1, (LPARAM)pEnteredText);
 			if (nMatch != CB_ERR)
 			{
-				uint32_t nMatchedTextLen = ::SendMessage(hWndCombo, CB_GETLBTEXTLEN, (WPARAM)nMatch, 0);
-				if (nMatchedTextLen != CB_ERR)
+				// the result must be signed: CB_ERR is -1 and the comparison with an
+				// unsigned value is always true
+				int nMatchedTextLen = ::SendMessage(hWndCombo, CB_GETLBTEXTLEN, (WPARAM)nMatch, 0);
+				if (nMatchedTextLen != CB_ERR && nMatchedTextLen >= 0)
 				{
 					// Since the user may be typing in the same string, but with different case (e.g. "/port --> /PORT")
 					// we copy whatever the user has already typed into the beginning of the matched string,
@@ -1668,7 +1670,7 @@ LRESULT MainFrame::onSpeaker(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, BOOL& 
 				if (m_statusText[0] != str[0])
 				{
 					m_statusText[0] = str[0];
-					l_result = m_ctrlStatus.SetText(1, str[0].c_str()); // TODO пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ...
+					l_result = m_ctrlStatus.SetText(1, str[0].c_str()); // TODO никогда не срабатывает...
 					dcassert(l_result);
 				}
 				const uint8_t count = str.size();
@@ -1828,16 +1830,16 @@ LRESULT MainFrame::onSpeaker(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, BOOL& 
 			PopupManager::getInstance()->AutoRemove((uint64_t)lParam);
 		}
 	}
-	else if (wParam == SET_PM_TRAY_ICON) // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ.
+	else if (wParam == SET_PM_TRAY_ICON) // Установка иконки о получении сообщения.
 	{
 		if (!ClientManager::isBeforeShutdown())
 		{
 			if (m_bIsPM == false && (!WinUtil::g_isAppActive || g_bAppMinimized))
 			{
-				m_bIsPM = true; // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ.
+				m_bIsPM = true; // Иконка о получении лички установлена.
 				
 				if (m_taskbarList)
-					m_taskbarList->SetOverlayIcon(m_hWnd, *m_pmicon, NULL); // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ-пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ.
+					m_taskbarList->SetOverlayIcon(m_hWnd, *m_pmicon, NULL); // Устанавливается мини-иконка на панели задач о получении сообщения.
 					
 				if (m_bTrayIcon == true)
 					setIcon(*m_pmicon);
@@ -2039,7 +2041,7 @@ LRESULT MainFrame::onOpenWindows(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*
 	return 0;
 }
 
-// пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ.
+// При изменении настроек.
 LRESULT MainFrame::OnFileSettings(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
 	if (!PropertiesDlg::g_is_create)
@@ -2268,7 +2270,10 @@ LRESULT MainFrame::onGetToolTip(int idCtrl, LPNMHDR pnmh, BOOL& /*bHandled*/)
 		}
 		if (stringId != -1)
 		{
+			// _tcsncpy() does not terminate the string when the source is not shorter
+			// than the buffer
 			_tcsncpy(pDispInfo->lpszText, CTSTRING_I((ResourceManager::Strings)stringId), 79);
+			pDispInfo->lpszText[79] = 0;
 			pDispInfo->uFlags |= TTF_DI_SETITEM;
 		}
 	}
@@ -2383,7 +2388,7 @@ void MainFrame::updateTray(bool add /* = true */)
 				nid.cbSize = sizeof(NOTIFYICONDATA);
 				nid.hWnd = m_hWnd;
 				nid.uFlags = NIF_ICON | NIF_TIP | NIF_MESSAGE;
-				nid.uCallbackMessage = WM_APP + 242;// TODO пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ! пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ!
+				nid.uCallbackMessage = WM_APP + 242;// TODO отрефакторить! это источник потенциальных ошибок!
 				nid.hIcon = *m_normalicon;
 				_tcsncpy(nid.szTip, getFlylinkDCAppCaptionT().c_str(), 64);
 				nid.szTip[63] = '\0';
@@ -2507,7 +2512,7 @@ void MainFrame::storeWindowsPos()
 		wp.length = sizeof(wp);
 		if (GetWindowPlacement(&wp))
 		{
-			// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ! пїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅ MAXIMIZED
+			// Состояние окна отдельно от координат! Там мы могли не попадать в условие, при MAXIMIZED
 			if (wp.showCmd == SW_SHOWNORMAL || wp.showCmd == SW_SHOW ||
 			        wp.showCmd == SW_SHOWMAXIMIZED || wp.showCmd == SW_SHOWMINIMIZED ||
 			        wp.showCmd == SW_MAXIMIZE)
@@ -2518,9 +2523,9 @@ void MainFrame::storeWindowsPos()
 			{
 				dcassert(0);
 			}
-			// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
+			// Координаты окна
 			CRect rc;
-			// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ!!! пїЅпїЅпїЅпїЅпїЅ - пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+			// СОХРАНИМ координаты, только если окно в нормальном состоянии!!! Иначе - пусть будут последние
 			if (GetWindowRect(rc) && (wp.showCmd == SW_SHOW || wp.showCmd == SW_SHOWNORMAL))
 			{
 				SET_SETTING(MAIN_WINDOW_POS_X, rc.left);
@@ -2531,14 +2536,14 @@ void MainFrame::storeWindowsPos()
 #ifdef _DEBUG
 			else {
 				dcdebug("MainFrame:: WINDOW  GetWindowRect(rc) -> NULL rc OR is SW_MAXIMIZED, SW_MINIMIZED, etc...\n");
-				// пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+				// Вывести окно с этим сообщением
 			}
 #endif
 		}
 #ifdef _DEBUG
 		else {
 			dcdebug("MainFrame:: WINDOW  GetWindowPlacement(&wp) -> NULL data !!!\n");
-			// пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+			// вывести окно с этим сообщением
 		}
 #endif
 	}
@@ -2581,7 +2586,6 @@ LRESULT MainFrame::OnClose(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, 
 	}
 	else
 	{
-		safe_destroy_timer();
 		if (!m_closing)
 		{
 #ifdef _DEBUG
@@ -2919,19 +2923,19 @@ struct ThreadParams
 
 static DWORD WINAPI converttthHistoryThreadFunc(void* params)
 {
-	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ ProgressParam<ThreadParams>,
-	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ IProgress пїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+	// Получаем экземпляр класса ProgressParam<ThreadParams>,
+	// который хранит указатель на IProgress и на параметры
 	ProgressParam<ThreadParams> *pp = (ProgressParam<ThreadParams>*)params;
 	
-	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
+	// Получаем параметры, но в данном случае ничего с ними не делаем
 	// ThreadParams* threadParams = (ThreadParams*)pp->pParams;
 	
-	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+	// Устанавливаем диапазон изменения индикатора прогресса
 	pp->pProgress->SetProgressRange(0, 100, 0);
 	CFlyLog l_log("[Convert TTH History]");
 	const auto l_count = CFlylinkDBManager::getInstance()->convert_tth_history();
 	l_log.step(" Count: " + Util::toString(l_count));
-	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
+	// Выполянем долгий цикл
 	/*
 	for (int i = 0; i < 100; ++i)
 	{
@@ -3075,7 +3079,7 @@ LRESULT MainFrame::onTaskbarButton(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lP
 			dcassert(0);
 		}
 	}
-	THUMBBUTTON buttons[3] = {}; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ.
+	THUMBBUTTON buttons[3] = {}; // Количество кнопок.
 	const int l_sizeTip = _countof(buttons[0].szTip) - 1;
 	buttons[0].dwMask = THB_ICON | THB_TOOLTIP | THB_FLAGS;
 	buttons[0].iId = IDC_OPEN_DOWNLOADS;
@@ -3907,7 +3911,7 @@ void MainFrame::on(UserManagerListener::CollectSummaryInfo, const UserPtr& user,
 #ifdef FLYLINKDC_USE_SQL_EXPLORER
 void MainFrame::on(UserManagerListener::BrowseSqlExplorer, const UserPtr& user, const string& hubHint) noexcept
 {
-	// TODO пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ MainFrame ;)
+	// TODO мы добрались до MainFrame ;)
 	//onOpenSQLExplorer() ?
 }
 #endif // FLYLINKDC_USE_SQL_EXPLORER
@@ -3939,7 +3943,7 @@ LRESULT MainFrame::onPreviewLogDlg(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hW
 #ifdef FLYLINKDC_USE_SQL_EXPLORER
 LRESULT MainFrame::onOpenSQLExplorer(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
-	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+	// Создаем вкладку
 	FlyWindow::FlySQLExplorer::Instance();
 	return 0;
 }

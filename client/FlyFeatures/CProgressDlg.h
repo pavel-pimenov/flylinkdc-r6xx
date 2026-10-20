@@ -39,6 +39,47 @@ template<class T, int idd, int time> class CProgressDlg :
 	public IProgress
 {
 	private:
+		// The worker thread must not use the dialog after it has been destroyed.
+		// The progress interface is therefore a separate object on the heap: the
+		// dialog detaches itself from it in the destructor.
+		class CProgressProxy : public IProgress
+		{
+			public:
+				explicit CProgressProxy(IProgress* p_target) : m_target(p_target)
+				{
+					::InitializeCriticalSection(&m_cs);
+				}
+				~CProgressProxy()
+				{
+					::DeleteCriticalSection(&m_cs);
+				}
+				void SetProgressRange(int minval, int maxval, int currval) override
+				{
+					::EnterCriticalSection(&m_cs);
+					IProgress* l_target = m_target;
+					if (l_target)
+						l_target->SetProgressRange(minval, maxval, currval);
+					::LeaveCriticalSection(&m_cs);
+				}
+				void SetProgress(int val) override
+				{
+					::EnterCriticalSection(&m_cs);
+					IProgress* l_target = m_target;
+					if (l_target)
+						l_target->SetProgress(val);
+					::LeaveCriticalSection(&m_cs);
+				}
+				void detach()
+				{
+					::EnterCriticalSection(&m_cs);
+					m_target = nullptr;
+					::LeaveCriticalSection(&m_cs);
+				}
+			private:
+				CRITICAL_SECTION m_cs;
+				IProgress* m_target;
+		};
+
 		BEGIN_MSG_MAP_EX(CAboutDlg)
 		MSG_WM_INITDIALOG(OnInitDialog)
 		MSG_WM_TIMER(OnTimer)
@@ -50,8 +91,10 @@ template<class T, int idd, int time> class CProgressDlg :
 			m_Progress = GetDlgItem(IDC_PROGRESS);
 			
 			unsigned ThreadId = 0;
-			m_FuncParams.pParams = m_pParams;
-			m_FuncParams.pProgress = this;
+			m_progress_proxy = new CProgressProxy(this);
+			m_FuncParams = new ProgressParam<T>();
+			m_FuncParams->pParams = m_pParams;
+			m_FuncParams->pProgress = m_progress_proxy;
 			
 			SetProgressRange(0, 100, 0);
 			
@@ -61,7 +104,7 @@ template<class T, int idd, int time> class CProgressDlg :
 			m_Dt = 0;
 			
 			m_hThread = (HANDLE)_beginthreadex(NULL, 0, (unsigned(__stdcall *)(void *))m_Func,
-			                                   ((void*)(&m_FuncParams)), 0, &ThreadId);
+			                                   ((void*)(m_FuncParams)), 0, &ThreadId);
 			                                   
 			if (!m_hThread)
 			{
@@ -108,19 +151,40 @@ template<class T, int idd, int time> class CProgressDlg :
 		DWORD m_MaxTime;
 		
 		// Именно это передаем в функцию потока, а не те аргументы, который void*
-		ProgressParam<T> m_FuncParams;
+		// the parameters are allocated on the heap: the worker thread uses them and
+		// they must stay alive until the thread has finished
+		ProgressParam<T>* m_FuncParams = nullptr;
+		CProgressProxy* m_progress_proxy = nullptr;
 	public:
 		enum { IDD = idd };
 		enum { IDTIME = time};
 		
 		CProgressDlg(LPTHREAD_START_ROUTINE func, T* params, LPCTSTR capture): m_Func(func),
 			m_TimerId(101), m_hThread(0), m_pParams(params), m_Capture(capture),
-			m_FirstTime(0), m_Dt(0), m_MaxTime(0), m_FuncParams()
+			m_FirstTime(0), m_Dt(0), m_MaxTime(0)
 		{
 		}
 		
 		virtual ~CProgressDlg()
 		{
+			// the worker thread must not use the dialog any more: the progress proxy
+			// detaches the dialog and the thread is awaited before the members of the
+			// dialog are destroyed
+			if (m_progress_proxy)
+				m_progress_proxy->detach();
+			if (m_hThread)
+			{
+				::WaitForSingleObject(m_hThread, 60000);
+				::CloseHandle(m_hThread);
+				m_hThread = NULL;
+			}
+			if (m_progress_proxy)
+			{
+				delete m_progress_proxy;
+				m_progress_proxy = NULL;
+			}
+			delete m_FuncParams;
+			m_FuncParams = nullptr;
 		}
 		
 		void Start()

@@ -434,7 +434,7 @@ string File::formatPath(const string & path, bool p_is_force_unc /*= false*/)
 	if (p_is_force_unc == false && path.size() < (MAX_PATH / 2) - 2)
 		return path;
 		
-	if (path[1] == '\\' && path[0] == '\\')
+	if (path.size() >= 2 && path[1] == '\\' && path[0] == '\\')
 		return "\\\\?\\UNC\\" + path.substr(2);
 	else
 		return "\\\\?\\" + path;
@@ -446,7 +446,7 @@ tstring File::formatPath(const tstring & path, bool p_is_force_unc /*= false*/)
 	if (p_is_force_unc == false && path.size() < (MAX_PATH / 2) - 2)
 		return path;
 		
-	if (path[1] == _T('\\') && path[0] == _T('\\'))
+	if (path.size() >= 2 && path[1] == _T('\\') && path[0] == _T('\\'))
 		return _T("\\\\?\\UNC\\") + path.substr(2);
 	else
 		return _T("\\\\?\\") + path;

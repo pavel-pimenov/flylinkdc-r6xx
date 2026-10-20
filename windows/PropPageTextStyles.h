@@ -79,7 +79,12 @@ class PropPageTextStyles: public CPropertyPage<IDD_TEXT_STYLES_PAGE>, public Pro
 		void setForeColor(CEdit& cs, const COLORREF& cr)
 		{
 			HBRUSH hBr = CreateSolidBrush(cr);
+			// the previous brush must be released: SetProp() replaces the value and
+			// the old handle would be leaked on every change of the color
+			HBRUSH l_old_brush = (HBRUSH)GetProp(cs.m_hWnd, _T("fillcolor"));
 			SetProp(cs.m_hWnd, _T("fillcolor"), hBr);
+			if (l_old_brush)
+				::DeleteObject(l_old_brush);
 			cs.Invalidate();
 			cs.RedrawWindow(NULL, NULL, RDW_INVALIDATE | RDW_ERASENOW | RDW_UPDATENOW | RDW_FRAME);
 		}

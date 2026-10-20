@@ -119,7 +119,9 @@ struct hash<HashValue<T>* >
 {
 	size_t operator()(const HashValue<T>* rhs) const
 	{
-		return *(size_t*)rhs;
+		// the pointer itself is hashed: the value behind it was hashed before, so
+		// two different pointers to equal values had different hashes
+		return reinterpret_cast<size_t>(rhs);
 	}
 };
 
@@ -128,7 +130,8 @@ struct equal_to<HashValue<T>*>
 {
 	bool operator()(const HashValue<T>* lhs, const HashValue<T>* rhs) const
 	{
-		return (*lhs) == (*rhs);
+		// the pointers are compared: the hash uses the pointer value
+		return lhs == rhs;
 	}
 };
 

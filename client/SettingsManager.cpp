@@ -1335,9 +1335,11 @@ void SettingsManager::load(const string& aFileName)
 			l_buf[0] = 0;
 			DWORD l_bufLen = sizeof(l_buf);
 			const wchar_t* l_key = _T("Inno Setup: Language");
-			::RegQueryValueEx(hk, l_key, NULL, NULL, (LPBYTE)l_buf, &l_bufLen);
+			const LONG l_res = ::RegQueryValueEx(hk, l_key, NULL, NULL, (LPBYTE)l_buf, &l_bufLen);
 			::RegCloseKey(hk);
-			if (l_bufLen)
+			// the value is not terminated when it does not fit into the buffer
+			l_buf[_countof(l_buf) - 1] = 0;
+			if (l_res == ERROR_SUCCESS && l_bufLen > 0 && l_bufLen <= sizeof(l_buf))
 			{
 				string l_result = Text::fromT(l_buf);
 				Text::replace_all(l_result, "_", "-");
@@ -1719,7 +1721,10 @@ bool SettingsManager::set(IntSetting key, int value)
 		}
 		case COLOR_AVOIDING:
 		{
-			if (value + get(PROGRESS_BACK_COLOR, false) > RGB(255, 255, 255))
+			// the value comes from the settings file: the sum must not overflow
+			const int64_t l_progress_back = get(PROGRESS_BACK_COLOR, false);
+			if (value < 0 || value > RGB(255, 255, 255) ||
+			    static_cast<int64_t>(value) + l_progress_back > RGB(255, 255, 255))
 			{
 				value = RGB(100, 0, 0);
 				l_auto = true;
@@ -1826,6 +1831,25 @@ bool SettingsManager::set(IntSetting key, int value)
 			VERIFI(80, 8000);
 			break;
 		}
+		case HUBFRAME_COLUMNS_SORT:
+		case SEARCH_SPY_COLUMNS_SORT:
+		case SEARCH_COLUMNS_SORT:
+		case QUEUE_COLUMNS_SORT:
+		case FINISHED_DL_COLUMNS_SORT:
+		case FINISHED_UL_COLUMNS_SORT:
+		case UPLOAD_QUEUE_COLUMNS_SORT:
+		case USERS_COLUMNS_SORT:
+		case HUBS_PUBLIC_COLUMNS_SORT:
+		case HUBS_FAVORITES_COLUMNS_SORT:
+		case HUBS_RECENTS_COLUMNS_SORT:
+		case DIRLIST_COLUMNS_SORT:
+		case TRANSFERS_COLUMNS_SORT:
+		{
+			// the value is used as an index of the column array of the frame
+			VER_MIN(-1);
+			VER_MAX(31);
+			break;
+		}
 		
 #undef VER_MIN
 #undef VER_MAX
@@ -1891,8 +1915,15 @@ void SettingsManager::save(const string& aFileName)
 		xml.toXML(&f);
 		f.flushBuffers(true);
 		out.close();
-		File::deleteFile(aFileName);
-		File::renameFile(aFileName + ".tmp", aFileName);
+		// the file must be replaced atomically: the delete + rename was not atomic and
+		// a crash in between left the client without any settings
+		if (!::MoveFileEx(Text::toT(aFileName + ".tmp").c_str(), Text::toT(aFileName).c_str(),
+		                   MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH))
+		{
+			const DWORD l_error = GetLastError();
+			CFlyServerJSON::pushError(13, "error rename .xml file:" + aFileName + " error = " + Util::translateError(l_error));
+			File::deleteFile(aFileName + ".tmp");
+		}
 	}
 	catch (const FileException& e)
 	{

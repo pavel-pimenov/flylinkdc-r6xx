@@ -172,8 +172,12 @@ LRESULT Popups::onFont(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOO
 	dlg.m_cf.rgbColors = SETTING(POPUP_TEXTCOLOR);
 	if (dlg.DoModal() == IDOK)
 	{
+		// the LOGFONT of the dialog is an input only: the font chosen by the user
+		// must be read with GetCurrentLogFont()
+		LOGFONT l_new_font = {0};
+		dlg.GetCurrentFont(&l_new_font);
 		SET_SETTING(POPUP_TEXTCOLOR, (int)dlg.GetColor());
-		SET_SETTING(POPUP_FONT, Text::fromT(WinUtil::encodeFont(font)));
+		SET_SETTING(POPUP_FONT, Text::fromT(WinUtil::encodeFont(l_new_font)));
 	}
 	return 0;
 }
@@ -186,7 +190,11 @@ LRESULT Popups::onTitleFont(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/
 	dlg.m_cf.rgbColors = SETTING(POPUP_TITLE_TEXTCOLOR);
 	if (dlg.DoModal() == IDOK)
 	{
-		myFont = tmp;
+		// the LOGFONT of the dialog is an input only: the font chosen by the user
+		// must be read with GetCurrentLogFont()
+		LOGFONT l_new_font = {0};
+		dlg.GetCurrentFont(&l_new_font);
+		myFont = l_new_font;
 		SET_SETTING(POPUP_TITLE_TEXTCOLOR, (int)dlg.GetColor());
 		SET_SETTING(POPUP_TITLE_FONT, Text::fromT(WinUtil::encodeFont(myFont)));
 	}

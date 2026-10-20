@@ -305,6 +305,7 @@ class QueueItem : public Flags
 		bool removeDownload(const UserPtr& p_user);
 		size_t getDownloadsSegmentCount() const
 		{
+			CFlyFastLock(m_fcs_download);
 			return m_downloads.size();
 		}
 		bool disconectedSlow(const DownloadPtr& d);
@@ -329,7 +330,9 @@ class QueueItem : public Flags
 		}
 		bool isWaiting() const
 		{
-			// fix lock - не включать! CFlyFastLock(m_fcs_download);
+			// m_downloads is modified by the download threads (addDownload/removeDownload):
+			// without the lock the size can be read in a torn state
+			CFlyFastLock(m_fcs_download);
 			return m_downloads.empty();
 		}
 		string getListName() const;

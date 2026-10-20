@@ -625,8 +625,11 @@ class ThreadedDirectoryListing : public Thread
 				if (!mFile.empty())
 				{
 					const string l_filename = Util::getFileName(mFile);
-					const bool l_list = (_strnicmp(l_filename.c_str(), "files", 5)
-					                     || _strnicmp(l_filename.c_str() + l_filename.length() - 8, ".xml.bz2", 8));
+					// the length of the name must be checked before the last characters
+					// are compared: the subtraction below would underflow
+					const bool l_is_bz2 = (l_filename.length() >= 8) &&
+					                      (_strnicmp(l_filename.c_str() + l_filename.length() - 8, ".xml.bz2", 8) == 0);
+					const bool l_list = (_strnicmp(l_filename.c_str(), "files", 5) != 0) || l_is_bz2;
 					                     
 					const bool l_own_list = _stricmp(l_filename.c_str(), Util::getFileName(ShareManager::getInstance()->getOwnListFile()).c_str()) == 0;
 					mWindow->dl->loadFile(mFile, l_own_list);

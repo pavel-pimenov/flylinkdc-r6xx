@@ -33,6 +33,12 @@ class MerkleCheckOutputStream : public OutputStream
 			//dcdebug("[==========================] MerkleCheckOutputStream() start = %d s = %d this = %d\r\n\r\n", start, s, this);
 			// Only start at block boundaries
 			const auto l_blocksize = aTree.getBlockSize();
+			if (l_blocksize <= 0)
+			{
+				// the block size of the tree is not set: the division below would crash
+				dcdebug("Invalid tree / parameters");
+				return;
+			}
 			dcassert(start % l_blocksize == 0);
 			cur.setFileSize(start);
 			

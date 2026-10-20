@@ -304,7 +304,14 @@ LRESULT UsersFrame::onDoubleClick(int /*idCtrl*/, LPNMHDR pnmh, BOOL& bHandled)
 	{
 	
 		static const int cmd[] = { IDC_GETLIST, IDC_PRIVATE_MESSAGE, IDC_MATCH_QUEUE, IDC_EDIT, IDC_OPEN_USER_LOG };
-		PostMessage(WM_COMMAND, cmd[SETTING(FAVUSERLIST_DBLCLICK)], 0);
+		// the setting comes from the user-editable config file and is not validated
+		const int l_action = SETTING(FAVUSERLIST_DBLCLICK);
+		if (l_action < 0 || l_action >= (int)_countof(cmd))
+		{
+			bHandled = FALSE;
+			return 0;
+		}
+		PostMessage(WM_COMMAND, cmd[l_action], 0);
 	}
 	else
 	{

@@ -235,15 +235,19 @@ LRESULT PublicHubsFrame::onSelChangedISPTree(int /*idCtrl*/, LPNMHDR pnmh, BOOL&
 				if (l_http_downloader.getBinaryDataFromInet(l_url, l_data, 1000))
 				{
 					const string ext = Util::getFileExt(l_url);
-					if (stricmp(ext, ".bz2") == 0)
+					if (stricmp(ext, ".bz2") == 0 && !l_data.empty())
 					{
-						std::vector<byte> l_out(l_data.size() * 20);
+						// +1 for the NUL terminator written below: the decompressed data may
+						// fill the whole buffer, then outSize == l_out.size()
+						std::vector<byte> l_out(l_data.size() * 20 + 1);
 						size_t outSize = l_out.size();
 						size_t sizeRead = l_data.size();
 						UnBZFilter unbzip;
 						try
 						{
 							unbzip(l_data.data(), (size_t &)sizeRead, &l_out[0], outSize);
+							if (outSize >= l_out.size())
+								outSize = l_out.size() - 1;
 							l_out[outSize] = 0;
 							HubEntryList& l_list = m_publicListMatrix[l_url];
 							l_list.clear();
@@ -378,7 +382,12 @@ void PublicHubsFrame::loadISPHubs()
 			}
 			else
 			{
-				string l_line = m_isp_raw_data.substr(linestart, lineend - linestart - 1);
+				// the '\n' is at the lineend position, so the line length is
+				// "lineend - linestart" - the extra -1 dropped the last character of
+				// every line and underflowed on an empty line
+				string l_line = m_isp_raw_data.substr(linestart, lineend - linestart);
+				if (!l_line.empty() && l_line[l_line.size() - 1] == '\r')
+					l_line.erase(l_line.size() - 1);
 				parseISPHubsLine(l_line, l_log);
 				linestart = lineend + 1;
 			}
@@ -457,7 +466,7 @@ void PublicHubsFrame::parseISPHubsLine(const string& p_line, CFlyLog& p_log)
 			                                                   0  // hInsertAfter
 			                                                  );
 		}
-		// Город
+		// Провайдер
 		const auto l_city_name = l_isp.getTokens()[2];
 		auto& l_city_item =  l_country_item.m_city[l_city_name];
 		if (!l_city_item.m_tree_item)
@@ -473,7 +482,7 @@ void PublicHubsFrame::parseISPHubsLine(const string& p_line, CFlyLog& p_log)
 			                                                0  // hInsertAfter
 			                                               );
 		}
-		// Провайдер
+		// Сеть
 		const auto l_isp_name = l_isp.getTokens()[3];
 		auto& l_isp_item =  l_city_item.m_isp[l_isp_name];
 		if (!l_isp_item.m_tree_item)

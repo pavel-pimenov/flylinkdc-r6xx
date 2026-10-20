@@ -100,7 +100,8 @@ class MerkleTree
 		}
 		static size_t calcBlocks(int64_t aFileSize, int64_t aBlockSize)
 		{
-			dcassert(aBlockSize > 0);
+			if (aBlockSize <= 0 || aFileSize <= 0)
+				return 0;
 			dcassert(aFileSize >= aBlockSize);
 			return std::max((size_t)((aFileSize + aBlockSize - 1) / aBlockSize), (size_t)1);
 		}

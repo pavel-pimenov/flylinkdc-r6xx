@@ -1438,25 +1438,34 @@ void HubFrame::addStatus(const tstring& aLine, const bool bInChat /*= true*/, co
 				// <VerliHub> Your reported IP: 192.168.###.### does not match your real IP: 192.168.###.###
 				const string l_new_ip_string = Text::fromT(m_last_hub_message.substr(l_marker_current_ip + l_ipT.length()));
 				std::smatch l_match;
-				const std::regex l_reg_exp_ip(CFlyServerConfig::g_regex_find_ip);
-				if (std::regex_search(l_new_ip_string, l_match, l_reg_exp_ip))
+				try
 				{
-					const string l_ip = l_match[0].str();
-					try
+					// the regular expression comes from the fly-server config that is downloaded
+					// over plain HTTP: an invalid pattern must not crash the client
+					const std::regex l_reg_exp_ip(CFlyServerConfig::g_regex_find_ip);
+					if (std::regex_search(l_new_ip_string, l_match, l_reg_exp_ip))
 					{
-						const auto l_ip_boost = boost::asio::ip::make_address_v4(l_ip);
-						if (Text::fromT(l_ipT) != l_ip)
+						const string l_ip = l_match[0].str();
+						try
 						{
-							m_client->getMyIdentity().setIp(l_ip);
-							const string l_message = "*** FlylinkDC++ automatic change IP " + Text::fromT(l_ipT) + " to " + l_ip + " [Hub " + m_client->getHubUrlAndIP() + "] Last Message: " + Text::fromT(m_last_hub_message);
-							BaseChatFrame::addStatus(Text::toT(l_message), bInChat, bHistory, cf);
-							CFlyServerJSON::pushError(26, Text::fromT(m_last_hub_message));
-							LogManager::message(l_message);
+							const auto l_ip_boost = boost::asio::ip::make_address_v4(l_ip);
+							if (Text::fromT(l_ipT) != l_ip)
+							{
+								m_client->getMyIdentity().setIp(l_ip);
+								const string l_message = "*** FlylinkDC++ automatic change IP " + Text::fromT(l_ipT) + " to " + l_ip + " [Hub " + m_client->getHubUrlAndIP() + "] Last Message: " + Text::fromT(m_last_hub_message);
+								BaseChatFrame::addStatus(Text::toT(l_message), bInChat, bHistory, cf);
+								CFlyServerJSON::pushError(26, Text::fromT(m_last_hub_message));
+								LogManager::message(l_message);
+							}
+						}
+						catch (const std::exception&) {
+							LogManager::message("Error convert IP = " + l_ip);
 						}
 					}
-					catch (const std::exception&) {
-						LogManager::message("Error convert IP = " + l_ip);
-					}
+				}
+				catch (const std::regex_error&)
+				{
+					LogManager::message("Invalid regular expression in the fly-server config");
 				}
 			}
 		}

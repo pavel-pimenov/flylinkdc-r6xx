@@ -60,15 +60,17 @@ void PGLoader::load(const string& p_data /*= BaseUtil::emptyString*/)
 							lineend = l_data.find('\n', linestart);
 							if (lineend == string::npos)
 								break;
-							const string line = l_data.substr(linestart, lineend - linestart - 1);
+							string l_line = l_data.substr(linestart, lineend - linestart);
+							if (!l_line.empty() && l_line[l_line.size() - 1] == '\r')
+								l_line.erase(l_line.size() - 1);
 							int u1, u2, u3, u4, u5, u6, u7, u8;
-							int iItems = sscanf_s(line.c_str(), "%u.%u.%u.%u - %u.%u.%u.%u", &u1, &u2, &u3, &u4, &u5, &u6, &u7, &u8);
+							int iItems = sscanf_s(l_line.c_str(), "%u.%u.%u.%u - %u.%u.%u.%u", &u1, &u2, &u3, &u4, &u5, &u6, &u7, &u8);
 							if (iItems == 8 || iItems == 4)
 							{
 								l_is_download = true;
 								break;
 							}
-							iItems = sscanf_s(line.c_str(), "#%u.%u.%u.%u - %u.%u.%u.%u", &u1, &u2, &u3, &u4, &u5, &u6, &u7, &u8);
+							iItems = sscanf_s(l_line.c_str(), "#%u.%u.%u.%u - %u.%u.%u.%u", &u1, &u2, &u3, &u4, &u5, &u6, &u7, &u8);
 							if (iItems == 8 || iItems == 4)
 							{
 								l_is_download = true;
@@ -138,7 +140,9 @@ void PGLoader::load(const string& p_data /*= BaseUtil::emptyString*/)
 			}
 			else
 			{
-				string l_line = l_data.substr(linestart, lineend - linestart - 1);
+				string l_line = l_data.substr(linestart, lineend - linestart);
+				if (!l_line.empty() && l_line[l_line.size() - 1] == '\r')
+					l_line.erase(l_line.size() - 1);
 				addLine(l_line, l_IPTrust_log);
 				linestart = lineend + 1;
 			}

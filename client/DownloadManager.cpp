@@ -606,6 +606,21 @@ void DownloadManager::endData(UserConnection* aSource)
 		
 		int64_t bl = 1024;
 		auto &l_getTigerTree = d->getTigerTree();
+		if (l_getTigerTree.getLeaves().empty())
+		{
+			// the peer announced a tree without any leaf: the tree cannot be verified
+			// (without the check below the loop would never end: the size of the tree
+			// is bigger than zero and the number of the leaves is zero)
+			removeDownload(d);
+			fly_fire2(DownloadManagerListener::Failed(), d, STRING(INVALID_TREE));
+			
+			QueueManager::getInstance()->removeSource(d->getPath(), aSource->getUser(), QueueItem::Source::FLAG_BAD_TREE, false);
+			
+			QueueManager::getInstance()->putDownload(d->getPath(), d, false);
+			
+			checkDownloads(aSource);
+			return;
+		}
 		while (bl * (int64_t)l_getTigerTree.getLeaves().size() < l_getTigerTree.getFileSize())
 		{
 			bl *= 2;
@@ -665,7 +680,7 @@ void DownloadManager::endData(UserConnection* aSource)
 	catch (const HashException& e)
 	{
 		//aSource->setDownload(nullptr);
-		const std::string l_error = "[DownloadManager::endData]HashException - for " + d->getPath() + " Error = " = e.getError();
+		const std::string l_error = "[DownloadManager::endData]HashException - for " + d->getPath() + " Error = " + e.getError();
 		LogManager::message(l_error);
 		CFlyServerJSON::pushError(30, l_error);
 		dcassert(0);
@@ -843,6 +858,8 @@ void DownloadManager::on(AdcCommand::STA, UserConnection* aSource, const AdcComm
 					noSlots(aSource, cmd.getParam("QP", 0, param) ? param : BaseUtil::emptyString);
 					return;
 			}
+			// an unknown recoverable error: the connection is closed below
+			break;
 		case AdcCommand::SEV_SUCCESS:
 			// We don't know any messages that would give us these...
 			dcdebug("Unknown success message %s %s", err.c_str(), cmd.getParam(1).c_str());

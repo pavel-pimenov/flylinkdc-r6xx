@@ -199,7 +199,16 @@ LRESULT PropPage::OnCtlColorDlg(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& b
 {
 	if (BOOLSETTING(SETTINGS_WINDOW_COLORIZE) || SettingsManager::isDarkTheme())
 	{
-		m_hDialogBrush = CreateSolidBrush(Colors::g_bgColor /*GetSysColor(COLOR_BTNFACE)*/);
+		// the brush is reused for every WM_CTLCOLOR* message: create it only once
+		// (and re-create it when the theme color changes), otherwise every repaint
+		// of every control leaks a GDI brush
+		if (!m_hDialogBrush || m_dialogBrushColor != Colors::g_bgColor)
+		{
+			if (m_hDialogBrush)
+				DeleteObject(m_hDialogBrush);
+			m_dialogBrushColor = Colors::g_bgColor;
+			m_hDialogBrush = CreateSolidBrush(m_dialogBrushColor);
+		}
 		return LRESULT(m_hDialogBrush);
 	}
 	else

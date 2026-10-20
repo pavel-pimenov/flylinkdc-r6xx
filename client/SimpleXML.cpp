@@ -253,12 +253,27 @@ void SimpleXML::fromXML(const string& aXML)
 		delete root.children[0];
 		root.children.clear();
 	}
+	// the children vector was cleared: the iterator and the current node must be
+	// re-anchored, otherwise they point to the deleted child
+	current = &root;
+	resetCurrentChild();
 	
 	TagReader t(&root);
-	SimpleXMLReader(&t).parse(aXML.c_str(), aXML.size(), false);
+	try
+	{
+		SimpleXMLReader(&t).parse(aXML.c_str(), aXML.size(), false);
+	}
+	catch (...)
+	{
+		current = &root;
+		resetCurrentChild();
+		throw;
+	}
 	
 	if (root.children.size() != 1)
 	{
+		current = &root;
+		resetCurrentChild();
 		throw SimpleXMLException(STRING(SXML_INVALID_FILE));
 	}
 	

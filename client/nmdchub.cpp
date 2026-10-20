@@ -373,8 +373,9 @@ void NmdcHub::updateFromTag(Identity& id, const string & tag, bool p_is_version_
 		}
 		else if ((j = i->find("L:")) != string::npos)
 		{
-			const uint32_t l_limit = Util::toInt(i->c_str() + j + 2);
-			id.setLimit(l_limit * 1024);
+			// the limit comes from the hub: it is stored in kilobytes and must fit into uint32_t
+			const int64_t l_limit = Util::toInt64(i->c_str() + j + 2);
+			id.setLimit(l_limit > 0 ? (uint32_t)(std::min<int64_t>(l_limit, 0xFFFFFFFFLL / 1024) * 1024) : 0);
 		}
 		else if ((j = i->find(' ')) != string::npos)
 		{

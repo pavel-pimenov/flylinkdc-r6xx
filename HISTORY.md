@@ -1,5 +1,259 @@
 ﻿# ╨Ш╤Б╤В╨╛╤А╨╕╤П ╨╕╨╖╨╝╨╡╨╜╨╡╨╜╨╕╨╣ FlylinkDC++
 
+## 2026-10-19
+### Рефакторинг и поиск ошибок: собственный код `client/` + `windows/`
+Цель: автономный аудит кода проекта (без вендоров) на реальные дефекты памяти, логики и
+безопасности. Метод: MSVC `/analyze` (`build-win/analyze.ps1`, 255 находок, 49 — в
+собственном коде) + параллельный ручной аудит по подсистемам + проверка каждого вывода по
+исходникам. Сборка Debug|x64 и Release|x64 — 0 предупреждений / 0 ошибок.
+
+#### Память и безопасность
+- `windows/PublicHubsFrm.cpp:240` — **переполнение heap-буфера на 1 байт**: буфер распаковки
+  bzip2 имел ровно `size*20` байт, `l_out[outSize] = 0` писал за его конец, если
+  распакованные данные занимали весь буфер (реально для XML-списка хабов). Буфер +1 байт,
+  индекс проверяется.
+- `client/Encoder.cpp:80` — `fromBase32()` писал `dst[0]` при `len == 0`; соль ADC-хаба длиной
+  1 символ давала `saltBytes = 0` → запись в 0-байтовый буфер. Гвард `dst == nullptr || len == 0`.
+  `client/AdcHub.cpp:1463` — буфер соли теперь всегда непустой.
+- `client/Encoder.cpp:120` — `isBase32()` индексировал таблицу знаковым `char` → отрицательный
+  индекс (OOB-чтение) для не-ASCII magnet-хэша. Добавлен `(unsigned char)`-cast.
+- `client/QueueItem.cpp:132` — деление на `getSize()` (размер файла задаёт удалённый пир)
+  при `Size="0"` → `EXCEPTION_INT_DIVIDE_BY_ZERO` и падение клиента.
+- `client/UploadManager.cpp:293,374` — проверка `(start + size) > sz` обходилась при
+  `aBytes == -1` со `start > sz` (отрицательный размер в поток) и при переполнении `int64`
+  (`aBytes` ≈ `INT64_MAX`). Старт и длина проверяются раздельно.
+- `client/SearchManager.cpp:303` — UDP-парсер `$SR` искал `" ("` через `rfind` по всему буферу:
+  в подделанном пакете позиция оказывалась меньше текущего курсора → `size_t`-underflow в
+  `substr` и подстановка чужого TTH в результат поиска. Поля разбираются от конца сообщения.
+- `client/iplist.cpp:291`, `client/PGLoader.cpp:63,141` — `substr(linestart, lineend - linestart - 1)`
+  давал underflow на пустой строке (правилом становился весь остаток файла) и терял последний
+  символ строки в LF-файлах. Разбор переписан с корректной обработкой CRLF/LF.
+- `client/File.cpp:437,449` — `path[1]` на пустом пути (OOB-чтение).
+- `client/Util.cpp:3170` — `GetTempPath` при нехватке буфера возвращает требуемый размер →
+  чтение за пределами `LocalArray<TCHAR, MAX_PATH>`.
+- `client/MD5Calc.cpp:20` — `CreateFile` не закрывался для пустых файлов и файлов > 4 ГБ
+  (`GetFileSize` → `0xFFFFFFFF` → `int` → -1). Заменён на `GetFileSizeEx`.
+- `client/FlyFeatures/flyServer.cpp:2351` — `l_dwBytesAvailable + 1` переполнял `DWORD`.
+- `client/AdcHub.cpp:935` — `Util::toUInt32(...) * 8` считалось в 32 битах (переполнение).
+- `client/AdcHub.cpp:289` — `*(short*)i->c_str()`: нарушение strict-aliasing и невыровненное
+  чтение байтов от хаба. Заменено на чтение двух байт.
+- `client/BufferedSocket.cpp:329` — underflow в `substr(8, l_marker_tth - 8)` на коротком
+  `$Search`-пакете.
+- `client/nmdchub.cpp:376` — тег `L:` из `$MyINFO` конвертировался знаковым `Util::toInt` и
+  умножался на 1024 в 32 битах → произвольный лимит от хаба.
+- `client/XMLParser/xmlParser.cpp:2291` — `(int)_ftelli64(f)` обрезал размер файла, результат
+  `malloc` не проверялся → `fread(NULL, ...)` для файлов > 2 ГБ.
+- `windows/WinUtil.cpp:2083` — в `RegSetValueEx` для `DCLST_SHELL_DESC` передавалась длина
+  другой строки (`MAGNET_SHELL_DESC`).
+- `windows/WinUtil.cpp:1991,1996,2000,2086,2090` — размер `REG_SZ` считался как
+  `sizeof(TCHAR) * len + 1` → значение без терминального нуля.
+- `windows/WinUtil.cpp:1785,1837,1879,1921,1969,2045` — `RegQueryValueEx` получал размер
+  буфера в символах вместо байт → обрезанное значение команды в реестре.
+- `windows/PropPage.cpp:202` — кисть `CreateSolidBrush` создавалась на каждое сообщение
+  `WM_CTLCOLOR*` → утечка GDI-объектов (сотни в секунду). Кисть переиспользуется и
+  пересоздаётся только при смене цвета темы.
+- `windows/BarShader.h:209` — ключ кэша градиента не учитывал `bLight` (плоский и «объёмный»
+  градиенты кэшировались под одним ключом).
+- `windows/CheckTargetDlg.cpp:32,44`, `windows/SpyFrame.cpp:354` — `_snwprintf` без
+  гарантированного NUL → чтение за пределами буфера.
+
+#### Безопасность цепочки обновления
+- `client/FlyFeatures/AutoUpdate.cpp` — **скачанный пакет обновления не проверялся по TTH**
+  из подписанного манифеста и загружался по обычному HTTP: MITM (или скомпрометированное
+  зеркало) мог подменить payload → произвольный код, устанавливаемый `FlyUpdate.exe`.
+  Теперь TTH скачанного файла сверяется с подписанным манифестом (`Util::getTTH_MD5`),
+  при несовпадении файл удаляется и обновление отклоняется.
+- `client/FlyFeatures/AutoUpdate.cpp` — распаковка zip считала успехом флаг «есть ещё данные»
+  (`UnZFilter` возвращает `Z_OK`, пока поток не завершён) → zip-обновления не устанавливались,
+  а обрезанный payload принимался за корректный. Для bzip2 результат разжатия игнорировался
+  вовсе. Буфер выделяется на 1 байт больше ожидаемого размера, проверяется полное
+  потребление входа и точное совпадение размера.
+- `client/FlyFeatures/AutoUpdate.cpp` — размер файла из манифеста не проверялся
+  (`new byte[m_size]` с отрицательным значением → `bad_alloc` без обработки).
+- `client/FlyFeatures/AutoUpdate.cpp` — путь и имя файла из манифеста не проверялись
+  (path traversal → запись файла вне папки обновления). Добавлена проверка
+  `isSafeRelativePath()`.
+- `client/FlyFeatures/AutoUpdate.cpp:322` — инвертированный флаг `l_is_invalid_sign_update`
+  при неуспешной проверке подписи второго манифеста.
+- `client/FlyFeatures/flyServer.cpp` — конфиг fly-server приходит по обычному HTTP без подписи:
+  невалидный `regex_find_ip` приводил к необработанному `std::regex_error` → падение клиента.
+  Регулярка проверяется при загрузке конфига, в `windows/HubFrame.cpp` добавлен `try/catch`.
+- `client/FlyFeatures/flyServer.cpp` — список расширений `mediainfo_ext` из того же конфига
+  подставлялся в SQL без экранирования → SQL-инъекция в локальную БД. Значения экранируются.
+
+#### COM и прочее
+- `client/FlyFeatures/WinFirewall.cpp` — HRESULT `get_GloballyOpenPorts` не проверялся,
+  указатель оставался неинициализированным → разыменование мусора (падение). Модуль
+  переписан на RAII-обёртку `CFlyComPtr`: заодно устранена утечка 2..5 COM-ссылок на каждый
+  запрос к брандмауэру.
+- `client/Client.cpp:401` — при несовпадении keyprint TLS-соединение не закрывалось: сессия
+  с недоверенным пиром оставалась открытой до авто-переподключения.
+
+#### Продолжение сессии: память, безопасность, потоки
+
+- `client/Util.cpp:1057` — буфер IDNA не оставался NUL-терминированным при длине
+  хоста в ACP > 255 байт → чтение за пределами стекового буфера в
+  `IDNA_convert_to_ACE()`. Хост приходит из URL хаба и из `Favorites.xml`.
+- `client/SettingsManager.cpp` — настройки `*_COLUMNS_SORT` не проверялись и
+  использовались как индекс колонки списка (значение обрезается до `uint8_t`) →
+  выход за границу массива колонок. Добавлена проверка диапазона и защита в
+  `windows/TypedListViewCtrl.h` (`setSortColumn`/`findColumn`/`getRealSortColumn`)
+  и `windows/ExListViewCtrl.cpp` (`insert`).
+- `client/FavoriteManager.cpp` — `HeaderSort` из `Favorites.xml` не проверялся
+  (индекс колонки); разыменование `nullptr` в ветке ISP-синхронизации при
+  `ISPDelete="1"`; утечка `RecentHubEntry` в `removeallRecent()`.
+- `client/HashManager.cpp:644` — в fallback-ветке выделялся один буфер
+  `g_HashBufferSize`, а `fastHash()` пишет во вторую половину → переполнение heap
+  на 16 МБ. Буфер увеличен вдвое, добавлена проверка размера в `fastHash()`.
+- `client/HashManager.cpp:84` — `blockSize` из NTFS-Alternate-Stream не проверялся →
+  деление на ноль или гигантский `bad_alloc` в потоке хеширования.
+- `client/SSLSocket.cpp:70,149` — при неудачном `SSL_new()` `checkSSL()` не бросал
+  исключение → разыменование `nullptr` в `SSL_set_verify()`.
+- `client/CFlylinkDBManager.cpp:4458` — размер blob'а дерева TTH обрезался до `int`
+  (переполнение → запись NULL в БД), `getLeaves()[0]` — без проверки на пустоту.
+- `client/SSL.h:73` — `scoped_handle::operator=(scoped_handle&&)` не освобождал
+  прежний OpenSSL-ресурс.
+- `client/DownloadManager.cpp:668` — `+ " Error = " = e.getError()`: присваивание
+  вместо конкатенации; `:845` — отсутствующий `break` в `case SEV_RECOVERABLE`.
+- `client/SettingsManager.cpp:1720` — переполнение `int` при проверке
+  `COLOR_AVOIDING`; `client/SimpleXML.cpp:249` — «полусломанное» состояние объекта
+  при исключении парсинга XML (итератор на освобождённом потомке).
+- `client/CompatibilityManager.cpp` — `FreeLibrary()` после `GetModuleHandle()`
+  (счётчик ссылок не увеличивался) и перебор дисков с `C:` при бите 0 = `A:`.
+- `windows/SearchFrm.cpp:2994` — `wnds[-1]` (OOB) при Shift+Tab; `:3448` —
+  пропущенная запятая в массиве разрешений.
+- `windows/BarShader.cpp:520` — запись пикселя за правой границей DIB.
+- `windows/TypedListViewCtrl.h:230` — `wcsncpy` без NUL-терминации в буфер
+  `LVN_GETDISPINFO`.
+- `windows/UsersFrame.cpp:307` — значение из конфига как индекс массива без проверки.
+- `windows/PublicHubsFrm.cpp:385` — обрезание последнего символа строки и underflow
+  при разборе ISP-списка; `windows/QueueFrame.cpp:1256` — `CheckMenuItem` без
+  `MF_BYCOMMAND`.
+- Потоки: `client/QueueManager.cpp:393` (`g_userQueueMap` без блокировки),
+  `client/QueueItem.h` (`isWaiting`, `getDownloadsSegmentCount`),
+  `client/QueueItem.cpp:329` (`isFinished`), `client/UploadManager.h:115`
+  (`getUploadCount`), `client/CFlylinkDBManager.h:780` (`get_tth_cache_size`),
+  `client/AdcHub.h:45` и `client/nmdchub.h:57` (`getUserCount`),
+  `client/ShareManager.h:440` (размеры кэшей), `client/FlyFeatures/flyServer.cpp`
+  (счётчики fly-server) — во всех местах размер контейнера читался без
+  соответствующей блокировки.
+
+#### Дымовой запуск (Release|x64, Windows)
+- EXE запущен вручную: процесс стабильно живёт 20 с (32 потока, 119 МБ ОЗУ), новых
+  дампов в `%LOCALAPPDATA%\CrashDumps` нет, клиент подключается к хабам
+  (fly-server.ru, dchub.one, cifracom). В `Settings\Logs\System.log` — только
+  безобидная запись об отсутствующей папке `Settings\Certificates\`; исключений,
+  assert-ов и падений нет.
+
+#### Продолжение сессии: клиент, окна, ресурсы
+
+- `client/DownloadManager.cpp` — **удалённый DoS**: пир мог объявить дерево без leaf'ов,
+  и цикл подбора размера блока крутился вечно (100 % CPU потока загрузки).
+- `client/QueueManager.cpp` — `checkTarget()` читал `aTarget[1]`/`aTarget[2]` без проверки
+  длины (пустой атрибут `Target` в файле очереди) → чтение за пределами строки.
+- `client/UploadManager.cpp` — проверка сокета выполнялась после разыменования.
+- `client/SettingsManager.cpp` — файл настроек заменялся неатомарно (delete + rename):
+  падение оставляло клиент без настроек. Заменено на `MoveFileEx(MOVEFILE_REPLACE_EXISTING)`.
+- `client/CFlylinkDBManager.cpp` — общая prepared-статмента без блокировки БД;
+  `&p_resume[0]` на пустом векторе; имя таблицы в SQL конкатенацией; счётчик
+  неотправленных статистик обнулялся при недоступном сервере.
+- `client/CFlyThread.cpp` — handle потока терялся, если первая попытка создания потока
+  не удалась, а вторая удалась → поток не присоединялся, handle утекал.
+- `client/FlyFeatures/flyServer.h` — деструктор адаптера не присоединял поток запросов.
+- `windows/flattabctrl.h` — `SwitchTo()` разыменовывал `m_active == nullptr`.
+- `windows/DirectoryListingFrm.h` — `length() - 8` при коротком имени файла → underflow.
+- `windows/MainFrm.cpp` — таймер окна уничтожался до подтверждения выхода; проверка
+  `CB_ERR` сравнивалась с `uint32_t`; `_tcsncpy` без NUL в подсказке.
+- `windows/DirectoryListingFrm.cpp` — пункт меню «избранные каталоги» индексировал
+  чужой список; `dl->getUser()` мог быть `nullptr`.
+- `windows/DCLSTPage.cpp` — индекс комбо не соответствовал значениям `DCLST_ACTION`.
+- `windows/SearchFrm.h/.cpp` — гонка на `m_search` и потоки поиска, переживающие окно.
+- `windows/ChatCtrl.cpp`, `windows/Players.cpp`, `windows/PopupManager.cpp`,
+  `windows/TreePropertySheet.cpp` — утечки COM/GDI/модулей.
+- `client/Text.h` — две перегрузки `tformat` заменены одной вариативной; опасные
+  `buf.resize(_snwprintf(...))` заменены на `Text::tformat`.
+- `client/Util.cpp` — `_snwprintf` писал строку в себя же (перекрывающиеся буферы).
+
+#### Продолжение сессии: UI, протокол, потоки, рефакторинг
+
+- `windows/FlyUpdateDlg.cpp` + `windows/AboutLogDlg.h` — **переполнение стека**:
+  `EM_GETTEXTRANGE` пишет строку длины диапазона в буфер `LocalArray<TCHAR, MAX_PATH>`.
+  В диалоге обновления текст приходит из скачанного по HTTP описания → длинная ссылка
+  переполняет стек. Буфер выделяется по длине диапазона.
+- `windows/PopupDlg.h` — кисть создавалась на каждое `WM_CTLCOLORSTATIC` (утечка GDI).
+- `windows/SharePage.cpp` — сравнивался путь каталога вместо имени (`vName` не
+  использовался) → переименование шары выполнялось всегда.
+- `windows/FolderTree.cpp` — освобождённый буфер `NetShareEnum` не обнулялся → двойное
+  освобождение.
+- `windows/dclstGenDlg.cpp` — разыменование `_tth.get()` при нерассчитанном TTH.
+- `windows/RangesPage.cpp` — `LB_GETTEXT` без терминатора → встроенный NUL в строке.
+- `windows/MessagePanel.cpp` — `SHOW_EMOTIONS_BTN` проверялся дважды вместо
+  `SHOW_MULTI_CHAT_BTN` → неверная ширина панели.
+- `windows/EmoticonsDlg.cpp` — скрытый модальный диалог без эмотиконов → зависание клиента.
+- `windows/SoundsPage.cpp` — `LVITEM` с `LVIF_TEXT` и `pszText == NULL` (запись по
+  нулевому указателю) и `g_SoundsTable[GetSelectionMark()]` с индексом -1.
+- `windows/PortalBrowser.cpp` — отрицательный код ошибки как индекс массива и двойной
+  `FreeLibrary`.
+- `windows/AdvancedPage.cpp` — результат `SetDlgItemText` присваивался строке → формат
+  iTunes затирался.
+- `windows/Players.cpp` — в «жанр» попадало название трека; `WideCharToMultiByte` в
+  неинициализированный буфер; лишний `AddRef()` у COM-объекта.
+- `windows/PropPageTextStyles.h/.cpp` — утечка GDI-кистей; имя шрифта писалось только в
+  редактируемый стиль.
+- `windows/JAControl.cpp` — часы делились на 360 вместо 3600.
+- `windows/PrivateFrame.cpp` — ключ счётчика личных сообщений отличался от ключа
+  увеличения/уменьшения → счётчик никогда не уменьшался и блокировал сообщения.
+- `windows/PopupsPage.cpp` — выбранный в диалоге шрифт терялся (`LOGFONT` диалога — только
+  входной параметр).
+- `client/ConnectionManager.cpp` — **прослушивающий сокет пересоздавался каждые 250 мс**
+  без `SO_REUSEADDR` → после отключения любого пира (порт в `TIME_WAIT`) `bind()` падал и
+  слушатель не работал минутами. Пересоздание только после реальной ошибки.
+- `client/CFlylinkDBManager.cpp` — инвертированный `memcmp` (данные возобновления торрента
+  никогда не обновлялись) и 14 `bind(..., SQLITE_STATIC)` с `User::m_nick` → SQLite держит
+  указатель на строку, которую меняет поток хаба → use-after-free. Заменено на
+  `SQLITE_TRANSIENT`.
+- `client/ClientManager.cpp` — `setErrors(0)` сбрасывало флаг «ошибка протокола» у всех
+  файлов в очереди; порт из UDP-ответа обрезался до 16 бит; `dcassert` был инвертирован;
+  сырой `Client*` использовался после освобождения блокировки списка клиентов (UAF) —
+  добавлен `ClientManager::completeAutodetect()` под блокировкой.
+- `client/OnlineUser.h`, `client/User.h` — ник пира менялся без блокировки, а геттер
+  возвращал ссылку → use-after-free. Добавлены per-object мьютексы, геттеры возвращают
+  копию; блокировка не удерживается при обращении к БД.
+- `client/FlyFeatures/CProgressDlg.h` — рабочий поток переживал диалог (use-after-free) и
+  терял handle. Добавлен heap-прокси прогресса с блокировкой и ожидание потока.
+- `client/FlyFeatures/MiniHTML.h`, `client/FlyFeatures/PropertyItemImpl.h` — переполнения
+  буферов, `ATLTRY`, проглатывавший `bad_alloc`, `_alloca` с длиной из удалённых данных.
+- `client/CFlylinkDBManager.cpp` (`errorDB`) — модальный `MessageBox` под глобальной
+  блокировкой БД: все операции с БД зависали до реакции пользователя.
+- `client/StrUtil.h`, `client/TransferData.cpp`, `client/MerkleCheckOutputStream.h`,
+  `client/Segment.h`, `client/HashValue.h`, `client/SettingsManager.cpp`,
+  `client/MappingManager.cpp`, `client/WildcardsReg.cpp` — переполнение знакового типа,
+  узкая строка в широком `%s`, деление на ноль, неверная семантика `contains()`,
+  нетерминированная строка из реестра, потеря информации о порте, underflow в `substr`.
+- **Рефакторинг**: четыре копии `registerXxxHandler()` в `windows/WinUtil.cpp` (~40 строк
+  каждая) заменены одной общей функцией — именно из-за дублирования размер `REG_SZ`
+  считался по-разному в копиях, и ошибка была исправлена только в одной.
+
+#### Восстановление комментариев CP1251
+- Коммит `32a9e4ed` («refactor: defensive _snprintf/strcpy/memcpy fixes») был записан
+  инструментом, который читает файлы как UTF-8, а русские комментарии в исходниках
+  хранятся в CP1251. Байты `0x80..0xFF` превратились в `U+FFFD` (EF BF BD) — в 7 файлах
+  репозитория: `windows/MainFrm.cpp`, `client/ClientManager.cpp`, `client/OnlineUser.h`,
+  `client/Socket.cpp`, `client/FinishedManager.cpp`, `client/idna/idna.cpp`,
+  `client/ADLSearch.h`.
+- Восстановлено скриптом `build-win/repair-cp1251.py`: строки сопоставляются по
+  «скелету» (ASCII-часть + маркер не-ASCII-участка) с эталонными ревизиями
+  (`32a9e4ed^`, `3f329713`, `58ebbbf8`) и оригинальные байты CP1251 возвращаются на место.
+  Итог: **0 байт U+FFFD во всём репозитории**. Сборка после восстановления:
+  Debug|x64 Rebuild — 0/0 (EXE=54883840), Release|x64 Rebuild — 0/0 (EXE=20748800).
+
+#### Инструменты и документация
+- `build-win/analyze.ps1` — прогон MSVC `/analyze` по решению с выгрузкой находок в
+  `build-win/analysis/analyze_<name>_<config>.txt` (`file|line|rule|message`).
+- `build-win/fix-todo-newlines.py` — восстановление переводов строк в `TODO.md`
+  (файл был записан вообще без переводов строк).
+- `build-win/update-todo.py`, `build-win/update-history.py` — обновление `TODO.md`/`HISTORY.md`.
+
 ## 2026-10-14
 ### ╨Ю╨▒╨╜╨╛╨▓╨╗╨╡╨╜╨╕╨╡ ╨▓╨╡╨╜╨┤╨╛╤А╨░ boost 1.88.0 -> 1.92.0
 - `vendor-manifests/boost.txt` тАФ ╨┐╨╗╨╛╤Б╨║╨╕╨╣ ╤Б╨┐╨╕╤Б╨╛╨║ ╤Д╨░╨╣╨╗╨╛╨▓; boost ╨▓╨╡╨╜╨┤╨╛╤А╨╕╤В╤Б╤П ╨┐╨╛ ╨╝╨╛╨┤╤Г╨╗╤П╨╝: ╨║╨░╤В╨░╨╗╨╛╨│ `boost/boost/` ╤Б╨╛╨┤╨╡╤А╨╢╨╕╤В ╨┐╨╛╨╗╨╜╤Л╨╡ ╨┤╨╡╤А╨╡╨▓╤М╤П ╨▓╤Л╨▒╤А╨░╨╜╨╜╤Л╤Е ╨▒╨╕╨▒╨╗╨╕╨╛╤В╨╡╨║ (╨▓╤Б╨╡ ╤Д╨░╨╣╨╗╤Л ╨║╨░╨╢╨┤╨╛╨│╨╛ ╨╕╨╖ 67 ╨║╨░╤В╨░╨╗╨╛╨│╨╛╨▓ ╨▓╨╡╤А╤Е╨╜╨╡╨│╨╛ ╤Г╤А╨╛╨▓╨╜╤П, 228 ╨║╨╛╨╝╨┐╨╛╨╜╨╡╨╜╤В╨╛╨▓ ╤Б ╤Г╤З╤С╤В╨╛╨╝ top-level ╤Д╨░╨╣╨╗╨╛╨▓), ╨░ ╨╜╨╡ include-╨╖╨░╨╝╤Л╨║╨░╨╜╨╕╨╡. ╨Я╨╛╨┤╤В╨▓╨╡╤А╨╢╨┤╨╡╨╜╨╛: `boost/algorithm` repo=upstream=87; ╨╡╨┤╨╕╨╜╤Б╤В╨▓╨╡╨╜╨╜╤Л╨╡ ╤Д╨░╨╣╨╗╤Л ╤А╨╡╨┐╨╛╨╖╨╕╤В╨╛╤А╨╕╤П, ╨╛╤В╤Б╤Г╤В╤Б╤В╨▓╤Г╤О╤Й╨╕╨╡ ╨▓ 1.92 тАФ 98 ╤А╨╡╨░╨╗╤М╨╜╨╛ ╤Г╨┤╨░╨╗╤С╨╜╨╜╤Л╤Е upstream (regex/v4 тАФ 49, smart_ptr/detail тАФ 33, asio/detail/impl тАФ 6, atomic тАФ 4 ╨╕ ╨┤╤А.). ╨з╨░╤Б╤В╤М `libs/` тАФ ╨║╤Г╤А╨╕╤А╤Г╨╡╨╝╤Л╨╣ ╤Б╨┐╨╕╤Б╨╛╨║ 37 ╤Д╨░╨╣╨╗╨╛╨▓ (`chrono`, `filesystem`, `iostreams`, `system`, `thread/src`).
@@ -257,3 +511,25 @@
  - Продолжён скан потенциально небезопасных паттернов (size()-N, memcpy/strcpy, sprintf/_snprintf) в client/ и windows/; большинство кандидатов либо безопасны, либо уже огорожены. Фиксились только реальные риски с сохранением поведения (W=0,E=0).
  - client/ShareManager.cpp, client/FlyFeatures/VideoPreview.cpp, windows/wtlbuilder/GDIUtil.cpp — выявлены только закомментированные/мёртвые sprintf или безопасные места; вмешательства минимальны.
 
+#### Контрольная сборка (финал)
+- Debug|x64 Rebuild — 0 предупреждений / 0 ошибок (EXE=54883840).
+- Release|x64 Rebuild — 0 предупреждений / 0 ошибок (EXE=20748800).
+- Итог: исправлено 53 дефекта в собственном коде; количество находок /analyze в собственном коде сократилось с 49 до 26.
+- Отдельно: русские комментарии в исходниках хранятся в CP1251 — инструмент, который читат файл как UTF-8, портит комментарии
+  (uild-win/repair-cp1251.py — восстановлено оригинальные байты из git show HEAD:<file>).
+
+#### Отложено (требует архитектурной переработки, описано в TODO.md)
+- `Identity::setNick()` без блокировки + `getNick()` возвращает ссылку (UAF).
+- Модальный `MessageBox` и HTTP-POST под глобальной блокировкой БД.
+- Сканирование ФС под эксклюзивной блокировкой шары.
+- Сырой `Client*` после освобождения блокировки списка клиентов.
+
+#### Контрольная сборка (финальная)
+- [x] **Финальная контрольная сборка** (2026-10-20 02:31-02:36):
+  Debug|x64 Rebuild — 0 предупреждений / 0 ошибок (EXE=54908928);
+  Release|x64 Rebuild — 0 предупреждений / 0 ошибок (EXE=20761600).
+- [x] **Финальный дымовой запуск** (Release|x64): процесс жив 30 с, 32 потока, 124 МБ ОЗУ,
+  подключение к хабам, проброс портов через UPnP, новых дампов нет, в `System.log` нет
+  исключений и assert-ов.
+- [x] **В репозитории не осталось ни одного повреждённого байта U+FFFD** (проверены все
+  отслеживаемые файлы).

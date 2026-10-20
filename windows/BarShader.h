@@ -199,7 +199,7 @@ class OperaColors
 		
 		struct fci_hash {
 			size_t operator()(const FloodCacheItem::FCIMapper& __x) const {
-				return (__x.c1 ^ __x.c2);
+				return (__x.c1 ^ __x.c2 ^ (__x.bLight ? 0x80u : 0u));
 			}
 			//bool operator()(const FloodCacheItem::FCIMapper& a, const FloodCacheItem::FCIMapper& b) {
 			//  return a.c1 < b.c1 && a.c2 < b.c2;
@@ -208,7 +208,9 @@ class OperaColors
 		
 		struct fci_equal_to {
 			bool operator()(const FloodCacheItem::FCIMapper& __x, const FloodCacheItem::FCIMapper& __y) const {
-				return (__x.c1 == __y.c1) && (__x.c2 == __y.c2);
+				// bLight selects a completely different rendering (flat gradient vs. bumped),
+				// so it must be part of the cache key
+				return (__x.c1 == __y.c1) && (__x.c2 == __y.c2) && (__x.bLight == __y.bLight);
 			}
 		};
 		

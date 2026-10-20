@@ -83,7 +83,9 @@ bool PrivateFrame::gotMessage(const Identity& from, const Identity& to, const Id
 	const auto& id = bMyMess ? to : replyTo;
 	const auto& myId = bMyMess ? replyTo : to;
 	
-	const string l_key = id.getUser()->getLastNick() + " + " + p_HubHint;
+	// the same key must be used everywhere: the counter was never decreased
+	// because the key of the check was different from the key of the counter
+	const string l_key = id.getUser()->getLastNick() + "~" + p_HubHint;
 	string l_message = Text::fromT(aMessage);
 	const bool l_is_spam = CFlyServerConfig::isSpam(l_message);
 	const auto i = g_pm_frames.find(id.getUser());
@@ -326,7 +328,10 @@ LRESULT PrivateFrame::onClose(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*
 	}
 	else
 	{
-		g_count_pm[m_replyTo.user->getLastNick() + "~" + m_replyTo.hint]--;
+		// the counter must not be decreased below zero: the key can be missing
+		auto l_it = g_count_pm.find(m_replyTo.user->getLastNick() + "~" + m_replyTo.hint);
+		if (l_it != g_count_pm.end() && l_it->second > 0)
+			--l_it->second;
 		g_pm_frames.erase(m_replyTo);
 		bHandled = FALSE;
 		return 0;

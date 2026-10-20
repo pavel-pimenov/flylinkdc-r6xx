@@ -62,30 +62,33 @@ string Players::getItunesSpam(HWND playerWnd /*= NULL*/)
 			if (SUCCEEDED(iITunes->get_CurrentTrack(&pTrack)) && pTrack != NULL)
 			{
 				//Get album, then call ::COLE2T() to convert the text to array
-				BSTR album;
+				BSTR album = nullptr;
 				pTrack->get_Album(&album);
 				if (album != NULL)
 				{
 					::COLE2T Album(album);
 					params["album"] = Text::fromT(Album.m_szBuffer);
+					::SysFreeString(album);
 				}
 				
 				//Same for artist
-				BSTR artist;
+				BSTR artist = nullptr;
 				pTrack->get_Artist(&artist);
 				if (artist != NULL)
 				{
 					::COLE2T Artist(artist);
 					params["artist"] = Text::fromT(Artist.m_szBuffer);
+					::SysFreeString(artist);
 				}
 				
 				//Track name (get_Name is inherited from IITObject, of which IITTrack is derived)
-				BSTR name;
+				BSTR name = nullptr;
 				pTrack->get_Name(&name);
 				if (name != NULL)
 				{
 					::COLE2T Name(name);
 					params["title"] = Text::fromT(Name.m_szBuffer);
+					::SysFreeString(name);
 				}
 				
 				// Genre
@@ -93,8 +96,9 @@ string Players::getItunesSpam(HWND playerWnd /*= NULL*/)
 				pTrack->get_Genre(&genre);
 				if (genre != NULL)
 				{
-					::COLE2T Genre(name);
+					::COLE2T Genre(genre);
 					params["genre"] = Text::fromT(Genre.m_szBuffer);
+					::SysFreeString(genre);
 				}
 				
 				//Total song time
@@ -263,9 +267,11 @@ string Players::getMPCSpam()
 						{
 							// second parameter is a AM_MEDIA_TYPE structure, which contains codec info
 							//                                      LPSTR thisIsBad = (LPSTR) pFileName;
-							AutoArray<char> test(1000);
-							WideCharToMultiByte(CP_ACP, 0, pFileName, -1, test, 1000, NULL, NULL);
-							string filename(test);
+							// the buffer must be zero terminated: WideCharToMultiByte() writes
+							// nothing when the result does not fit into the buffer
+							std::vector<char> test(1000, 0);
+							const int l_converted = WideCharToMultiByte(CP_ACP, 0, pFileName, -1, test.data(), (int)test.size(), NULL, NULL);
+							string filename(l_converted > 0 ? test.data() : "");
 							params["filepath"] = filename;
 							params["filename"] = Util::getFileName(filename); //otherwise fully qualified
 							params["title"] = params["filename"].substr(0, params["filename"].size() - 4);
@@ -464,11 +470,9 @@ string Players::getWMPSpam(HWND playerWnd /*= NULL*/, HWND g_mainWnd /*= NULL*/)
 			if (SUCCEEDED(hresult))
 			{
 				hresult = CComObject<WMPlayerRemoteApi>::CreateInstance(&WMPlayerRemoteApiCtrl);
-				if (WMPlayerRemoteApiCtrl)
-				{
-					WMPlayerRemoteApiCtrl->AddRef();
-				}
-				else
+				// CreateInstance() already returns a reference count of 1: an additional
+				// AddRef() would leak the object
+				if (!WMPlayerRemoteApiCtrl)
 				{
 					hresult = E_POINTER;
 				}

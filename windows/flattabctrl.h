@@ -812,6 +812,9 @@ class ATL_NO_VTABLE FlatTabCtrlImpl : public CWindowImpl< T, TBase, TWinTraits>
 		void SwitchTo(bool next = true)
 		{
 			activateCloseButton(FALSE, FALSE);
+			// the active tab can be null: it is reset when the last tab is closed
+			if (!m_active || m_tabs.empty())
+				return;
 			
 			for (auto i = m_tabs.cbegin(); i != m_tabs.cend(); ++i)
 			{

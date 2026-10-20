@@ -57,7 +57,7 @@ UploadManager::~UploadManager()
 	ClientManager::getInstance()->removeListener(this);
 	{
 		CFlyLock(m_csQueue);
-		m_slotQueue.clear(); // TODO - пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅ shutdown
+		m_slotQueue.clear(); // TODO - унести зачистку раньше в метод shutdown
 	}
 	while (true)
 	{
@@ -89,12 +89,14 @@ bool UploadManager::hasUpload(const UserConnection* p_newLeacher, const string& 
 			const auto u = *i;
 			dcassert(u);
 			dcassert(u->getUser());
+			// the socket must be checked before it is used
+			if (!u->getUserConnection() || !u->getUserConnection()->getSocket())
+				continue;
 			const auto& uploadUserIp = u->getUserConnection()->getSocket()->getIp();
 			const auto& uploadUserShare = u->getUser()->getBytesShared();
 			const auto& uploadUserNick = u->getUser()->getLastNick();
 			
-			if (u->getUserConnection()->getSocket() &&
-			        newLeacherIp == uploadUserIp &&
+			if (newLeacherIp == uploadUserIp &&
 			        (newLeacherShare == uploadUserShare ||
 			         newLeacherNick == uploadUserNick)
 			   )
@@ -217,7 +219,7 @@ bool UploadManager::prepareFile(UserConnection* aSource, const string& aType, co
 				{
 					/*
 					Fix
-					[2017-10-01 16:20:21] <MikeKMV> пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+					[2017-10-01 16:20:21] <MikeKMV> оказывается флай умеет флудить
 					[2017-10-01 16:20:25] <MikeKMV> Client: [Incoming][194.186.25.22]       $ADCGET list /music/Vangelis/[1988]\ Vangelis\ -\ Direct/ 0 -1 ZL1
 					Client: [Outgoing][194.186.25.22]       $ADCSND list /music/Vangelis/[1988]\ Vangelis\ -\ Direct/ 0 2029 ZL1|
 					Client: [Incoming][194.186.25.22]       $ADCGET list /music/Vangelis/[1988]\ Vangelis\ -\ Direct/ 0 -1 ZL1
@@ -287,15 +289,18 @@ bool UploadManager::prepareFile(UserConnection* aSource, const string& aType, co
 				
 				start = aStartPos;
 				int64_t sz = f->getSize();
-				size = (aBytes == -1) ? sz - start : aBytes;
 				fileSize = sz;
 				
-				if ((start + size) > sz)
+				// the start position and the length are controlled by the remote peer:
+				// "start + size" can overflow and a negative size would be passed to the
+				// stream, so both values are validated separately
+				if (aStartPos > sz || (aBytes != -1 && aBytes > sz - aStartPos))
 				{
 					aSource->fileNotAvail();
 					delete f;
 					return false;
 				}
+				size = (aBytes == -1) ? (sz - start) : aBytes;
 				
 				l_is_free = l_is_free || (sz <= (int64_t)(SETTING(SET_MINISLOT_SIZE) * 1024));
 				
@@ -369,14 +374,17 @@ bool UploadManager::prepareFile(UserConnection* aSource, const string& aType, co
 						
 						start = aStartPos;
 						fileSize = f->getFastFileSize();
-						size = (aBytes == -1) ? fileSize - start : aBytes;
 						
-						if ((start + size) > fileSize)
+						// the start position and the length are controlled by the remote peer:
+						// "start + size" can overflow and a negative size would be passed to
+						// the stream, so both values are validated separately
+						if (aStartPos > fileSize || (aBytes != -1 && aBytes > fileSize - aStartPos))
 						{
 							aSource->fileNotAvail();
 							delete f;
 							return false;
 						}
+						size = (aBytes == -1) ? (fileSize - start) : aBytes;
 						
 						f->setPos(start);
 						if ((start + size) < fileSize)
@@ -1020,7 +1028,7 @@ void UploadManager::removeConnection(UserConnection* aSource, bool p_is_remove_l
 void UploadManager::notifyQueuedUsers(int64_t p_tick)
 {
 	dcassert(!ClientManager::isBeforeShutdown());
-	// пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ m_csQueue
+	// Сверху лочится через m_csQueue
 	if (m_slotQueue.empty())
 		return; //no users to notify
 	vector<WaitingUser> l_notifyList;
@@ -1038,7 +1046,7 @@ void UploadManager::notifyQueuedUsers(int64_t p_tick)
 				clearWaitingFilesL(wu);
 				if (g_count_WaitingUsersFrame)
 				{
-					fly_fire1(UploadManagerListener::QueueRemove(), wu.getUser()); // TODO пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ?
+					fly_fire1(UploadManagerListener::QueueRemove(), wu.getUser()); // TODO унести из лока?
 				}
 				if (wu.getUser()->isOnline())
 				{
@@ -1206,8 +1214,8 @@ void UploadManager::on(TimerManagerListener::Second, uint64_t aTick) noexcept
 			{
 				SharedFileStream::cleanup();
 			}
-			l_tickList.reserve(g_uploads.size());
 			CFlyReadLock(*g_csUploadsDelay);
+			l_tickList.reserve(g_uploads.size());
 			for (auto i = g_uploads.cbegin(); i != g_uploads.cend(); ++i)
 			{
 				auto u = *i;
@@ -1265,7 +1273,7 @@ void UploadManager::on(TimerManagerListener::Second, uint64_t aTick) noexcept
 		if (!l_tickList.empty())
 		{
 			fly_fire1(UploadManagerListener::Tick(), l_tickList);
-			// TODO - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
+			// TODO - Выполняем под локом
 		}
 	}
 	notifyQueuedUsers(aTick);

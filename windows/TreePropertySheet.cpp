@@ -269,8 +269,9 @@ void TreePropertySheet::addTransparency()
 void TreePropertySheet::setTransp(int p_Layered)
 {
 	typedef bool (CALLBACK * LPFUNC)(HWND hwnd, COLORREF crKey, BYTE bAlpha, DWORD dwFlags);
-	HMODULE l_hUser32 = ::LoadLibrary(_T("user32"));
-	LPFUNC _d_SetLayeredWindowAttributes = l_hUser32 ? (LPFUNC)GetProcAddress(l_hUser32, "SetLayeredWindowAttributes") : nullptr;
+	// the module is not loaded again for every call: the function is called for every
+	// movement of the slider of the transparency
+	static LPFUNC _d_SetLayeredWindowAttributes = reinterpret_cast<LPFUNC>(::GetProcAddress(::GetModuleHandle(_T("user32")), "SetLayeredWindowAttributes"));
 	if (_d_SetLayeredWindowAttributes)
 	{
 		SetWindowLongPtr(GWL_EXSTYLE, GetWindowLongPtr(GWL_EXSTYLE) | WS_EX_LAYERED /*| WS_EX_TRANSPARENT*/);

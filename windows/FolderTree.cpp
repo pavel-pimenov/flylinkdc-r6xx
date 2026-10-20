@@ -127,12 +127,22 @@ void ShareEnumerator::Refresh()
 {
 	m_dwShares = 0;
 	if (m_pNTShareInfo)
+	{
 		m_pNTBufferFree(m_pNTShareInfo);
+		// the pointer must be reset: a failed enumeration below would leave it
+		// dangling and the destructor would free it twice
+		m_pNTShareInfo = NULL;
+	}
 		
 	if (m_pNTShareEnum)
 	{
 		DWORD dwEntriesRead = 0;
-		m_pNTShareEnum(NULL, 502, (LPBYTE*) &m_pNTShareInfo, MAX_PREFERRED_LENGTH, &dwEntriesRead, &m_dwShares, NULL);
+		const NET_API_STATUS l_status = m_pNTShareEnum(NULL, 502, (LPBYTE*) &m_pNTShareInfo, MAX_PREFERRED_LENGTH, &dwEntriesRead, &m_dwShares, NULL);
+		if (l_status != NERR_Success)
+		{
+			m_pNTShareInfo = NULL;
+			m_dwShares = 0;
+		}
 	}
 }
 

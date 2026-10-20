@@ -39,6 +39,7 @@ class PropPage
 #endif
 #ifdef SCALOLAZ_PROPPAGE_COLOR
 			, m_hDialogBrush(0)
+			, m_dialogBrushColor(0)
 #endif
 		{
 		}
@@ -75,6 +76,7 @@ class PropPage
 		LRESULT OnEraseBackground(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 		*/
 		HBRUSH m_hDialogBrush;
+		COLORREF m_dialogBrushColor;
 #endif
 		
 		struct Item

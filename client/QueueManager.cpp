@@ -393,9 +393,9 @@ void QueueManager::FileQueue::moveTarget(const QueueItemPtr& qi, const string& a
 bool QueueManager::UserQueue::userIsDownloadedFiles(const UserPtr& aUser, QueueItemList& p_status_update_array)
 {
 	bool hasDown = false;
-#ifdef FLYLINKDC_USE_USER_QUEUE_CS
-	Lock CFlyReadLock(*g_userQueueMapCS);
-#endif
+	// g_userQueueMap is modified under QueueItem::g_cs - without the lock a
+	// concurrent insert (which can rehash the map) would corrupt the lookup
+	CFlyFastLock(*QueueItem::g_cs);
 	for (size_t i = 0; i < QueueItem::LAST && !ClientManager::isBeforeShutdown(); ++i)
 	{
 		const auto j = g_userQueueMap[i].find(aUser);
@@ -1317,8 +1317,10 @@ string QueueManager::checkTarget(const string& aTarget, const int64_t aSize, boo
 		throw QueueException(STRING(TARGET_FILENAME_TOO_LONG));
 	}
 	// Check that target starts with a drive or is an UNC path
-	if ((aTarget[1] != ':' || aTarget[2] != '\\') &&
-	        (aTarget[0] != '\\' && aTarget[1] != '\\'))
+	// the length must be checked before the indexes are used
+	if (aTarget.length() < 3 ||
+	        ((aTarget[1] != ':' || aTarget[2] != '\\') &&
+	         (aTarget[0] != '\\' && aTarget[1] != '\\')))
 	{
 		throw QueueException(STRING(INVALID_TARGET_FILE));
 	}

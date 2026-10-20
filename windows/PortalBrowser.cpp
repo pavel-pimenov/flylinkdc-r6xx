@@ -213,7 +213,12 @@ void PortalBrowserFrame::Cleanup()
 	__finally
 	{
 		if (m_hLib)
+		{
 			FreeLibrary(m_hLib);
+			// the handle must be reset: Cleanup() is called twice (from the error
+			// message and from the destructor) and the module would be released twice
+			m_hLib = NULL;
+		}
 	}
 }
 static void LoadExternalPortalBrowserXML()
@@ -453,7 +458,8 @@ LRESULT PortalBrowserFrame::onEvent(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam,
 			
 			std::wstring str(L"Failed to create PortalBrowser.\r\nReason: ");
 			
-			if (lParam >= _countof(s_ErrorStringTable))
+			// the error code comes from the portal browser: it can be negative
+			if (lParam < 0 || lParam >= (LPARAM)_countof(s_ErrorStringTable))
 				lParam = 0;
 				
 			str += s_ErrorStringTable[lParam];

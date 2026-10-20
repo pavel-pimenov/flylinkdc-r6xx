@@ -87,9 +87,15 @@ LRESULT FlyUpdateDlg::OnLink(int /*idCtrl*/, LPNMHDR pnmh, BOOL& bHandled)
 	const ENLINK* pL = (const ENLINK*)pnmh;
 	if (WM_LBUTTONDOWN == pL->msg)
 	{
-		LocalArray<TCHAR, MAX_PATH> buf;
-		CRichEditCtrl(pL->nmhdr.hwndFrom).GetTextRange(pL->chrg.cpMin, pL->chrg.cpMax, buf.data());
-		WinUtil::openFile(buf.data());
+		// the length of the range is not known in advance: the buffer must be allocated
+		// for it, otherwise EM_GETTEXTRANGE writes past the end of the buffer
+		const LONG l_len = pL->chrg.cpMax - pL->chrg.cpMin;
+		if (l_len > 0)
+		{
+			std::vector<TCHAR> l_buf(static_cast<size_t>(l_len) + 1, 0);
+			CRichEditCtrl(pL->nmhdr.hwndFrom).GetTextRange(pL->chrg.cpMin, pL->chrg.cpMax, l_buf.data());
+			WinUtil::openFile(l_buf.data());
+		}
 	}
 	else
 		bHandled = FALSE;

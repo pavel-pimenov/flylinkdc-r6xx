@@ -194,10 +194,9 @@ const tstring QueueFrame::QueueItemInfo::getText(int col) const
 						}
 						else
 						{
-							tstring buf;
-							buf.resize(64);
-							buf.resize(_snwprintf(&buf[0], buf.size(), CTSTRING(WAITING_USERS_ONLINE), l_online, l_count_source));
-							return buf;
+							// Text::tformat() is used: _snwprintf() returns -1 when the result is
+							// truncated and the resize of a negative value would throw
+							return Text::tformat(CTSTRING(WAITING_USERS_ONLINE), l_online, l_count_source);
 						}
 					}
 					else
@@ -215,10 +214,9 @@ const tstring QueueFrame::QueueItemInfo::getText(int col) const
 							case 4:
 								return TSTRING(ALL_4_USERS_OFFLINE);
 							default:
-								tstring buf;
-								buf.resize(64);
-								buf.resize(_snwprintf(&buf[0], buf.size(), CTSTRING(ALL_USERS_OFFLINE), l_count_source));
-								return buf;
+								// Text::tformat() is used: _snwprintf() returns -1 when the result is
+								// truncated and the resize of a negative value would throw
+								return Text::tformat(CTSTRING(ALL_USERS_OFFLINE), l_count_source);
 						};
 					}
 				}
@@ -230,10 +228,9 @@ const tstring QueueFrame::QueueItemInfo::getText(int col) const
 					}
 					else
 					{
-						tstring buf;
-						buf.resize(64);
-						buf.resize(_snwprintf(&buf[0], buf.size(), CTSTRING(USERS_ONLINE), l_online, l_count_source));
-						return buf;
+						// Text::tformat() is used: _snwprintf() returns -1 when the result is
+						// truncated and the resize of a negative value would throw
+						return Text::tformat(CTSTRING(USERS_ONLINE), l_online, l_count_source);
 					}
 				}
 			}
@@ -1253,7 +1250,7 @@ LRESULT QueueFrame::onContextMenu(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, B
 				{
 					{
 						const QueueItemPtr qi = ii->getQueueItem();
-						segmentsMenu.CheckMenuItem(IDC_SEGMENTONE - 1 + qi->getMaxSegments(), MF_CHECKED);
+						segmentsMenu.CheckMenuItem(IDC_SEGMENTONE - 1 + qi->getMaxSegments(), MF_BYCOMMAND | MF_CHECKED);
 					}
 					if (!ii->isAnySet(QueueItem::FLAG_USER_LIST | QueueItem::FLAG_PARTIAL_LIST | QueueItem::FLAG_DCLST_LIST | QueueItem::FLAG_USER_GET_IP))
 					{
@@ -1274,8 +1271,8 @@ LRESULT QueueFrame::onContextMenu(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, B
 						const QueueItemPtr qi = ii->getQueueItem();
 						if (qi)
 						{
-							const auto& sources = ii->getQueueItem()->getSourcesL(); // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
-							// пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+							const auto& sources = ii->getQueueItem()->getSourcesL(); // Делать копию нельзя
+							// ниже сохраняем адрес итератора
 							for (auto i = sources.cbegin(); i != sources.cend(); ++i)
 							{
 								const auto user = i->first;
@@ -1311,8 +1308,8 @@ LRESULT QueueFrame::onContextMenu(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, B
 								menuItems++;
 							}
 							readdItems = 0;
-							const auto& badSources = ii->getQueueItem()->getBadSourcesL(); // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
-							// пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+							const auto& badSources = ii->getQueueItem()->getBadSourcesL(); // Делать копию нельзя
+							// ниже сохраняем адрес итератора
 							for (auto i = badSources.cbegin(); i != badSources.cend(); ++i)
 							{
 								const auto user = i->first;
@@ -1551,7 +1548,7 @@ LRESULT QueueFrame::onReadd(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BO
 			if (omi)
 			{
 				const UserPtr s = *(UserPtr*)omi->m_data; // TODO - https://crash-server.com/Problem.aspx?ClientID=guest&ProblemID=62702
-				// пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
+				// Мертвый юзер
 				try
 				{
 					QueueManager::getInstance()->readd(ii->getTarget(), s);
@@ -1713,7 +1710,7 @@ LRESULT QueueFrame::onPriority(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/,
 		int i = -1;
 		while ((i = ctrlQueue.GetNextItem(i, LVNI_SELECTED)) != -1)
 		{
-			// TODO - пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ - пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
+			// TODO - двойное обращение к менеджеру - склеить вместе
 			const auto l_target = ctrlQueue.getItemData(i)->getTarget();
 			QueueManager::getInstance()->setAutoPriority(l_target, false);
 			QueueManager::getInstance()->setPriority(l_target, p);
@@ -1783,7 +1780,7 @@ void QueueFrame::changePriority(bool inc)
 				dcassert(false);
 				break;
 		}
-		// TODO - пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ - пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
+		// TODO - двойное обращение к менеджеру - склеить вместе
 		const auto l_target = ctrlQueue.getItemData(i)->getTarget();
 		QueueManager::getInstance()->setAutoPriority(l_target, false);
 		QueueManager::getInstance()->setPriority(l_target, p);
@@ -1805,8 +1802,8 @@ void QueueFrame::setPriority(HTREEITEM ht, const QueueItem::Priority& p)
 	const auto dp = m_directories.equal_range(name);
 	for (auto i = dp.first; i != dp.second; ++i)
 	{
-		// TODO - пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ - пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
-		// + пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
+		// TODO - двойное обращение к менеджеру - склеить вместе
+		// + внутри нет лока
 		QueueManager::getInstance()->setAutoPriority(i->second->getTarget(), false);
 		QueueManager::getInstance()->setPriority(i->second->getTarget(), p);
 	}

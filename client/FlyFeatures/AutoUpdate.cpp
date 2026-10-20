@@ -56,6 +56,22 @@ static const string UPDATE_DESCRIPTION_FILE = "UpdateAU.rtf";
 
 bool AutoUpdate::g_exitOnUpdate = false;
 
+// The path and the name of an updated file are taken from the update manifest.
+// They must be relative and must not contain any parent directory reference,
+// otherwise the downloaded file could be written outside of the update folder.
+static bool isSafeRelativePath(const string& p_path, bool p_allow_empty = true)
+{
+	if (p_path.empty())
+		return p_allow_empty; // an empty path means the root of the update folder
+	if (p_path.find("..") != string::npos)
+		return false;
+	if (p_path.find(':') != string::npos) // drive letter or NTFS stream
+		return false;
+	if (p_path[0] == '/' || p_path[0] == '\\')
+		return false;
+	return true;
+}
+
 
 AutoUpdate::AutoUpdate() : m_isUpdateStarted(0), m_isUpdate(false), m_manualUpdate(false), m_mainFrameHWND(nullptr), m_guiDelegate(nullptr)
 {
@@ -303,9 +319,9 @@ void AutoUpdate::startUpdateThisThread()
 						{
 							l_check_message += "\r\n";
 							l_check_message += STRING(AUTOUPDATE_ERROR_VERIF) + "\r\n url: " + l_check_file_url;
-							l_is_invalid_sign_update = false;
+							l_is_invalid_sign_update = true;
 						}
-						if (!l_check_message.empty())
+						if (!l_check_message.empty() || l_is_invalid_sign_update)
 						{
 							CFlyHTTPDownloader::nextMirror();
 							m_isUpdate = false;
@@ -553,6 +569,12 @@ bool AutoUpdate::needUpdateFile(const AutoUpdateFile& p_file, const string& p_ou
 	//            if found. Check size, if not equal return true;
 	//                                  if equal. Check TTH. If not equal return true;
 	//                                                                    return false;
+	if (!isSafeRelativePath(p_file.m_sPath) || !isSafeRelativePath(p_file.m_sName, false))
+	{
+		// the path from the manifest is not safe: the file must not be looked up
+		// outside of the installation folder
+		return true;
+	}
 	string filePath = p_outputFolder;
 	AppendPathSeparator(filePath);
 	filePath += p_file.m_sPath;
@@ -565,7 +587,9 @@ bool AutoUpdate::needUpdateFile(const AutoUpdateFile& p_file, const string& p_ou
 		if (fiter->getSize() == p_file.m_size)
 		{
 			// Calculate TTH (in string)
-			const int c_size_buf = std::min(p_file.m_size, static_cast<int64_t>(1024 * 1024));
+			// the size comes from the update manifest: a bogus (negative) value must not
+			// be used as the size of the read buffer
+			const size_t c_size_buf = (size_t)std::max<int64_t>(1, std::min<int64_t>(p_file.m_size, 1024 * 1024));
 			unique_ptr<TigerTree> tth;
 			if (Util::getTTH_MD5(filePath, c_size_buf, &tth))
 			{
@@ -618,6 +642,20 @@ bool AutoUpdate::prepareFile(const AutoUpdateFile& file, const string& tempFolde
 	CFlyHTTPDownloader l_http_downloader;
 	l_http_downloader.m_is_use_cache = false;
 	int64_t sizeRead = l_http_downloader.getBinaryDataFromInetSafe(file.m_sDownloadURL, l_binary_data, 60000, reporter); 
+	// the size of the payload comes from the update manifest and is used as the size of
+	// the output buffer - a bogus value must not lead to a huge allocation
+	if (file.m_size <= 0 || file.m_size > (int64_t)1024 * 1024 * 1024)
+	{
+		fail("Invalid size of the update file: " + Util::toString(file.m_size) + " [" + file.m_sDownloadURL + "]");
+		return false;
+	}
+	// the path of the file is taken from the update manifest as well: it must stay
+	// inside the update folder
+	if (!isSafeRelativePath(file.m_sPath) || !isSafeRelativePath(file.m_sName, false))
+	{
+		fail("Unsafe path in the update manifest: [" + file.m_sPath + "] [" + file.m_sName + "]");
+		return false;
+	}
 	if (sizeRead == file.m_packedSize)
 	{
 		/*
@@ -626,21 +664,37 @@ bool AutoUpdate::prepareFile(const AutoUpdateFile& file, const string& tempFolde
 		fy.close();
 		*/
 		// Unpack if need
-		size_t outSize = file.m_size;
-		unique_ptr<byte[]> out(new byte[file.m_size]);
+		// the buffer is one byte larger than the expected size: a payload that is bigger
+		// than the size from the manifest is detected instead of being truncated silently
+		const size_t l_capacity = (size_t)file.m_size + 1;
+		size_t outSize = l_capacity;
+		size_t l_in_size = (size_t)sizeRead;
+		unique_ptr<byte[]> out;
+		try
+		{
+			out.reset(new byte[l_capacity]);
+		}
+		catch (const std::bad_alloc&)
+		{
+			fail("Not enough memory for the update file: " + file.m_sDownloadURL);
+			return false;
+		}
 		bool unPacked = false;
 		if (file.m_packer == AutoUpdateFile::Zip)
 		{
 			UnZFilter unzip;
-			unPacked  = (unzip(l_binary_data.data(), (size_t &)sizeRead, out.get(), outSize) && static_cast<int64_t>(outSize) == file.m_size);
+			// the filter returns true while there is MORE data to process (Z_OK) and
+			// false when the stream has ended (Z_STREAM_END)
+			const bool l_more_data = unzip(l_binary_data.data(), l_in_size, out.get(), outSize);
+			unPacked = (!l_more_data) && (l_in_size == 0) && (static_cast<int64_t>(outSize) == file.m_size);
 		}
 		else if (file.m_packer == AutoUpdateFile::BZip2)
 		{
 			UnBZFilter unbzip;
 			try
 			{
-				unbzip(l_binary_data.data(), (size_t &)sizeRead, out.get(), outSize);
-				unPacked = (static_cast<int64_t>(outSize) == file.m_size) ;
+				const bool l_more_data = unbzip(l_binary_data.data(), l_in_size, out.get(), outSize);
+				unPacked = (!l_more_data) && (l_in_size == 0) && (static_cast<int64_t>(outSize) == file.m_size);
 			}
 			catch (const Exception&)
 			{
@@ -650,8 +704,9 @@ bool AutoUpdate::prepareFile(const AutoUpdateFile& file, const string& tempFolde
 		}
 		else if (file.m_packer == AutoUpdateFile::Unpacked)
 		{
-			memcpy(out.get(), l_binary_data.data(), sizeRead);
-			unPacked = true;
+			memcpy(out.get(), l_binary_data.data(), l_in_size);
+			outSize = l_in_size;
+			unPacked = (static_cast<int64_t>(outSize) == file.m_size);
 		}
 		if (unPacked)
 		{
@@ -673,7 +728,7 @@ bool AutoUpdate::prepareFile(const AutoUpdateFile& file, const string& tempFolde
 			{
 				File f(destinationPath, File::WRITE, File::TRUNCATE | File::CREATE);
 				f.write(out.get(), outSize);
-				return true;
+				f.close();
 			}
 			catch (const FileException& e)
 			{
@@ -684,6 +739,26 @@ bool AutoUpdate::prepareFile(const AutoUpdateFile& file, const string& tempFolde
 				::MessageBox(nullptr, Text::toT(l_ErrorString).c_str(), getFlylinkDCAppCaptionWithVersionT().c_str() , MB_ICONSTOP);
 				return false;
 			}
+			// The update manifest is signed, but the payload itself is downloaded over plain
+			// HTTP and was only checked by size. Verify the TTH of the downloaded file against
+			// the signed manifest - otherwise a man-in-the-middle could substitute the payload
+			// and get arbitrary code installed by the updater.
+			if (!file.m_sTTH.empty())
+			{
+				unique_ptr<TigerTree> l_tth;
+				const size_t l_buf_size = (size_t)std::max<int64_t>(1, std::min<int64_t>(file.m_size, 1024 * 1024));
+				const bool l_is_hash_ok = Util::getTTH_MD5(destinationPath, l_buf_size, &l_tth)
+					&& l_tth && l_tth->getRoot().toBase32() == file.m_sTTH;
+				if (!l_is_hash_ok)
+				{
+					File::deleteFile(destinationPath);
+					const string l_error = STRING(AUTOUPDATE_ERROR_VERIF) + " " + destinationPath;
+					fail(l_error);
+					CFlyServerJSON::pushError(63, l_error);
+					return false;
+				}
+			}
+			return true;
 		}
 	}
 	else

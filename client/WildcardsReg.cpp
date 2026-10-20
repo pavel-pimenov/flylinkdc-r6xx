@@ -177,7 +177,10 @@ bool WildcardsEss::search(const tstring& text, const tstring& filter, bool ignor
 		
 		if (item.mask.curr & END)
 		{
-			if (item.delta >= _text.length() && _text.substr(_text.length() - item.delta).compare(item.curr) == 0)
+			// the length of the text must not be less than the length of the chunk:
+			// the subtraction below would underflow
+			if (item.delta >= _text.length() && _text.length() >= item.delta &&
+				_text.substr(_text.length() - item.delta).compare(item.curr) == 0)
 			{
 				if (it + 1 == itEnd)
 				{

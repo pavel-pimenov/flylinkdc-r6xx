@@ -403,16 +403,16 @@ static char *convert_from_ACE (const char *name)
 
 
 /*
- * E.g. convert "www.tromsï¿½.no" to ACE:
+ * E.g. convert "www.tromsø.no" to ACE:
  *
- * 1) Convert each label separately. "www", "tromsï¿½" and "no"
- * 2) "tromsï¿½" -> u+0074 u+0072 u+006F u+006D u+0073 u+00F8
+ * 1) Convert each label separately. "www", "tromsø" and "no"
+ * 2) "tromsø" -> u+0074 u+0072 u+006F u+006D u+0073 u+00F8
  * 3) Pass this through 'punycode_encode()' which gives "troms-zua".
  * 4) Repeat for all labels with non-ASCII letters.
  * 5) Prepending "xn--" for each converted label gives "www.xn--troms-zua.no".
  *
  * E.g. 2:
- *   "www.blï¿½bï¿½rsyltetï¿½y.no" -> "www.xn--blbrsyltety-y8aO3x.no"
+ *   "www.blåbærsyltetøy.no" -> "www.xn--blbrsyltety-y8aO3x.no"
  *
  * Ref. http://www.imc.org/idna/do-idna.cgi
  *      http://www.norid.no/domenenavnbaser/ace/ace_technical.en.html

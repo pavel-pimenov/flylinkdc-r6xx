@@ -300,18 +300,27 @@ int SearchManager::UdpQueue::run()
 				}
 				uint8_t slots = (uint8_t)Util::toInt(x.substr(i, j - i));
 				i = j + 1;
-				if ((j = x.rfind(" (")) == string::npos)
+				// the tail of the message is "<Hubname> (<Hubip:port>)" - the hub name may
+				// contain spaces, so the fields are parsed from the end of the message.
+				// A whole-buffer rfind() would return a position before "i" for a crafted
+				// packet and the size_t subtraction below would underflow.
+				const string::size_type l_close = x.rfind(')');
+				if (l_close == string::npos || l_close < i)
 				{
 					continue;
 				}
-				string l_hub_name_or_tth = x.substr(i, j - i);
-				i = j + 2;
-				if ((j = x.rfind(')')) == string::npos)
+				const string::size_type l_open = x.rfind('(', l_close);
+				if (l_open == string::npos || l_open < i)
 				{
 					continue;
 				}
-				
-				const string hubIpPort = x.substr(i, j - i);
+				const string hubIpPort = x.substr(l_open + 1, l_close - l_open - 1);
+				const string::size_type l_space = x.rfind(' ', l_open);
+				if (l_space == string::npos || l_space < i)
+				{
+					continue;
+				}
+				string l_hub_name_or_tth = x.substr(i, l_space - i);
 				const string url = ClientManager::findHub(hubIpPort);
 				const string l_encoding = ClientManager::findHubEncoding(url);
 				nick = Text::toUtf8(nick, l_encoding);

@@ -147,7 +147,7 @@ std::string JAControl::getJACurrTimeString(bool isCurrentTime)
 	if ((float)currTimeSec / 3600 < 1)
 		time = "0";
 	else
-		time = Util::toString(currTimeSec / 360);
+		time = Util::toString(currTimeSec / 3600);
 	if (currTimeSec / 60 < 10)
 		time += ":0" + Util::toString(currTimeSec / 60);
 	else

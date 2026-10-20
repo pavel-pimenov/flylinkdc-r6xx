@@ -36,13 +36,39 @@ inline int_type stringToInt(const char_type* s)
 	}
 	else if (*s == '+')
 		s++;
-	int_type result = 0;
+	// the value is accumulated in the unsigned domain: an overflow of a signed
+	// type would be undefined behaviour, the result is saturated instead
+	using utype = typename std::make_unsigned<int_type>::type;
+	const utype l_sign_bit = static_cast<utype>(~(utype)0) >> (sizeof(utype) * 8 - 1);
+	const utype l_max = std::is_signed<int_type>::value
+	                    ? (negative ? l_sign_bit : (l_sign_bit - 1))
+	                    : static_cast<utype>(~(utype)0);
+	utype result = 0;
 	while (*s >= '0' && *s <= '9')
 	{
-		result = result * 10 + *s - '0';
+		const utype l_digit = static_cast<utype>(*s - '0');
+		if (result > (l_max - l_digit) / 10)
+		{
+			result = l_max;
+			s++;
+			break;
+		}
+		result = result * 10 + l_digit;
 		s++;
 	}
-	return negative ? -result : result;
+	if (!std::is_signed<int_type>::value)
+	{
+		return static_cast<int_type>(result);
+	}
+	if (negative)
+	{
+		if (result == 0)
+			return static_cast<int_type>(0);
+		// the magnitude of the most negative value is one bigger than the
+		// magnitude of the most positive one
+		return static_cast<int_type>(-static_cast<int_type>(result - 1) - 1);
+	}
+	return static_cast<int_type>(result);
 }
 
 #ifdef _MSC_VER

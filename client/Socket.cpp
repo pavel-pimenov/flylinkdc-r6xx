@@ -187,8 +187,8 @@ uint16_t Socket::bind(uint16_t aPort, string aIp /* = 0.0.0.0 */)
 		dcdebug("Bind failed, ip = %s error: %s\n", aIp.c_str(), l_error.c_str());
 #endif
 		sock_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-		//TODO - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ 10048 - пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
-		// - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
+		//TODO - обработать ошибку с 10048 - занят порт
+		// - отключил спам
 		// LogManager::message("uint16_t Socket::bind Error! IP = " + aIp + " aPort=" + Util::toString(aPort) + " Error = " + l_error);
 		check(::bind(m_sock, (sockaddr *)&sock_addr, sizeof(sock_addr)));
 	}
@@ -394,7 +394,7 @@ int Socket::getSocketOptInt(int p_option) const
 void Socket::setSocketOpt(int option, int val)
 {
 	dcassert(val > 0);
-	int len = sizeof(val); // x64 - x86 int пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
+	int len = sizeof(val); // x64 - x86 int разный размер
 	check(::setsockopt(m_sock, SOL_SOCKET, option, (char*)&val, len));
 }
 

@@ -44,6 +44,9 @@ class AdcHub : public Client, public CommandHandler<AdcHub>
 		void resetAntivirusInfo();
 		size_t getUserCount() const
 		{
+			// m_adc_users is modified by the hub thread - the size must be read
+			// under the lock
+			CFlyReadLock(*m_cs);
 			return m_adc_users.size();
 		}
 		string escape(const string& str) const

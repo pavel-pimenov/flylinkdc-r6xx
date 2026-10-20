@@ -517,7 +517,10 @@ void OperaColors::FloodFill(CDC& hDC, int x1, int y1, int x2, int y2, const COLO
 		static const int g_blend_vector[MAX_SHADE] = {0, 8, 16, 20, 10, 4, 0, -2, -4, -6, -10, -12, -14, -16, -14, -12, -10, -8, -6, -4, -2, 0, //-V112
 		                                              1, 2, 3, 8, 10, 12, 14, 16, 14, 12, 10, 6, 4, 2, 0, -4, -10, -20, -16, -8, 0 //-V112
 		                                             };
-		for (int _x = 0; _x <= w; ++_x)
+		// the DIB is w x h: the valid x range is 0..w-1 (the flat branch below
+		// uses the same range) - with "_x <= w" the last column was written
+		// outside of the bitmap
+		for (int _x = 0; _x < w; ++_x)
 		{
 			const COLORREF cr = blendColors(c2, c1, double(_x) / double(w));
 			for (int _y = 0; _y < h; ++_y)

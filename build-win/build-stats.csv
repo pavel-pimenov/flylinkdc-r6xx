@@ -60,3 +60,63 @@
 2026-10-14 22:19:07,Release,Build,FlyLinkDC_2022.sln,0,34,32,0,20734976,0,lua.pdb restored
 2026-10-14 22:21:04,Release,Build,FlyLinkDC_2022.sln,0,33,32,0,20734976,0,lua rebuild via sln
 2026-10-14 22:25:02,Release,Build,FlyLinkDC_2022.sln,0,01,0,0,20734976,0,post lua+app combined rebuild
+2026-10-19 18:49:42,Debug,Build,FlyLinkDC_2022.sln,0,55,0,0,54875136,0,baseline refactor session start
+2026-10-19 19:20:13,Debug,Build,FlyLinkDC_2022.sln,1,00,0,0,54877696,0,refactor batch 1 (memory safety fixes)
+2026-10-19 19:23:19,Debug,Build,FlyLinkDC_2022.sln,0,08,0,0,54878720,0,refactor batch 2 (autoupdate TTH verify, xmlparser size)
+2026-10-19 19:37:28,Debug,Build,FlyLinkDC_2022.sln,0,09,0,0,54881280,0,refactor batch 3 (upload bounds, UDP SR parser, autoupdate hardening)
+2026-10-19 19:38:28,Debug,Build,FlyLinkDC_2022.sln,0,07,0,0,54881280,0,refactor batch 4 (WinFirewall COM)
+2026-10-19 19:41:02,Debug,Build,FlyLinkDC_2022.sln,0,25,0,0,54883328,0,refactor batch 5 (regex, sql, adchub, nmdc, buffered socket, keyprint)
+2026-10-19 20:08:28,Debug,Build,FlyLinkDC_2022.sln,1,02,0,0,54887424,0,refactor batch 6 (windows UI + threading)
+2026-10-19 20:11:41,Debug,Build,FlyLinkDC_2022.sln,0,02,0,0,54887424,0,refactor batch 7
+2026-10-19 20:30:22,Debug,Build,FlyLinkDC_2022.sln,0,54,0,0,54886400,0,refactor batch 8 (idna, columns sort, listview)
+2026-10-19 20:36:05,Debug,Build,FlyLinkDC_2022.sln,1,03,0,0,54887936,0,refactor batch 9 (hash manager, ssl, favorites, settings, simplexml)
+2026-10-19 20:37:49,Debug,Rebuild,FlyLinkDC_2022.sln,1,37,0,0,54887936,0,final validation Debug rebuild
+2026-10-19 20:40:21,Release,Rebuild,FlyLinkDC_2022.sln,2,15,0,0,20752896,0,final validation Release rebuild
+2026-10-19 20:45:34,Debug,Build,FlyLinkDC_2022.sln,1,03,0,0,54887424,0,after cp1251 repair
+2026-10-19 20:53:28,Debug,Build,FlyLinkDC_2022.sln,0,56,0,0,54887424,0,final batch (autoupdate path checks, cp1251 repair)
+2026-10-19 20:54:58,Debug,Rebuild,FlyLinkDC_2022.sln,1,35,0,0,54887424,0,FINAL validation Debug rebuild
+2026-10-19 20:57:18,Release,Rebuild,FlyLinkDC_2022.sln,2,16,0,0,20752896,0,FINAL validation Release rebuild
+2026-10-19 21:07:56,Debug,Rebuild,FlyLinkDC_2022.sln,1,38,0,0,54883840,0,FINAL validation after cp1251 repo-wide repair
+2026-10-19 21:10:21,Release,Rebuild,FlyLinkDC_2022.sln,2,18,0,0,20748800,0,FINAL validation Release after cp1251 repair
+2026-10-19 21:14:02,Debug,Build,FlyLinkDC_2022.sln,0,52,0,0,54883840,0,final state check
+2026-10-19 21:14:05,Release,Build,FlyLinkDC_2022.sln,0,01,0,0,20748800,0,final state check
+2026-10-19 21:55:29,Debug,Build,FlyLinkDC_2022.sln,1,05,0,0,54887424,0,batch 10 (windows UI + client transfer/progress fixes)
+2026-10-19 21:57:24,Debug,Build,FlyLinkDC_2022.sln,0,28,0,0,54887424,0,batch 11 (property grid + minihtml fixes)
+2026-10-19 21:59:34,Debug,Build,FlyLinkDC_2022.sln,0,99,0,0,54888448,0,batch 12 (connectionmanager autodetect UAF)
+2026-10-19 22:01:47,Debug,Build,FlyLinkDC_2022.sln,0,09,0,0,54888448,0,batch 13 (errorDB modal dialog)
+2026-10-19 22:03:17,Debug,Build,FlyLinkDC_2022.sln,0,99,0,0,54902272,0,batch 14 (identity nick race)
+2026-10-19 22:05:52,Debug,Build,FlyLinkDC_2022.sln,0,99,0,0,54906880,0,batch 15 (user nick race)
+2026-10-19 22:26:11,Debug,Build,FlyLinkDC_2022.sln,0,11,0,0,54906880,0,batch 16 (listener socket, resume data, asserts)
+2026-10-19 22:29:29,Debug,Build,FlyLinkDC_2022.sln,0,18,3,2,54906880,1,batch 17 (windows UI fixes)
+2026-10-19 22:30:32,Debug,Build,FlyLinkDC_2022.sln,0,14,0,0,54908416,0,batch 17 fix
+2026-10-19 22:31:15,Debug,Build,FlyLinkDC_2022.sln,0,09,0,0,54908928,0,batch 18 (connection errors, peer port)
+2026-10-19 22:31:53,Debug,Build,FlyLinkDC_2022.sln,0,16,0,0,54909440,0,batch 19 (pm counter, text styles)
+2026-10-19 22:32:36,Debug,Build,FlyLinkDC_2022.sln,0,09,0,0,54909440,0,batch 19b
+2026-10-19 22:33:36,Release,Build,FlyLinkDC_2022.sln,0,99,0,0,20761088,0,release check
+2026-10-19 22:34:38,Debug,Build,FlyLinkDC_2022.sln,0,08,0,0,54910464,0,batch 20 (user nick lock scope)
+2026-10-19 22:35:12,Debug,Build,FlyLinkDC_2022.sln,0,08,0,0,54910464,0,batch 20b (user nick lock scope)
+2026-10-19 22:36:50,Debug,Build,FlyLinkDC_2022.sln,0,03,0,1,54910464,1,batch 21 (winutil registry refactoring)
+2026-10-19 22:37:23,Debug,Build,FlyLinkDC_2022.sln,0,03,0,1,54910464,1,batch 21b (winutil registry refactoring)
+2026-10-19 22:37:44,Debug,Build,FlyLinkDC_2022.sln,0,03,0,1,54910464,1,batch 21c (winutil registry refactoring)
+2026-10-19 22:38:20,Debug,Build,FlyLinkDC_2022.sln,0,19,0,0,54905344,0,batch 21d
+2026-10-19 22:43:57,Debug,Build,FlyLinkDC_2022.sln,0,48,0,1,54905344,1,batch 22 (safe format)
+2026-10-19 22:45:56,Debug,Build,FlyLinkDC_2022.sln,1,09,0,0,54906368,0,batch 22b (variadic tformat)
+2026-10-19 22:46:49,Debug,Build,FlyLinkDC_2022.sln,0,09,0,0,54906368,0,batch 23 (overlapping snwprintf)
+2026-10-19 23:29:10,Debug,Build,FlyLinkDC_2022.sln,0,09,0,0,54906368,0,batch 24 (thread handle)
+2026-10-19 23:30:48,Debug,Build,FlyLinkDC_2022.sln,0,51,0,0,54906368,0,batch 25 (threads, logic)
+2026-10-19 23:31:18,Debug,Build,FlyLinkDC_2022.sln,0,08,0,0,54906368,0,batch 25b
+2026-10-19 23:32:11,Debug,Build,FlyLinkDC_2022.sln,0,17,0,0,54906880,0,batch 26 (dclst page, chatctrl, hashmanager)
+2026-10-19 23:32:50,Debug,Build,FlyLinkDC_2022.sln,0,15,0,0,54906880,0,batch 27 (players bstr, popupmanager)
+2026-10-19 23:33:45,Release,Build,FlyLinkDC_2022.sln,0,91,0,0,20761088,0,release check
+2026-10-20 02:23:03,Debug,Build,FlyLinkDC_2022.sln,0,56,0,0,54907904,0,batch 28 (remote DoS, OOB reads)
+2026-10-20 02:23:39,Debug,Build,FlyLinkDC_2022.sln,0,30,0,0,54907904,0,batch 28b
+2026-10-20 02:24:38,Debug,Build,FlyLinkDC_2022.sln,0,30,0,0,54908928,0,batch 29 (atomic settings, db lock, timer)
+2026-10-20 02:25:27,Debug,Build,FlyLinkDC_2022.sln,0,03,0,1,54908928,1,batch 30 (dirlisting, mainfrm)
+2026-10-20 02:27:04,Debug,Build,FlyLinkDC_2022.sln,0,29,0,0,54908416,0,batch 31
+2026-10-20 02:27:37,Debug,Build,FlyLinkDC_2022.sln,0,09,0,0,54908928,0,batch 32 (resume data, sql bind)
+2026-10-20 02:28:42,Debug,Build,FlyLinkDC_2022.sln,0,11,0,0,54908928,0,batch 33
+2026-10-20 02:29:14,Release,Build,FlyLinkDC_2022.sln,0,53,0,0,20761600,0,release check
+2026-10-20 02:31:39,Debug,Rebuild,FlyLinkDC_2022.sln,1,37,0,0,54908928,0,FINAL Debug rebuild
+2026-10-20 02:34:26,Release,Rebuild,FlyLinkDC_2022.sln,2,15,0,0,20761600,0,FINAL Release rebuild
+2026-10-20 02:41:24,Debug,Build,FlyLinkDC_2022.sln,0,56,0,0,54908928,0,final state
+2026-10-20 02:41:54,Release,Build,FlyLinkDC_2022.sln,0,48,0,0,20761600,0,final state

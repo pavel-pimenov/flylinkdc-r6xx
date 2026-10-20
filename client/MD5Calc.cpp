@@ -29,10 +29,15 @@ char* MD5Calc::CalcMD5FromFile(const wchar_t *s8_Path)
 	if (h_File != INVALID_HANDLE_VALUE)
 	{
 		// http://msdn.microsoft.com/en-us/library/aa364957(v=VS.85).aspx
-		int s32_Size = GetFileSize(h_File, 0);
-		int l_ReadBufSize = std::min(1000000, s32_Size);
-		if (l_ReadBufSize > 0)
+		// GetFileSizeEx() is used instead of GetFileSize() - the latter cannot
+		// report the size of files bigger than 4 GB
+		LARGE_INTEGER l_fileSize = {};
+		int64_t s32_Size = 0;
+		if (GetFileSizeEx(h_File, &l_fileSize) && l_fileSize.QuadPart > 0)
+			s32_Size = l_fileSize.QuadPart;
+		if (s32_Size > 0)
 		{
+			const int l_ReadBufSize = (int)std::min<int64_t>(1000000, s32_Size);
 			std::unique_ptr<unsigned char[]> l_buf(new unsigned char[l_ReadBufSize]);
 			while (s32_Size > 0)
 			{
@@ -47,13 +52,15 @@ char* MD5Calc::CalcMD5FromFile(const wchar_t *s8_Path)
 				
 				s32_Size -= u32_Read;
 			};
-			
-			CloseHandle(h_File);
-			
-			// ++++++++++++ Signature --> String +++++++++++
-			
-			return MD5FinalToString();
 		}
+		
+		// the handle must be closed on every path - otherwise it leaks for
+		// empty files and for files that cannot be read
+		CloseHandle(h_File);
+		
+		// ++++++++++++ Signature --> String +++++++++++
+		
+		return MD5FinalToString();
 	}
 	return "";
 }

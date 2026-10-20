@@ -36,6 +36,8 @@
 #error PropertyItem.h requires atlbase.h to be included first
 #endif
 
+#include <vector>
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -50,11 +52,22 @@ class CProperty : public IProperty
 		LPARAM m_lParam;
 		
 	public:
-		CProperty(LPCTSTR pstrName, LPARAM lParam) : m_fEnabled(true), m_lParam(lParam), m_hWndOwner(NULL)
+		CProperty(LPCTSTR pstrName, LPARAM lParam) : m_pszName(NULL), m_fEnabled(true), m_lParam(lParam), m_hWndOwner(NULL)
 		{
 			ATLASSERT(!::IsBadStringPtr(pstrName, UINT_PTR(-1)));
-			ATLTRY(m_pszName = new TCHAR[(::wcslen(pstrName) * sizeof(TCHAR)) + 1 ]);    // [!] PVS V303 The function 'lstrlen' is deprecated in the Win64 system. It is safer to use the 'wcslen' function. propertyitemimpl.h 53
-			ATLASSERT(m_pszName);
+			// ATLTRY() swallows the exception of the allocation: the pointer would
+			// stay uninitialized and the copy below would write through it
+			try
+			{
+				m_pszName = new TCHAR[(::wcslen(pstrName) * sizeof(TCHAR)) + 1 ];    // [!] PVS V303 The function 'lstrlen' is deprecated in the Win64 system. It is safer to use the 'wcslen' function. propertyitemimpl.h 53
+			}
+			catch (...)
+			{
+				m_pszName = NULL;
+				throw;
+			}
+			if (m_pszName == NULL)
+				return;
 			::lstrcpy(m_pszName, pstrName);
 		}
 		
@@ -186,8 +199,11 @@ class CPropertyItem : public CProperty
 		
 		void DrawValue(PROPERTYDRAWINFO& di)
 		{
+			// the length of the value comes from the data: it must not be allocated on
+			// the stack of the UI thread
 			UINT cchMax = GetDisplayValueLength() + 1;
-			LPTSTR pszText = (LPTSTR) _alloca(cchMax * sizeof(TCHAR));
+			std::vector<TCHAR> l_textBuffer(cchMax);
+			LPTSTR pszText = l_textBuffer.data();
 			ATLASSERT(pszText);
 			if (!GetDisplayValue(pszText, cchMax)) return;
 			CDCHandle dc(di.hDC);
@@ -206,7 +222,11 @@ class CPropertyItem : public CProperty
 			CComVariant v;
 			if (FAILED(v.ChangeType(VT_BSTR, &m_val))) return FALSE;
 			USES_CONVERSION;
-			::wcsncpy(pstr, OLE2CT(v.bstrVal), cchMax); // [!] PVS V303 The function 'lstrcpyn' is deprecated in the Win64 system. It is safer to use the 'wcsncpy' function. propertyitemimpl.h 203
+			// wcsncpy() does not terminate the string when the value is not shorter
+			// than the buffer
+			if (cchMax > 0)
+				::wcsncpy(pstr, OLE2CT(v.bstrVal), cchMax - 1); // [!] PVS V303 The function 'lstrcpyn' is deprecated in the Win64 system. It is safer to use the 'wcsncpy' function. propertyitemimpl.h 203
+			pstr[cchMax - 1] = _T('\0');
 			return TRUE;
 		}
 		
@@ -268,8 +288,11 @@ class CPropertyReadOnlyItem : public CPropertyItem
 		void DrawValue(PROPERTYDRAWINFO& di)
 		{
 			// Get property text
+			// the length of the value comes from the data: it must not be allocated on
+			// the stack of the UI thread
 			UINT cchMax = GetDisplayValueLength() + 1;
-			LPTSTR pszText = (LPTSTR) _alloca(cchMax * sizeof(TCHAR));
+			std::vector<TCHAR> l_textBuffer(cchMax);
+			LPTSTR pszText = l_textBuffer.data();
 			ATLASSERT(pszText);
 			if (!GetDisplayValue(pszText, cchMax)) return;
 			// Prepare paint
@@ -362,8 +385,11 @@ class CPropertyEditItem : public CPropertyItem
 		HWND CreateInplaceControl(HWND hWnd, const RECT& rc)
 		{
 			// Get default text
+			// the length of the value comes from the data: it must not be allocated on
+			// the stack of the UI thread
 			UINT cchMax = GetDisplayValueLength() + 1;
-			LPTSTR pszText = (LPTSTR) _alloca(cchMax * sizeof(TCHAR));
+			std::vector<TCHAR> l_textBuffer(cchMax);
+			LPTSTR pszText = l_textBuffer.data();
 			ATLASSERT(pszText);
 			if (!GetDisplayValue(pszText, cchMax)) return NULL;
 			// Create EDIT control
@@ -642,7 +668,11 @@ class CPropertyFileNameItem : public CPropertyItem
 				if (*p == _T(':') || *p == _T('\\')) pstrFileName = p + 1;
 				p = ::CharNext(p);
 			}
-			::wcsncpy(pstr, pstrFileName, cchMax); // [!] PVS V303 The function 'lstrcpyn' is deprecated in the Win64 system. It is safer to use the 'wcsncpy' function. propertyitemimpl.h 626
+			// wcsncpy() does not terminate the string when the file name is not
+			// shorter than the buffer
+			if (cchMax > 0)
+				::wcsncpy(pstr, pstrFileName, cchMax - 1); // [!] PVS V303 The function 'lstrcpyn' is deprecated in the Win64 system. It is safer to use the 'wcsncpy' function. propertyitemimpl.h 626
+			pstr[cchMax - 1] = _T('\0');
 			return TRUE;
 		}
 		

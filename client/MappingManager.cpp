@@ -85,8 +85,7 @@ string MappingManager::getPortmapInfo(bool p_show_public_ip)
 			l_result += "(+)";
 		else if (p_status == false)
 			l_result += "(-)";
-		else
-			l_result.clear();
+		// the status is unknown: the information about the port is kept without a marker
 		return l_result;
 	};
 	if (CFlyServerJSON::isTestPortOK(SETTING(UDP_PORT), "udp"))

@@ -355,6 +355,14 @@ class CMiniHTML
 				}
 				ppstrPseudo += 2;
 			}
+			if (*ppstrPseudo == NULL)
+			{
+				// an unknown entity: the text must be shown as it is, otherwise the
+				// parser does not make any progress and loops forever
+				ACTION action = { CMD_SPECIALCHAR, 1, pstrText[0] };
+				m_aActions.Add(action);
+				pstrText += 1;
+			}
 			ATLASSERT(*ppstrPseudo); // Found a replacement?
 		}
 		void _ParseTag(CDCHandle dc, LPCTSTR& pstrText, CONTEXT& c, FONT& f, int& iHeight)
@@ -363,6 +371,12 @@ class CMiniHTML
 			while (*pstrText && *pstrText != _T('>') && *pstrText != _T(' ')) pstrText = ::CharNext(pstrText);
 			int nTagLen = (pstrText - pstrStart) - 1;
 			TCHAR szTag[16] = { 0 };
+			// the length of the tag is not limited by the text: it must fit into szTag
+			const int l_cchMaxTag = (int)(_countof(szTag) / sizeof(TCHAR)) - 1;
+			if (nTagLen < 0)
+				nTagLen = 0;
+			if (nTagLen > l_cchMaxTag)
+				nTagLen = l_cchMaxTag;
 			::memcpy(szTag, pstrStart + 1, nTagLen * sizeof(TCHAR));
 			::CharUpperBuff(szTag, nTagLen);
 			
@@ -386,7 +400,8 @@ class CMiniHTML
 				{
 					if (_GetAttribute(szAttribs, _T(" COLOR"), szValue)) c.clrText = _GetColor(szValue);
 					if (_GetAttribute(szAttribs, _T(" SIZE"), szValue)) f.lf.lfHeight = _GetFontSize(szValue);
-					if (_GetAttribute(szAttribs, _T(" FACE"), szValue)) ::lstrcpy(f.lf.lfFaceName, szValue);
+					// lfFaceName is only LF_FACESIZE characters long
+					if (_GetAttribute(szAttribs, _T(" FACE"), szValue)) ::lstrcpyn(f.lf.lfFaceName, szValue, LF_FACESIZE);
 					bPushStack = true;
 				}
 				else if (::lstrcmp(szTag, _T("DIV")) == 0)
@@ -422,6 +437,11 @@ class CMiniHTML
 			else if (bPopStack)
 			{
 				ATLASSERT(m_aFontStack.GetSize() > 0); // Tag mismatch
+				if (m_aFontStack.GetSize() == 0)
+				{
+					// a closing tag without an opening one: the stack is empty
+					return;
+				}
 				int iContext = m_aFontStack[m_aFontStack.GetSize() - 1];
 				m_aFontStack.RemoveAt(m_aFontStack.GetSize() - 1);
 				c = m_aContexts[iContext];

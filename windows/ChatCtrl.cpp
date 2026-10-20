@@ -99,11 +99,16 @@ void ChatCtrl::Initialize()
 	dcassert(m_pRichEditOle);
 	if (m_pRichEditOle)
 	{
-		const SCODE sc = ::CreateILockBytesOnHGlobal(NULL, TRUE, &m_lpLockBytes);
-		if (sc == S_OK && m_lpLockBytes)
+		// the storage and the lock bytes must not be replaced: the objects that are
+		// already inserted are stored in them and they would be leaked
+		if (!m_pStorage)
 		{
-			(void)::StgCreateDocfileOnILockBytes(m_lpLockBytes,
-			                               STGM_SHARE_EXCLUSIVE | STGM_CREATE | STGM_READWRITE, 0, &m_pStorage);
+			const SCODE sc = ::CreateILockBytesOnHGlobal(NULL, TRUE, &m_lpLockBytes);
+			if (sc == S_OK && m_lpLockBytes)
+			{
+				(void)::StgCreateDocfileOnILockBytes(m_lpLockBytes,
+				                               STGM_SHARE_EXCLUSIVE | STGM_CREATE | STGM_READWRITE, 0, &m_pStorage);
+			}
 		}
 	}
 	SetOleCallback(this);
@@ -447,6 +452,9 @@ void ChatCtrl::AppendText(const CFlyChatCache& p_message, unsigned p_max_smiles,
 						}
 						else
 						{
+							// the references must be released here as well
+							safe_release(pOleClientSite);
+							safe_release(m_pRichEditOle);
 							AppendTextOnly(sText.substr(l_pos, l_cur_smile.size()), p_message);
 						}
 						if (!l_cur_smile.empty())

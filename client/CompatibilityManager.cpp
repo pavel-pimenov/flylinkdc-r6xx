@@ -169,7 +169,8 @@ bool CompatibilityManager::detectWine()
 		return false;
 		
 	const bool ret = GetProcAddress(module, "wine_server_call") != nullptr;
-	FreeLibrary(module);
+	// GetModuleHandle() does not increase the reference count of the module:
+	// FreeLibrary() would unload a dll that is still in use
 	return ret;
 }
 
@@ -1079,7 +1080,8 @@ string CompatibilityManager::DiskSpaceInfo(bool onlyTotal /* = false */)
 	
 	//check for mounted Network drives
 	ULONG drives = _getdrives();
-	TCHAR drive[3] = { _T('C'), _T(':'), _T('\0') }; // TODO фиксануть copy-paste
+	// the bit 0 of _getdrives() is the drive "A:"
+	TCHAR drive[3] = { _T('A'), _T(':'), _T('\0') }; // TODO фиксануть copy-paste
 	while (drives != 0)
 	{
 		const auto l_drive_type = GetDriveType(drive);
@@ -1163,7 +1165,8 @@ tstring CompatibilityManager::diskInfo()
 	
 	// and a check for mounted Network drives, todo fix a better way for network space
 	ULONG drives = _getdrives();
-	TCHAR drive[3] = { _T('C'), _T(':'), _T('\0') };
+	// the bit 0 of _getdrives() is the drive "A:"
+	TCHAR drive[3] = { _T('A'), _T(':'), _T('\0') };
 	
 	while (drives != 0)
 	{
@@ -1227,7 +1230,7 @@ string CompatibilityManager::getSysUptime()
 		
 	//apexdc
 	typedef ULONGLONG(CALLBACK * LPFUNC2)(void);
-	LPFUNC2 _GetTickCount64 = (LPFUNC2)GetProcAddress(kernel32lib, "GetTickCount64");
+	LPFUNC2 _GetTickCount64 = kernel32lib ? (LPFUNC2)GetProcAddress(kernel32lib, "GetTickCount64") : nullptr;
 	time_t sysUptime = (_GetTickCount64 ? _GetTickCount64() : GetTickCount()) / 1000;
 	
 	return Util::formatTime(sysUptime, false);

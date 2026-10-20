@@ -787,6 +787,7 @@ int ConnectionManager::Server::run() noexcept
 {
 	while (!isShutdown())
 	{
+		bool l_is_error = false;
 		try {
 			/// TODO while (!this->die)
 			// while (!isShutdown())
@@ -801,8 +802,17 @@ int ConnectionManager::Server::run() noexcept
 		catch (const Exception& e) {
 			dcdebug("ConnectionManager::Server::run Error: %s\n", e.getError().c_str());
 			LogManager::message(STRING(LISTENER_FAILED) + ' ' + e.getError());
+			l_is_error = true;
 		}
 		
+		if (!l_is_error)
+		{
+			// the listening socket is still valid: it must not be re-created here.
+			// Socket::create() does not set SO_REUSEADDR, so after every disconnect of a
+			// peer (the port is in TIME_WAIT) the bind would fail and the listener would
+			// be dead for minutes. The connections in the backlog would be dropped as well.
+			continue;
+		}
 		
 		bool failed = false;
 		while (!isShutdown())
@@ -811,6 +821,7 @@ int ConnectionManager::Server::run() noexcept
 			{
 				m_sock.disconnect();
 				m_sock.create();
+				m_sock.setSocketOpt(SO_REUSEADDR, 1);
 				m_server_port = m_sock.bind(m_server_port, m_server_ip);
 				dcassert(m_server_port);
 				m_sock.listen();
@@ -1366,18 +1377,13 @@ void ConnectionManager::on(UserConnectionListener::MyNick, UserConnection* aSour
 			
 			// WARNING: only Nmdc hub requests for REASON_DETECT_CONNECTION.
 			// if another hub added, one must implement autodetection in base Client class
-			NmdcHub* hub = static_cast<NmdcHub*>(ClientManager::findClient(i.m_HubUrl));
-			if (!hub)
-				dcdebug("REASON_DETECT_CONNECTION: can't find hub %s\n", i.m_HubUrl.c_str());
-			//dcassert(hub);
-			
-			if (hub && hub->IsAutodetectPending())
+			// the hub is used under the lock of the list of the clients: a raw pointer
+			// would be invalid if the hub is deleted in the meantime
+			if (ClientManager::completeAutodetect(i.m_HubUrl))
 			{
 				// set connection type to ACTIVE
 				// TODO - if (fhub)
 				//     fhub->setMode(1);
-				
-				hub->AutodetectComplete();
 				
 				dcdebug("REASON_DETECT_CONNECTION: All OK %s Nick = %s\n", i.m_HubUrl.c_str(), aNick.c_str());
 				
@@ -1385,6 +1391,10 @@ void ConnectionManager::on(UserConnectionListener::MyNick, UserConnection* aSour
 				// favorite hub's settings
 				
 				fly_fire1(ConnectionManagerListener::OpenTCPPortDetected(), i.m_HubUrl);
+			}
+			else
+			{
+				dcdebug("REASON_DETECT_CONNECTION: can't complete the autodetection for hub %s\n", i.m_HubUrl.c_str());
 			}
 			
 			putConnection(aSource);
@@ -1408,10 +1418,13 @@ void ConnectionManager::on(UserConnectionListener::MyNick, UserConnection* aSour
 		for (auto i = g_downloads.cbegin(); i != g_downloads.cend(); ++i)
 		{
 			const ConnectionQueueItemPtr& cqi = *i;
-			cqi->setErrors(0);
 			if ((cqi->getState() == ConnectionQueueItem::CONNECTING || cqi->getState() == ConnectionQueueItem::WAITING) &&
 			        cqi->getUser()->getCID() == cid)
 			{
+				// the counter of the errors must be reset only for the item of this user:
+				// otherwise the protocol error (-1) of every other item is cleared and the
+				// client reconnects to the peers that violated the protocol
+				cqi->setErrors(0);
 				aSource->setUser(cqi->getUser());
 				// Indicate that we're interested in this file...
 				aSource->setFlag(UserConnection::FLAG_DOWNLOAD);

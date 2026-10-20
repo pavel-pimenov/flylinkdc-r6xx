@@ -439,10 +439,13 @@ class ShareManager : public Singleton<ShareManager>, private Thread, private Tim
 	public:
 		static unsigned get_cache_size_file_not_exists_set()
 		{
+			// the set is modified by the hub thread - the size must be read under the lock
+			CFlyReadLock(*g_csShareNotExists);
 			return g_file_not_exists_set.size();
 		}
 		static unsigned get_cache_file_map()
 		{
+			CFlyReadLock(*g_csShareCache);
 			return g_file_cache_map.size();
 		}
 		static int g_RebuildIndexes;

@@ -955,6 +955,9 @@ class SearchFrame : public MDITabChildWindowImpl < SearchFrame, RGB(127, 127, 25
 				TorrentSearchSender(): m_wnd(0) { }
 				void start_torrent_search(HWND p_wnd, const tstring& p_search)
 				{
+					// the previous worker must be stopped before the members are changed:
+					// it reads them while it is running
+					join();
 					m_wnd = p_wnd;
 					m_search = p_search;
 					//CFlyBusy l(m_count_run);

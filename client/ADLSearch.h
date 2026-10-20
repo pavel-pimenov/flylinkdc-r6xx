@@ -18,7 +18,7 @@
 
 /*
  * Automatic Directory Listing Search
- * Henrik Engstrï¿½m, henrikengstrom at home se
+ * Henrik Engström, henrikengstrom at home se
  */
 #pragma once
 

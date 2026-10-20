@@ -173,6 +173,8 @@ LRESULT Sounds::onPlay(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOO
 	LVITEM item = {0};
 	item.mask = LVIF_TEXT;
 	item.cchTextMax = 255;
+	LocalArray<TCHAR, 256> l_buf;
+	item.pszText = l_buf.data();
 	if (ctrlSounds.GetSelectedItem(&item))
 	{
 		PlaySound(ctrlSounds.ExGetItemTextT(item.iItem, 1).c_str(), NULL, SND_FILENAME | SND_ASYNC);
@@ -209,8 +211,13 @@ LRESULT Sounds::onDefault(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, 
 	{
 		tstring l_themePath = Text::toT(Util::getSoundPath() + SETTING(THEME_MANAGER_SOUNDS_THEME_NAME));
 		AppendPathSeparator(l_themePath);
-		const tstring l_selectedSoundPath = l_themePath + g_SoundsTable[ctrlSounds.GetSelectionMark()];
-		ctrlSounds.SetItemText(item.iItem, 1, l_selectedSoundPath.c_str());
+		// GetSelectionMark() returns -1 when no item is marked
+		const int l_index = ctrlSounds.GetSelectedIndex();
+		if (l_index >= 0 && l_index < (int)_countof(g_SoundsTable))
+		{
+			const tstring l_selectedSoundPath = l_themePath + g_SoundsTable[l_index];
+			ctrlSounds.SetItemText(item.iItem, 1, l_selectedSoundPath.c_str());
+		}
 	}
 	return 0;
 }

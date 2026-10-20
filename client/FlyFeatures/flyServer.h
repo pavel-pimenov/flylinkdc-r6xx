@@ -435,6 +435,12 @@ class CFlyServerAdapter
 		}
 		virtual ~CFlyServerAdapter()
 		{
+			if (m_query_thread)
+			{
+				// the worker uses the adapter: it must not outlive it
+				m_query_thread->join();
+				dcdrun(m_debugWaits = true;)
+			}
 			dcassert(m_debugWaits);
 			dcassert(g_GetFlyServerArray.empty());
 			dcassert(g_SetFlyServerArray.empty());

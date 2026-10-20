@@ -102,7 +102,9 @@ class Segment
 		}
 		bool contains(const Segment& rhs) const
 		{
-			return getStart() <= rhs.getStart() && getEnd() == rhs.getEnd();
+			// the segment must be inside of this one: the end was compared with "=="
+			// before, so a segment that ends earlier was never "contained"
+			return getStart() <= rhs.getStart() && getEnd() >= rhs.getEnd();
 		}
 	private:
 		int64_t start;

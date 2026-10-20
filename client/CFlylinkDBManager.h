@@ -779,7 +779,8 @@ class CFlylinkDBManager : public Singleton<CFlylinkDBManager>
 		static void tryFixBadAlloc();
 		static unsigned get_tth_cache_size()
 		{
-			//CFlyFastLock(g_tth_cache_cs);
+			// the cache is modified by the database threads
+			CFlyFastLock(g_tth_cache_cs);
 			return g_tiger_tree_cache.size();
 		}
 };

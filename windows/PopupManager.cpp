@@ -75,7 +75,11 @@ void PopupManager::Show(const tstring &aMsg, const tstring &aTitle, int Icon, bo
 	{
 		PopupImage = SETTING(POPUPFILE);
 		m_popuptype = SETTING(POPUP_TYPE);
-		m_hBitmap = (HBITMAP)::LoadImage(NULL, Text::toT(PopupImage).c_str(), IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION);
+		HBITMAP l_new_bitmap = (HBITMAP)::LoadImage(NULL, Text::toT(PopupImage).c_str(), IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION);
+		// the previous bitmap must be released: it was only deleted in the destructor
+		if (m_hBitmap)
+			::DeleteObject(m_hBitmap);
+		m_hBitmap = l_new_bitmap;
 	}
 	
 	height = SETTING(POPUP_H);
@@ -114,6 +118,10 @@ void PopupManager::Show(const tstring &aMsg, const tstring &aTitle, int Icon, bo
 			p->SetWindowLongPtr(GWL_EXSTYLE, p->GetWindowLongPtr(GWL_EXSTYLE) | WS_EX_LAYERED | WS_EX_TRANSPARENT);
 			_d_SetLayeredWindowAttributes(p->m_hWnd, 0, SETTING(POPUP_TRANSP), LWA_ALPHA);
 		}
+		// the reference of the module must be released: the popup is shown for every
+		// message of the client
+		if (l_hUser32)
+			::FreeLibrary(l_hUser32);
 	}
 	
 	//move the window to the top of the z-order and display it

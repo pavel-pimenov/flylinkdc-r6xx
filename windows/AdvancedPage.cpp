@@ -98,7 +98,9 @@ LRESULT AdvancedPage::onInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lP
 			SetDlgItemText(IDC_WINAMP, WMPlayerStr.c_str());
 			break;
 		case SettingsManager::iTunes:
-			iTunesStr = SetDlgItemText(IDC_WINAMP, iTunesStr.c_str());
+			// the result of SetDlgItemText() must not be assigned to the string:
+			// it would replace the format with a single character
+			SetDlgItemText(IDC_WINAMP, iTunesStr.c_str());
 			break;
 		case SettingsManager::WinMediaPlayerClassic:
 			SetDlgItemText(IDC_WINAMP, MPCStr.c_str());

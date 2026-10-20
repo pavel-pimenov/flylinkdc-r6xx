@@ -100,44 +100,41 @@ tstring User::getLastNickHubT() const
 void User::setLastNick(const string& p_nick)
 {
 	//dcassert(!p_nick.empty());
-	if (m_ratio_ptr == nullptr)
+	// The nick is changed by the thread of the hub and read by the other threads:
+	// only the string itself is protected. The ratio must not be initialized under
+	// this lock: the database is locked in the opposite order (the database code
+	// reads the nick of the user).
+	bool l_is_nick_changed = false;
+	bool l_is_change_nick = false;
 	{
-		m_nick = p_nick;
-	}
-	else
-	{
+		CFlyFastLock(m_cs_nick);
 		if (m_nick != p_nick)
 		{
-			const bool l_is_change_nick = !m_nick.empty() && !p_nick.empty();
-			if (l_is_change_nick)
-			{
-				if (m_ratio_ptr)
-				{
-					{
-#ifdef FLYLINKDC_USE_RATIO_CS
-						CFlyFastLock(m_ratio_cs);
-#endif
-						safe_delete(m_ratio_ptr);
-					}
-					m_nick = p_nick;
-					initRatio();
-				}
-			}
-			else
-			{
-				m_nick = p_nick;
-			}
-			if (m_ratio_ptr)
-			{
-				m_ratio_ptr->set_dirty(true);
-			}
-		}
-		else
-		{
-			// TODO dcassert(p_nick != m_nick); // Ловим холостое обновление
+			l_is_change_nick = !m_nick.empty() && !p_nick.empty();
+			m_nick = p_nick;
+			l_is_nick_changed = true;
 		}
 	}
+	if (!l_is_nick_changed || m_ratio_ptr == nullptr)
+	{
+		return;
+	}
+	if (l_is_change_nick)
+	{
+		{
+#ifdef FLYLINKDC_USE_RATIO_CS
+			CFlyFastLock(m_ratio_cs);
+#endif
+			safe_delete(m_ratio_ptr);
+		}
+		initRatio();
+	}
+	if (m_ratio_ptr)
+	{
+		m_ratio_ptr->set_dirty(true);
+	}
 }
+
 void User::setIP(const string& p_ip, bool p_is_set_only_ip)
 {
 	boost::system::error_code ec;
@@ -360,10 +357,12 @@ bool User::flushRatio()
 		if (isDirtyInternal())
 		{
 			// LogManager::message("User::flushRatio m_nick = " + m_nick);
-			if (getHubID() && !m_nick.empty() && CFlylinkDBManager::isValidInstance() && !m_last_ip_sql.get().is_unspecified())
+			// the nick is copied: it is changed by the thread of the hub
+			const string l_nick = getLastNick();
+			if (getHubID() && !l_nick.empty() && CFlylinkDBManager::isValidInstance() && !m_last_ip_sql.get().is_unspecified())
 			{
 				bool l_is_sql_not_found = isSet(User::IS_SQL_NOT_FOUND);
-				CFlylinkDBManager::getInstance()->update_last_ip_and_message_count(getHubID(), m_nick, m_last_ip_sql.get(), m_message_count.get(), l_is_sql_not_found,
+				CFlylinkDBManager::getInstance()->update_last_ip_and_message_count(getHubID(), l_nick, m_last_ip_sql.get(), m_message_count.get(), l_is_sql_not_found,
 				                                                                   m_last_ip_sql.is_dirty(),
 				                                                                   m_message_count.is_dirty()
 				                                                                  );
@@ -380,7 +379,7 @@ void User::initRatioL(const boost::asio::ip::address_v4& p_ip)
 {
 	if (BOOLSETTING(ENABLE_RATIO_USER_LIST))
 	{
-		if (m_ratio_ptr == nullptr && !m_nick.empty() && m_hub_id)
+		if (m_ratio_ptr == nullptr && !getLastNick().empty() && m_hub_id)
 		{
 			m_ratio_ptr = new CFlyUserRatioInfo(this);
 			if (m_ratio_ptr->tryLoadRatio(p_ip) == false)
@@ -394,7 +393,7 @@ void User::initMesageCount()
 {
 	if (BOOLSETTING(ENABLE_LAST_IP_AND_MESSAGE_COUNTER))
 	{
-		if (!m_nick.empty() && m_hub_id && !isSet(IS_FIRST_INIT_RATIO)
+		if (!getLastNick().empty() && m_hub_id && !isSet(IS_FIRST_INIT_RATIO)
 		        // Глючит когда шлется UserIP && isSet(IS_MYINFO)
 		   )
 		{
@@ -404,7 +403,7 @@ void User::initMesageCount()
 			// Узнаем, есть ли в базе last_ip или счетчик мессаг
 			uint32_t l_message_count = 0;
 			boost::asio::ip::address_v4 l_last_ip_from_sql;
-			const bool l_is_sql_not_found = !CFlylinkDBManager::getInstance()->load_last_ip_and_user_stat(m_hub_id, m_nick, l_message_count, l_last_ip_from_sql);
+			const bool l_is_sql_not_found = !CFlylinkDBManager::getInstance()->load_last_ip_and_user_stat(m_hub_id, getLastNick(), l_message_count, l_last_ip_from_sql);
 			setFlag(IS_SQL_NOT_FOUND, l_is_sql_not_found);
 			if (!l_is_sql_not_found)
 			{
@@ -999,14 +998,13 @@ tstring Identity::getHubs() const
 	const auto l_hub_op = getHubOperator();
 	if (l_hub_normal || l_hub_reg || l_hub_op)
 	{
-		tstring hubs;
-		hubs.resize(64);
-		hubs.resize(_snwprintf(&hubs[0], hubs.size(), _T("%u (%u/%u/%u)"),
-		                       l_hub_normal + l_hub_reg + l_hub_op,
-		                       l_hub_normal,
-		                       l_hub_reg,
-		                       l_hub_op));
-		return hubs;
+		// Text::tformat() is used: _snwprintf() returns -1 when the result is
+		// truncated and the resize of a negative value would throw
+		return Text::tformat(_T("%u (%u/%u/%u)"),
+		                     l_hub_normal + l_hub_reg + l_hub_op,
+		                     l_hub_normal,
+		                     l_hub_reg,
+		                     l_hub_op);
 	}
 	else
 	{

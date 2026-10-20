@@ -286,7 +286,7 @@ void AdcHub::handle(AdcCommand::INF, const AdcCommand& c) noexcept
 			dcassert(0);
 			continue;
 		}
-		switch (*(short*)i->c_str())
+		switch (i->length() < 2 ? 0 : (int)((unsigned char)(*i)[0] | ((unsigned char)(*i)[1] << 8)))
 		{
 			case TAG('S', 'L'):
 			{
@@ -932,7 +932,8 @@ void AdcHub::handle(AdcCommand::GET, const AdcCommand& c) noexcept
 	if (type == "blom" && c.getParam("BK", 4, sk) && c.getParam("BH", 4, sh))
 	{
 		ByteVector v;
-		size_t m = Util::toUInt32(c.getParam(3)) * 8;
+		// the multiplication must be done in 64 bit: in 32 bit it would wrap around
+		size_t m = static_cast<size_t>(Util::toUInt32(c.getParam(3))) * 8ULL;
 		size_t k = Util::toUInt32(sk);
 		size_t h = Util::toUInt32(sh);
 		
@@ -1461,8 +1462,10 @@ void AdcHub::password(const string& pwd)
 	if (!m_salt.empty())
 	{
 		size_t saltBytes = m_salt.size() * 5 / 8;
-		std::unique_ptr<uint8_t[]> buf(new uint8_t[saltBytes]);
-		Encoder::fromBase32(m_salt.c_str(), &buf[0], saltBytes);
+		// a 1-char salt decodes to 0 bytes: keep the buffer non-empty to avoid
+		// taking the address of a zero-sized array
+		std::unique_ptr<uint8_t[]> buf(new uint8_t[saltBytes ? saltBytes : 1]);
+		Encoder::fromBase32(m_salt.c_str(), buf.get(), saltBytes);
 		TigerHash th;
 		if (m_oldPassword)
 		{
@@ -1470,7 +1473,7 @@ void AdcHub::password(const string& pwd)
 			th.update(cid.data(), CID::SIZE);
 		}
 		th.update(pwd.data(), pwd.length());
-		th.update(&buf[0], saltBytes);
+		th.update(buf.get(), saltBytes);
 		send(AdcCommand(AdcCommand::CMD_PAS, AdcCommand::TYPE_HUB).addParam(Encoder::toBase32(th.finalize(), TigerHash::BYTES)));
 		m_salt.clear();
 	}

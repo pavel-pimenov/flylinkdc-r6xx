@@ -311,6 +311,10 @@ bool BufferedSocket::all_search_parser(const string::size_type p_pos_next_separa
 //			         l_line_item.size() == l_marker_tth + 9 + 40
 //			        );
 			l_marker_tth -= 4;
+			if (l_marker_tth < 9) // no room for the "ip:port " of the seeker
+			{
+				return true;
+			}
 #ifdef _DEBUG
 			static FastCriticalSection g_stat_cs;
 			static std::unordered_map<TTHValue, unsigned> g_tth_count;

@@ -56,6 +56,9 @@ class NmdcHub : public Client, private Flags
 		}
 		size_t getUserCount() const
 		{
+			// m_users is modified by the hub thread - the size must be read
+			// under the lock
+			CFlyReadLock(*m_cs);
 			return m_users.size();
 		}
 		string escape(const string& str) const override

@@ -409,6 +409,9 @@ void Client::on(Connected) noexcept
 			{
 				state = STATE_DISCONNECTED;
 				m_client_sock->removeListener(this);
+				// the peer did not prove its identity: the connection must be closed,
+				// otherwise the unverified session stays alive
+				m_client_sock->disconnect(false);
 				fly_fire2(ClientListener::ClientFailed(), this, "Keyprint mismatch");
 				return;
 			}

@@ -114,7 +114,9 @@ class UploadManager : private ClientManagerListener, private UserConnectionListe
 		/** @return Number of uploads. */
 		static size_t getUploadCount()
 		{
-			// CFlyReadLock(*g_csUploadsDelay);
+			// g_uploads is modified by the upload threads (push_back/erase) - the size
+			// must be read under the lock
+			CFlyReadLock(*g_csUploadsDelay);
 			return g_uploads.size();
 		}
 		

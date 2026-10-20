@@ -295,7 +295,9 @@ LRESULT PropPageTextStyles::onEditTextStyle(WORD /*wNotifyCode*/, WORD /*wID*/, 
 		CLockRedraw<true> l_lock_redraw(m_Preview);
 		for (int i = 0; i < TS_LAST; i++)
 		{
-			_tcscpy(TextStyles[iNdx].szFaceName, m_Font.lfFaceName);
+			// the name of the font must be written to the style of the loop, not only
+			// to the edited one
+			_tcscpy(TextStyles[i].szFaceName, m_Font.lfFaceName);
 			TextStyles[i].bCharSet = m_Font.lfCharSet;
 			TextStyles[i].yHeight = m_Font.lfHeight;
 			const ChatCtrl::CFlyChatCache l_message(ClientManager::getFlylinkDCIdentity(), false, true, _T("12:34 "), Text::toT(TextStyles[i].m_sPreviewText), TextStyles[i], true);
@@ -535,6 +537,12 @@ void PropPageTextStyles::TextStyleSettings::EditTextStyle()
 
 LRESULT PropPageTextStyles::OnDestroy(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 {
+	// the brush of the example control is stored in a property of the window
+	{
+		HBRUSH l_brush = (HBRUSH)RemoveProp(ctrlTabExample.m_hWnd, _T("fillcolor"));
+		if (l_brush)
+			::DeleteObject(l_brush);
+	}
 	m_lsbList.Detach();
 	m_Preview.Detach();
 	ctrlTabList.Detach();

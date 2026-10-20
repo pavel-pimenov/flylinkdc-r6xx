@@ -102,7 +102,10 @@ LRESULT RangesPage::onRemoveP2PManual(WORD /*wNotifyCode*/, WORD wID, HWND /*hWn
 			if (nLen > 0)
 			{
 				tstring l_str;
-				l_str.resize(nLen + 2);
+				// LB_GETTEXT does not write a terminator: the string must be exactly
+				// nLen characters long, otherwise it contains an embedded null and the
+				// address cannot be parsed
+				l_str.resize(nLen);
 				m_list_box.GetText(aiSel[i], &l_str[0]);
 				CFlylinkDBManager::getInstance()->remove_manual_p2p_guard(Text::fromT(l_str));
 			}

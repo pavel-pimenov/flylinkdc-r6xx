@@ -69,8 +69,12 @@ bool SSLSocket::waitConnected(uint64_t millis)
 		}
 		ssl.reset(SSL_new(ctx));
 		if (!ssl)
-			checkSSL(-1);
-			
+		{
+			// checkSSL() does not throw when the handle is empty - without the exception
+			// the code below would dereference a null pointer
+			throw SSLSocketException(STRING(TLS_ERROR) + ": SSL_new failed");
+		}
+		
 		if (!verifyData)
 		{
 			SSL_set_verify(ssl, SSL_VERIFY_NONE, NULL);
@@ -148,7 +152,11 @@ bool SSLSocket::waitAccepted(uint64_t millis)
 		}
 		ssl.reset(SSL_new(ctx));
 		if (!ssl)
-			checkSSL(-1);
+		{
+			// checkSSL() does not throw when the handle is empty - without the exception
+			// the code below would dereference a null pointer
+			throw SSLSocketException(STRING(TLS_ERROR) + ": SSL_new failed");
+		}
 			
 		if (!verifyData)
 		{
