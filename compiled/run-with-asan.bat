@@ -1,0 +1,2 @@
+set ASAN_OPTIONS=continue_on_error=1
+FlylinkDC_Debug_x64.exe

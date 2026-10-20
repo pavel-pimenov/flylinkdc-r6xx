@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!--
+    FlylinkDC++ optional AddressSanitizer build.
+
+    Активируется только при явной передаче `/p:FlyASan=true`. В обычных сборках
+    (без этого свойства) файл не влияет ни на что.
+
+    Инструментирует ClCompile всех проектов решения (включая вендоров) опцией
+    /fsanitize=address. Промежуточные и выходные файлы уводятся в подкаталог
+    asan\, чтобы не смешиваться и не затирать обычный Release; exe/pdb получают
+    суффикс _asan и остаются в compiled\. Рантайм-библиотека
+    clang_rt.asan_dynamic-x86_64.dll копируется рядом с exe.
+  -->
+  <PropertyGroup Condition="'$(FlyASan)' == 'true' and '$(ConfigurationType)' != 'Application'">
+    <IntDir>$(IntDir)asan\</IntDir>
+    <OutDir>$(OutDir)asan\</OutDir>
+    <TargetDir>$(OutDir)</TargetDir>
+    <TargetPath>$(OutDir)$(TargetFileName)</TargetPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(FlyASan)' == 'true' and '$(ConfigurationType)' == 'Application'">
+    <IntDir>$(IntDir)asan\</IntDir>
+    <TargetPath>$(SolutionDir)compiled\$(TargetName)_asan.exe</TargetPath>
+  </PropertyGroup>
+
+  <ItemDefinitionGroup Condition="'$(FlyASan)' == 'true'">
+    <ClCompile>
+      <AdditionalOptions>/fsanitize=address %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+
+  <ItemDefinitionGroup Condition="'$(FlyASan)' == 'true' and '$(ConfigurationType)' == 'Application'">
+    <Link>
+      <OutputFile>$(SolutionDir)compiled\$(TargetName)_asan.exe</OutputFile>
+      <ProgramDatabaseFile>$(SolutionDir)compiled\$(TargetName)_asan.pdb</ProgramDatabaseFile>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <Target Name="FlyASanCopyRuntime" AfterTargets="Build"
+          Condition="'$(FlyASan)' == 'true' and '$(ConfigurationType)' == 'Application'">
+    <Copy SourceFiles="$(VCToolsInstallDir)bin\Hostx64\x64\clang_rt.asan_dynamic-x86_64.dll"
+          DestinationFolder="$(SolutionDir)compiled\" SkipUnchangedFiles="true" />
+  </Target>
+</Project>

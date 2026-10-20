@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{7F4C5A26-9B1D-4E6A-8C3F-2A5E1D0B7C94}</ProjectGuid>
+    <RootNamespace>sentry_native</RootNamespace>
+    <ProjectName>sentry-native</ProjectName>
+    <Keyword>Win32Proj</Keyword>
+    <UseNativeEnvironment>true</UseNativeEnvironment>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>$(SolutionDir)vc17\$(Platform)\$(Configuration)\$(ProjectName)\</OutDir>
+    <IntDir>$(SolutionDir)vc17\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>$(SolutionDir)vc17\$(Platform)\$(Configuration)\$(ProjectName)\</OutDir>
+    <IntDir>$(SolutionDir)vc17\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CRT_SECURE_NO_WARNINGS;SENTRY_BUILD_STATIC;SENTRY_BACKEND_INPROC;SIZEOF_LONG=4;SENTRY_WITH_UNWINDER_DBGHELP;_WIN32_WINNT=0x0601;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)sentry-native\include;$(SolutionDir)sentry-native;$(SolutionDir)sentry-native\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <Optimization>Disabled</Optimization>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Lib>
+      <OutputFile>$(OutDir)$(ProjectName).lib</OutputFile>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CRT_SECURE_NO_WARNINGS;SENTRY_BUILD_STATIC;SENTRY_BACKEND_INPROC;SIZEOF_LONG=4;SENTRY_WITH_UNWINDER_DBGHELP;_WIN32_WINNT=0x0601;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)sentry-native\include;$(SolutionDir)sentry-native;$(SolutionDir)sentry-native\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <Optimization>Full</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <OmitFramePointers>false</OmitFramePointers>
+    </ClCompile>
+    <Lib>
+      <OutputFile>$(OutDir)$(ProjectName).lib</OutputFile>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="src\sentry_alloc.c" />
+    <ClCompile Include="src\sentry_backend.c" />
+    <ClCompile Include="src\sentry_core.c" />
+    <ClCompile Include="src\sentry_database.c" />
+    <ClCompile Include="src\sentry_envelope.c" />
+    <ClCompile Include="src\sentry_info.c" />
+    <ClCompile Include="src\sentry_json.c" />
+    <ClCompile Include="src\sentry_logger.c" />
+    <ClCompile Include="src\sentry_options.c" />
+    <ClCompile Include="src\sentry_os.c" />
+    <ClCompile Include="src\sentry_random.c" />
+    <ClCompile Include="src\sentry_ratelimiter.c" />
+    <ClCompile Include="src\sentry_scope.c" />
+    <ClCompile Include="src\sentry_session.c" />
+    <ClCompile Include="src\sentry_slice.c" />
+    <ClCompile Include="src\sentry_string.c" />
+    <ClCompile Include="src\sentry_sync.c" />
+    <ClCompile Include="src\sentry_tracing.c" />
+    <ClCompile Include="src\sentry_transport.c" />
+    <ClCompile Include="src\sentry_utils.c" />
+    <ClCompile Include="src\sentry_uuid.c" />
+    <ClCompile Include="src\sentry_value.c" />
+    <ClCompile Include="src\sentry_windows_dbghelp.c" />
+    <ClCompile Include="src\backends\sentry_backend_inproc.c" />
+    <ClCompile Include="src\modulefinder\sentry_modulefinder_windows.c" />
+    <ClCompile Include="src\path\sentry_path.c" />
+    <ClCompile Include="src\path\sentry_path_windows.c" />
+    <ClCompile Include="src\symbolizer\sentry_symbolizer_windows.c" />
+    <ClCompile Include="src\transports\sentry_disk_transport.c" />
+    <ClCompile Include="src\transports\sentry_function_transport.c" />
+    <ClCompile Include="src\transports\sentry_transport_winhttp.c" />
+    <ClCompile Include="src\unwinder\sentry_unwinder.c" />
+    <ClCompile Include="src\unwinder\sentry_unwinder_dbghelp.c" />
+    <ClCompile Include="vendor\mpack.c" />
+    <ClCompile Include="vendor\stb_sprintf.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\sentry.h" />
+    <ClInclude Include="src\sentry_boot.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

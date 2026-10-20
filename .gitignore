@@ -47,3 +47,6 @@ build-win
 vc17/
 __pycache__/
 *.pyc
+
+# runtime data of the crash reporter (sentry-native)
+/compiled/Settings/sentry-native/
