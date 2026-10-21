@@ -45,6 +45,9 @@ const char Encoder::g_base32Alphabet[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 
 string& Encoder::toBase32(const uint8_t* src, size_t len, string& dst)
 {
+	// the result is written to the buffer from the beginning: the old value must not
+	// be kept (the buffer can be reused by the caller)
+	dst.clear();
 	// Code snagged from the bitzi bitcollider
 	size_t i, index;
 	uint8_t word;

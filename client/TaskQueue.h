@@ -68,7 +68,9 @@ class TaskQueue
 		}
 		bool empty()
 		{
-			// CFlyFastLock(m_csTaskQueue);
+			// the queue is changed by the thread of the hub and read by the thread of
+			// the interface - the lock is needed
+			CFlyFastLock(m_csTaskQueue);
 			// Убрал лок - т.к. даже если пропустим задачу след раз поймаем
 			// с ней слишком много блокировок бегает в клиенте
 			return m_tasks.empty();
@@ -102,7 +104,7 @@ class TaskQueue
 		{
 			CFlyFastLock(m_csTaskQueue);
 			dcassert(m_destroy_guard == 0);
-			dcassert(m_lock_count == 0)
+			dcassert(m_lock_count == 0);
 			if (m_destroy_guard == 0 && m_lock_count == 0)
 			{
 				m_tasks.push_back(std::make_pair(type, data));
@@ -133,7 +135,9 @@ class TaskQueue
 		void unlock_task()
 		{
 			CFlyFastLock(m_csTaskQueue);
-			m_lock_count--;
+			// the counter must not be negative: the tasks are rejected otherwise
+			if (m_lock_count)
+				m_lock_count--;
 		}
 		void destroy_task()
 		{

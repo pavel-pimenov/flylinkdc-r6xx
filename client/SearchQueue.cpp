@@ -85,8 +85,8 @@ bool SearchQueue::add(const Search& s)
 
 bool SearchQueue::empty()
 {
-	// CFlyFastLock(m_cs);
-	// Тут лок не критичны и зовется не часто
+	// m_searchQueue меняется из GUI-потока, а читается из потока таймера - нужен лок
+	CFlyFastLock(m_cs);
 	return m_searchQueue.empty();
 }
 void SearchQueue::clear()
@@ -247,7 +247,9 @@ bool SearchParam::is_parse_nmdc_search(const string& p_raw_search)
 		m_error_level = 5;
 		return false;
 	}
-	const int l_type_search = atoi(param.c_str() + i) - 1;
+	// the type comes from the hub: the parse must not overflow the signed type
+	const int64_t l_type = Util::toInt64(param.c_str() + i);
+	const int l_type_search = (l_type > 0) ? static_cast<int>(l_type - 1) : -1;
 	m_file_type = (l_type_search >= 0 && l_type_search < Search::TYPE_LAST_MODE)
 	              ? static_cast<Search::TypeModes>(l_type_search)
 	              : Search::TYPE_ANY;

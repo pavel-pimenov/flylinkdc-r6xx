@@ -61,7 +61,14 @@ int ThrottleManager::read(Socket* sock, void* buffer, size_t len)
 		size_t readSize = std::min(slice, std::min(len, downTokens));
 		
 		// read from socket
-		readSize = sock->read(buffer, readSize);
+		// the read returns -1 on the error: the value must not be converted to the
+		// unsigned type (the counter of the tokens is increased instead of decreased)
+		const int l_read = sock->read(buffer, static_cast<int>(readSize));
+		if (l_read <= 0)
+		{
+			return -1;
+		}
+		readSize = static_cast<size_t>(l_read);
 		
 		if (readSize > 0)
 			downTokens -= readSize;
@@ -96,8 +103,11 @@ int ThrottleManager::write(Socket* p_sock, const void* p_buffer, size_t& p_len)
 	{
 		// Apply individual restriction to the user if it is
 		const int64_t l_currentBucket = p_sock->getCurrentBucket();
-		p_len = std::min(p_len, static_cast<size_t>(l_currentBucket));
-		p_sock->setCurrentBucket(l_currentBucket - p_len);
+		// the bucket can be negative (the limit of the speed was changed): the value
+		// must not be converted to the unsigned type
+		const int64_t l_bucket = (l_currentBucket > 0) ? l_currentBucket : 0;
+		p_len = std::min(p_len, static_cast<size_t>(l_bucket));
+		p_sock->setCurrentBucket(l_currentBucket - static_cast<int64_t>(p_len));
 		
 		// write to socket
 		const int sent = p_sock->write(p_buffer, p_len);
@@ -181,7 +191,19 @@ static bool isAltLimiterTime()
 		
 	time_t currentTime;
 	time(&currentTime);
-	const auto currentHour = localtime(&currentTime)->tm_hour;
+	// localtime uses the shared buffer: the copy is used here (the function is
+	// called from the different threads)
+	tm l_local_time = {};
+	const tm* l_current = nullptr;
+#if defined(_WIN32)
+	if (localtime_s(&l_local_time, &currentTime) == 0)
+	{
+		l_current = &l_local_time;
+	}
+#else
+	l_current = localtime_r(&currentTime, &l_local_time);
+#endif
+	const auto currentHour = l_current ? l_current->tm_hour : 0;
 	const auto s = SETTING(BANDWIDTH_LIMIT_START);
 	const auto e = SETTING(BANDWIDTH_LIMIT_END);
 	return ((s < e &&

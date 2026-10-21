@@ -653,7 +653,9 @@ class Util : public BaseUtil
 					return static_cast<int_type>(0);
 				// the magnitude of the most negative value is one bigger than the
 				// magnitude of the most positive one
-				return static_cast<int_type>(-static_cast<int_type>(l_result - 1) - 1);
+				// the bitwise not is used instead of the unary minus: the minus of an
+				// unsigned type is a warning (the branch is not used for it)
+				return static_cast<int_type>(~static_cast<int_type>(l_result - 1));
 			}
 			return static_cast<int_type>(l_result);
 		}
@@ -716,20 +718,9 @@ class Util : public BaseUtil
 		}
 		static uint32_t toUInt32(const char* c)
 		{
-#ifdef _MSC_VER
-			/*
-			* MSVC's atoi returns INT_MIN/INT_MAX if out-of-range; hence, a number
-			* between INT_MAX and UINT_MAX can't be converted back to uint32_t.
-			*/
-			uint32_t ret = atoi(c);
-			if ((ret == INT_MAX || ret == INT_MIN) && errno == ERANGE)
-			{
-				ret = (uint32_t)_atoi64(c);
-			}
-			return ret;
-#else
-			return (uint32_t)atoi(c);
-#endif
+			// the value is saturated at the limits of the type: the overflow of a signed
+			// type would be undefined behaviour (atoi())
+			return stringToInt<uint32_t, char>(c);
 		}
 		
 		static double toDouble(const string& aString);
@@ -976,7 +967,9 @@ class Util : public BaseUtil
 			g_awayMsg = p_Msg;
 		}
 		
-		static uint64_t getDirSize(const string &sFullPath);
+		// the depth of the recursion is limited: the junction (the reparse point) can
+		// make the recursion infinite
+		static uint64_t getDirSize(const string &sFullPath, int p_depth = 0);
 		static bool validatePath(const string &sPath);
 		static string getFilenameForRenaming(const string& p_filename);
 		
@@ -1361,7 +1354,23 @@ class BackgroundTaskExecuter : public Thread, protected CFlyStopThread
 					std::swap(next, m_tasks.back());
 					m_tasks.pop_back();
 				}
-				execute(next);
+				try
+				{
+					execute(next);
+				}
+				catch (const Exception& e)
+				{
+					// an exception of a background task must not kill the whole client
+					LogManager::message("BackgroundTaskExecuter: task failed: " + e.getError());
+				}
+				catch (const std::exception& e)
+				{
+					LogManager::message(std::string("BackgroundTaskExecuter: task failed: ") + e.what());
+				}
+				catch (...)
+				{
+					LogManager::message("BackgroundTaskExecuter: task failed: unknown error");
+				}
 			}
 		}
 		virtual void execute(const TASK_TYPE & toExecute) = 0;

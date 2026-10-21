@@ -85,7 +85,12 @@ LRESULT Popups::onInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/
 	ctrlPopupType.AddString(CTSTRING(POPUP_CUSTOM));
 	ctrlPopupType.AddString(CTSTRING(POPUP_SPLASH));
 	ctrlPopupType.AddString(CTSTRING(POPUP_WINDOW));
-	ctrlPopupType.SetCurSel(SETTING(POPUP_TYPE));
+	// the value of the setting can be out of the range (the file of the settings is
+	// edited by the user) - the index of the combo must be checked
+	int l_popup_type = SETTING(POPUP_TYPE);
+	if (l_popup_type < 0 || l_popup_type > WINDOW)
+		l_popup_type = BALLOON;
+	ctrlPopupType.SetCurSel(l_popup_type);
 	
 	CUpDownCtrl spin;
 	spin.Attach(GetDlgItem(IDC_POPUP_TIME_SPIN));

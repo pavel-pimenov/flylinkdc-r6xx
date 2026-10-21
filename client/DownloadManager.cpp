@@ -437,6 +437,13 @@ void DownloadManager::on(AdcCommand::SND, UserConnection* aSource, const AdcComm
 		return;
 	}
 	
+	// the number of the parameters is checked: the peer can send the command
+	// without them (the assert in the getter is not a check)
+	if (cmd.getParameters().size() < 4)
+	{
+		aSource->disconnect(true);
+		return;
+	}
 	const std::string type = cmd.getParam(0);
 	const int64_t start = Util::toInt64(cmd.getParam(2));
 	const int64_t bytes = Util::toInt64(cmd.getParam(3));
@@ -459,6 +466,13 @@ void DownloadManager::startData(UserConnection* aSource, int64_t start, int64_t 
 	dcassert(d);
 	
 	dcdebug("Preparing " I64_FMT ":" I64_FMT ", " I64_FMT ":" I64_FMT "\n", d->getStartPos(), start, d->getSize(), bytes);
+	// the position of the start is checked in any case: the peer can send the
+	// data from the other place
+	if (d->getStartPos() != start)
+	{
+		failDownload(aSource, STRING(INVALID_SIZE));
+		return;
+	}
 	if (d->getSize() == -1)
 	{
 		if (bytes >= 0)
@@ -517,7 +531,9 @@ void DownloadManager::startData(UserConnection* aSource, int64_t start, int64_t 
 		std::string l_error = "catch (...) Error new BufferedOutputStream<true> l_buf_size (Mb) = " + Util::toString(l_buf_size / 1024 / 1024) + " email: ppa74@ya.ru";
 		LogManager::message(l_error);
 		d->reset_download_file();
-		//failDownload(aSource, l_error);
+		// the download must be removed: the slot of the file is busy otherwise and
+		// the file of the download is empty (the write is a dereference of the null)
+		failDownload(aSource, l_error);
 		return;
 	}
 	
@@ -568,6 +584,11 @@ void DownloadManager::fireData(UserConnection* aSource, const uint8_t* aData, si
 	// TODO dcassert(!ClientManager::isBeforeShutdown());
 	auto d = aSource->getDownload();
 	dcassert(d);
+	if (!d || !d->getDownloadFile())
+	{
+		// the file of the download is empty (the error of the creation of the buffer)
+		return;
+	}
 	try
 	{
 		d->addPos(d->getDownloadFile()->write(aData, aLen), aLen);
@@ -1146,7 +1167,12 @@ void DownloadManager::onTorrentAlertNotify()
 						{
 							m_torrents.erase(i);
 						}
-						--m_torrent_resume_count;
+						// the counter must not be negative: the loop of the shutdown of the
+						// torrents would never end otherwise
+						if (m_torrent_resume_count.load() > 0)
+						{
+							--m_torrent_resume_count;
+						}
 						CFlylinkDBManager::getInstance()->delete_torrent_resume(l_sha1);
 						LogManager::torrent_message("CFlylinkDBManager::getInstance()->delete_torrent_resume(l_sha1): " + lt::aux::to_hex(l_delete->handle.info_hash()));
 						fly_fire1(DownloadManagerListener::RemoveTorrent(), l_sha1);
@@ -1154,7 +1180,10 @@ void DownloadManager::onTorrentAlertNotify()
 					if (const auto l_rename = lt::alert_cast<lt::file_renamed_alert>(a))
 					{
 						LogManager::torrent_message("file_renamed_alert: " + l_rename->message(), false);
-						if (!--m_torrent_rename_count)
+						// the counter must not be negative: the resume data of the torrent
+						// is not saved otherwise
+						const int l_rename_count = (m_torrent_rename_count.load() > 0) ? --m_torrent_rename_count : 0;
+						if (!l_rename_count)
 						{
 							if (!CFlylinkDBManager::is_delete_torrent(l_rename->handle.info_hash()))
 							{
@@ -1172,7 +1201,10 @@ void DownloadManager::onTorrentAlertNotify()
 						dcassert(0);
 						LogManager::torrent_message("file_rename_failed_alert: " + a->message() +
 						                            " error = " + Util::toString(l_rename->error.value()), true);
-						if (!--m_torrent_rename_count)
+						// the counter must not be negative: the resume data of the torrent
+						// is not saved otherwise
+						const int l_rename_count = (m_torrent_rename_count.load() > 0) ? --m_torrent_rename_count : 0;
+						if (!l_rename_count)
 						{
 							l_rename->handle.save_resume_data();
 							++m_torrent_resume_count;
@@ -1201,10 +1233,11 @@ void DownloadManager::onTorrentAlertNotify()
 						const torrent_status st = l_a->handle.status(torrent_handle::query_save_path);
 						
 						auto l_full_file_path = st.save_path + l_files.file_path(l_a->index);
-						auto const l_is_tmp = l_full_file_path.find_last_of(".!fl");
+						// the temporary file of the torrent has the extension ".!fl"
+						auto const l_is_tmp = l_full_file_path.rfind(".!fl");
 						if (l_is_tmp != std::string::npos && l_is_tmp > 3)
 						{
-							l_full_file_path = l_full_file_path.substr(0, l_is_tmp - 3);
+							l_full_file_path = l_full_file_path.substr(0, l_is_tmp);
 							++m_torrent_rename_count;
 							l_a->handle.rename_file(l_a->index, l_full_file_path);
 						}
@@ -1289,7 +1322,12 @@ void DownloadManager::onTorrentAlertNotify()
 					{
 						dcassert(0);
 						dcassert(m_torrent_resume_count > 0);
-						--m_torrent_resume_count;
+						// the counter must not be negative: the loop of the shutdown of the
+						// torrents would never end otherwise
+						if (m_torrent_resume_count.load() > 0)
+						{
+							--m_torrent_resume_count;
+						}
 						LogManager::torrent_message("save_resume_data_failed_alert: " + l_a->message() + " info:" + std::string(a->what()), true);
 					}
 					if (const auto l_a = lt::alert_cast<save_resume_data_alert>(a))
@@ -1298,7 +1336,12 @@ void DownloadManager::onTorrentAlertNotify()
 						const torrent_status st = l_a->handle.status(torrent_handle::query_name);
 						dcassert(st.info_hash == l_a->handle.info_hash());
 						CFlylinkDBManager::getInstance()->save_torrent_resume(l_a->handle.info_hash(), st.name, l_resume);
-						--m_torrent_resume_count;
+						// the counter must not be negative: the loop of the shutdown of the
+						// torrents would never end otherwise
+						if (m_torrent_resume_count.load() > 0)
+						{
+							--m_torrent_resume_count;
+						}
 #ifdef _DEBUG
 						// LogManager::torrent_message("save_resume_data_alert: " + l_a->message(), true);
 #else

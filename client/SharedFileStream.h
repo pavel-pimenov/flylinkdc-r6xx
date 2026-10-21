@@ -43,6 +43,8 @@ struct SharedFileHandle
 		int m_mode;
 		int m_access;
 		int64_t m_last_file_size;
+		// the size of the mapped region - the write outside of it damages the memory
+		int64_t m_map_file_size;
 		HANDLE m_map_file;
 		char* m_map_file_ptr;
 		bool m_is_map_file_error;

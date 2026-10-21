@@ -120,8 +120,9 @@ class Speaker
 			
 			if (std::find(m_listeners.begin(), m_listeners.end(), aListener) == m_listeners.end())
 			{
+				// the capacity of the vector is not reduced here: the listeners are
+				// added often and the reallocation is not needed
 				m_listeners.push_back(aListener);
-				m_listeners.shrink_to_fit();
 			}
 #ifdef _DEBUG_SPEAKER_LISTENER_LIST_LEVEL_1
 			else

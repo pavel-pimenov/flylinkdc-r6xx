@@ -254,7 +254,9 @@ class QueueManager : public Singleton<QueueManager>,
 		/** Add a source to an existing queue item */
 		static bool addSourceL(const QueueItemPtr& qi, const UserPtr& aUser, Flags::MaskType addBad, bool p_is_first_load = false);
 	private:
-		static uint64_t g_lastSave;
+		// the flag is changed by the threads of the hubs and read by the thread of the
+		// timer: the access must be atomic
+		static std::atomic<uint64_t> g_lastSave;
 #ifdef FLYLINKDC_USE_SHARED_FILE_CACHE // Не включать - глючит
 		static std::unordered_map<string, std::unique_ptr<SharedFileStream>> g_SharedDownloadFileCache;
 		static FastCriticalSection g_SharedDownloadFileCache_cs;
@@ -266,7 +268,7 @@ class QueueManager : public Singleton<QueueManager>,
 			return Util::getConfigPath() + "Queue.xml";
 		}
 		
-		static bool g_is_exists_queueFile;
+		static std::atomic<bool> g_is_exists_queueFile;
 		
 		CriticalSection m_cs_target_array;
 		StringList m_remove_target_array;
@@ -289,7 +291,9 @@ class QueueManager : public Singleton<QueueManager>,
 				}
 		} m_mover;
 		
-		typedef std::vector<pair<QueueItem::SourceConstIter, const QueueItemPtr> > PFSSourceList;
+		// the partial source is stored by value: an iterator into the source map
+		// becomes invalid when the source is removed
+		typedef std::vector<pair<QueueItem::PartialSource::Ptr, const QueueItemPtr> > PFSSourceList;
 		
 		class Rechecker : public BackgroundTaskExecuter<string>
 		{
@@ -414,9 +418,11 @@ class QueueManager : public Singleton<QueueManager>,
 				/** Currently running downloads, a QueueItem is always either here or in the userQueue */
 				static RunningMap g_runningMap;
 				/** Last error message to sent to TransferView */
-#ifdef FLYLINKDC_USE_USER_QUEUE_CS
-				static std::unique_ptr<webrtc::RWLockWrapper> g_userQueueMapCS;
-#endif
+				// the map of the queues of the users is changed by the threads of the search
+				// and is read by the threads of the connections: the access must be
+				// protected (the recursive lock is used: the removal of the source is
+				// called under the lock)
+				static FastCriticalSection g_userQueueMapCS;
 #define FLYLINKDC_USE_RUNNING_QUEUE_CS
 #ifdef FLYLINKDC_USE_RUNNING_QUEUE_CS
 				static std::unique_ptr<webrtc::RWLockWrapper> g_runningMapCS;
@@ -439,7 +445,11 @@ class QueueManager : public Singleton<QueueManager>,
 		/** Recent searches list, to avoid searching for the same thing too often */
 		deque<string> m_recent;
 		/** The queue needs to be saved */
-		static bool g_dirty;
+		// the flag is changed by the threads of the hubs and read by the thread of the
+		// timer: the access must be atomic
+		static std::atomic<bool> g_dirty;
+		// the counter is used with the guard of the busy state: the usual type is
+		// needed for it
 		static int  g_running_count;
 		/** Next search */
 		uint64_t nextSearch;

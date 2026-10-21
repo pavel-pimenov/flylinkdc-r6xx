@@ -31,7 +31,8 @@ void CBarShader::BuildModifiers()
 	uint32_t dwCount = CalcHalfHeight(m_iHeight);
 	double piOverDepth = M_PI / depth;
 	double base = M_PI_2 - piOverDepth;
-	double increment = piOverDepth / static_cast<double>(dwCount - 1);
+	// the count of the modifiers can be 1 - the division by zero is not allowed
+	double increment = (dwCount > 1) ? (piOverDepth / static_cast<double>(dwCount - 1)) : 0.0;
 	
 	m_pdblModifiers.resize(dwCount);
 	for (uint32_t i = 0; i < dwCount; i++, base += increment)
@@ -223,7 +224,8 @@ void CBarShader::FillRect(CDC& dc, LPCRECT rectSpan, COLORREF crColor)
 		RECT        rect = {};
 		int         iTop = rectSpan->top, iBot = rectSpan->bottom;
 		const size_t l_count = static_cast<size_t>(CalcHalfHeight(m_iHeight));
-		dcassert(m_pdblModifiers.size() <= l_count);
+		// the loop below reads l_count elements: the size must be not less
+		dcassert(m_pdblModifiers.size() >= l_count);
 		
 		rect.right = rectSpan->right;
 		rect.left = rectSpan->left;
@@ -481,16 +483,9 @@ void OperaColors::FloodFill(CDC& hDC, int x1, int y1, int x2, int y2, const COLO
 	bih.biCompression = BI_RGB;
 	bih.biClrUsed = 32;
 	fci->m_bitmap = ::CreateDIBitmap(hDC.m_hDC, &bih, 0, NULL, NULL, DIB_RGB_COLORS);
-	const auto l_old_bitmap = ::SelectObject(fci->hDC, fci->m_bitmap);
-	if (!::DeleteObject(l_old_bitmap))
-	{
-		const auto l_error_code = GetLastError();
-		if (l_error_code)
-		{
-			dcassert(l_error_code == 0);
-			dcdebug("DeleteObject(l_old_bitmap) = error_code = %d", l_error_code);
-		}
-	}
+	// the previous bitmap is saved: it must be restored before the deletion of ours
+	// (the object which is selected in the DC cannot be deleted)
+	fci->m_old_bitmap = (HBITMAP)::SelectObject(fci->hDC, fci->m_bitmap);
 	
 	if (!p_light)
 	{
@@ -534,7 +529,8 @@ void OperaColors::FloodFill(CDC& hDC, int x1, int y1, int x2, int y2, const COLO
 			}
 		}
 	}
-	BitBlt(hDC.m_hDC, x1, y1, x2, y2, fci->hDC, 0, 0, SRCCOPY);
+	// the size of the copied rectangle is used here - not the coordinates
+	BitBlt(hDC.m_hDC, x1, y1, w, h, fci->hDC, 0, 0, SRCCOPY);
 }
 
 /*

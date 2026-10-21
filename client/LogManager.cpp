@@ -97,6 +97,18 @@ LogManager::LogManager()
 
 void LogManager::log(const string& p_area, const string& p_msg) noexcept
 {
+	try
+	{
+	logInternal(p_area, p_msg);
+	}
+	catch (...)
+	{
+		// the function is noexcept: the exception must not leave it
+	}
+}
+
+void LogManager::logInternal(const string& p_area, const string& p_msg)
+{
 	dcassert(g_isInit);
 	if (!g_isInit)
 		return;

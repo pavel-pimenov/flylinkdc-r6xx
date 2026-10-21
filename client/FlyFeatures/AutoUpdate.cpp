@@ -303,8 +303,10 @@ void AutoUpdate::startUpdateThisThread()
 						}
 					}
 					//
-					if (l_totalSize) // Есть кандидаты для обновления?
 					{
+						// the signature of the manifest must be checked always: the check must not
+						// depend on the total size of the files (it is zero when the manifest
+						// does not contain the PackedSize attribute)
 						string l_check_file_url = l_base_update_url + UPDATE_SIGN_FILE_DOWNLOAD();
 						string l_check_message;
 						bool l_check_result = l_autoUpdateObject->checkSignXML(l_check_file_url);
@@ -334,7 +336,15 @@ void AutoUpdate::startUpdateThisThread()
 						}
 					}
 					// Create TempFolder
-					static string g_tempFolder = getTempFolderForUpdate(l_autoUpdateObject->m_sVersion);
+					// the folder must be created for every run of the update: the files of the
+					// previous run must not be mixed with the new ones (the updater copies all
+					// the files of the folder)
+					string g_tempFolder = getTempFolderForUpdate(l_autoUpdateObject->m_sVersion);
+					if (g_tempFolder.empty())
+					{
+						fail("Cannot create the folder for the update");
+						return;
+					}
 					
 					// Start Update (show info if need?)
 					bool needToUpdate = true;
@@ -682,11 +692,19 @@ bool AutoUpdate::prepareFile(const AutoUpdateFile& file, const string& tempFolde
 		bool unPacked = false;
 		if (file.m_packer == AutoUpdateFile::Zip)
 		{
-			UnZFilter unzip;
-			// the filter returns true while there is MORE data to process (Z_OK) and
-			// false when the stream has ended (Z_STREAM_END)
-			const bool l_more_data = unzip(l_binary_data.data(), l_in_size, out.get(), outSize);
-			unPacked = (!l_more_data) && (l_in_size == 0) && (static_cast<int64_t>(outSize) == file.m_size);
+			try
+			{
+				UnZFilter unzip;
+				// the filter returns true while there is MORE data to process (Z_OK) and
+				// false when the stream has ended (Z_STREAM_END)
+				const bool l_more_data = unzip(l_binary_data.data(), l_in_size, out.get(), outSize);
+				unPacked = (!l_more_data) && (l_in_size == 0) && (static_cast<int64_t>(outSize) == file.m_size);
+			}
+			catch (const Exception&)
+			{
+				// Unpack error - the exception must not leave the thread: it kills the client
+				unPacked = false;
+			}
 		}
 		else if (file.m_packer == AutoUpdateFile::BZip2)
 		{
@@ -710,6 +728,24 @@ bool AutoUpdate::prepareFile(const AutoUpdateFile& file, const string& tempFolde
 		}
 		if (unPacked)
 		{
+			// The update manifest is signed, but the payload itself is downloaded over plain
+			// HTTP. Verify the TTH of the payload against the signed manifest before it is
+			// written to the disk - otherwise a man-in-the-middle could substitute the payload
+			// and get arbitrary code installed by the updater.
+			if (!file.m_sTTH.empty())
+			{
+				TigerTree l_tth(TigerTree::calcBlockSize(outSize, 1));
+				l_tth.update(out.get(), outSize);
+				l_tth.finalize();
+				const string l_tth_base32 = l_tth.getRoot().toBase32();
+				if (l_tth_base32 != file.m_sTTH)
+				{
+					const string l_error = STRING(AUTOUPDATE_ERROR_VERIF) + " " + file.m_sName;
+					fail(l_error);
+					CFlyServerJSON::pushError(63, l_error);
+					return false;
+				}
+			}
 			// Save out.get() to File
 			string destinationPath = tempFolder;
 			AppendPathSeparator(destinationPath);
@@ -780,7 +816,20 @@ string AutoUpdate::getTempFolderForUpdate(const string &version)
 	CreateDirectory(wtempFolder.c_str(), NULL);
 	
 	AppendPathSeparator(tempFolder);
-	tempFolder += version;
+	// the version comes from the manifest: it must not be a part of a path
+	string l_version;
+	for (auto l_c : version)
+	{
+		if (isalnum(static_cast<unsigned char>(l_c)) || l_c == '.' || l_c == '-' || l_c == '_')
+		{
+			l_version += l_c;
+		}
+	}
+	if (l_version.empty())
+	{
+		l_version = "unknown";
+	}
+	tempFolder += l_version;
 	
 	string tempFolderPath;
 	bool bFolderfound  = true;

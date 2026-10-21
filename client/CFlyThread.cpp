@@ -84,7 +84,21 @@ bool Thread::is_active(int p_wait /* = 0 */) const
 unsigned int WINAPI Thread::starter(void* p)
 {
 	if (Thread* t = reinterpret_cast<Thread*>(p))
-		t->run();
+	{
+		try
+		{
+			t->run();
+		}
+		catch (const std::exception&)
+		{
+			// the exception of the thread must not kill the whole client
+			dcdebug("Thread: the unhandled exception of the thread\n");
+		}
+		catch (...)
+		{
+			dcdebug("Thread: the unknown exception of the thread\n");
+		}
+	}
 	return 0;
 }
 

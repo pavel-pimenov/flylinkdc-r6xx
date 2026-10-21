@@ -228,7 +228,12 @@ void ClientManager::putClient(Client* p_client)
 	p_client->removeListeners();
 	{
 		CFlyWriteLock(*g_csClients);
-		g_clients.erase(p_client->getHubUrl());
+		// the record of another client with the same url must not be removed
+		auto l_i = g_clients.find(p_client->getHubUrl());
+		if (l_i != g_clients.end() && l_i->second == p_client)
+		{
+			g_clients.erase(l_i);
+		}
 	}
 	if (!isBeforeShutdown()) // При закрытии не шлем уведомление (на него подписан только фрейм поиска)
 	{

@@ -163,6 +163,8 @@ void BaseChatFrame::setStatusText(unsigned char p_index, const tstring& p_text)
 
 void BaseChatFrame::restoreStatusFromCache()
 {
+	if (!m_ctrlStatus)
+		return; // the control is not created yet
 	CLockRedraw<true> l_lock_draw(m_ctrlStatus->m_hWnd);
 	for (size_t i = 0 ; i < m_ctrlStatusCache.size(); ++i)
 	{

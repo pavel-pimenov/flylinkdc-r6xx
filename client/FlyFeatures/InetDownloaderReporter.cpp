@@ -23,11 +23,14 @@
 void InetDownloadReporter::SetCurrentHWND(HWND windowReceiver)
 {
 	if (::IsWindow(windowReceiver))
+	{
+		CFlyFastLock(m_cs);
 		_windows.push_front(windowReceiver);
+	}
 }
 void InetDownloadReporter::RemoveCurrentHWND(HWND windowReceiver)
 {
-
+	CFlyFastLock(m_cs);
 	HWNDReceiversIter i = _windows.begin();
 	while (i != _windows.end())
 		(*i == windowReceiver) ? i = _windows.erase(i) : ++i;
@@ -36,9 +39,13 @@ void InetDownloadReporter::RemoveCurrentHWND(HWND windowReceiver)
 
 bool InetDownloadReporter::ReportResultWait(DWORD totalDataWait)
 {
-	if (_windows.empty())
-		return true;
-	HWND currentWindow = _windows.at(0);
+	HWND currentWindow = NULL;
+	{
+		CFlyFastLock(m_cs);
+		if (_windows.empty())
+			return true;
+		currentWindow = _windows.front();
+	}
 	if (::IsWindow(currentWindow))
 	{
 		::PostMessage(currentWindow, WM_IDR_TOTALRESULT_WAIT, (WPARAM)totalDataWait, NULL);
@@ -48,9 +55,13 @@ bool InetDownloadReporter::ReportResultWait(DWORD totalDataWait)
 }
 bool InetDownloadReporter::ReportResultReceive(DWORD currentDataReceive)
 {
-	if (_windows.empty())
-		return true;
-	HWND currentWindow = _windows.at(0);
+	HWND currentWindow = NULL;
+	{
+		CFlyFastLock(m_cs);
+		if (_windows.empty())
+			return true;
+		currentWindow = _windows.front();
+	}
 	if (::IsWindow(currentWindow))
 	{
 		::PostMessage(currentWindow, WM_IDR_RESULT_RECEIVED, (WPARAM)currentDataReceive, NULL);
@@ -59,11 +70,15 @@ bool InetDownloadReporter::ReportResultReceive(DWORD currentDataReceive)
 }
 bool InetDownloadReporter::SetCurrentStage(std::string& value)
 {
-	if (_windows.empty())
-		return true;
+	HWND currentWindow = NULL;
+	{
+		CFlyFastLock(m_cs);
+		if (_windows.empty())
+			return true;
 		
-	_currentStage = value;
-	HWND currentWindow = _windows.at(0);
+		_currentStage = value;
+		currentWindow = _windows.front();
+	}
 	if (::IsWindow(currentWindow))
 	{
 		::PostMessage(currentWindow, WM_IDR_CURRENT_STAGE, NULL, NULL);

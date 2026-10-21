@@ -28,7 +28,7 @@
 #endif
 #include "../client/FlyFeatures/flyServer.h"
 
-uint16_t ConnectionManager::g_ConnToMeCount = 0;
+std::atomic<uint16_t> ConnectionManager::g_ConnToMeCount(0);
 bool ConnectionManager::g_is_test_tcp_port = false;
 std::unique_ptr<webrtc::RWLockWrapper> ConnectionManager::g_csConnection = std::unique_ptr<webrtc::RWLockWrapper> (webrtc::RWLockWrapper::CreateRWLock());
 CriticalSection ConnectionManager::g_csDownloads;
@@ -330,11 +330,21 @@ bool ConnectionManager::getCipherNameAndIP(UserConnection* p_conn, string& p_chi
 UserConnection* ConnectionManager::getConnection(bool aNmdc, bool secure) noexcept
 {
 	dcassert(g_shuttingDown == false);
-	UserConnection* uc = new UserConnection(secure);
-	uc->addListener(this);
+	UserConnection* uc = nullptr;
+	try
 	{
-		CFlyWriteLock(*g_csConnection);
-		g_userConnections.insert(uc);
+		uc = new UserConnection(secure);
+		uc->addListener(this);
+		{
+			CFlyWriteLock(*g_csConnection);
+			g_userConnections.insert(uc);
+		}
+	}
+	catch (const std::bad_alloc&)
+	{
+		// the function is noexcept: the exception must not leave it
+		ShareManager::tryFixBadAlloc();
+		return nullptr;
 	}
 	if (aNmdc)
 	{
@@ -393,9 +403,14 @@ void ConnectionManager::addOnUserUpdated(const UserPtr& aUser)
 	{
 		ShareManager::tryFixBadAlloc();
 		flushOnUserUpdated(); // fix https://drdump.com/DumpGroup.aspx?DumpGroupID=526008
+		try
 		{
 			CFlyFastLock(g_cs_update);
 			g_users_for_update.insert(aUser);
+		}
+		catch (const std::bad_alloc&)
+		{
+			// the update of the user is lost - the client must not die because of it
 		}
 	}
 }
@@ -591,7 +606,8 @@ void ConnectionManager::on(TimerManagerListener::Second, uint64_t aTick) noexcep
 #ifdef FLYLINKDC_USE_AUTOMATIC_PASSIVE_CONNECTION
 					if (cqi->m_count_waiting > 2)
 					{
-						l_error_download.push_back(make_pair(cqi->getUser(), STRING(CONNECTION_TIMEOUT)));
+						const CFlyReasonItem l_item(cqi, STRING(CONNECTION_TIMEOUT));
+						l_error_download.push_back(l_item);
 						cqi->setState(ConnectionQueueItem::WAITING);
 						// TODO - удаление пока не делаем - нужно потестировать лучше
 						// l_removed.push_back(cqi);
@@ -890,13 +906,15 @@ void ConnectionManager::accept(const Socket& sock, bool secure, Server* p_server
 		else
 		*/
 		{
-			if (g_ConnToMeCount <= 0)
+			if (g_ConnToMeCount.load() <= 0)
 			{
 				m_floodCounter += g_FLOOD_ADD;
 			}
 		}
 	}
 	UserConnection* uc = getConnection(false, secure);
+	if (!uc)
+		return; // not enough memory for the new connection
 	uc->setFlag(UserConnection::FLAG_INCOMING);
 	uc->setState(UserConnection::STATE_SUPNICK);
 	uc->setLastActivity();
@@ -1175,6 +1193,8 @@ void ConnectionManager::nmdcConnect(const string& aIPServer, uint16_t aPort, uin
 	}
 	
 	UserConnection* uc = getConnection(true, secure);
+	if (!uc)
+		return; // not enough memory for the new connection
 	uc->setServerPort(aIPServer + ':' + Util::toString(aPort)); // CTM2HUB
 	uc->setUserConnectionToken(aNick); // Токен = ник?
 	uc->setHubUrl(hubUrl);
@@ -1205,6 +1225,8 @@ void ConnectionManager::adcConnect(const OnlineUser& aUser, uint16_t aPort, uint
 		return;
 		
 	UserConnection* uc = getConnection(false, secure);
+	if (!uc)
+		return; // not enough memory for the new connection
 	uc->setUserConnectionToken(aToken);
 	uc->setEncoding(Text::g_utf8);
 	uc->setState(UserConnection::STATE_CONNECT);
@@ -1914,8 +1936,15 @@ void ConnectionManager::shutdown()
 		}
 	}
 #endif
-	g_downloads.clear();
-	g_uploads.clear();
+	{
+		// the containers are changed by the threads of the sockets
+		CFlyLock(g_csDownloads);
+		g_downloads.clear();
+	}
+	{
+		CFlyLock(g_csUploads);
+		g_uploads.clear();
+	}
 }
 
 // UserConnectionListener

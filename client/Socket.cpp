@@ -302,12 +302,16 @@ void Socket::socksConnect(const string& aAddr, uint16_t aPort, uint64_t timeout)
 	
 	// We assume we'll get a ipv4 address back...therefore, 10 bytes...
 	/// @todo add support for ipv6
-	if (readAll(&connStr[0], 10, timeLeft(start, timeout)) != 10)
+	// the answer must not be written into connStr: its size depends on the request
+	// (with SOCKS_RESOLVE and a short host name it is smaller than 10 bytes)
+	uint8_t l_socks_answer[10];
+	memzero(l_socks_answer, sizeof(l_socks_answer));
+	if (readAll(l_socks_answer, 10, timeLeft(start, timeout)) != 10)
 	{
 		throw SocketException(STRING(SOCKS_FAILED));
 	}
 	
-	if (connStr[0] != 5 || connStr[1] != 0)
+	if (l_socks_answer[0] != 5 || l_socks_answer[1] != 0)
 	{
 		throw SocketException(STRING(SOCKS_FAILED));
 	}
@@ -315,7 +319,7 @@ void Socket::socksConnect(const string& aAddr, uint16_t aPort, uint64_t timeout)
 	in_addr sock_addr;
 	
 	memzero(&sock_addr, sizeof(sock_addr));
-	sock_addr.s_addr = *((unsigned long*) & connStr[4]);
+	sock_addr.s_addr = *((unsigned long*) & l_socks_answer[4]);
 	setIp(inet_ntoa(sock_addr));
 }
 
@@ -535,7 +539,12 @@ int Socket::writeAll(const void* aBuffer, int aLen, uint64_t timeout)
 		const int i = write(buf + static_cast<size_t>(pos), (int)std::min(aLen - pos, sendSize)); // [!] PVS V104 Implicit conversion of 'pos' to memsize type in an arithmetic expression: buf + pos socket.cpp 464
 		if (i == -1)
 		{
-			wait(timeout, false, true);
+			// the send buffer of the socket is full - wait until it becomes writable.
+			// without the check of the result the loop spins forever (100% of the CPU)
+			if (!wait(timeout, false, true).second)
+			{
+				throw SocketException(STRING(CONNECTION_TIMEOUT));
+			}
 		}
 		else
 		{
@@ -808,7 +817,7 @@ bool Socket::waitConnected(uint64_t millis) {
 //            throw SocketException(err4);
 //        }
 
-		m_sock = INVALID_SOCKET; // .reset();
+		close(); // the handle of the socket must be released, otherwise it is leaked
 	}
 	
 	return false;

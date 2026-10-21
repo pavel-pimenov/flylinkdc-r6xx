@@ -107,9 +107,11 @@ void NmdcHub::refreshUserList(bool refreshOnly)
 	if (refreshOnly)
 	{
 		OnlineUserList v;
-		v.reserve(m_users.size());
 		{
+			// the size of the list must be read under the lock: the list is changed
+			// by the thread of the hub
 			CFlyReadLock(*m_cs);
+			v.reserve(m_users.size());
 			for (auto i = m_users.cbegin(); i != m_users.cend(); ++i)
 			{
 				v.push_back(i->second);
@@ -326,7 +328,8 @@ void NmdcHub::updateFromTag(Identity& id, const string & tag, bool p_is_version_
 		}
 		else if (i->compare(0, 2, "H:", 2) == 0)
 		{
-			int u[3] = {0};
+			// the format %u requires the pointer to the unsigned type
+			unsigned u[3] = {0};
 			const auto l_items = sscanf_s(i->c_str() + 2, "%u/%u/%u", &u[0], &u[1], &u[2]);
 			if (l_items != 3)
 				continue;
@@ -668,7 +671,9 @@ void NmdcHub::searchParse(const string& param, bool p_is_passive)
 #endif
 		return;
 	}
-	const int l_type_search = atoi(param.c_str() + i) - 1;
+	// the type comes from the hub: the parse must not overflow the signed type
+	const int64_t l_type = Util::toInt64(param.c_str() + i);
+	const int l_type_search = (l_type > 0) ? static_cast<int>(l_type - 1) : -1;
 	l_search_param.m_file_type = (l_type_search >= 0 && l_type_search < Search::TYPE_LAST_MODE)
 	                                 ? static_cast<Search::TypeModes>(l_type_search)
 	                                 : Search::TYPE_ANY;
@@ -1918,18 +1923,19 @@ void NmdcHub::onLine(const string& aLine)
 				const string l_key = it->substr(0, l_pos);
 				if (l_key == "Int")
 				{
-					auto l_int = Util::toInt(it->substr(l_pos + 1));
+					// the value comes from the hub: the multiplication must not overflow
+					const int64_t l_int = Util::toInt64(it->substr(l_pos + 1));
 					if (l_int > 0)
 					{
-						setSearchInterval(l_int * 1000, true);
+						setSearchInterval(static_cast<uint32_t>(std::min<int64_t>(l_int, 120000)) * 1000, true);
 					}
 				}
 				if (l_key == "IntPas")
 				{
-					auto l_int = Util::toInt(it->substr(l_pos + 1));
+					const int64_t l_int = Util::toInt64(it->substr(l_pos + 1));
 					if (l_int > 0)
 					{
-						setSearchIntervalPassive(l_int * 1000, true);
+						setSearchIntervalPassive(static_cast<uint32_t>(std::min<int64_t>(l_int, 120000)) * 1000, true);
 					}
 				}
 			}

@@ -81,7 +81,8 @@ void FinishedManager::rotation_items(const FinishedItemPtr& p_item, eType p_type
 			fly_fire1(FinishedManagerListener::RemovedDl(), *l_item_array.cbegin());
 		else
 			fly_fire1(FinishedManagerListener::RemovedUl(), *l_item_array.cbegin());
-		delete *l_item_array.cbegin(); // Мутное место
+		// the object is owned by the shared_ptr: the delete of the pointer and the
+		// delete of the shared_ptr would free the memory twice
 		l_item_array.pop_front();
 	}
 #endif // FLYLINKDC_USE_ROTATION_FINISHED_MANAGER

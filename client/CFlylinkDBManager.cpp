@@ -1884,7 +1884,9 @@ void CFlylinkDBManager::cleanup_transfer_historgam()
 //========================================================================================================
 void CFlylinkDBManager::load_transfer_historgam(bool p_is_torrent, eTypeTransfer p_type, CFlyTransferHistogramArray& p_array)
 {
-	// CFlyLock(m_cs);
+	// the prepared commands are the members of the class: the lock of the database
+	// is needed, the commands are used from different threads
+	CFlyLock(m_cs);
 	try
 	{
 		static bool g_is_first = false;
@@ -1933,6 +1935,11 @@ void CFlylinkDBManager::load_transfer_historgam(bool p_is_torrent, eTypeTransfer
 //========================================================================================================
 std::string CFlylinkDBManager::get_purge_transfer_history(std::string p_table_name)
 {
+	// the name of the table is a part of the query: only the known names are allowed
+	if (p_table_name != "fly_transfer_file" && p_table_name != "fly_transfer_file_torrent")
+	{
+		return string();
+	}
 	const string l_sql = "delete from transfer_db." + p_table_name + " where (type=1 and day<strftime('%s','now','localtime')/60/60/24-"
 	                     + Util::toString(SETTING(DB_LOG_FINISHED_UPLOADS)) + ") or "
 	                     "(type=0 and day<strftime('%s','now','localtime')/60/60/24-" + Util::toString(SETTING(DB_LOG_FINISHED_DOWNLOADS)) + ")";
@@ -1941,6 +1948,9 @@ std::string CFlylinkDBManager::get_purge_transfer_history(std::string p_table_na
 //========================================================================================================
 void CFlylinkDBManager::load_transfer_history(bool p_is_torrent, eTypeTransfer p_type, int p_day)
 {
+	// the prepared commands are the members of the class: the lock of the database
+	// is needed, the commands are used from different threads
+	CFlyLock(m_cs);
 	try
 	{
 		if (p_is_torrent)
@@ -2256,7 +2266,9 @@ void CFlylinkDBManager::save_transfer_history(bool p_is_torrent, eTypeTransfer p
 //========================================================================================================
 void CFlylinkDBManager::load_ignore(StringSet& p_ignores)
 {
-	// CFlyLock(m_cs);
+	// the prepared command is a member of the class: the lock of the database is
+	// needed, the command is used from different threads
+	CFlyLock(m_cs);
 	try
 	{
 		m_get_ignores.init(m_flySQLiteDB,
@@ -2458,7 +2470,9 @@ int32_t CFlylinkDBManager::load_queue()
 					if (l_tempTarget.length() >= MAX_PATH)
 					{
 						const auto i = l_tempTarget.rfind(PATH_SEPARATOR);
-						if (l_tempTarget.length() - i >= MAX_PATH || i == string::npos) // ָלÿ פאיכא במכüרו MAX_PATH - מבנוזול
+						// the check of npos must be first: the difference of the sizes is
+						// calculated with the unsigned type
+						if (i == string::npos || l_tempTarget.length() - i >= MAX_PATH) // ָלÿ פאיכא במכüרו MAX_PATH - מבנוזול
 						{
 							string l_file_name = Util::getFileName(l_tempTarget);
 							dcassert(l_file_name.length() >= MAX_PATH);
@@ -3003,7 +3017,9 @@ void CFlylinkDBManager::load_avdb()
 bool CFlylinkDBManager::load_last_ip_and_user_stat(uint32_t p_hub_id, const string& p_nick, uint32_t& p_message_count, boost::asio::ip::address_v4& p_last_ip)
 {
 	dcassert(BOOLSETTING(ENABLE_LAST_IP_AND_MESSAGE_COUNTER));
-	//CFlyLock(m_cs);
+	// the prepared command is a member of the class: the lock of the database is
+	// needed, the command is used from the threads of the hubs
+	CFlyLock(m_cs);
 	try
 	{
 		p_message_count = 0;
@@ -4178,7 +4194,9 @@ unsigned __int64 CFlylinkDBManager::get_block_size_sql(const TTHValue& p_root, _
 	{
 		errorDB("SQLite - get_block_size_sql: " + e.getError());
 	}
-	l_blocksize = TigerTree::getMaxBlockSize(p_size);
+	// the size of the file can be negative (the item of the queue is not known):
+	// the calculation of the size of the block must not use it
+	l_blocksize = TigerTree::getMaxBlockSize(p_size > 0 ? p_size : 0);
 	dcassert(l_blocksize);
 	return l_blocksize;
 }

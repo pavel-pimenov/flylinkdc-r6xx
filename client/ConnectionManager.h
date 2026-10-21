@@ -241,7 +241,9 @@ class ConnectionManager :
 			return secureServer ? static_cast<uint16_t>(secureServer->getServerPort()) : 0;
 		}
 		
-		static uint16_t g_ConnToMeCount;
+		// the counter is changed by the threads of the hubs and by the thread of the
+		// server: the access must be atomic
+		static std::atomic<uint16_t> g_ConnToMeCount;
 		
 		class Server : public Thread, private CFlyStopThread
 		{

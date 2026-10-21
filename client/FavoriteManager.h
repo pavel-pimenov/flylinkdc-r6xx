@@ -202,6 +202,9 @@ class FavoriteManager : private Speaker<FavoriteManagerListener>,
 		static void changeConnectionStatus(const string& hubUrl, ConnectionStatus::Status status);
 		
 		static FavoriteHubEntry* getFavoriteHubEntry(const string& aServer);
+		// the copy of the entry: the original is removed by the thread of the
+		// interface and the pointer to it becomes invalid
+		static bool getFavoriteHubEntryCopy(const string& aServer, FavoriteHubEntry& p_out);
 		
 		static bool isPrivate(const string& p_url);
 // Favorite hub groups

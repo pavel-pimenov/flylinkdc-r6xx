@@ -302,7 +302,11 @@ LRESULT MessagePanel::onEmoticons(WORD /*wNotifyCode*/, WORD /*wID*/, HWND hWndC
 			// !BUGMASTER!
 			int start = 0, end = 0;
 			int len = m_ctrlMessage->GetWindowTextLength();
+			// the selection must be checked: the end of the selection can be out of the
+			// text (the length of the text is negative - the underflow of the size)
 			m_ctrlMessage->GetSel(start, end);
+			if (start < 0 || end < start || end > len)
+				return 0;
 			std::vector<TCHAR> l_message(len + 1);
 			m_ctrlMessage->GetWindowText(&l_message[0], len + 1);
 			tstring s1(&l_message[0], start);
@@ -331,7 +335,9 @@ LRESULT MessagePanel::onEmoPackChange(WORD wNotifyCode, WORD wID, HWND hWndCtl, 
 		return 0;
 	m_tooltip.Activate(FALSE);
 	LocalArray<TCHAR, 256> buf;
-	g_emoMenu.GetMenuString(wID, buf.data(), buf.size(), MF_BYCOMMAND);
+	// the result must be checked: the buffer is not filled when the command is not found
+	if (g_emoMenu.GetMenuString(wID, buf.data(), buf.size(), MF_BYCOMMAND) == 0)
+		return 0;
 	if (buf.data() != Text::toT(SETTING(EMOTICONS_FILE)))
 	{
 		SET_SETTING(EMOTICONS_FILE, Text::fromT(buf.data()));

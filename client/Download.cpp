@@ -30,81 +30,88 @@ Download::Download(UserConnection* p_conn, const QueueItemPtr& p_item, const str
 	, m_lastNormalSpeed(0)
 #endif
 {
-	if (m_qi->isSet(QueueItem::FLAG_PARTIAL_LIST))
+	try
 	{
-		setType(TYPE_PARTIAL_LIST);
-	}
-	else if (m_qi->isSet(QueueItem::FLAG_USER_LIST))
-	{
-		setType(TYPE_FULL_LIST);
-	}
-	
-	if (m_qi->isSet(QueueItem::FLAG_USER_GET_IP))
-		setFlag(FLAG_USER_GET_IP);
-		
-	// TODO: убрать флажки после рефакторинга, ибо они всё равно бесполезны
-	const bool l_is_type_file = getType() == TYPE_FILE && m_qi->getSize() != -1;
-	
-	bool l_check_tth_sql = false;
-	if (getTTH() != TTHValue()) // не зовем проверку на TTH = 0000000000000000000000000000000000 (файл-лист)
-	{
-		__int64 l_block_size = 0;
-		l_check_tth_sql = CFlylinkDBManager::getInstance()->get_tree(getTTH(), m_tiger_tree, l_block_size);
-		if (l_check_tth_sql && l_block_size)
+		if (m_qi->isSet(QueueItem::FLAG_PARTIAL_LIST))
 		{
-			m_qi->setBlockSize(l_block_size);
+			setType(TYPE_PARTIAL_LIST);
 		}
-	}
-	{
-		RLock(*QueueItem::g_cs); // Fix https://drdump.com/DumpGroup.aspx?DumpGroupID=476822&Login=guest
-		const bool l_is_check_tth = l_is_type_file && l_check_tth_sql;
-		const auto& l_source_it = m_qi->findSourceL(getUser());
-		if (l_source_it != m_qi->getSourcesL().end())
+		else if (m_qi->isSet(QueueItem::FLAG_USER_LIST))
 		{
-			const auto& l_src = l_source_it->second;
-			if (l_src.isSet(QueueItem::Source::FLAG_PARTIAL))
+			setType(TYPE_FULL_LIST);
+		}
+
+		if (m_qi->isSet(QueueItem::FLAG_USER_GET_IP))
+			setFlag(FLAG_USER_GET_IP);
+
+		// TODO: убрать флажки после рефакторинга, ибо они всё равно бесполезны
+		const bool l_is_type_file = getType() == TYPE_FILE && m_qi->getSize() != -1;
+
+		bool l_check_tth_sql = false;
+		if (getTTH() != TTHValue()) // не зовем проверку на TTH = 0000000000000000000000000000000000 (файл-лист)
+		{
+			__int64 l_block_size = 0;
+			l_check_tth_sql = CFlylinkDBManager::getInstance()->get_tree(getTTH(), m_tiger_tree, l_block_size);
+			if (l_check_tth_sql && l_block_size)
 			{
-				setFlag(FLAG_DOWNLOAD_PARTIAL);
-			}
-			
-			if (l_is_type_file)
-			{
-				if (l_is_check_tth)
-				{
-					setTreeValid(true);
-					setSegment(m_qi->getNextSegmentL(getTigerTree().getBlockSize(), p_conn->getChunkSize(), p_conn->getSpeed(), l_src.getPartialSource()));
-				}
-				else if (p_conn->isSet(UserConnection::FLAG_SUPPORTS_TTHL) && !l_src.isSet(QueueItem::Source::FLAG_NO_TREE) && m_qi->getSize() > MIN_BLOCK_SIZE)
-				{
-					// Get the tree unless the file is small (for small files, we'd probably only get the root anyway)
-					setType(TYPE_TREE);
-					getTigerTree().setFileSize(m_qi->getSize());
-					setSegment(Segment(0, -1));
-				}
-				else
-				{
-					// Use the root as tree to get some sort of validation at least...
-					getTigerTree() = TigerTree(m_qi->getSize(), m_qi->getSize(), getTTH());
-					setTreeValid(true);
-					setSegment(m_qi->getNextSegmentL(getTigerTree().getBlockSize(), 0, 0, l_src.getPartialSource()));
-				}
-				
-				if ((getStartPos() + getSize()) != m_qi->getSize())
-				{
-					setFlag(FLAG_CHUNKED);
-				}
-				
-				if (getSegment().getOverlapped())
-				{
-					setFlag(FLAG_OVERLAP);
-					m_qi->setOverlapped(getSegment(), true);
-				}
+				m_qi->setBlockSize(l_block_size);
 			}
 		}
-		else
 		{
-			dcassert(0);
+			RLock(*QueueItem::g_cs); // Fix https://drdump.com/DumpGroup.aspx?DumpGroupID=476822&Login=guest
+			const bool l_is_check_tth = l_is_type_file && l_check_tth_sql;
+			const auto& l_source_it = m_qi->findSourceL(getUser());
+			if (l_source_it != m_qi->getSourcesL().end())
+			{
+				const auto& l_src = l_source_it->second;
+				if (l_src.isSet(QueueItem::Source::FLAG_PARTIAL))
+				{
+					setFlag(FLAG_DOWNLOAD_PARTIAL);
+				}
+				
+				if (l_is_type_file)
+				{
+					if (l_is_check_tth)
+					{
+						setTreeValid(true);
+						setSegment(m_qi->getNextSegmentL(getTigerTree().getBlockSize(), p_conn->getChunkSize(), p_conn->getSpeed(), l_src.getPartialSource()));
+					}
+					else if (p_conn->isSet(UserConnection::FLAG_SUPPORTS_TTHL) && !l_src.isSet(QueueItem::Source::FLAG_NO_TREE) && m_qi->getSize() > MIN_BLOCK_SIZE)
+					{
+						// Get the tree unless the file is small (for small files, we'd probably only get the root anyway)
+						setType(TYPE_TREE);
+						getTigerTree().setFileSize(m_qi->getSize());
+						setSegment(Segment(0, -1));
+					}
+					else
+					{
+						// Use the root as tree to get some sort of validation at least...
+						getTigerTree() = TigerTree(m_qi->getSize(), m_qi->getSize(), getTTH());
+						setTreeValid(true);
+						setSegment(m_qi->getNextSegmentL(getTigerTree().getBlockSize(), 0, 0, l_src.getPartialSource()));
+					}
+
+					if ((getStartPos() + getSize()) != m_qi->getSize())
+					{
+						setFlag(FLAG_CHUNKED);
+					}
+
+					if (getSegment().getOverlapped())
+					{
+						setFlag(FLAG_OVERLAP);
+						m_qi->setOverlapped(getSegment(), true);
+					}
+				}
+			}
+			else
+			{
+				dcassert(0);
+			}
 		}
+	}
+	catch (...)
+	{
+		// the function is noexcept: the exception must not leave it
 	}
 }
 

@@ -82,6 +82,9 @@ class LogManager
 	private:
 		static void flush_file(const string& p_area, const string& p_msg);
 		static void log(const string& p_area, const string& p_msg) noexcept;
+		// the body of the log: the exceptions of the standard library are caught
+		// by the caller (the function is noexcept)
+		static void logInternal(const string& p_area, const string& p_msg);
 		
 		static int g_logOptions[LAST][2];
 #ifdef _DEBUG

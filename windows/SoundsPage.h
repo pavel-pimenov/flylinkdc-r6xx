@@ -59,7 +59,11 @@ class Sounds : public CPropertyPage<IDD_SOUNDS_PAGE>, public PropPage
 		LRESULT onDefault(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled);
 		LRESULT onDefaultAll(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled)
 		{
+			// the control is detached after the initialization of the dialog: it must be
+			// attached again - the selected theme is read from it
+			ctrlSNDTheme.Attach(GetDlgItem(IDC_SOUNDS_COMBO));
 			DefaultAllSounds();
+			ctrlSNDTheme.Detach();
 			return 0;
 		}
 		LRESULT onClickedActive(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);

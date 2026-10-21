@@ -429,10 +429,21 @@ void ADLSearchManager::save() const
 		// Save string to file
 		try
 		{
-			File fout(getConfigFile(), File::WRITE, File::CREATE | File::TRUNCATE);
-			fout.write(SimpleXML::utf8Header);
-			fout.write(xml.toXML());
-			fout.close();
+			const string l_file = getConfigFile();
+			const string l_tmp_file = l_file + ".tmp";
+			{
+				File fout(l_tmp_file, File::WRITE, File::CREATE | File::TRUNCATE);
+				fout.write(SimpleXML::utf8Header);
+				fout.write(xml.toXML());
+				fout.close();
+			}
+			// the file must be replaced atomically: the truncation of the file before the
+			// writing destroys all the searches when the client is closed at that moment
+			if (!::MoveFileEx(Text::toT(l_tmp_file).c_str(), Text::toT(l_file).c_str(),
+			                   MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH))
+			{
+				File::deleteFile(l_tmp_file);
+			}
 		}
 		catch (const FileException&) {   }
 	}
@@ -633,6 +644,8 @@ void ADLSearchManager::finalizeDestinationDirectories(DestDirList& destDirVector
 
 void ADLSearchManager::matchListing(DirectoryListing& aDirList) noexcept
 {
+	try
+	{
 	if (collection.empty())
 		return;
 	StringMap params;
@@ -652,6 +665,16 @@ void ADLSearchManager::matchListing(DirectoryListing& aDirList) noexcept
 	matchRecurse(destDirs, aDirList.getRoot(), path);
 	
 	finalizeDestinationDirectories(destDirs, aDirList.getRoot());
+}
+	catch (const std::bad_alloc&)
+	{
+		// the function is noexcept: the exception must not leave it
+		LogManager::message("ADLSearchManager::matchListing: not enough memory");
+	}
+	catch (...)
+	{
+		// the other exceptions of the standard library must not kill the client
+	}
 }
 
 void ADLSearchManager::matchRecurse(DestDirList &aDestList, DirectoryListing::Directory* aDir, const string &aPath)

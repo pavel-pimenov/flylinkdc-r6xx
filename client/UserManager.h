@@ -88,7 +88,9 @@ class UserManager : public Singleton<UserManager>, public Speaker<UserManagerLis
 		static bool isInIgnoreList(const string& nick);
 		static void setIgnoreList(const IgnoreMap& newlist);
 		
-		static bool g_isEmptyIgnoreList;
+		// the flag is changed by the thread of the interface and read by the other
+		// threads: the access must be atomic
+		static std::atomic<bool> g_isEmptyIgnoreList;
 	private:
 		static void saveIgnoreList();
 		static IgnoreMap g_ignoreList;

@@ -42,8 +42,10 @@ class InetDownloadReporter : public IDateReceiveReporter, public Singleton<InetD
 		bool ReportResultReceive(DWORD currentDataReceive);
 		bool SetCurrentStage(std::string& value);
 		
-		const std::string& GetCurrentStage()
+		std::string GetCurrentStage()
 		{
+			// the string is changed by the thread of the update - the copy is returned
+			CFlyFastLock(m_cs);
 			return _currentStage;
 		}
 		
@@ -56,6 +58,9 @@ class InetDownloadReporter : public IDateReceiveReporter, public Singleton<InetD
 		friend class Singleton<InetDownloadReporter>;
 		HWNDReceivers _windows;
 		std::string _currentStage;
+		// the list of the windows is changed in the thread of the interface and read
+		// in the thread of the update
+		FastCriticalSection m_cs;
 };
 
 #endif //_INET_DOWNLOAD_REPORTER_

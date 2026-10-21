@@ -42,15 +42,15 @@ std::unordered_map<TTHValue, int> QueueManager::FileQueue::g_queue_tth_map;
 
 QueueManager::FileQueue QueueManager::g_fileQueue;
 QueueManager::UserQueue QueueManager::g_userQueue;
-bool QueueManager::g_dirty = false;
+// the flags are changed by the threads of the hubs and read by the thread of the
+// timer: the access must be atomic
+std::atomic<bool> QueueManager::g_dirty(false);
 int  QueueManager::g_running_count = 0;
-bool QueueManager::g_is_exists_queueFile = false;
-uint64_t QueueManager::g_lastSave = 0;
+std::atomic<bool> QueueManager::g_is_exists_queueFile(false);
+std::atomic<uint64_t> QueueManager::g_lastSave(0);
 QueueManager::UserQueue::UserQueueMap QueueManager::UserQueue::g_userQueueMap[QueueItem::LAST];
 QueueManager::UserQueue::RunningMap QueueManager::UserQueue::g_runningMap;
-#ifdef FLYLINKDC_USE_USER_QUEUE_CS
-Lock std::unique_ptr<webrtc::RWLockWrapper> QueueManager::UserQueue::g_userQueueMapCS = std::unique_ptr<webrtc::RWLockWrapper>(webrtc::RWLockWrapper::CreateRWLock());
-#endif
+FastCriticalSection QueueManager::UserQueue::g_userQueueMapCS;
 #ifdef FLYLINKDC_USE_RUNNING_QUEUE_CS
 std::unique_ptr<webrtc::RWLockWrapper> QueueManager::UserQueue::g_runningMapCS = std::unique_ptr<webrtc::RWLockWrapper>(webrtc::RWLockWrapper::CreateRWLock());
 #endif
@@ -111,19 +111,20 @@ QueueItemPtr QueueManager::FileQueue::add(int64_t p_FlyQueueID,
 {
 	if (p == QueueItem::DEFAULT)
 	{
-		if (aSize <= SETTING(PRIO_HIGHEST_SIZE) * 1024)
-		{
+		// the multiplication must be in 64 bits: the value of the setting is an int
+		if (aSize <= static_cast<int64_t>(SETTING(PRIO_HIGHEST_SIZE)) * 1024)
+	{
 			p = QueueItem::HIGHEST;
 		}
-		else if (aSize <= SETTING(PRIO_HIGH_SIZE) * 1024)
-		{
+		else if (aSize <= static_cast<int64_t>(SETTING(PRIO_HIGH_SIZE)) * 1024)
+	{
 			p = QueueItem::HIGH;
 		}
-		else if (aSize <= SETTING(PRIO_NORMAL_SIZE) * 1024)
-		{
+		else if (aSize <= static_cast<int64_t>(SETTING(PRIO_NORMAL_SIZE)) * 1024)
+	{
 			p = QueueItem::NORMAL;
 		}
-		else if (aSize <= SETTING(PRIO_LOW_SIZE) * 1024)
+		else if (aSize <= static_cast<int64_t>(SETTING(PRIO_LOW_SIZE)) * 1024)
 		{
 			p = QueueItem::LOW;
 		}
@@ -421,9 +422,7 @@ void QueueManager::UserQueue::addL(const QueueItemPtr& qi)
 void QueueManager::UserQueue::addL(const QueueItemPtr& qi, const UserPtr& aUser, bool p_is_first_load)
 {
 	dcassert(qi->getPriority() < QueueItem::LAST);
-#ifdef FLYLINKDC_USE_USER_QUEUE_CS
-	Lock CFlyWriteLock(*g_userQueueMapCS);
-#endif
+	CFlyFastLock(g_userQueueMapCS);
 	auto& uq = g_userQueueMap[qi->getPriority()][aUser];
 	
 // ѕри первой загрузки очереди из базы не зовем calcAverageSpeedAndCalcAndGetDownloadedBytesL
@@ -471,9 +470,7 @@ QueueItemPtr QueueManager::UserQueue::getNextL(const UserPtr& aUser, QueueItem::
 	m_lastError.clear();
 	do
 	{
-#ifdef FLYLINKDC_USE_USER_QUEUE_CS
-		CFlyReadLock(*g_userQueueMapCS);
-#endif
+		CFlyFastLock(g_userQueueMapCS);
 		const auto i = g_userQueueMap[p].find(aUser);
 		if (i != g_userQueueMap[p].cend())
 		{
@@ -663,9 +660,7 @@ void QueueManager::UserQueue::removeUserL(const QueueItemPtr& qi, const UserPtr&
 	}
 	{
 	
-#ifdef FLYLINKDC_USE_USER_QUEUE_CS
-		Lock CFlyWriteLock(*g_userQueueMapCS);
-#endif
+		CFlyFastLock(g_userQueueMapCS);
 		auto& ulm = g_userQueueMap[qi->getPriority()];
 		const auto& j = ulm.find(aUser);
 		if (j == ulm.cend())
@@ -948,7 +943,7 @@ void QueueManager::on(TimerManagerListener::Minute, uint64_t aTick) noexcept
 		{
 			if (ClientManager::isBeforeShutdown())
 				return;
-			QueueItem::PartialSource::Ptr source = i->first->second.getPartialSource();
+			QueueItem::PartialSource::Ptr source = i->first;
 			const QueueItemPtr qi = i->second;
 			
 			PartsInfoReqParam* param = new PartsInfoReqParam;
@@ -969,8 +964,11 @@ void QueueManager::on(TimerManagerListener::Minute, uint64_t aTick) noexcept
 	}
 	if (g_fileQueue.getSize() > 0 && aTick >= nextSearch && BOOLSETTING(AUTO_SEARCH))
 	{
+		// the size of the queue is read once: the queue can be emptied by the other
+		// threads and the loop below would never end (the pop_front of the empty deque)
+		const size_t l_queue_size = g_fileQueue.getSize();
 		// We keep 30 recent searches to avoid duplicate searches
-		while (m_recent.size() >= g_fileQueue.getSize() || m_recent.size() > 30)
+		while (!m_recent.empty() && (m_recent.size() > 30 || (l_queue_size > 0 && m_recent.size() >= l_queue_size)))
 		{
 			m_recent.pop_front();
 		}
@@ -1578,18 +1576,25 @@ void QueueManager::QueueManagerWaiter::execute(const WaiterFile& p_currentFile)
 	auto qm = QueueManager::getInstance();
 	qm->setAutoPriority(l_source, false);
 	qm->setPriority(l_source, QueueItem::PAUSED);
-	const QueueItemPtr qi = QueueManager::FileQueue::find_target(l_source);
+	QueueItemPtr qi = QueueManager::FileQueue::find_target(l_source);
+	if (!qi)
+		return;
 	dcassert(qi->getPriority() == QueueItem::PAUSED);
 	while (qi)
 	{
 		if (qi->isRunning())
 		{
 			sleep(1000);
+			// the item can be removed from the queue while it is waiting
+			qi = QueueManager::FileQueue::find_target(l_source);
 		}
 		else
 		{
 			qm->move(l_source, l_target);
 			qm->setPriority(l_target, l_priority);
+			// without the exit the loop never ends: the item was moved and the
+			// source does not exist anymore - the loop spins with 100% of the CPU
+			break;
 		}
 	}
 }
@@ -2442,6 +2447,8 @@ bool QueueManager::removeTarget(const string& aTarget, bool p_is_batch_remove)
 		{
 			RLock(*QueueItem::g_cs);
 			dcassert(q->getSourcesL().size() == 1);
+			// the item of the queue can lose its source before it is removed
+			if (!q->getSourcesL().empty())
 			{
 				CFlyFastLock(csDirectories);
 				for_each(m_directories.equal_range(q->getSourcesL().begin()->first) | map_values, DeleteFunction()); // ћутное место
@@ -2842,6 +2849,12 @@ void QueueLoader::startTag(const string& name, StringPairList& attribs, bool sim
 				return;
 			}
 			QueueItem::Priority p = (QueueItem::Priority)Util::toInt(getAttrib(attribs, sPriority, 3));
+			// the priority comes from the file of the queue: the value is used as an index
+			// of the array of the queues and must be in the range
+			if (p < QueueItem::PAUSED || p >= QueueItem::LAST)
+			{
+				p = QueueItem::DEFAULT;
+			}
 			time_t added = static_cast<time_t>(Util::toInt(getAttrib(attribs, sAdded, 4)));
 			const string& tthRoot = getAttrib(attribs, sTTH, 5);
 			if (tthRoot.empty())
@@ -3209,11 +3222,13 @@ bool QueueManager::handlePartialResult(const UserPtr& aUser, const TTHValue& tth
 				// add this user as partial file sharing source
 				qi->addSourceL(aUser, false);
 				si = qi->findSourceL(aUser); // TODO - повторный поиск?
-				si->second.setFlag(QueueItem::Source::FLAG_PARTIAL);
 				
 				const auto ps = std::make_shared<QueueItem::PartialSource>(partialSource.getMyNick(),
 				                                                           partialSource.getHubIpPort(), partialSource.getIp(), partialSource.getUdpPort());
+				// the source must be set before the flag: another thread can see the flag
+				// with an empty source and dereference the null pointer
 				si->second.setPartialSource(ps);
+				si->second.setFlag(QueueItem::Source::FLAG_PARTIAL);
 				
 				g_userQueue.addL(qi, aUser, false);
 				dcassert(si != qi->getSourcesL().end());
@@ -3271,12 +3286,22 @@ void QueueManager::FileQueue::findPFSSourcesL(PFSSourceList& sl)
 #endif
 	const uint64_t now = GET_TICK();
 	// TODO - утащить в отдельный метод
-	RLock(*g_csFQ);
-	for (auto i = g_queue.cbegin(); i != g_queue.cend(); ++i)
+	// the queue is copied and the lock is released: the sources of the items are
+	// protected by another lock (QueueItem::g_cs) and the order of the locks
+	// must not be inverted here
+	QueueItemList l_queue;
+	{
+		RLock(*g_csFQ);
+		for (auto i = g_queue.cbegin(); i != g_queue.cend(); ++i)
+		{
+			l_queue.push_back(i->second);
+		}
+	}
+	for (auto i = l_queue.cbegin(); i != l_queue.cend(); ++i)
 	{
 		if (ClientManager::isBeforeShutdown())
 			return;
-		const auto q = i->second;
+		const auto q = *i;
 		
 		if (q->getSize() < PARTIAL_SHARE_MIN_SIZE) continue;
 		
@@ -3291,35 +3316,43 @@ void QueueManager::FileQueue::findPFSSourcesL(PFSSourceList& sl)
 			continue;
 		}
 		
-		QueueItem::getPFSSourcesL(q, buffer, now);
+		{
+			// the sources of the item are protected by QueueItem::g_cs
+			RLock(*QueueItem::g_cs);
+			QueueItem::getPFSSourcesL(q, buffer, now);
 //////////////////
 #ifdef _DEBUG
-		// ѕосле отладки убрать сарый вариант наполнени€
-		const auto& sources = q->getSourcesL();
-		const auto& badSources = q->getBadSourcesL();
-		for (auto j = sources.cbegin(); j != sources.cend(); ++j)
-		{
-			const auto &l_getPartialSource = j->second.getPartialSource();
-			if (j->second.isSet(QueueItem::Source::FLAG_PARTIAL) &&
-			        l_getPartialSource->getNextQueryTime() <= now &&
-			        l_getPartialSource->getPendingQueryCount() < 10 && l_getPartialSource->getUdpPort() > 0)
+			// ѕосле отладки убрать сарый вариант наполнени€
+			const auto& sources = q->getSourcesL();
+			const auto& badSources = q->getBadSourcesL();
+			for (auto j = sources.cbegin(); j != sources.cend(); ++j)
 			{
-				debug_buffer.insert(make_pair(l_getPartialSource->getNextQueryTime(), make_pair(j, q)));
+				const auto &l_getPartialSource = j->second.getPartialSource();
+				if (!l_getPartialSource)
+					continue;
+				if (j->second.isSet(QueueItem::Source::FLAG_PARTIAL) &&
+				        l_getPartialSource->getNextQueryTime() <= now &&
+				        l_getPartialSource->getPendingQueryCount() < 10 && l_getPartialSource->getUdpPort() > 0)
+				{
+					debug_buffer.insert(make_pair(l_getPartialSource->getNextQueryTime(), make_pair(l_getPartialSource, q)));
+				}
+
 			}
-			
-		}
-		for (auto j = badSources.cbegin(); j != badSources.cend(); ++j)
-		{
-			const auto &l_getPartialSource = j->second.getPartialSource();
-			if (j->second.isSet(QueueItem::Source::FLAG_TTH_INCONSISTENCY) == false && j->second.isSet(QueueItem::Source::FLAG_PARTIAL) &&
-			        l_getPartialSource->getNextQueryTime() <= now && l_getPartialSource->getPendingQueryCount() < 10 &&
-			        l_getPartialSource->getUdpPort() > 0)
+			for (auto j = badSources.cbegin(); j != badSources.cend(); ++j)
 			{
-				debug_buffer.insert(make_pair(l_getPartialSource->getNextQueryTime(), make_pair(j, q)));
+				const auto &l_getPartialSource = j->second.getPartialSource();
+				if (!l_getPartialSource)
+					continue;
+				if (j->second.isSet(QueueItem::Source::FLAG_TTH_INCONSISTENCY) == false && j->second.isSet(QueueItem::Source::FLAG_PARTIAL) &&
+				        l_getPartialSource->getNextQueryTime() <= now && l_getPartialSource->getPendingQueryCount() < 10 &&
+				        l_getPartialSource->getUdpPort() > 0)
+				{
+					debug_buffer.insert(make_pair(l_getPartialSource->getNextQueryTime(), make_pair(l_getPartialSource, q)));
+				}
 			}
-		}
 #endif
 //////////////////
+		}
 	}
 	// TODO: opt this function.
 	// copy to results

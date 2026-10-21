@@ -372,6 +372,10 @@ class QueueFrame : public MDITabChildWindowImpl < QueueFrame, RGB(0, 0, 0), IDR_
 		OMenu removeAllMenu;
 		OMenu pmMenu;
 		OMenu readdMenu;
+		// the copies of the users of the context menu: a pointer into the map of the
+		// sources becomes invalid when the source is removed (the menu is a modal
+		// loop and the threads of the download are working at the same time)
+		std::list<UserPtr> m_context_menu_users;
 		
 		CButton ctrlShowTree;
 		CContainedWindow showTreeContainer;

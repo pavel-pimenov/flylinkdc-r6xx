@@ -147,23 +147,33 @@ class OperaColors
 	private:
 		struct FloodCacheItem
 		{
-			FloodCacheItem() : w(0), h(0), hDC(nullptr), m_bitmap(nullptr)
+			FloodCacheItem() : w(0), h(0), hDC(nullptr), m_bitmap(nullptr), m_old_bitmap(nullptr)
 			{
 			}
 			void cleanup()
 			{
 				if (hDC)
 				{
-					if (!::DeleteObject(m_bitmap))
+					if (m_bitmap)
 					{
-						const auto l_error_code = GetLastError();
-						if (l_error_code)
+						// the bitmap is selected in the DC: it cannot be deleted before the
+						// selection is changed - the handle is lost otherwise (the leak of GDI)
+						if (m_old_bitmap)
 						{
-							dcassert(l_error_code == 0);
-							dcdebug("DeleteObject(hBr) = error_code = %d", l_error_code);
+							::SelectObject(hDC, m_old_bitmap);
 						}
+						if (!::DeleteObject(m_bitmap))
+						{
+							const auto l_error_code = GetLastError();
+							if (l_error_code)
+							{
+								dcassert(l_error_code == 0);
+								dcdebug("DeleteObject(hBr) = error_code = %d", l_error_code);
+							}
+						}
+						m_bitmap = nullptr;
+						m_old_bitmap = nullptr;
 					}
-					m_bitmap = nullptr;
 					
 					if (!::DeleteDC(hDC))
 					{
@@ -195,6 +205,9 @@ class OperaColors
 			int h;
 			HDC hDC;
 			HBITMAP m_bitmap;
+			// the bitmap which was selected in the DC before ours: it must be restored
+			// before the deletion of ours
+			HBITMAP m_old_bitmap;
 		};
 		
 		struct fci_hash {

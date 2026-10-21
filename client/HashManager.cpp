@@ -22,6 +22,9 @@
 #include "CompatibilityManager.h"
 #include "ShareManager.h"
 #include "../client/FlyFeatures/flyServer.h"
+#include <winioctl.h>
+#include <mutex>
+#include <map>
 
 
 const string HashManager::StreamStore::g_streamName(".gltth");
@@ -86,6 +89,10 @@ bool HashManager::StreamStore::loadTree(const string& p_filePath, TigerTree& p_T
 			if (h.blockSize <= 0 || h.fileSize <= 0)
 				return false;
 			const size_t l_datalen = TigerTree::calcBlocks(l_fileSize, h.blockSize) * TTHValue::BYTES;
+			// the header is a file of the user: the size of the tree must be sane,
+			// otherwise the allocation of the buffer fails with the bad_alloc
+			if (l_datalen == 0 || l_datalen > 64 * 1024 * 1024)
+				return false;
 			l_sz = l_datalen;
 			AutoArray<uint8_t> buf(l_datalen);
 			if (l_stream.read((uint8_t*)buf, l_sz) != l_datalen)
@@ -94,6 +101,11 @@ bool HashManager::StreamStore::loadTree(const string& p_filePath, TigerTree& p_T
 			if (!(p_Tree.getRoot() == h.root))
 				return false;
 		}
+	}
+	catch (const std::bad_alloc& /*e*/)
+	{
+		// not enough memory for the tree of the file
+		return false;
 	}
 	catch (const Exception& /*e*/)
 	{
@@ -373,13 +385,54 @@ void HashManager::Hasher::instantPause()
 
 static size_t g_HashBufferSize = 16 * 1024 * 1024;
 
+// the size of the sector of the volume: it is needed for the unbuffered reads
+// (the size of the buffer and the offset of the file must be aligned to it)
+static DWORD getSectorSize(const string& p_path) noexcept
+{
+	// the value is cached: the query of the geometry is not free and it is called
+	// for every file of the share
+	static std::mutex g_cs_sector_size;
+	static std::map<std::string, DWORD> g_sector_size;
+	{
+		std::lock_guard<std::mutex> l_lock(g_cs_sector_size);
+		const auto i = g_sector_size.find(p_path);
+		if (i != g_sector_size.end())
+		{
+			return i->second;
+		}
+	}
+	HANDLE l_volume = ::CreateFileW(Text::toT(p_path).c_str(), GENERIC_READ,
+	                                    FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr,
+	                                    OPEN_EXISTING, 0, nullptr);
+	if (l_volume == INVALID_HANDLE_VALUE)
+	{
+		return 0;
+	}
+	DISK_GEOMETRY l_geometry = {};
+	DWORD l_returned = 0;
+	const BOOL l_ok = ::DeviceIoControl(l_volume, IOCTL_DISK_GET_DRIVE_GEOMETRY, nullptr, 0,
+	                                    &l_geometry, sizeof(l_geometry), &l_returned, nullptr);
+	::CloseHandle(l_volume);
+	if (!l_ok)
+	{
+		return 0;
+	}
+	{
+		std::lock_guard<std::mutex> l_lock(g_cs_sector_size);
+		g_sector_size[p_path] = l_geometry.BytesPerSector;
+	}
+	return l_geometry.BytesPerSector;
+}
+
 bool HashManager::Hasher::fastHash(const string& fname, uint8_t* buf, unsigned p_buf_size, TigerTree& tth, int64_t& p_size, bool p_is_link)
 {
 	int64_t l_size = p_size;
 	HANDLE h = INVALID_HANDLE_VALUE;
-	DWORD l_sector_size = 0;
-	DWORD l_tmp;
-	BOOL l_sector_result;
+	// the size of the sector of the volume: the third parameter of GetDiskFreeSpace is
+	// the total size of the volume in bytes and not the size of the sector
+	const DWORD l_sector_size = getSectorSize((fname.size() >= 3 && fname[1] == ':')
+	                                      ? fname.substr(0, 3)
+	                                      : Util::getFilePath(fname));
 	// TODO - размер сектора определять один раз для одной буквы через массив от A до Z и не звать GetDiskFreeSpaceA
 	// на каждый файл
 	//
@@ -390,24 +443,11 @@ bool HashManager::Hasher::fastHash(const string& fname, uint8_t* buf, unsigned p
 	// Ещё там есть зависящее от диска (should) ограничение на выравнивание буфера в памяти.
 	// https://msdn.microsoft.com/en-us/library/windows/desktop/cc644950(v=vs.85).aspx
 	
-	if (fname.size() >= 3 && fname[1] == ':')
+	if (l_sector_size == 0)
 	{
-		char l_drive[4];
-		memcpy(l_drive, fname.c_str(), 3);
-		l_drive[3] = 0;
-		l_sector_result = GetDiskFreeSpaceA(l_drive, &l_tmp, &l_sector_size, &l_tmp, &l_tmp);
-	}
-	else
-	{
-		l_sector_result = GetDiskFreeSpace(Text::toT(Util::getFilePath(fname)).c_str(), &l_tmp, &l_sector_size, &l_tmp, &l_tmp);
-	}
-	if (!l_sector_result)
-	{
-		dcassert(0);
+		// the size of the sector is unknown: the unbuffered reads are not possible
 		return false;
-		// TODO Залогировать ошибку.
 	}
-	else
 	{
 		if ((g_HashBufferSize % l_sector_size) != 0)
 		{

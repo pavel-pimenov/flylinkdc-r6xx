@@ -205,7 +205,9 @@ class CFlyServerConfig
 		static const CServerItem& getTestPortServer();
 		static const std::vector<CServerItem> getMirrorTestPortServerArray();
 		
-		static const CServerItem& getRandomMirrorServer(bool p_is_set);
+		// the copy is returned: the reference to the element of the vector becomes
+		// invalid when the config is reloaded
+		static CServerItem getRandomMirrorServer(bool p_is_set);
 		bool isInit() const
 		{
 			return !m_scan.empty();

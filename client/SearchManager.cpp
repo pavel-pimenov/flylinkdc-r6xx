@@ -721,12 +721,13 @@ string SearchManager::getPartsString(const PartsInfo& partsInfo)
 {
 	string ret;
 	
-	for (auto i = partsInfo.cbegin(); i < partsInfo.cend(); i += 2)
+	// the parts are stored by pairs - the last element of an odd size is skipped
+	for (auto i = partsInfo.cbegin(); i + 1 < partsInfo.cend(); i += 2)
 	{
 		ret += Util::toString(*i) + "," + Util::toString(*(i + 1)) + ",";
 	}
 	
-	return ret.substr(0, ret.size() - 1);
+	return ret.empty() ? BaseUtil::emptyString : ret.substr(0, ret.size() - 1);
 }
 
 void SearchManager::toPSR(AdcCommand& cmd, bool wantResponse, const string& myNick, const string& hubIpPort, const string& tth, const vector<uint16_t>& partialInfo)

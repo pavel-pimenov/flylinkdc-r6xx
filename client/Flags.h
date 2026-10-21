@@ -11,21 +11,29 @@ class Flags
 		
 		Flags() : flags(0) { }
 		explicit Flags(MaskType f) : flags(f) { }
+		// the flags are changed by the threads of the hubs and read by the thread of
+		// the interface: the access must be atomic
+		Flags(const Flags& p_other) : flags(p_other.flags.load()) { }
+		Flags& operator=(const Flags& p_other)
+		{
+			flags.store(p_other.flags.load());
+			return *this;
+		}
 		bool isSet(MaskType aFlag) const
 		{
-			return (flags & aFlag) == aFlag;
+			return (flags.load() & aFlag) == aFlag;
 		}
 		bool isAnySet(MaskType aFlag) const
 		{
-			return (flags & aFlag) != 0;
+			return (flags.load() & aFlag) != 0;
 		}
 		void setFlag(MaskType aFlag)
 		{
-			flags |= aFlag;
+			flags.fetch_or(aFlag);
 		}
 		void unsetFlag(MaskType aFlag)
 		{
-			flags &= ~aFlag;
+			flags.fetch_and(~aFlag);
 		}
 		void setFlag(MaskType aFlag, bool aValue)
 		{
@@ -36,16 +44,16 @@ class Flags
 		}
 		void setFlags(MaskType aFlags)
 		{
-			flags = aFlags;
+			flags.store(aFlags);
 		}
 		MaskType getFlags() const
 		{
-			return flags;
+			return flags.load();
 		}
 	protected:
 		virtual ~Flags() { }
 	private:
-		MaskType flags;
+		std::atomic<MaskType> flags;
 };
 
 

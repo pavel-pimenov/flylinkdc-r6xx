@@ -172,7 +172,9 @@ class ShareManager : public Singleton<ShareManager>, private Thread, private Tim
 		GETSET(string, bzXmlFile, BZXmlFile);
 		
 	private:
-		static size_t g_hits;
+		// the counters are changed by the threads of the hubs and read by the thread
+		// of the interface: the access must be atomic
+		static std::atomic<size_t> g_hits;
 		static int64_t g_lastSharedDate;
 		
 		static string getEmptyBZXmlFile()
@@ -522,6 +524,8 @@ class ShareManager : public Singleton<ShareManager>, private Thread, private Tim
 		bool isInSkipList(const string& lowerName) const;
 		bool isSkipListEmpty() const
 		{
+			// the list is changed by the thread of the interface
+			CFlyFastLock(m_csSkipList);
 			return m_skipList.empty();
 		}
 		void rebuildSkipList();

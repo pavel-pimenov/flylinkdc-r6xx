@@ -71,7 +71,8 @@ class AutoArray
 #ifdef _DEBUG
 		explicit AutoArray(size_t size, char p_fill) : p(new T[size])
 		{
-			memset(p, p_fill, size);
+			// the size of the buffer is in the elements, not in the bytes
+			memset(p, p_fill, size * sizeof(T));
 		}
 #endif
 		explicit AutoArray(size_t size) : p(new T[size]) { }

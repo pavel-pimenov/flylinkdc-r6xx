@@ -262,6 +262,8 @@ void PropPageTextStyles::cancel()
 LRESULT PropPageTextStyles::onEditBackColor(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
 	int iNdx = m_lsbList.GetCurSel();
+	if (iNdx < 0 || iNdx >= TS_LAST)
+		return TRUE; // the list has no selection - the index must not be used
 	TextStyles[ iNdx ].EditBackColor();
 	RefreshPreview();
 	return TRUE;
@@ -270,6 +272,8 @@ LRESULT PropPageTextStyles::onEditBackColor(WORD /*wNotifyCode*/, WORD /*wID*/, 
 LRESULT PropPageTextStyles::onEditForeColor(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
 	int iNdx = m_lsbList.GetCurSel();
+	if (iNdx < 0 || iNdx >= TS_LAST)
+		return TRUE; // the list has no selection - the index must not be used
 	TextStyles[ iNdx ].EditForeColor();
 	RefreshPreview();
 	return TRUE;
@@ -278,6 +282,8 @@ LRESULT PropPageTextStyles::onEditForeColor(WORD /*wNotifyCode*/, WORD /*wID*/, 
 LRESULT PropPageTextStyles::onEditTextStyle(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
 	int iNdx = m_lsbList.GetCurSel();
+	if (iNdx < 0 || iNdx >= TS_LAST)
+		return TRUE; // the list has no selection - the index must not be used
 	TextStyles[ iNdx ].EditTextStyle();
 	
 	_tcscpy(m_Font.lfFaceName, TextStyles[ iNdx ].szFaceName);
@@ -587,13 +593,18 @@ LRESULT PropPageTextStyles::onExport(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*
 
 void PropPageTextStyles::onResetColor(int i)
 {
+	if (i < 0 || i >= static_cast<int>(_countof(colours)))
+		return; // the index of the list is not valid
 	colours[i].value = SettingsManager::get((SettingsManager::IntSetting)colours[i].setting, true);
 	setForeColor(ctrlTabExample, colours[i].value);
 }
 
 LRESULT PropPageTextStyles::onTabListChange(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
-	COLORREF color = colours[ctrlTabList.GetCurSel()].value;
+	const int l_index = ctrlTabList.GetCurSel();
+	if (l_index < 0 || l_index >= static_cast<int>(_countof(colours)))
+		return S_OK; // the list has no selection - the index must not be used
+	COLORREF color = colours[l_index].value;
 	setForeColor(ctrlTabExample, color);
 	RefreshPreview();
 	return S_OK;
@@ -607,11 +618,14 @@ LRESULT PropPageTextStyles::onClickedResetTabColor(WORD /*wNotifyCode*/, WORD /*
 
 LRESULT PropPageTextStyles::onClientSelectTabColor(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
-	CColorDialog d(colours[ctrlTabList.GetCurSel()].value, CC_FULLOPEN, *this);
+	const int l_index = ctrlTabList.GetCurSel();
+	if (l_index < 0 || l_index >= static_cast<int>(_countof(colours)))
+		return S_OK; // the list has no selection - the index must not be used
+	CColorDialog d(colours[l_index].value, CC_FULLOPEN, *this);
 	if (d.DoModal() == IDOK)
 	{
-		colours[ctrlTabList.GetCurSel()].value = d.GetColor();
-		switch (ctrlTabList.GetCurSel())
+		colours[l_index].value = d.GetColor();
+		switch (l_index)
 		{
 			case 0:
 				bg = d.GetColor();
@@ -648,7 +662,8 @@ LRESULT PropPageTextStyles::onCtlColor(UINT /*uMsg*/, WPARAM wParam, LPARAM lPar
 		{
 			return (LRESULT)h;
 		}
-		return TRUE;
+		// the value of the message must be a brush - the default one is used
+		return 0;
 	}
 	else
 	{

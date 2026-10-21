@@ -922,6 +922,20 @@ class TypedListViewCtrl : public CWindowImpl<TypedListViewCtrl<T, ctrlId>, CList
 			LVCOLUMN lvc = {0};
 			lvc.mask = LVCF_ORDER;
 			
+			// the order of the columns comes from the settings: it must be a permutation
+			// of the numbers of the columns, otherwise the state of the control and the
+			// real order of the columns do not match
+			if (iCount > m_columnList.size())
+				return;
+			std::vector<bool> l_used(iCount, false);
+			for (size_t i = 0; i < iCount; ++i)
+			{
+				const int l_col = columns[i];
+				if (l_col < 0 || l_col >= static_cast<int>(iCount) || l_used[l_col])
+					return; // the order is invalid - the default order is kept
+				l_used[l_col] = true;
+			}
+
 			int j = 0;
 			for (size_t i = 0; i < iCount;)
 			{

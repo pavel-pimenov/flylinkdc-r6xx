@@ -37,6 +37,12 @@ bool WildcardsEss::search(const tstring& text, const tstring& filter, bool ignor
 		_text   = _lowercase(text);
 		_filter = _lowercase(filter); //: ~18ms
 	}
+	else
+	{
+		// without the case sensitive comparison the previous values were used
+		_text   = text;
+		_filter = filter;
+	}
 	
 	item.reset();
 	words.reset();
@@ -312,10 +318,14 @@ size_t WildcardsEss::interval()
 	if (item.mask.prev & SINGLE && (words.found - words.left) != 1)
 	{
 		size_t len      = item.prev.length();
-		short int lPos  = words.found - len - item.overlay - 1;
+		// the difference must be checked before the subtraction: the underflow of the
+		// unsigned type breaks the position and the substr() throws an exception
+		if (words.found < len + static_cast<size_t>(item.overlay) + 1)
+			return tstring::npos;
+		size_t lPos  = words.found - len - item.overlay - 1;
 		
 		// [pro]ject ... [pro]t[ection] -> [pro]<-#-ection
-		if (lPos < 0 || _text.substr(lPos, len).compare(item.prev) != 0)
+		if (_text.substr(lPos, len).compare(item.prev) != 0)
 		{
 			return tstring::npos;
 		}
@@ -326,7 +336,13 @@ size_t WildcardsEss::interval()
 	if (item.mask.prev & ONE && (words.found - words.left) > 1)
 	{
 		size_t len      = item.prev.length();
+		// the difference can be negative - the underflow of the unsigned type breaks
+		// the calculation of the position and the substr() throws an exception
+		if (len > words.found)
+			return tstring::npos;
 		size_t lPosMax  = words.found - len;
+		if (lPosMax == 0 || item.overlay + 1 > lPosMax)
+			return tstring::npos;
 		size_t lPos     = lPosMax - item.overlay - 1;
 		
 		do  // ????? - min<->max:

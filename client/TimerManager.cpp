@@ -31,7 +31,7 @@
 using namespace boost::posix_time;
 static auto g_start = microsec_clock::universal_time();
 
-bool TimerManager::g_isRun = false;
+std::atomic<bool> TimerManager::g_isRun(false);
 
 TimerManager::TimerManager()
 {

@@ -184,6 +184,9 @@ LRESULT SharePage::onClickedAdd(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndC
 LRESULT SharePage::onClickedRemove(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
 	AutoArray <TCHAR> buf(FULL_MAX_PATH);
+	// the buffer is not initialized in the release build: the string must be
+	// terminated before the reading of it
+	buf.data()[0] = 0;
 	LVITEM item = {0};
 	item.mask = LVIF_TEXT;
 	item.cchTextMax = FULL_MAX_PATH;
@@ -194,7 +197,10 @@ LRESULT SharePage::onClickedRemove(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hW
 	{
 		item.iItem = i;
 		item.iSubItem = 1;
-		ctrlDirectories.GetItem(&item);
+		buf.data()[0] = 0;
+		// the result must be checked: the buffer is not filled when the item is invalid
+		if (!ctrlDirectories.GetItem(&item))
+			continue;
 		ShareManager::getInstance()->removeDirectory(Text::fromT(buf.data()));
 		ctrlTotal.SetWindowText(ShareManager::getShareSizeformatBytesW().c_str());
 		ctrlDirectories.DeleteItem(i);

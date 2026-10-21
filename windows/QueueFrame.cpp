@@ -853,8 +853,12 @@ void QueueFrame::removeItem(const string& p_target)
 		if (j->second == ii)
 			break;
 	}
-	dcassert(j != i.second);
-	m_directories.erase(j);
+	// the item can be absent in the map: the erase of the end of the map is
+	// the undefined behaviour
+	if (j != i.second)
+	{
+		m_directories.erase(j);
+	}
 	if (m_directories.find(ii->getPath()) == m_directories.end())
 	{
 		removeDirectory(ii->getPath(), ii->isAnySet(QueueItem::FLAG_USER_LIST | QueueItem::FLAG_PARTIAL_LIST));
@@ -1118,6 +1122,8 @@ void QueueFrame::renameSelected()
 {
 	// Single file, get the full filename and move...
 	const QueueItemInfo* ii = getSelectedQueueItem();
+	if (!ii)
+		return; // there is no selected item
 	const tstring target = Text::toT(ii->getTarget());
 	const tstring filename = Util::getFileName(target);
 	
@@ -1267,6 +1273,9 @@ LRESULT QueueFrame::onContextMenu(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, B
 				if (ii)
 					if (!ii->isTorrent())
 					{
+						// the copies of the users of the context menu - a pointer into the map
+						// of the sources becomes invalid when the source is removed
+						m_context_menu_users.clear();
 						RLock(*QueueItem::g_cs);
 						const QueueItemPtr qi = ii->getQueueItem();
 						if (qi)
@@ -1292,7 +1301,10 @@ LRESULT QueueFrame::onContextMenu(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, B
 								mi.fMask = MIIM_ID | MIIM_TYPE | MIIM_DATA;
 								mi.fType = MFT_STRING;
 								mi.dwTypeData = (LPTSTR)nick.c_str();
-								mi.dwItemData = (ULONG_PTR)& i->first;
+								// the copy of the user is used: the pointer into the map of the sources
+								// becomes invalid when the source is removed
+								m_context_menu_users.push_back(user);
+								mi.dwItemData = (ULONG_PTR)&m_context_menu_users.back();
 								mi.wID = IDC_BROWSELIST + menuItems;
 								browseMenu.InsertMenuItem(menuItems, TRUE, &mi);
 								mi.wID = IDC_REMOVE_SOURCE + 1 + menuItems; // "All" is before sources
@@ -1350,7 +1362,10 @@ LRESULT QueueFrame::onContextMenu(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, B
 								mi.fMask = MIIM_ID | MIIM_TYPE | MIIM_DATA;
 								mi.fType = MFT_STRING;
 								mi.dwTypeData = (LPTSTR)nick.c_str();
-								mi.dwItemData = (ULONG_PTR) & (*i);
+								// the copy of the user is used: the pointer into the map of the sources
+								// becomes invalid when the source is removed
+								m_context_menu_users.push_back(user);
+								mi.dwItemData = (ULONG_PTR)&m_context_menu_users.back();
 								mi.wID = IDC_READD + 1 + readdItems;  // "All" is before sources
 								readdMenu.InsertMenuItem(readdItems + 2, TRUE, &mi);  // "All" and separator come first
 								readdItems++;

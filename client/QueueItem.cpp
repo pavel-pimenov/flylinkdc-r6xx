@@ -304,9 +304,11 @@ void QueueItem::getPFSSourcesL(const QueueItemPtr& p_qi, SourceListBuffer& p_sou
 		for (auto j = sources.cbegin(); j != sources.cend(); ++j)
 		{
 			const auto &l_ps = j->second.getPartialSource();
+			if (!l_ps)
+				continue; // the flag can be set before the source - see QueueManager::handlePartialResult
 			if (j->second.isCandidate(isBadSourses) && l_ps->isCandidate(p_now))
 			{
-				p_sourceList.insert(make_pair(l_ps->getNextQueryTime(), make_pair(j, p_qi)));
+				p_sourceList.insert(make_pair(l_ps->getNextQueryTime(), make_pair(l_ps, p_qi)));
 			}
 		}
 	};
@@ -663,7 +665,8 @@ Segment QueueItem::getNextSegmentL(const int64_t  blockSize, const int64_t wante
 					if (partialSource)
 					{
 						// store all chunks we could need
-						for (auto j = posArray.cbegin(); j < posArray.cend(); j += 2)
+						// the parts are stored by pairs - the last element of an odd size is skipped
+						for (auto j = posArray.cbegin(); j + 1 < posArray.cend(); j += 2)
 						{
 							if ((*j <= start && start < * (j + 1)) || (start <= *j && *j < end))
 							{
@@ -773,6 +776,8 @@ string QueueItem::getSectionString() const
 			char buf[48];
 			buf[0] = 0;
 			_snprintf(buf, _countof(buf), "%I64d %I64d ", i->getStart(), i->getSize());
+			// the string must be terminated: the format can be longer than the buffer
+			buf[_countof(buf) - 1] = 0;
 			l_strSections += buf;
 		}
 	}
@@ -865,7 +870,8 @@ bool QueueItem::isNeededPart(const PartsInfo& partsInfo, int64_t p_blockSize) co
 	dcassert(partsInfo.size() % 2 == 0);
 	CFlyFastLock(m_fcs_segment);
 	auto i = m_done_segment.begin();
-	for (auto j = partsInfo.cbegin(); j != partsInfo.cend(); j += 2)
+	// the parts are stored by pairs - the last element of an odd size is skipped
+	for (auto j = partsInfo.cbegin(); j + 1 < partsInfo.cend(); j += 2)
 	{
 		while (i != m_done_segment.end() && (*i).getEnd() <= (*j) * p_blockSize)
 			++i;

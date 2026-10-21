@@ -92,9 +92,8 @@ string Players::getItunesSpam(HWND playerWnd /*= NULL*/)
 				}
 				
 				// Genre
-				BSTR genre;
-				pTrack->get_Genre(&genre);
-				if (genre != NULL)
+				BSTR genre = nullptr;
+				if (SUCCEEDED(pTrack->get_Genre(&genre)) && genre != nullptr)
 				{
 					::COLE2T Genre(genre);
 					params["genre"] = Text::fromT(Genre.m_szBuffer);
@@ -180,12 +179,12 @@ string Players::getItunesSpam(HWND playerWnd /*= NULL*/)
 			}
 			
 			//iTunes version
-			BSTR version;
-			iITunes->get_Version(&version);
-			if (version != NULL)
+			BSTR version = nullptr;
+			if (SUCCEEDED(iITunes->get_Version(&version)) && version != nullptr)
 			{
 				::COLE2T iVersion(version);
 				params["version"] = Text::fromT(iVersion.m_szBuffer);
+				::SysFreeString(version);
 			}
 			
 			//Release (decrement reference counter to 0) IiTunes object so it can unload and free itself; otherwise, it's locked in memory
@@ -274,7 +273,11 @@ string Players::getMPCSpam()
 							string filename(l_converted > 0 ? test.data() : "");
 							params["filepath"] = filename;
 							params["filename"] = Util::getFileName(filename); //otherwise fully qualified
-							params["title"] = params["filename"].substr(0, params["filename"].size() - 4);
+							// the name of the file can be shorter than the extension
+							if (params["filename"].size() > 4)
+								params["title"] = params["filename"].substr(0, params["filename"].size() - 4);
+							else
+								params["title"] = params["filename"];
 							params["size"] = Util::formatBytes(File::getSize(filename));
 							
 							if (BOOLSETTING(USE_MAGNETS_IN_PLAYERS_SPAM))

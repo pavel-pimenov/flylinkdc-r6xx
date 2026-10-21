@@ -40,28 +40,51 @@ class PopupWnd : public CWindowImpl<PopupWnd, CWindow>
 		{
 			memset(&logFont, 0, sizeof(logFont));
 			memset(&myFont, 0, sizeof(myFont));
+			// the fonts must be created before the window: onCreate() uses them and
+			// Create() sends WM_CREATE synchronously
+			Fonts::decodeFont(Text::toT(SETTING(POPUP_FONT)), logFont);
+			font = ::CreateFontIndirect(&logFont);
+
+			Fonts::decodeFont(Text::toT(SETTING(POPUP_TITLE_FONT)), myFont);
+			titlefont = ::CreateFontIndirect(&myFont);
+
 			if ((SETTING(POPUP_TYPE) == BALLOON) || (SETTING(POPUP_TYPE) == SPLASH))
 				Create(NULL, rc, NULL, WS_POPUP | WS_CLIPSIBLINGS | WS_CLIPCHILDREN, WS_EX_TOOLWINDOW);
 			else if ((SETTING(POPUP_TYPE) == CUSTOM) && (m_bmp != NULL))
 				Create(NULL, rc, NULL, WS_POPUP | WS_CLIPSIBLINGS | WS_CLIPCHILDREN, WS_EX_TOOLWINDOW);
 			else
 				Create(NULL, rc, NULL, WS_CAPTION | WS_POPUP | WS_CLIPSIBLINGS | WS_CLIPCHILDREN, WS_EX_TOOLWINDOW);
-				
-			Fonts::decodeFont(Text::toT(SETTING(POPUP_FONT)), logFont);
-			font = ::CreateFontIndirect(&logFont);
-			
-			Fonts::decodeFont(Text::toT(SETTING(POPUP_TITLE_FONT)), myFont);
-			titlefont = ::CreateFontIndirect(&myFont);
 		}
 		
 		~PopupWnd()
 		{
 			DeleteObject(font);
 			DeleteObject(titlefont);
-		if (m_bgBrush) ::DeleteObject(m_bgBrush);
+		// the brush of the background belongs to the class of the window: it is
+		// shared by all the popups and must not be deleted here
 		if (m_ctlBrush) ::DeleteObject(m_ctlBrush);
 		}
 		
+		// the brush of the background of the class of the window: it is created once
+		// and is shared by all the popups (the deletion of the brush of the class
+		// breaks the drawing of the other popups)
+		static HBRUSH& getBgBrush(COLORREF p_color)
+		{
+			static HBRUSH l_brush = nullptr;
+			static COLORREF l_color = CLR_INVALID;
+			if (l_brush && l_color != p_color)
+			{
+				::DeleteObject(l_brush);
+				l_brush = nullptr;
+			}
+			if (!l_brush)
+			{
+				l_brush = ::CreateSolidBrush(p_color);
+				l_color = p_color;
+			}
+			return l_brush;
+		}
+
 		LRESULT onLButtonDown(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& bHandled)
 		{
 			::PostMessage(WinUtil::g_mainWnd, WM_SPEAKER, WM_CLOSE, (LPARAM)id);
@@ -77,7 +100,7 @@ class PopupWnd : public CWindowImpl<PopupWnd, CWindow>
 				return 1;
 			}
 			
-			m_bgBrush = ::CreateSolidBrush(Colors::getSysColor(COLOR_INFOBK));
+			m_bgBrush = getBgBrush(Colors::getSysColor(COLOR_INFOBK));
 			::SetClassLongPtr(m_hWnd, GCLP_HBRBACKGROUND, (LONG_PTR)m_bgBrush);
 			CRect rc;
 			GetClientRect(rc);

@@ -33,7 +33,7 @@
 #include "../windows/resource.h"
 
 bool ShareManager::g_ignoreFileSizeHFS = false; // http://www.fly-server.ru/2015/01/hfs-mac-windows.html
-size_t ShareManager::g_hits = 0;
+std::atomic<size_t> ShareManager::g_hits(0);
 int ShareManager::g_RebuildIndexes = 0;
 std::unique_ptr<webrtc::RWLockWrapper> ShareManager::g_csBloom = std::unique_ptr<webrtc::RWLockWrapper>(webrtc::RWLockWrapper::CreateRWLock());
 #ifdef FLYLINKDC_USE_RW_LOCK_SHARE
@@ -234,6 +234,9 @@ bool ShareManager::destinationShared(const string& file_or_dir_name)
 #endif
 	for (auto i = g_shares.cbegin(); i != g_shares.cend(); ++i)
 	{
+		// the name of the share can be empty and the path can be shorter than the name
+		if (i->first.empty() || file_or_dir_name.size() < i->first.size())
+			continue;
 		if (strnicmp(i->first, file_or_dir_name, i->first.size()) == 0 && file_or_dir_name[i->first.size() - 1] == PATH_SEPARATOR)
 		{
 			return true;
@@ -833,6 +836,12 @@ bool ShareManager::loadCache() noexcept
 		}
 		l_cache_loader_log.step("update index done");
 		return true;
+	}
+	catch (const std::bad_alloc&)
+	{
+		// not enough memory: the cache is cleared
+		internalClearCache(true);
+		ShareManager::tryFixBadAlloc();
 	}
 	catch (const Exception& e)
 	{
@@ -1653,6 +1662,9 @@ void ShareManager::refresh_share(bool p_dirs /* = false */, bool aUpdate /* = tr
 	catch (const ThreadException& e)
 	{
 		LogManager::message(STRING(FILE_LIST_REFRESH_FAILED) + ' ' + e.getError());
+		// the thread is not started: the flag must be reset, otherwise the refresh
+		// of the share is never performed again
+		m_is_refreshing.clear();
 	}
 }
 
@@ -1675,6 +1687,14 @@ void ShareManager::getDirectories(CFlyDirItemArray& p_dirs)
 
 int ShareManager::run()
 {
+	// the flag of the refresh must be reset on any exit of the function: otherwise
+	// the share is never refreshed again
+	struct RefreshGuard
+	{
+		std::atomic_flag& l_flag;
+		explicit RefreshGuard(std::atomic_flag& p_flag): l_flag(p_flag) { }
+		~RefreshGuard() { l_flag.clear(); }
+	} l_refresh_guard(m_is_refreshing);
 	static bool g_is_first = false;
 	if (g_is_first == false)
 	{
@@ -1800,6 +1820,14 @@ void ShareManager::generateXmlList()
 	{
 		return;
 	}
+	// the flag must be reset on any exit of the function: otherwise the list of the
+	// files is never generated again
+	struct XmlListGuard
+	{
+		std::atomic_flag& l_flag;
+		explicit XmlListGuard(std::atomic_flag& p_flag): l_flag(p_flag) { }
+		~XmlListGuard() { l_flag.clear(); }
+	} l_xml_list_guard(m_updateXmlListInProcess);
 	
 	if (m_is_forceXmlRefresh || (m_is_xmlDirty && (m_lastXmlUpdate + 15 * 60 * 1000 < GET_TICK() || m_lastXmlUpdate <= m_lastFullUpdate)))
 	{
@@ -1871,6 +1899,11 @@ void ShareManager::generateXmlList()
 			bzXmlRef = unique_ptr<File>(new File(newXmlName, File::READ, File::OPEN));
 			setBZXmlFile(newXmlName);
 			bzXmlListLen = File::getSize(newXmlName);
+		}
+		catch (const std::bad_alloc&)
+		{
+			// not enough memory: the list of the files is not generated
+			tryFixBadAlloc();
 		}
 		catch (const Exception&)
 		{
@@ -2802,7 +2835,13 @@ bool ShareManager::AdcSearch::hasExt(const string& name)
 		return true;
 	if (!m_noExts.empty())
 	{
-		m_exts = StringList(m_exts.begin(), set_difference(m_exts.begin(), m_exts.end(), m_noExts.begin(), m_noExts.end(), m_exts.begin()));
+		// the ranges must be sorted and the result must be written to the other
+		// container: the output of the algorithm cannot overlap with the input
+		std::sort(m_exts.begin(), m_exts.end());
+		std::sort(m_noExts.begin(), m_noExts.end());
+		StringList l_result;
+		std::set_difference(m_exts.begin(), m_exts.end(), m_noExts.begin(), m_noExts.end(), std::back_inserter(l_result));
+		m_exts.swap(l_result);
 		m_noExts.clear();
 	}
 	for (auto i = m_exts.cbegin(), iend = m_exts.cend(); i != iend; ++i)
@@ -3001,6 +3040,8 @@ void ShareManager::on(QueueManagerListener::FileMoved, const string& n) noexcept
 void ShareManager::on(HashManagerListener::TTHDone, const string& fname, const TTHValue& p_root,
                       int64_t aTimeStamp, const CFlyMediaInfo& p_out_media, int64_t p_size) noexcept
 {
+	try
+	{
 	dcassert(!ClientManager::isBeforeShutdown());
 	if (!ClientManager::isBeforeShutdown())
 	{
@@ -3019,14 +3060,21 @@ void ShareManager::on(HashManagerListener::TTHDone, const string& fname, const T
 				if (i != d->m_share_files.end())
 				{
 					CFlyLock(g_csTTHIndex);
+					// the index of the TTH can point to another file with the same TTH:
+					// the record of the other file must not be removed
 					if (p_root != i->getTTH())
 					{
-						g_tthIndex.erase(i->getTTH());
+						auto l_j = g_tthIndex.find(i->getTTH());
+						if (l_j != g_tthIndex.end() && l_j->second == i)
+						{
+							g_tthIndex.erase(l_j);
+						}
 					}
 					// Get rid of false constness...
 					Directory::ShareFile* f = const_cast<Directory::ShareFile*>(&(*i));
 					f->setTTH(p_root);
-					g_tthIndex.insert(std::make_pair(f->getTTH(), i));
+					// the insert does not replace the existing record: the assignment is used
+					g_tthIndex[f->getTTH()] = i;
 					// TODO g_lastSharedDate =
 					g_isNeedsUpdateShareSize = true;
 				}
@@ -3034,7 +3082,11 @@ void ShareManager::on(HashManagerListener::TTHDone, const string& fname, const T
 				{
 					const int64_t l_size = File::getSize(fname);
 					dcassert(p_size == l_size);
+					// the number of the buckets is checked: the rehash of the set invalidates
+					// the iterators which are stored in the index of the TTH
+					const size_t l_buckets_before = d->m_share_files.bucket_count();
 					auto it = d->m_share_files.insert(Directory::ShareFile(l_file_name, l_size, d, p_root, 0, uint32_t(aTimeStamp), getFType(l_file_name)));
+					const bool l_is_rehash = (d->m_share_files.bucket_count() != l_buckets_before);
 					dcassert(it.second);
 					auto f = const_cast<Directory::ShareFile*>(&(*it.first));
 					f->initLowerName();
@@ -3048,6 +3100,20 @@ void ShareManager::on(HashManagerListener::TTHDone, const string& fname, const T
 						CFlyLock(g_csTTHIndex);
 						{
 							CFlyWriteLock(*g_csBloom);
+							// the rehash of the set of the files invalidates the iterators which
+							// are stored in the index of the TTH: the records of the directory
+							// must be updated
+							if (l_is_rehash)
+							{
+								for (auto l_it = d->m_share_files.cbegin(); l_it != d->m_share_files.cend(); ++l_it)
+								{
+									auto l_j = g_tthIndex.find(l_it->getTTH());
+									if (l_j != g_tthIndex.end())
+									{
+										l_j->second = l_it;
+									}
+								}
+							}
 							updateIndicesFileL(*d, it.first);
 						}
 					}
@@ -3061,6 +3127,16 @@ void ShareManager::on(HashManagerListener::TTHDone, const string& fname, const T
 	clear_partial_cache(fname);
 	clear_tth_path_cache();
 	internalClearCache(true);
+	}
+	catch (const std::bad_alloc&)
+	{
+		// the function is noexcept: the exception must not leave it
+		tryFixBadAlloc();
+	}
+	catch (...)
+	{
+		// the other exceptions of the standard library must not kill the client
+	}
 }
 
 void ShareManager::clear_partial_cache(string p_path)
@@ -3161,6 +3237,22 @@ void ShareManager::internalClearCache(bool p_is_force)
 		if (p_is_force || g_file_cache_map.size() > g_cache_limit * 2)
 		{
 			clear_and_reset_capacity(g_file_cache_map);
+		}
+	}
+	{
+		// the cache of the partial lists grows without the limit (every record
+		// holds the whole list of the directory): it is cleared when it is too big
+		CFlyFastLock(g_csPartialCache);
+		if (g_partial_list_cache.size() > g_cache_limit * 2)
+		{
+			clear_and_reset_capacity(g_partial_list_cache);
+		}
+	}
+	{
+		CFlyFastLock(g_csTTHPathCache);
+		if (g_tth_path_cache.size() > g_cache_limit * 2)
+		{
+			clear_and_reset_capacity(g_tth_path_cache);
 		}
 	}
 }
@@ -3322,6 +3414,8 @@ bool ShareManager::findByRealPathName(const string& realPathname, TTHValue* outT
 
 bool ShareManager::isInSkipList(const string& lowerName) const
 {
+	// the list is changed by the thread of the interface: the copy is used
+	CFlyFastLock(m_csSkipList);
 	return Wildcard::patternMatchLowerCase(lowerName, m_skipList);
 }
 

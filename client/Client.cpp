@@ -205,7 +205,11 @@ void Client::shutdown()
 
 const FavoriteHubEntry* Client::reloadSettings(bool updateNick)
 {
-	const FavoriteHubEntry* hub = FavoriteManager::getFavoriteHubEntry(getHubUrl());
+	// the copy of the entry is used: the original is removed by the thread of the
+	// interface and the pointer to it becomes invalid (the use after free)
+	FavoriteHubEntry l_hub_copy;
+	const bool l_is_hub_found = FavoriteManager::getFavoriteHubEntryCopy(getHubUrl(), l_hub_copy);
+	const FavoriteHubEntry* hub = l_is_hub_found ? &l_hub_copy : nullptr;
 	{
 		m_clientName = getFlylinkDCAppCaption();
 		m_clientVersion = A_CLIENT_ID_VERSIONSTRING;
@@ -341,7 +345,15 @@ void Client::connect()
 	catch (const Exception& e)
 	{
 		state = STATE_DISCONNECTED;
+		// the socket must be returned to the pool: it is not done by the destructor
+		reset_socket();
 		fly_fire2(ClientListener::ClientFailed(), this, e.getError());
+	}
+	catch (const std::bad_alloc&)
+	{
+		state = STATE_DISCONNECTED;
+		reset_socket();
+		fly_fire2(ClientListener::ClientFailed(), this, "Not enough memory");
 	}
 	updateActivity();
 }
@@ -815,6 +827,9 @@ bool Client::isMeCheck(const OnlineUserPtr& ou)
 }
 bool Client::allowPrivateMessagefromUser(const ChatMessage& message)
 {
+	// the user can be empty: the message is not from the user
+	if (!message.m_replyTo)
+		return false;
 	if (isMe(message.m_replyTo))
 	{
 		if (UserManager::expectPasswordFromUser(message.m_to->getUser())
@@ -1072,6 +1087,8 @@ string Client::getCounts()
 		l_op = 0;
 	}
 	_snprintf(buf, _countof(buf), "%d/%d/%d", l_norm, l_reg, l_op);
+	// the string must be terminated: the format can be longer than the buffer
+	buf[_countof(buf) - 1] = 0;
 	return buf;
 }
 

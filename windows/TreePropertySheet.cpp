@@ -341,7 +341,9 @@ void TreePropertySheet::fillTree()
 	HTREEITEM first = NULL;
 	for (int i = 0; i < pages; ++i)
 	{
-		tab.GetItem(i, &item);
+		// the result must be checked: the buffer keeps the text of the previous tab
+		if (!tab.GetItem(i, &item))
+			continue;
 		if (i == 0)
 			first = createTree(buf.data(), TVI_ROOT, i);
 		else

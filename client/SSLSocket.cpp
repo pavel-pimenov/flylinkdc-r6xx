@@ -194,7 +194,7 @@ bool SSLSocket::waitWant(int ret, uint64_t millis) {
 		case SSL_ERROR_WANT_READ:
 			return wait(millis, true, false).first;
 		case SSL_ERROR_WANT_WRITE:
-			return wait(millis, true, false).second;
+			return wait(millis, false, true).second;
 		// Check if this is a fatal error...
 		default:
 			checkSSL(ret);
@@ -353,7 +353,13 @@ std::string SSLSocket::getEncryptionInfo() const noexcept
 	if (!ssl)
 		return BaseUtil::emptyString;
 		
-	const string cipher = SSL_get_cipher_name(ssl);
+	// the name of the cipher can be null (the handshake is not finished)
+	const char* l_cipher = SSL_get_cipher_name(ssl);
+	if (!l_cipher)
+	{
+		return BaseUtil::emptyString;
+	}
+	const string cipher = l_cipher;
 	//string protocol = SSL_get_version(ssl);
 	//return protocol + " / " + cipher;
 	return cipher;
@@ -412,8 +418,9 @@ bool SSLSocket::verifyKeyprint(const string& expKP, bool allowUntrusted) noexcep
 		
 		if (cert) X509_free(cert);
 		if (vrfy_ctx) X509_STORE_CTX_free(vrfy_ctx);
-		if (store) X509_STORE_free(store);
 	}
+	// the store is released in any case: it was created before the check of the context
+	if (store) X509_STORE_free(store);
 	
 	// KeyPrint is a strong indicator of trust (TODO: check that this KeyPrint is mediated by a trusted hub)
 	SSL_set_verify_result(ssl, err);

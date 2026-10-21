@@ -60,7 +60,11 @@ X509 getX509(const char* file) {
 	::X509* ret = nullptr;
 	FILE* f = dcpp_fopen(file, "r");
 	if (f) {
-		PEM_read_X509(f, &ret, nullptr, nullptr);
+		// the result of the reading is checked: the file can be damaged
+		if (PEM_read_X509(f, &ret, nullptr, nullptr) == nullptr)
+		{
+			ret = nullptr;
+		}
 		fclose(f);
 	}
 	return X509(ret);

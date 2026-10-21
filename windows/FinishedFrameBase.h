@@ -470,9 +470,9 @@ class FinishedFrameBase : public MDITabChildWindowImpl < T, RGB(0, 0, 0), icon >
 				break;
 				case SPEAK_REMOVE_LINE:
 				{
-					if (m_is_crrent_tree_node)
+					const FinishedItemPtr* l_entry = reinterpret_cast<FinishedItemPtr*>(lParam);
+					if (l_entry && m_is_crrent_tree_node)
 					{
-						const FinishedItemPtr* l_entry = reinterpret_cast<FinishedItemPtr*>(lParam);
 						const int l_cnt = ctrlList.GetItemCount();
 						for (int i = 0; i < l_cnt; ++i)
 						{
@@ -480,12 +480,15 @@ class FinishedFrameBase : public MDITabChildWindowImpl < T, RGB(0, 0, 0), icon >
 							if (l_item && l_item->m_entry == *l_entry)
 							{
 								ctrlList.DeleteItem(i);
+								// the object of the item is not deleted by the control
+								delete l_item;
 								break;
 							}
 						}
-						delete l_entry;
 						updateStatus();
 					}
+					// the object must be deleted in any case - otherwise it is leaked
+					delete l_entry;
 				}
 				break;
 				case SPEAK_UPDATE_STATUS:
@@ -551,6 +554,8 @@ class FinishedFrameBase : public MDITabChildWindowImpl < T, RGB(0, 0, 0), icon >
 						m_totalActual -= ii->m_entry->getActual();
 						m_totalCount--;
 						ctrlList.DeleteItem(i);
+						// the object of the item is not deleted by the control
+						delete ii;
 						p = i;
 					}
 					ctrlList.SelectItem((p < ctrlList.GetItemCount() - 1) ? p : ctrlList.GetItemCount() - 1);

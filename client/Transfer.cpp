@@ -61,13 +61,14 @@ void Transfer::tick(uint64_t p_CurrentTick)
 		dcassert(!m_samples.empty());
 		if (!m_samples.empty()) // https://crash-server.com/Problem.aspx?ClientID=guest&ProblemID=57070
 		{
-			if (m_actual && m_samples.back().second == m_actual)
+			const int64_t l_actual = m_actual.load();
+	if (l_actual && m_samples.back().second == l_actual)
 				m_samples.back().first = m_lastTick; // Position hasn't changed, just update the time
 			else
-				m_samples.emplace_back(Sample(m_lastTick, m_actual));
+				m_samples.emplace_back(Sample(m_lastTick, l_actual));
 				
 			const uint64_t ticks = m_lastTick - m_samples.front().first;
-			const int64_t bytes = m_actual - m_samples.front().second;
+			const int64_t bytes = l_actual - m_samples.front().second;
 			m_runningAverage = bytes * 1000I64 / (ticks ? ticks : 1I64);
 			
 			if (ticks > SPEED_APPROXIMATION_INTERVAL_S * 1000 && m_samples.size() > SPEED_APPROXIMATION_INTERVAL_S)
@@ -136,6 +137,9 @@ void Transfer::setStart(uint64_t tick)
 }
 const uint64_t Transfer::getLastActivity()
 {
+	// the connection can be already closed: the object is deleted by the other thread
+	if (!getUserConnection())
+		return 0;
 	return getUserConnection()->getLastActivity(false);
 }
 //string Transfer::getUserConnectionToken() const

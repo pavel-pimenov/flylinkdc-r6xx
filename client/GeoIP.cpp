@@ -115,7 +115,13 @@ void GeoIP::update() {
 }
 
 void GeoIP::open() {
-	geo = (MMDB_s*)malloc(sizeof(MMDB_s));
+	// the structure is used by MMDB_open without an initialization of the fields
+	geo = (MMDB_s*)calloc(1, sizeof(MMDB_s));
+	if (!geo)
+	{
+		dcdebug("GeoIP: out of memory\n");
+		return;
+	}
 	
 	auto res = MMDB_open(Text::fromUtf8(path).c_str(), MMDB_MODE_MMAP, geo);
 	if (res != MMDB_SUCCESS) {

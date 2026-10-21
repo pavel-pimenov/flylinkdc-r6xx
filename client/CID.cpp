@@ -19,13 +19,19 @@
 #include "stdinc.h"
 #include "CID.h"
 #include "Util.h"
+#include <openssl/rand.h>
 
 CID CID::generate()
 {
 	uint8_t data[CID::SIZE];
-	for (size_t i = 0; i < sizeof(data); ++i)
+	// the identity of the client must not be predictable: the simple generator is
+	// seeded with the time of the second
+	if (RAND_bytes(data, sizeof(data)) != 1)
 	{
-		data[i] = (uint8_t)Util::rand();
+		for (size_t i = 0; i < sizeof(data); ++i)
+		{
+			data[i] = (uint8_t)Util::rand();
+		}
 	}
 	return CID(data);
 }

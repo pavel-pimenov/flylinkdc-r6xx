@@ -256,7 +256,7 @@ LRESULT EmoticonsDlg::onInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lP
 								m_HandleList.push_back(l_h_bm);
 								emoButton.SetBitmap(l_h_bm);
 								m_ctrlToolTip.AddTool(emoButton, smajl.c_str());
-								DeleteObject((HGDIOBJ)emoButton);
+								emoButton.DestroyWindow();
 								bCreated = true;
 							}
 						}
@@ -291,7 +291,7 @@ LRESULT EmoticonsDlg::onInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lP
 		CButton emoButton;
 		emoButton.Create(EmoticonsDlg::m_hWnd, pos, _T(""), WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | BS_FLAT);
 		emoButton.SetFocus();
-		DeleteObject((HGDIOBJ)emoButton);
+		emoButton.DestroyWindow();
 		ShowWindow(SW_SHOW);
 		
 		for (auto y = m_BtnList.cbegin(); y != m_BtnList.cend(); ++y)
@@ -322,6 +322,8 @@ EmoticonsDlg::~EmoticonsDlg()
 	{
 		delete *i;
 	}
+	// the static pointer must not point to the destroyed dialog
+	g_pDialog = nullptr;
 }
 
 CAnimatedButton::CAnimatedButton(CGDIImage *pImage):

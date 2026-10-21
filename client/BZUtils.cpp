@@ -96,7 +96,9 @@ bool UnBZFilter::operator()(const void* in, size_t& insize, void* out, size_t& o
 	
 	int err = BZ2_bzDecompress(&zs);
 	// No more input data, and inflate didn't think it has reached the end...
-	if (insize == 0 && zs.avail_out != 0 && err != BZ_STREAM_END)
+	// the number of the unread bytes is used here: insize is the size of the input
+	// of the caller and it is never zero at this point
+	if (zs.avail_in == 0 && zs.avail_out != 0 && err != BZ_STREAM_END)
 		throw Exception(STRING(DECOMPRESSION_ERROR));
 		
 	if (err != BZ_OK && err != BZ_STREAM_END)

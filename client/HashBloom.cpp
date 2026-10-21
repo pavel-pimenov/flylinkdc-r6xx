@@ -99,14 +99,20 @@ size_t HashBloom::pos(const TTHValue& tth, size_t n) const
 			x |= (1i64 << i);
 		}
 	}
+	// the empty filter cannot be used - the division by zero is not allowed
+	if (bloom.empty())
+		return 0;
 	return x % bloom.size();
 }
 
 void HashBloom::copy_to(ByteVector& v) const
 {
-	v.resize(bloom.size() / 8);
+	// the buffer must be cleared: the old bits of the reused buffer would stay
+	v.assign(bloom.size() / 8, 0);
 	for (size_t i = 0; i < bloom.size(); ++i)
 	{
+		if (i / 8 >= v.size())
+			break;
 		v[i / 8] |= bloom[i] << (i % 8);
 	}
 }

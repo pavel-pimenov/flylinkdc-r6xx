@@ -162,6 +162,12 @@ void NmdcSupports::setStatus(Identity& id, const char status, const string& conn
 #undef CHECK_SPEED
 		}
 		con *= coef;
+		// the value comes from the hub: the conversion to the unsigned type is not
+		// defined for the values out of the range
+		if (!(con >= 0.0) || con > 4294967295.0)
+		{
+			con = 0.0;
+		}
 		id.setDownloadSpeed(static_cast<uint32_t>(con));
 	}
 	

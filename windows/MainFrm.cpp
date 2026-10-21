@@ -1525,9 +1525,16 @@ LRESULT MainFrame::onQuickSearchEditChange(WORD /*wNotifyCode*/, WORD /*wID*/, H
 					// we copy whatever the user has already typed into the beginning of the matched string,
 					// then copy the whole shebang into the combobox.  We then set the selection to mask off
 					// the inferred portion.
-					_TCHAR * pStrMatchedText = new _TCHAR[nMatchedTextLen + 1];
+					// the buffer must be able to hold both the matched string and the text
+					// of the user - the copy of the text was longer than the buffer
+					size_t l_size = static_cast<size_t>(nMatchedTextLen) + 1;
+					if (l_size < static_cast<size_t>(nTextLen) + 1)
+						l_size = static_cast<size_t>(nTextLen) + 1;
+					_TCHAR * pStrMatchedText = new _TCHAR[l_size];
 					::SendMessage(hWndCombo, CB_GETLBTEXT, (WPARAM)nMatch, (LPARAM)pStrMatchedText);
 					memcpy((void*)pStrMatchedText, (void*)pEnteredText, nTextLen * sizeof(_TCHAR));
+					// the terminator can be overwritten by the copy - it must be restored
+					pStrMatchedText[nTextLen] = 0;
 					::SendMessage(hWndCombo, WM_SETTEXT, 0, (WPARAM)pStrMatchedText);
 					::SendMessage(hWndCombo, CB_SETEDITSEL, 0, MAKELPARAM(nTextLen, -1));
 					delete [] pStrMatchedText;
@@ -1667,6 +1674,9 @@ LRESULT MainFrame::onSpeaker(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, BOOL& 
 			{
 				//CLockRedraw<true> l_lock_draw(m_ctrlStatus.m_hWnd);
 				BOOL l_result = FALSE;
+				// the list can be empty: the first element does not exist then
+				if (str.empty())
+					return 0;
 				if (m_statusText[0] != str[0])
 				{
 					m_statusText[0] = str[0];
@@ -1870,8 +1880,10 @@ void MainFrame::parseCommandLine(const tstring& cmdLine)
 	
 	if (!cmdLine.empty() && cmdLine[l_e] == '"')
 	{
-		string::size_type l_b = cmdLine.rfind('"', l_e - 1);
-		if (l_b != tstring::npos)
+		// the index of the first quote is searched from the end: the position must
+		// be checked (the string of one character has no other quote)
+		string::size_type l_b = (l_e > 0) ? cmdLine.rfind('"', l_e - 1) : tstring::npos;
+		if (l_b != tstring::npos && l_b < l_e)
 		{
 			l_cmdLine = cmdLine.substr(0, l_e);
 			l_cmdLine.erase(l_b, 1);

@@ -1344,7 +1344,9 @@ LRESULT TransferView::onSpeaker(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lPara
 					if (l_is_find)
 					{
 						ctrlTransfers.removeGroupedItem(ii);
-						j = 0;
+						// the indexes are shifted after the removal: the scan must be started
+						// from the first element again
+						j = -1;
 #ifdef FLYLINKDC_USE_DEBUG_TRANSFERS
 						LogManager::message("TRANSFER_REMOVE_TOKEN_ITEM ui.token = " + ui.m_token);
 						l_count_remove++;
@@ -1677,7 +1679,9 @@ void TransferView::ItemInfo::update(const UpdateInfo& ui)
 			}
 #endif
 #ifdef FLYLINKDC_USE_COLUMN_RATIO
-			m_ratio_as_text = ui.m_hintedUser.user->getUDratio();
+			// the user can be empty (the item of the list is not bound to the user)
+			if (ui.m_hintedUser.user)
+				m_ratio_as_text = ui.m_hintedUser.user->getUDratio();
 #endif
 #ifdef FLYLINKDC_USE_DNS
 			columns[COLUMN_DNS] = ui.dns;

@@ -60,6 +60,20 @@ DirectoryListingFrame::~DirectoryListingFrame()
 #ifdef FLYLINKDC_USE_MEDIAINFO_SERVER
 	dcassert(m_merge_item_map.empty());
 #endif // FLYLINKDC_USE_MEDIAINFO_SERVER
+	if (m_thread_state)
+	{
+		// the thread of the parsing works with the controls of the window: the frame
+		// must not be destroyed before the thread is finished
+		m_thread_state->l_is_frame_alive = false;
+		if (dl)
+		{
+			dl->setAbort(true);
+		}
+		while (!m_thread_state->l_is_thread_finished.load())
+		{
+			::Sleep(10);
+		}
+	}
 	CFlyLock(g_csUsersMap);
 	if (dl->getUser() && !dl->getUser()->getCID().isZero() && g_usersMap.find(dl->getUser()) != g_usersMap.end())
 		g_usersMap.erase(dl->getUser());
@@ -162,7 +176,8 @@ void DirectoryListingFrame::loadFile(const tstring& name, const tstring& dir)
 	m_FL_LoadSec = GET_TICK();
 	ctrlStatus.SetText(0, CTSTRING(PROCESSING_FILE_LIST));
 	//don't worry about cleanup, the object will delete itself once the thread has finished it's job
-	ThreadedDirectoryListing* tdl = new ThreadedDirectoryListing(this, Text::fromT(name), BaseUtil::emptyString, dir);
+	m_thread_state = std::make_shared<CFlyDirectoryListingThreadState>();
+	ThreadedDirectoryListing* tdl = new ThreadedDirectoryListing(this, Text::fromT(name), BaseUtil::emptyString, dir, m_thread_state);
 	m_loading = true;
 	try
 	{
@@ -181,7 +196,8 @@ void DirectoryListingFrame::loadXML(const string& txt)
 	m_FL_LoadSec = GET_TICK();
 	ctrlStatus.SetText(0, CTSTRING(PROCESSING_FILE_LIST));
 	//don't worry about cleanup, the object will delete itself once the thread has finished it's job
-	ThreadedDirectoryListing* tdl = new ThreadedDirectoryListing(this, BaseUtil::emptyString, txt);
+	m_thread_state = std::make_shared<CFlyDirectoryListingThreadState>();
+	ThreadedDirectoryListing* tdl = new ThreadedDirectoryListing(this, BaseUtil::emptyString, txt, BaseUtil::emptyStringT, m_thread_state);
 	m_loading = true;
 	try
 	{
@@ -645,6 +661,9 @@ LRESULT DirectoryListingFrame::onOpenFile(WORD /*wNotifyCode*/, WORD /*wID*/, HW
 	while ((i = ctrlList.GetNextItem(i, LVNI_SELECTED)) != -1)
 	{
 		const ItemInfo* ii = ctrlList.getItemData(i);
+		// the item can be a directory: the file and the directory are in the union
+		if (!ii || ii->type != ItemInfo::FILE)
+			continue;
 		const string rp = ShareManager::toRealPath(ii->m_file->getTTH());
 		if (!rp.empty())
 		{
@@ -661,7 +680,14 @@ LRESULT DirectoryListingFrame::onOpenFolder(WORD /*wNotifyCode*/, WORD /*wID*/, 
 	{
 		if (const ItemInfo *ii = ctrlList.getItemData(i))
 		{
-			WinUtil::openFolder(Text::toT(ShareManager::toRealPath(ii->m_file->getTTH())));
+			// the item can be a file: the file and the directory are in the union
+			if (ii->type != ItemInfo::DIRECTORY || !ii->m_dir)
+				return 0;
+			const string l_path = dl->getPath(ii->m_dir);
+			if (!l_path.empty())
+			{
+				WinUtil::openFolder(Text::toT(l_path));
+			}
 		}
 	}
 	return 0;

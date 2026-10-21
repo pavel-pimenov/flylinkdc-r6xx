@@ -1,4 +1,334 @@
 ﻿# ╨Ш╤Б╤В╨╛╤А╨╕╤П ╨╕╨╖╨╝╨╡╨╜╨╡╨╜╨╕╨╣ FlylinkDC++
+## 2026-10-21 (продолжение 3)
+### Раунд 6: завершение сессии
+
+- [x] `client/DownloadManager.cpp` — счётчики состояния торрентов
+  (`m_torrent_resume_count`, `m_torrent_rename_count`) уменьшались без проверки →
+  значение могло стать отрицательным (и тип `int` → 0xFFFFFFFF) → цикл выхода из
+  клиента (`while (m_torrent_resume_count > 0)`) не завершался никогда, а resume-данные
+  торрента не сохранялись.
+- [x] `windows/DirectoryListingFrm.h` — поток разбора списка файлов должен был
+  обязательно сообщить об окончании работы: ранние выходы из функции оставляли окно
+  ждать поток вечно (зависание при закрытии). Добавлен guard (RAII) с общим состоянием.
+
+#### Итог сессии
+- [x] **Исправлено 96 дефектов** в 119 файлах (+2603 / −499 строк).
+- [x] Debug|x64 Rebuild — 0/0 (EXE=54982656); Release|x64 Rebuild — 0/0
+  (EXE=20800000).
+- [x] MSVC `/analyze`: находок в собственном коде 24 → 18, новых нет.
+- [x] Дымовой запуск Release|x64 (3 раза): процесс жив, подключение к хабам, исключений
+  в `System.log` нет, новых дампов нет.
+
+## 2026-10-21 (продолжение 2)
+### Раунд 4: менеджер очереди и менеджеры передач
+
+- `client/QueueManager.cpp` — **OOB-запись по индексу**: значение `Priority` из файла
+  `Queue.xml` не проверялось и использовалось как индекс массива `g_userQueueMap` из 6
+  элементов (`Priority="2147483647"` → запись за пределы массива).
+- `client/QueueManager.cpp` — **бесконечный цикл и `pop_front()` пустого deque** в
+  обработчике авто-поиска (размер очереди меняется другими потоками).
+- `client/QueueManager.h/.cpp` — карта очередей пользователей `g_userQueueMap` была **без
+  блокировки** (макрос `FLYLINKDC_USE_USER_QUEUE_CS` нигде не определён) → гонка на
+  `unordered_map` между потоком поиска и потоками соединений. Включена рекурсивная
+  блокировка (снятие источника вызывается под ней).
+- `client/QueueManager.cpp` — умножение значения настройки на 1024 в 32 битах
+  (знаковое переполнение) → неверный приоритет файлов.
+- `client/DownloadManager.cpp` — ветка `catch(...)` обнуляла файл загрузки, но не
+  снимала саму загрузку (слот файла занят навсегда), а следующая запись данных
+  разыменовывала `nullptr` → падение.
+- `client/DownloadManager.cpp` — число параметров `$ADCSND` не проверялось (assert от
+  пира в debug / ложная метка «файл недоступен» в release); позиция старта не сверялась
+  с запрошенной при неизвестном размере файла.
+- `client/DownloadManager.cpp` — `find_last_of(".!fl")` вместо `rfind(".!fl")`: имя
+  завершённого файла торрента обрезалось на 4 символа.
+- `client/UploadManager.cpp` — `std::bad_alloc` из `prepareFile()` не ловился → выход из
+  `noexcept`-функции → `std::terminate` → падение клиента.
+- `client/UploadManager.cpp` — счётчик соединений пользователя уменьшался дважды при
+  повторном удалении загрузки из списка.
+
+### Раунд 5: атомарность общих счётчиков и блокировки
+
+#### Найдено и исправлено
+- [x] `client/Transfer.h/.cpp` — счётчики прогресса передачи (`m_pos`, `m_actual`,
+  `m_runningAverage`) менялись из потока сети и читались из потока таймера и UI без
+  синхронизации → «скачущая» скорость и «рвущиеся» проценты. Сделаны атомарными.
+- [x] `client/QueueManager.h/.cpp` — флаги состояния очереди (`g_dirty`, `g_lastSave`,
+  `g_is_exists_queueFile`) менялись из потоков хабов → потеря флага «изменено»
+  (очередь не сохранялась) → сделаны атомарными.
+- [x] `client/FavoriteManager.cpp` — поля избранного пользователя изменялись под
+  **разделяемым** (read) замком → гонка с писателями → сделано `CFlyWriteLock`.
+- [x] `client/FavoriteManager.cpp` — сохранение `Favorites.xml` не было защищено: два
+  потока писали в один и тот же временный файл → смешанное содержимое → избранное
+  терялось. Добавлена блокировка.
+- [x] `client/LogManager.cpp` — `log()` помечена `noexcept`, но внутри создаются строки
+  и элементы карты → `std::bad_alloc` → `std::terminate`. Тело вынесено в
+  `logInternal()` и обёрнуто в `try/catch`.
+- [x] `client/UploadManager.cpp` — зарезервированный слот сохранялся как `uint32_t` при
+  64-битном таймере → обрезка → слот «жил» 49 дней вместо заданного времени.
+
+#### Проверка сборки
+- [x] Debug|x64 Rebuild — 0/0 (EXE=54981632); Release|x64 Rebuild — 0/0
+  (EXE=20798464).
+- [x] Дымовой запуск Release|x64: процесс жив (31 поток, 114 МБ), исключений и
+  новых дампов нет.
+
+## 2026-10-21 (продолжение)
+### Раунд 3: проверка «быстрого» хеширования, поток разбора списка файлов, мелочи
+
+- `client/HashManager.cpp` — **быстрое хеширование никогда не работало**: размер сектора
+  тома брался из третьего параметра `GetDiskFreeSpace` (общий объём тома в байтах, а не
+  размер сектора) → проверка выравнивания буфера всегда давала «не выровнено» и путь
+  отключался. Размер сектора теперь запрашивается через
+  `IOCTL_DISK_GET_DRIVE_GEOMETRY`; при неизвестном размере сектора быстрый путь не
+  используется.
+- `build-win/check-fasthash.cpp` (+ `build-win/build-check-fasthash.cmd`) — отдельный тест
+  логики чтения быстрого пути (небуферизованные перекрывающиеся чтения): для размеров
+  0; 1; 4095; 4096; 4097; 1 МБ; 16 МБ ± 1; 32 МБ + 12345 данные **совпадают** с
+  обычным буферизованным чтением — все проверки пройдены.
+- `windows/DirectoryListingFrm.h/.cpp` — **use-after-free**: рабочий поток разбора
+  списка файлов обращался к уже уничтоженному окну (окно удаляется при закрытии
+  приложения, поток при этом жив). Добавлено общее состояние потока и окна: поток
+  проверяет «живость» окна перед каждым обращением, деструктор окна сбрасывает флаг,
+  прерывает разбор и ждёт завершения потока; ошибка разбора больше не пишется в
+  уничтоженное окно.
+- `client/SSL.cpp` — результат `PEM_read_X509` не проверялся.
+- `client/CryptoManager.cpp` — пути к сертификату, заданные пользователем, затирались
+  при каждом старте; CN сертификата не дополняется мусором до 39 символов (иначе поиск
+  ника по CID давал чужой ник).
+- `client/DebugManager.cpp` — `noexcept`-функции создавали строки (`std::bad_alloc` →
+  `std::terminate`).
+- `client/TimerManager.h`, `client/ShareManager.h` — флаги и счётчики, которые пишутся
+  одними потоками и читаются другими, → `std::atomic`.
+- `windows/HubFrame.cpp`, `client/ConnectionManager.cpp` — исправлен код под неактивными
+  макросами (иначе проект не собирался бы при их включении).
+- Контрольная сборка: Debug|x64 Rebuild — 0/0 (EXE=54963712), Release|x64 Rebuild — 0/0
+  (EXE=20793856); MSVC `/analyze`: находок в собственном коде 24 → 18; дымовой запуск
+  Release|x64 — без исключений и дампов.
+
+## 2026-10-21
+### Рефакторинг и поиск ошибок: раунд 2 (менеджеры, страницы настроек, окна, криптография)
+
+Продолжение автономного аудита: 4 раунда параллельного анализа подсистем
+(`client/ConnectionManager`, `ClientManager`, `UserManager`; `windows/` — страницы
+настроек; крупные окна интерфейса; `client/` — OpenSSL, XML, утилиты). Итог раунда —
+**ещё 48 исправлений** в 30 файлах. Контрольная сборка Debug|x64 и Release|x64
+(Rebuild) — 0 предупреждений / 0 ошибок; дымовой запуск — без исключений.
+
+#### Управление памятью и гонки данных
+- `client/User.cpp` — **use-after-free / double free** объекта коэффициента UD: блокировка
+  `m_ratio_cs` была под неопределённым макросом `FLYLINKDC_USE_RATIO_CS` → объект
+  удалялся в потоке хаба, пока его читал UI-поток. Блокировка включена безусловно.
+- `client/Util.cpp` — генератор случайных чисел без блокировки (гонка из десятков
+  потоков) и с предсказуемым засеванием (время в секундах).
+- `client/CID.cpp` — идентичность клиента (192 бита, попадает в CN сертификата TLS)
+  генерировалась предсказуемо → переход на `RAND_bytes` OpenSSL.
+- `client/Flags.h` — неатомарный read-modify-write над флагами (`User::ONLINE`) →
+  `std::atomic` + копирующий конструктор.
+- `client/ConnectionManager.h`, `client/UserManager.h` — неатомарные счётчики
+  `g_ConnToMeCount` и `g_isEmptyIgnoreList`.
+- `client/Client.cpp` — «висячий» `FavoriteHubEntry*` из потока хаба → копия под
+  блокировкой (новый `FavoriteManager::getFavoriteHubEntryCopy`).
+- `client/ClientManager.cpp` — `putClient()` стирал из реестра запись другого клиента
+  с тем же URL.
+- `client/ConnectionManager.cpp` — общие контейнеры очищались без блокировки;
+  повторная вставка в `catch`-блоке могла бросить исключение снова.
+- `client/ConnectivityManager.cpp` — флаг `g_is_running` не сбрасывался на успешном
+  пути → автоопределение соединения больше не выполнялось.
+- `client/Transfer.cpp`, `client/Speaker.h`, `client/Singleton.h` — разыменование
+  удалённого соединения; лишняя реаллокация при добавлении слушателя; висящий
+  указатель при исключении из конструктора.
+
+#### Падения и обработка исключений
+- `client/ConnectionManager.cpp` — `getConnection()` была `noexcept`, но внутри `new` и
+  вставка в множество: `std::bad_alloc` → `std::terminate` (сеть → падение клиента).
+- `client/SimpleXMLReader.cpp` — **бесконечный цикл** при разборе XML с
+  нераспознанной entity в объявлении кодировки → зависание потока разбора списка
+  файла от пира.
+- `client/CryptoManager.cpp`, `client/AdcHub.cpp` — `&kp[0]` по пустому вектору
+  (выход за границы) при ошибке вычисления дайджеста.
+- `client/CryptoManager.cpp` — не проверялся результат `PEM_write_*` (файл ключа
+  обрезался и оставался пустым), `RSA_new()`/`DH_new()` — без проверки на `NULL`,
+  параметр `minValidityDays` не использовался (сертификат, истекающий через час,
+  не перегенерировался).
+- `client/SSLSocket.cpp` — утечка `X509_STORE` (освобождался только в одной ветке);
+  `SSL_get_cipher_name()` может вернуть `NULL`.
+- `client/BZUtils.cpp` — обрезанный bz2-архив принимался как корректный (проверялось
+  не то значение).
+- `client/ThrottleManager.cpp` — `-1` от чтения сокета превращался в `SIZE_MAX`
+  (счётчик токенов рос вместо уменьшения); отрицательный «бакет» индивидуального
+  лимита отключал лимит; `localtime()` (общий буфер) заменён на `localtime_s`.
+- `client/Encoder.cpp` — `toBase32()` дописывал результат в переиспользуемый буфер.
+- `client/TaskQueue.h` — пропущенная `;` после `dcassert`; декремент счётчика
+  блокировок без проверки (переполнение → отбрасывание всех задач).
+
+#### Логика и интерфейс
+- `windows/BarShader.h` — **утечка GDI**: `DeleteObject()` для битмапа, выбранного в DC
+  (удаление не выполнялось) — на каждой перерисовке меню и при очистке кэша.
+- `windows/DirectoryListingFrm.cpp` — обращение к каталогу как к файлу (union
+  `m_file`/`m_dir`) → чтение мусора.
+- `windows/HubFrame.cpp` — `LOWORD()` обрезал индекс символа в чате (после 65535
+  символов подставлялся не тот ник); `substr` с отрицательным размером при `maxlen` от
+  хаба меньше 5.
+- `windows/UsersFrame.cpp` — бесконечный цикл в `onRemove` (строка могла остаться в
+  списке) → зависание интерфейса.
+- `windows/SearchFrm.cpp` — инвертированная проверка токена поиска.
+- `windows/QueueFrame.cpp` — `erase(end())` при отсутствии элемента в карте.
+- `windows/TransferView.cpp` — после удаления элемента сканирование начиналось с
+  индекса 1 (первая строка оставалась в списке передач).
+- `windows/MainFrm.cpp` — `str[0]` по пустому вектору; `std::out_of_range` при разборе
+  командной строки из одного символа.
+- `windows/FinishedFrameBase.h` — утечка `FinishedItemInfo` при удалении записей.
+- `windows/PublicHubsFrm.cpp` — строки с «хвостовыми» NUL в множестве.
+- `windows/GeneralPage.cpp` — `LimitText` на статической надписи вместо поля e-mail;
+  фильтр `<`/`>` с неверным ID; `GetCurSel()` == -1 в настройке.
+- `windows/PropPage.cpp` — при отсутствующем контроле настройка затиралась пустым
+  значением.
+- `windows/PropPageTextStyles.cpp` — в `WM_CTLCOLORSTATIC` возвращалось `TRUE` вместо
+  кисти.
+- `windows/BarShader.cpp` — инвертированный `dcassert` (не защищал от OOB).
+- `windows/SoundsPage.cpp` — «сброс звуков» применял произвольную тему (контрол был
+  отсоединён).
+
+## 2026-10-20
+### Рефакторинг и поиск ошибок: сессия r6 (аудит `client/` + `windows/`)
+
+Цель: автономный аудит собственного кода на реальные дефекты памяти, логики,
+безопасности и потоков. Метод: MSVC `/analyze` (250 находок, новых нет) + 9 раундов
+параллельного аудита подсистем + побайтовые правки с сохранением кодировки CP1251 в
+исходниках. Итог: **81 исправление** в 60 файлах. Контрольная сборка Debug|x64 и
+Release|x64 (Rebuild) — 0 предупреждений / 0 ошибок.
+
+#### Сеть и протокол
+- `client/Socket.cpp` — **переполнение heap-буфера в рукопожатии SOCKS5**: 10-байтный
+  ответ прокси писался в вектор `connStr`, размер которого определяется запросом
+  (при `SOCKS_RESOLVE` и имени хоста короче 3 символов — меньше 10 байт).
+- `client/Socket.cpp` — утечка дескриптора сокета при неудачном подключении
+  (`m_sock` обнулялся без `closesocket()`).
+- `client/Socket.cpp` — `writeAll()` игнорировал результат `wait()` при заполненном
+  буфере отправки → бесконечный цикл (100 % CPU потока).
+- `client/SSLSocket.cpp` — `waitWant()` при `SSL_ERROR_WANT_WRITE` ждал чтение и
+  возвращал признак записи → всегда `false` → TLS-рукопожатие всегда прерывалось.
+- `client/SearchQueue.cpp`, `client/UploadManager.cpp` — чтение списков без блокировки
+  (гонка GUI-потока и рабочих потоков).
+- `client/nmdchub.cpp`, `client/SearchQueue.cpp` — `atoi` на типе поиска из сети
+  (`INT_MIN - 1` — переполнение знакового типа, UB); `$SearchRule Int` — переполнение
+  `int` при умножении на 1000; `sscanf_s("%u")` с `int*`; чтение `m_users.size()` без
+  блокировки.
+- `client/AdcCommand.cpp` — чтение 2 байт пустого параметра команды.
+- `client/AdcSupports.cpp` — `double → uint32_t` вне диапазона (UB) из `$MyINFO`.
+- `client/DirectoryListing.cpp` — `atoi`/`_atoi64` на атрибутах XML от пира; `tolower()`
+  с отрицательным `char`.
+
+#### Очередь, хранилище, хеширование
+- `client/QueueManager.cpp` — **бесконечный цикл** в `QueueManagerWaiter::execute`:
+  указатель на элемент очереди не обновлялся → поток фоновых задач переставал работать.
+- `client/QueueManager.cpp`, `client/QueueItem.cpp` — **use-after-free**: итераторы карты
+  источников сохранялись в списке PFS и использовались после освобождения блокировки;
+  флаг `FLAG_PARTIAL` выставлялся раньше ссылки на источник (→ `nullptr`).
+- `client/QueueManager.cpp` — `getSourcesL().begin()->first` на пустой карте.
+- `client/QueueItem.cpp` — обход `PartsInfo` по парам без проверки чётности (OOB).
+- `client/SharedFileStream.cpp` — `memcpy` в memory-mapped файл без проверки границ.
+- `client/HashManager.cpp` — неограниченный размер дерева TTH из файла пользователя →
+  `std::bad_alloc` вне обработчика → аварийное завершение потока хеширования.
+- `client/Util.cpp` — `getDirSize()`: рекурсия без ограничения глубины (junction →
+  переполнение стека); `validateFileName()` не нейтрализовал `..` в начале и в конце
+  пути; `loadP2PGuard()` терял последний символ строки; `RegQueryValueEx`/`RegEnumValue`
+  без проверки результата и без гарантированного NUL.
+- `client/Util.h` — `toUInt32()` на базе `atoi()` (UB) заменён на насыщающий
+  `stringToInt`; устранено предупреждение C4146.
+- `client/FavoriteManager.cpp` — неатомарная замена `Favorites.xml`; `moveUserCommand()`
+  менял местами элемент с несуществующим соседом.
+- `client/ADLSearch.cpp` — неатомарная запись `ADLSearch.xml`; `matchListing()` (noexcept)
+  не ловил `std::bad_alloc`.
+- `client/GeoIP.cpp` — `malloc` без проверки (разыменование `NULL` в `MMDB_open`).
+- `client/WildcardsReg.cpp` — `search()` при `ignoreCase == false` сравнивал данные
+  предыдущего вызова; `interval()` — underflow `size_t` → `out_of_range`.
+- `client/File.cpp`, `client/CryptoManager.cpp`, `client/SearchManager.cpp`,
+  `client/BufferedSocket.cpp`, `client/FsUtils.cpp`, `client/TaskQueue.h`,
+  `client/BaseUtil.h`, `client/HashBloom.cpp`, `client/UserInfoBase.cpp`,
+  `client/FinishedManager.cpp`, `client/UserManager.cpp` — обрезание размера файла до
+  32 бит; `&aKP[0]` на пустом векторе; чтение за пределами `PartsInfo`; необработанный
+  `bad_alloc` в потоке сокета; сдвиг `1 << 31` (UB) и гонка на кэше томов; чтение
+  очереди задач без блокировки; `memset` на `size` байт вместо `size * sizeof(T)`;
+  деление на ноль на пустом bloom-фильтре и «залипание» битов; отсутствующая проверка
+  пустого пользователя; `delete` по `shared_ptr` (double free).
+
+#### Потоки, БД, шара
+- `client/CFlyThread.cpp` — **исключение из потока необработанно** → `std::terminate` →
+  падение клиента. Добавлен `try/catch` в точке входа потока.
+- `client/ShareManager.cpp` — флаги `m_is_refreshing`/`m_updateXmlListInProcess` не
+  сбрасывались при ошибке → обновление шары больше никогда не происходило (RAII-guard).
+- `client/ShareManager.cpp` — индекс TTH хранил итераторы `unordered_set`,
+  инвалидируемые при rehash (use-after-free); после вставки записи индекса обновляются.
+- `client/ShareManager.cpp` — `on(TTHDone)` удалял из индекса запись другого файла с тем
+  же TTH и не перезаписывал существующий ключ → файл пропадал из поиска по TTH.
+- `client/ShareManager.cpp` — `destinationShared()` читал `path[size-1]` без проверки;
+  `AdcSearch::hasExt()` — `set_difference` с пересекающимися диапазонами; список
+  исключений читался без блокировки.
+- `client/CFlylinkDBManager.cpp` — четыре общие prepared-команды использовались без
+  блокировки БД из нескольких потоков (гонка, порча `sqlite3_stmt`); имя таблицы
+  подставлялось в SQL конкатенацией (инъекция) → белый список; отрицательный размер
+  файла → бесконечный цикл в `calcBlockSize`; переполнение `size_t` в `rfind`.
+- `client/MerkleTree.h` — `calcBlockSize()` мог зациклиться при переполнении `uint64`.
+- `client/MappingManager.h` — глобальные строки внешнего IP и шлюза без блокировки.
+- `client/ResourceManager.cpp` — `shrink_to_fit()` освобождал буфер глобальных строк
+  локализации, которые читаются другими потоками (use-after-free).
+
+#### Автообновление, fly-server, XML-парсер
+- `client/FlyFeatures/AutoUpdate.cpp` — ветка распаковки zip без `try/catch` →
+  исключение из потока → падение клиента; **проверка подписи манифеста пропускалась**
+  при нулевом суммарном размере → неподписанный манифест считался доверенным; TTH
+  payload'а проверялся после записи на диск (теперь по буферу до записи); `Version` из
+  манифеста фильтруется (path traversal); папка обновления создаётся заново.
+- `client/FlyFeatures/flyServer.cpp` — списки конфигурации не очищались перед загрузкой
+  (рост данных раз в 12 ч); распаковка ответа без ограничения размера (zip-бомба);
+  `sprintf_s` с именем файла из протокола; `getRandomMirrorServer()` возвращал ссылку.
+- `client/FlyFeatures/InetDownloaderReporter.cpp` — список окон и строка состояния без
+  блокировки.
+- `client/XMLParser/xmlParser.cpp` — **неограниченная рекурсия** при разборе вложенных
+  элементов (переполнение стека на документе из сети); `getNextChar()` уходил за
+  терминатор строки; `decodeSize()` (base64) уходил назад за начало буфера;
+  `positionOfChildNode()` зацикливался.
+
+#### Интерфейс (`windows/`)
+- `windows/PropPageTextStyles.cpp` — **выход за границы массива**: `GetCurSel()` == -1 →
+  `colours[-1].value = ...` и `TextStyles[-1]`.
+- `windows/PopupDlg.h` — неинициализированный `HFONT` в `onCreate()` (шрифты создавались
+  после `Create()`); кисть фона удалялась, но оставалась в классе окна.
+- `windows/EmoticonsDlg.cpp` — `DeleteObject()` с объектом окна; висящий `g_pDialog`.
+- `windows/JAControl.cpp` — `WM_COPYDATA` читался как строка без проверки `cbData`.
+- `windows/Players.cpp` — неинициализированные `BSTR` и непроверенные `HRESULT`;
+  утечка `BSTR version`; underflow в `substr`.
+- `windows/PropPage.cpp` — `throw;` вне активного исключения → `std::terminate()`.
+- `windows/QueueFrame.cpp` — **use-after-free**: в данные пунктов контекстного меню
+  сохранялся адрес элемента карты источников.
+- `windows/MainFrm.cpp` — **переполнение heap-буфера** в автодополнении Quick Search.
+- `windows/WinUtil.cpp` — `HRESULT` объединялись побитовым `|` (ярлык не сохранялся +
+  утечка COM); `RegQueryValueEx` без проверки; `LoadLibrary` без `FreeLibrary`.
+- `windows/WinUtil.h` — `ReleaseDC()` с чужим окном (утечка GDI-DC).
+- `windows/PopupManager.cpp`, `windows/BarShader.cpp`, `windows/dclstGenDlg.cpp`,
+  `windows/FinishedFrameBase.h`, `windows/SearchFrm.cpp`, `windows/MessagePanel.cpp`,
+  `windows/UsersFrame.cpp`, `windows/FolderTree.cpp`, `windows/TypedListViewCtrl.h`,
+  `windows/SearchFrm.h`, `windows/TransferView.cpp`, `windows/OMenu.cpp`,
+  `windows/WaitingUsersFrame.cpp`, `windows/BaseChatFrame.cpp`, `windows/SoundsPage.cpp`,
+  `windows/PopupsPage.cpp`, `windows/AdvancedPage.cpp` — отсутствие NUL в
+  `NOTIFYICONDATA`; `BitBlt` с координатами вместо размеров; деление на ноль в
+  прогресс-баре; утечка `FinishedItemPtr`; утечка объекта сообщения; underflow в
+  `GetSel`; `nullptr` в контекстных меню; ошибка в пути исключённой папки (её нельзя
+  было ни исключить, ни вернуть); выход за границы `m_dwMediaID[26]`; непроверенный
+  порядок колонок из настроек; `delete` вне критической секции множества; разыменование
+  пустого `UserPtr`; `erase(end())`; отсутствующие проверки `nullptr`.
+
+#### Инструменты
+- `build-win/apply-patches.py` — поддержка кодировки патча (`"enc": "cp1251"`) и числа
+  замен (`"count"`); без этого правки русских комментариев портили кодировку.
+- `build-win/mkpatch.py` — сборка патча из диапазона строк исходника (точное
+  совпадение байтов).
+
+#### Проверка
+- Debug|x64 Rebuild — 0/0 (EXE=54956544); Release|x64 Rebuild — 0/0 (EXE=20787200).
+- Дымовой запуск Release|x64: процесс жив (35 потоков, 129 МБ), подключение к хабам,
+  обновление шары работает, новых дампов нет, в `System.log` нет исключений.
 
 ## 2026-10-19
 ### Рефакторинг и поиск ошибок: собственный код `client/` + `windows/`

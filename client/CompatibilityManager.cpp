@@ -1209,7 +1209,9 @@ string CompatibilityManager::CPUInfo()
 		if (key.QueryStringValue(_T("ProcessorNameString"), buf, &len) == ERROR_SUCCESS)
 		{
 			tstring tmp = buf;
-			result = tmp.substr(tmp.find_first_not_of(_T(' ')));
+			const auto l_pos = tmp.find_first_not_of(_T(' '));
+			// find_first_not_of returns npos for an empty string - substr(npos) throws an exception
+			result = (l_pos == tstring::npos) ? tstring() : tmp.substr(l_pos);
 		}
 		DWORD speed;
 		if (key.QueryDWORDValue(_T("~MHz"), speed) == ERROR_SUCCESS)

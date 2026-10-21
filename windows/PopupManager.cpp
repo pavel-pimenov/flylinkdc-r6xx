@@ -41,9 +41,12 @@ void PopupManager::Show(const tstring &aMsg, const tstring &aTitle, int Icon, bo
 		return;
 		
 	tstring msg = aMsg;
-	if (int(aMsg.length()) > SETTING(MAX_MSG_LENGTH))
+	// the length of the message can be less than 3: the size of the tail must be
+	// positive
+	const size_t l_max_length = (SETTING(MAX_MSG_LENGTH) > 3) ? static_cast<size_t>(SETTING(MAX_MSG_LENGTH)) : 3;
+	if (aMsg.length() > l_max_length)
 	{
-		msg = aMsg.substr(0, (SETTING(MAX_MSG_LENGTH) - 3));
+		msg = aMsg.substr(0, (l_max_length - 3));
 		msg += _T("...");
 	}
 #ifdef _DEBUG
@@ -60,7 +63,9 @@ void PopupManager::Show(const tstring &aMsg, const tstring &aTitle, int Icon, bo
 		m_nid.uTimeout = (SETTING(POPUP_TIME) * 1000);
 		m_nid.dwInfoFlags = Icon;
 		_tcsncpy(m_nid.szInfo, msg.c_str(), 255);
+		m_nid.szInfo[255] = 0;
 		_tcsncpy(m_nid.szInfoTitle, aTitle.c_str(), 63);
+		m_nid.szInfoTitle[63] = 0;
 		Shell_NotifyIcon(NIM_MODIFY, &m_nid);
 		return;
 	}
@@ -199,7 +204,8 @@ void PopupManager::Remove(uint32_t pos)
 	
 	//set offset one window position lower
 	dcassert(offset > 0);
-	offset = offset - height;
+	// the offset is an unsigned 16 bit value: the subtraction must not wrap around
+	offset = (offset > height) ? static_cast<uint16_t>(offset - height) : 0;
 	
 	//nothing to do
 	if (m_popups.empty())

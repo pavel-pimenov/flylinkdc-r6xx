@@ -202,7 +202,10 @@ void Util::initialize()
 #endif
 	Text::initialize();
 	
-	sgenrand((unsigned long)time(NULL));
+	// the seed must not be predictable: the time of the second is not enough
+	// (the identity of the client and the tokens of the connections are generated
+	// from this generator)
+	sgenrand((unsigned long)time(NULL) ^ ((unsigned long)GetCurrentThreadId() << 16) ^ (unsigned long)GetTickCount());
 	
 #if (_MSC_VER >= 1400)
 	_set_invalid_parameter_handler(reinterpret_cast<_invalid_parameter_handler>(invalidParameterHandler));
@@ -505,7 +508,11 @@ void Util::loadP2PGuard()
 					linestart++;
 					continue;
 				}
-				const string l_currentLine = l_data.substr(linestart, lineend - linestart - 1);
+				// the line can end with CR or not - the last character of the line must not
+				// be lost when the file has the LF line endings only
+				string l_currentLine = l_data.substr(linestart, lineend - linestart);
+				if (!l_currentLine.empty() && l_currentLine.back() == '\r')
+					l_currentLine.pop_back();
 				linestart = lineend + 1;
 				uint32_t a = 0, b = 0, c = 0, d = 0, a2 = 0, b2 = 0, c2 = 0, d2 = 0;
 				const int l_Items = sscanf_s(l_currentLine.c_str(), "%u.%u.%u.%u-%u.%u.%u.%u", &a, &b, &c, &d, &a2, &b2, &c2, &d2);
@@ -845,6 +852,25 @@ string Util::validateFileName(string tmp)
 		i += 2;
 	}
 	
+	// the ".." at the beginning and at the end of the path is not neutralized by
+	// the loops above - the path can leave the directory
+	if (tmp.compare(0, 3, "..\\") == 0)
+	{
+		tmp.replace(0, 2, "__");
+	}
+	if (tmp.compare(0, 3, "../") == 0)
+	{
+		tmp.replace(0, 2, "__");
+	}
+	if (tmp.size() >= 3 && tmp.compare(tmp.size() - 3, 3, "\\..") == 0)
+	{
+		tmp.replace(tmp.size() - 2, 2, "__");
+	}
+	if (tmp.size() >= 3 && tmp.compare(tmp.size() - 3, 3, "/..") == 0)
+	{
+		tmp.replace(tmp.size() - 2, 2, "__");
+	}
+
 	// Dots at the end of path names aren't popular
 	i = 0;
 	while (((i = tmp.find(".\\", i)) != string::npos))
@@ -1180,20 +1206,26 @@ string Util::getAwayMessage(StringMap& params)
 wstring Util::formatSecondsW(int64_t aSec, bool supressHours /*= false*/)
 {
 	wchar_t buf[64];
+	buf[0] = 0;
 	if (!supressHours)
 		_snwprintf(buf, _countof(buf), L"%01lu:%02u:%02u", unsigned long(aSec / (60 * 60)), unsigned((aSec / 60) % 60), unsigned(aSec % 60));
 	else
 		_snwprintf(buf, _countof(buf), L"%02u:%02u", unsigned(aSec / 60), unsigned(aSec % 60));
+	// the string must be terminated: the format can be longer than the buffer
+	buf[_countof(buf) - 1] = 0;
 	return buf;
 }
 	
 string Util::formatSeconds(int64_t aSec, bool supressHours /*= false*/)
 {
 	char buf[64];
+	buf[0] = 0;
 	if (!supressHours)
 		_snprintf(buf, _countof(buf), "%01lu:%02u:%02u", unsigned long(aSec / (60 * 60)), unsigned((aSec / 60) % 60), unsigned(aSec % 60));
 	else
 		_snprintf(buf, _countof(buf), "%02u:%02u", unsigned(aSec / 60), unsigned(aSec % 60));
+	// the string must be terminated: the format can be longer than the buffer
+	buf[_countof(buf) - 1] = 0;
 	return buf;
 }
 	
@@ -1229,6 +1261,8 @@ string Util::formatBytes(int64_t aBytes)
 	{
 		_snprintf(buf, _countof(buf), "%.03f %s", (double)aBytes / (1152921504606846976.0), CSTRING(EB));
 	}
+	// the string must be terminated: the format can be longer than the buffer
+	buf[_countof(buf) - 1] = 0;
 	return buf;
 }
 string Util::formatBytes(double aBytes)
@@ -1263,6 +1297,8 @@ string Util::formatBytes(double aBytes)
 	{
 		_snprintf(buf, _countof(buf), "%.03f %s", aBytes / (1152921504606846976.0), CSTRING(EB));
 	}
+	// the string must be terminated: the format can be longer than the buffer
+	buf[_countof(buf) - 1] = 0;
 	return buf;
 }
 	
@@ -1297,6 +1333,8 @@ wstring Util::formatBytesW(int64_t aBytes)
 	{
 		_snwprintf(buf, _countof(buf), L"%.03f %s", (double)aBytes / (1152921504606846976.0), CWSTRING(EB)); //TODO Crash beta-16
 	}
+	// the string must be terminated: the format can be longer than the buffer
+	buf[_countof(buf) - 1] = 0;
 	
 	return buf; // https://drdump.com/Problem.aspx?ProblemID=240683
 }
@@ -1307,14 +1345,19 @@ wstring Util::formatExactSize(int64_t aBytes)
 	wchar_t l_number[64];
 	l_number[0] = 0;
 	_snwprintf(l_number, _countof(l_number), _T(I64_FMT), aBytes);
+	// the string must be terminated: the format can be longer than the buffer
+	l_number[_countof(l_number) - 1] = 0;
 	wchar_t l_buf_nf[64];
 	l_buf_nf[0] = 0;
 	GetNumberFormat(LOCALE_USER_DEFAULT, 0, l_number, &g_nf, l_buf_nf, _countof(l_buf_nf));
+	l_buf_nf[_countof(l_buf_nf) - 1] = 0;
 	// the formatted number must not be written over itself: the source and the
 	// destination of the conversion must not overlap
 	wchar_t l_result[128];
 	l_result[0] = 0;
 	_snwprintf(l_result, _countof(l_result), _T("%s %s"), l_buf_nf, CWSTRING(B));
+	// the string must be terminated: the format can be longer than the buffer
+	l_result[_countof(l_result) - 1] = 0;
 	return l_result;
 #else
 	wchar_t buf[64];
@@ -1809,8 +1852,12 @@ string Util::formatRegExp(const string& msg, const StringMap& params)
 	return result;
 }
 	
-uint64_t Util::getDirSize(const string &sFullPath)
+uint64_t Util::getDirSize(const string &sFullPath, int p_depth)
 {
+	// the depth of the recursion is limited: the junction (the reparse point) can
+	// make the recursion infinite and the stack of the thread is overflowed
+	if (p_depth > 64)
+		return 0;
 	uint64_t total = 0;
 	
 	WIN32_FIND_DATA fData;
@@ -1833,11 +1880,15 @@ uint64_t Util::getDirSize(const string &sFullPath)
 				continue;
 			if (fData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
 			{
+				// the junction (the reparse point) can lead to the parent directory and
+				// make the recursion infinite
+				if (fData.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)
+					continue;
 				const string newName = sFullPath + PATH_SEPARATOR + name;
 				// TODO TEMP_DOWNLOAD_DIRECTORY может содержать шаблон "[targetdrive]" сравнивать с ним не всегда верно
 				if (stricmp(newName + PATH_SEPARATOR, l_tmp_path) != 0)
 				{
-					total += getDirSize(newName);
+					total += getDirSize(newName, p_depth + 1);
 				}
 			}
 			else
@@ -2048,6 +2099,9 @@ string Util::formatTime(uint64_t rest, const bool withSecond /*= true*/)
 	
 static std::vector<unsigned long> g_mt(N + 1); /* the array for the state vector  */
 static int g_mti = N + 1; /* mti==N+1 means mt[N] is not initialized */
+// the state of the generator is shared: the access from the different threads
+// must be protected
+static FastCriticalSection g_cs_rand;
 	
 /* initializing the array with a NONZERO seed */
 static void sgenrand(unsigned long seed)
@@ -2063,6 +2117,8 @@ static void sgenrand(unsigned long seed)
 	
 uint32_t Util::rand()
 {
+	// the state of the generator is shared between the threads
+	CFlyFastLock(g_cs_rand);
 	unsigned long y;
 	/* mag01[x] = x * MATRIX_A  for x=0,1 */
 	
@@ -2072,7 +2128,7 @@ uint32_t Util::rand()
 		int kk;
 	
 		if (g_mti == N + 1) /* if sgenrand() has not been called, */
-			sgenrand(4357); /* a default initial seed is used   */
+			sgenrand((unsigned long)time(NULL) ^ ((unsigned long)GetCurrentThreadId() << 16) ^ (unsigned long)GetTickCount()); /* a default initial seed is used   */
 	
 		for (kk = 0; kk < N - M; kk++)
 		{
@@ -2234,8 +2290,13 @@ std::string Util::getRegistryCommaSubkey(const tstring& p_key)
 	{
 		DWORD l_dwIndex = 0;
 		DWORD l_len = _countof(l_buf);
-		while (RegEnumValue(l_hk, l_dwIndex++, l_buf, &l_len, NULL, NULL, NULL, NULL) == ERROR_SUCCESS)
+		for (;;)
 		{
+			const LSTATUS l_status = RegEnumValue(l_hk, l_dwIndex++, l_buf, &l_len, NULL, NULL, NULL, NULL);
+			if (l_status != ERROR_SUCCESS)
+				break;
+			// the value of the registry is not necessarily a null terminated string
+			l_buf[_countof(l_buf) - 1] = 0;
 			l_result += l_sep + Text::fromT(l_buf);
 			l_len = _countof(l_buf);
 			if (l_sep.empty())
@@ -2254,10 +2315,12 @@ string Util::getRegistryValueString(const TCHAR* p_key, bool p_is_path)
 	if (::RegOpenKeyEx(HKEY_CURRENT_USER, FLYLINKDC_REGISTRY_PATH, 0, KEY_READ, &hk) == ERROR_SUCCESS)
 	{
 		DWORD l_bufLen = sizeof(l_buf);
-		::RegQueryValueEx(hk, p_key, NULL, NULL, (LPBYTE)l_buf, &l_bufLen);
+		const LSTATUS l_status = ::RegQueryValueEx(hk, p_key, NULL, NULL, (LPBYTE)l_buf, &l_bufLen);
 		::RegCloseKey(hk);
-		if (l_bufLen)
+		if (l_status == ERROR_SUCCESS)
 		{
+			// the value is not necessarily a null terminated string - force the terminator
+			l_buf[_countof(l_buf) - 1] = 0;
 			string l_result = Text::fromT(l_buf);
 			if (p_is_path)
 				AppendPathSeparator(l_result);

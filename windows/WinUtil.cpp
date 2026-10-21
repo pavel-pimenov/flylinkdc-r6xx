@@ -1789,7 +1789,12 @@ static void internalRegisterUrlProtocolHandler(const tstring& p_protocol, const 
 	{
 		DWORD l_buf_len = sizeof(TCHAR) * l_buf.size();
 		DWORD l_type;
-		::RegQueryValueEx(hk, NULL, 0, &l_type, (LPBYTE)l_buf.data(), &l_buf_len);
+		if (::RegQueryValueEx(hk, NULL, 0, &l_type, (LPBYTE)l_buf.data(), &l_buf_len) != ERROR_SUCCESS)
+		{
+			l_buf[0] = 0;
+		}
+		// the value of the registry is not necessarily a null terminated string
+		l_buf[l_buf.size() - 1] = 0;
 		::RegCloseKey(hk);
 	}
 	
@@ -1881,7 +1886,12 @@ void WinUtil::registerMagnetHandler()
 		if (::RegOpenKeyEx(HKEY_CURRENT_USER, l_comman_key_path, 0, KEY_READ, &hk) == ERROR_SUCCESS)
 		{
 			DWORD l_bufLen = sizeof(TCHAR) * l_buf.size();
-			::RegQueryValueEx(hk, NULL, NULL, NULL, (LPBYTE)l_buf.data(), &l_bufLen);
+			if (::RegQueryValueEx(hk, NULL, NULL, NULL, (LPBYTE)l_buf.data(), &l_bufLen) != ERROR_SUCCESS)
+			{
+				l_buf[0] = 0;
+			}
+			// the value of the registry is not necessarily a null terminated string
+			l_buf[l_buf.size() - 1] = 0;
 			::RegCloseKey(hk);
 		}
 		openCmd = l_buf.data();
@@ -1957,7 +1967,12 @@ void WinUtil::registerDclstHandler()
 		if (::RegOpenKeyEx(HKEY_CURRENT_USER, l_comman_key_path.c_str(), 0, KEY_READ, &hk) == ERROR_SUCCESS)
 		{
 			DWORD l_bufLen = sizeof(TCHAR) * l_buf.size();
-			::RegQueryValueEx(hk, NULL, NULL, NULL, (LPBYTE)l_buf.data(), &l_bufLen);
+			if (::RegQueryValueEx(hk, NULL, NULL, NULL, (LPBYTE)l_buf.data(), &l_bufLen) != ERROR_SUCCESS)
+			{
+				l_buf[0] = 0;
+			}
+			// the value of the registry is not necessarily a null terminated string
+			l_buf[l_buf.size() - 1] = 0;
 			::RegCloseKey(hk);
 		}
 		openCmd = l_buf.data();
@@ -2827,6 +2842,10 @@ bool WinUtil::shutDown(int action)
 			{
 				_d_LockWorkStation();
 			}
+			if (l_hUser32)
+			{
+				::FreeLibrary(l_hUser32);
+			}
 			return true;
 		}
 	}
@@ -3573,27 +3592,34 @@ bool WinUtil::CreateShortCut(const tstring& pszTargetfile, const tstring& pszTar
 		if (SUCCEEDED(hRes))
 		{
 			/* Set the fields in the IShellLink object */
-			// [!] PVS V519 The 'hRes' variable is assigned values twice successively. Perhaps this is a mistake. Check lines: 4536, 4537.
-			hRes |= pShellLink->SetPath(pszTargetfile.c_str());
-			hRes |= pShellLink->SetArguments(pszTargetargs.c_str());
-			if (pszDescription.length() > 0)
-				hRes |= pShellLink->SetDescription(pszDescription.c_str());
-			if (iShowmode > 0)
-				hRes |= pShellLink->SetShowCmd(iShowmode);
-			if (pszCurdir.length() > 0)
-				hRes |= pShellLink->SetWorkingDirectory(pszCurdir.c_str());
-			if (pszIconfile.length() > 0 && iIconindex >= 0)
-				hRes |= pShellLink->SetIconLocation(pszIconfile.c_str(), iIconindex);
+			// the results of the calls must not be combined with '|': a failed call makes
+			// the whole result negative, the link is not saved and the reference of the
+			// IPersistFile object is not released
+			HRESULT l_hres = pShellLink->SetPath(pszTargetfile.c_str());
+			if (SUCCEEDED(l_hres))
+				l_hres = pShellLink->SetArguments(pszTargetargs.c_str());
+			if (SUCCEEDED(l_hres) && pszDescription.length() > 0)
+				l_hres = pShellLink->SetDescription(pszDescription.c_str());
+			if (SUCCEEDED(l_hres) && iShowmode > 0)
+				l_hres = pShellLink->SetShowCmd(iShowmode);
+			if (SUCCEEDED(l_hres) && pszCurdir.length() > 0)
+				l_hres = pShellLink->SetWorkingDirectory(pszCurdir.c_str());
+			if (SUCCEEDED(l_hres) && pszIconfile.length() > 0 && iIconindex >= 0)
+				l_hres = pShellLink->SetIconLocation(pszIconfile.c_str(), iIconindex);
+			hRes = l_hres;
 				
 			/* Use the IPersistFile object to save the shell link */
-			hRes |= pShellLink->QueryInterface( /* [!] PVS thanks! */
-			            IID_IPersistFile,         /* pre-defined interface of the IPersistFile object */
-			            (LPVOID*)&pPersistFile);            /* returns a pointer to the IPersistFile object */
+			if (SUCCEEDED(hRes))
+			{
+				hRes = pShellLink->QueryInterface( /* [!] PVS thanks! */
+				            IID_IPersistFile,         /* pre-defined interface of the IPersistFile object */
+				            (LPVOID*)&pPersistFile);            /* returns a pointer to the IPersistFile object */
+			}
 			if (SUCCEEDED(hRes))
 			{
 				hRes = pPersistFile->Save(pszLinkfile.c_str(), TRUE);
-				safe_release(pPersistFile);
 			}
+			safe_release(pPersistFile);
 			safe_release(pShellLink);
 		}
 		

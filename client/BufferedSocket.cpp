@@ -1126,12 +1126,14 @@ void BufferedSocket::write(const char* aBuf, size_t aLen)
 	try
 	{
 		m_writeBuf.reserve(m_writeBuf.size() + aLen);
+		m_writeBuf.insert(m_writeBuf.end(), aBuf, aBuf + aLen); // [1] std::bad_alloc
 	}
 	catch (std::bad_alloc&)
 	{
 		ShareManager::tryFixBadAlloc();
+		// the exception must not leave the thread: it kills the whole client
+		throw SocketException(STRING(BAD_ALLOC));
 	}
-	m_writeBuf.insert(m_writeBuf.end(), aBuf, aBuf + aLen); // [1] std::bad_alloc
 }
 
 void BufferedSocket::threadSendData()

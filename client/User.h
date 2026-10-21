@@ -262,9 +262,9 @@ class User : public Flags
 		uint32_t  m_hub_id;
 		friend struct CFlyUserRatioInfo;
 		////static std::unique_ptr<webrtc::RWLockWrapper> g_ratio_cs;
-#ifdef FLYLINKDC_USE_RATIO_CS
+		// the object of the ratio is used by the threads of the hubs and by the
+		// thread of the interface: the access must be protected by the lock
 		mutable FastCriticalSection m_ratio_cs;
-#endif
 #endif
 };
 

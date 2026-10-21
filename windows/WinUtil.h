@@ -1378,7 +1378,8 @@ class WinUtil
 			{
 				const HDC dc = ::GetDC(hWnd);
 				sz = getTextWidth(str, dc);
-				const int l_res = ::ReleaseDC(g_mainWnd, dc);
+				// the dc must be released with the same window it was taken from
+				const int l_res = ::ReleaseDC(hWnd, dc);
 				dcassert(l_res);
 				(void)l_res;
 			}

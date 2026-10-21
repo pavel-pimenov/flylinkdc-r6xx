@@ -154,7 +154,8 @@ void UserInfoBase::pm(const string& hubHint)
 
 void UserInfoBase::pm_msg(const string& hubHint, const tstring& p_message)
 {
-	if (!p_message.empty())
+	// the user can be empty - the message is not sent in this case
+	if (getUser() && !p_message.empty())
 	{
 		UserManager::getInstance()->outgoingPrivateMessage(getUser(), hubHint, p_message);
 	}

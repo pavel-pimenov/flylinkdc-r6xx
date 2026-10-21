@@ -113,6 +113,9 @@ void ConnectivityManager::detectConnection()
 		}
 	}
 	log(STRING(LOCAL_NET_NAT_DETECT));
+	// the flag must be reset on any exit of the function: the detection of the
+	// connection is not possible again otherwise
+	g_is_running = false;
 	
 }
 void ConnectivityManager::test_all_ports()

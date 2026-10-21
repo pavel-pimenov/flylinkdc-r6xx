@@ -26,7 +26,7 @@
 
 
 UserManager::IgnoreMap UserManager::g_ignoreList;
-bool UserManager::g_isEmptyIgnoreList = true;
+std::atomic<bool> UserManager::g_isEmptyIgnoreList(true);
 dcdrun(bool UserManager::g_ignoreListLoaded = false);
 
 UserManager::CheckedUserSet UserManager::checkedPasswordUsers;
@@ -41,6 +41,7 @@ void UserManager::saveIgnoreList()
 	CFlyReadLock(*g_csIgnoreList);
 	dcassert(g_ignoreListLoaded);
 	CFlylinkDBManager::getInstance()->save_ignore(g_ignoreList);
+	// the flag is read from the other threads without the lock
 	g_isEmptyIgnoreList = g_ignoreList.empty();
 }
 
@@ -59,6 +60,11 @@ UserManager::~UserManager()
 
 UserManager::PasswordStatus UserManager::checkPrivateMessagePassword(const ChatMessage& pm)
 {
+	// the user of the message can be empty
+	if (!pm.m_replyTo || !pm.m_replyTo->getUser())
+	{
+		return PasswordStatus::FIRST;
+	}
 	const UserPtr& user = pm.m_replyTo->getUser();
 	CFlyFastLock(g_csPsw);
 	if (checkedPasswordUsers.find(user) != checkedPasswordUsers.cend())

@@ -168,7 +168,9 @@ class QueueItem : public Flags
 		typedef std::unordered_map<UserPtr, Source, User::Hash> SourceMap;
 		typedef SourceMap::iterator SourceIter;
 		typedef SourceMap::const_iterator SourceConstIter;
-		typedef std::multimap<time_t, std::pair<SourceConstIter, const QueueItemPtr> > SourceListBuffer;
+		// the partial source is stored by value (a shared_ptr): an iterator into the
+		// source map becomes invalid when the source is removed
+		typedef std::multimap<time_t, std::pair<PartialSource::Ptr, const QueueItemPtr> > SourceListBuffer;
 		
 		static void getPFSSourcesL(const QueueItemPtr& p_qi, SourceListBuffer& p_sourceList, uint64_t p_now);
 		

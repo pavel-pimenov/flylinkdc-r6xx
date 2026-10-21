@@ -46,7 +46,9 @@ void PropPage::read(HWND page, Item const* items, ListItem* listItems /* = NULL 
 					if (GetDlgItem(page, i->itemID) == NULL)
 					{
 						// Control not exist ? Why ??
-						throw;
+						// the throw without an active exception calls std::terminate()
+						dcassert(0);
+						break;
 					}
 					::SetDlgItemText(page, i->itemID,
 					                 Text::toT(g_settings->get((SettingsManager::StrSetting)i->setting, useDef)).c_str());
@@ -56,7 +58,9 @@ void PropPage::read(HWND page, Item const* items, ListItem* listItems /* = NULL 
 					if (GetDlgItem(page, i->itemID) == NULL)
 					{
 						// Control not exist ? Why ??
-						throw;
+						// the throw without an active exception calls std::terminate()
+						dcassert(0);
+						break;
 					}
 					::SetDlgItemInt(page, i->itemID,
 					                g_settings->get(SettingsManager::IntSetting(i->setting), useDef), FALSE);
@@ -65,7 +69,9 @@ void PropPage::read(HWND page, Item const* items, ListItem* listItems /* = NULL 
 					if (GetDlgItem(page, i->itemID) == NULL)
 					{
 						// Control not exist ? Why ??
-						throw;
+						// the throw without an active exception calls std::terminate()
+						dcassert(0);
+						break;
 					}
 					if (SettingsManager::getBool(SettingsManager::IntSetting(i->setting), useDef))
 						::CheckDlgButton(page, i->itemID, BST_CHECKED);
@@ -123,14 +129,28 @@ void PropPage::write(HWND page, Item const* items, ListItem* listItems /* = NULL
 			{
 				case T_STR:
 				{
-					WinUtil::GetDlgItemText(page, i->itemID, buf);
+					// the control can be absent: the value of the setting must not be
+					// overwritten with an empty string in this case
+					if (GetDlgItem(page, i->itemID) == NULL)
+					{
+						dcassert(0);
+						break;
+					}
+					if (!WinUtil::GetDlgItemText(page, i->itemID, buf))
+						break;
 					l_showUserWarning |= g_settings->set(SettingsManager::StrSetting(i->setting), Text::fromT(buf));
 					// Crash https://crash-server.com/Problem.aspx?ClientID=guest&ProblemID=78416
 					break;
 				}
 				case T_INT:
 				{
-					WinUtil::GetDlgItemText(page, i->itemID, buf);
+					if (GetDlgItem(page, i->itemID) == NULL)
+					{
+						dcassert(0);
+						break;
+					}
+					if (!WinUtil::GetDlgItemText(page, i->itemID, buf))
+						break;
 					l_showUserWarning |= g_settings->set(SettingsManager::IntSetting(i->setting), Util::toInt(buf));
 					break;
 				}
@@ -139,8 +159,9 @@ void PropPage::write(HWND page, Item const* items, ListItem* listItems /* = NULL
 					if (GetDlgItem(page, i->itemID) == NULL)
 					{
 						// Control not exist ? Why ??
+						// the throw without an active exception calls std::terminate()
 						dcassert(0);
-						throw;
+						break;
 					}
 					if (::IsDlgButtonChecked(page, i->itemID) == BST_CHECKED)
 						l_showUserWarning |= g_settings->set(SettingsManager::IntSetting(i->setting), true);

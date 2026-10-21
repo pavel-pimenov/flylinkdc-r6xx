@@ -48,7 +48,7 @@ class Transfer
 		virtual ~Transfer() { }
 		int64_t getPos() const
 		{
-			return m_pos;
+			return m_pos.load();
 		}
 		int64_t getStartPos() const
 		{
@@ -68,11 +68,11 @@ class Transfer
 		void tick(uint64_t p_CurrentTick);
 		int64_t getRunningAverage() const
 		{
-			return m_runningAverage;
+			return m_runningAverage.load();
 		}
 		int64_t getActual() const
 		{
-			return m_actual;
+			return m_actual.load();
 		}
 		int64_t getSize() const
 		{
@@ -165,13 +165,13 @@ class Transfer
 		/** TTH of the file being transferred */
 		const TTHValue m_tth;
 		/** Bytes transferred over socket */
-		int64_t m_actual;
+		std::atomic<int64_t> m_actual;
 		/** Bytes transferred to/from file */
-		int64_t m_pos;
+		std::atomic<int64_t> m_pos;
 		/** Starting position */
 		int64_t m_startPos;
 		/** Actual speed */
-		int64_t m_runningAverage;
+		std::atomic<int64_t> m_runningAverage;
 		UserConnection* m_userConnection;
 		HintedUser m_hinted_user;
 		const string m_chiper_name;

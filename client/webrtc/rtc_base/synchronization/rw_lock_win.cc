@@ -58,12 +58,10 @@ void RWLockWin::ReleaseLockShared() {
 }
 
 bool RWLockWin::LoadModule() {
-  static bool module_load_attempted = false;
-  static bool native_rw_locks_supported = false;
-  if (module_load_attempted) {
-    return native_rw_locks_supported;
-  }
-  module_load_attempted = true;
+  // the initialization must be thread safe: another thread can call the function
+  // pointers before they are assigned (the check of the flag and the assignment of
+  // the pointers are not atomic)
+  static const bool native_rw_locks_supported = []() -> bool {
 #if !defined(WINUWP)
   // Use native implementation if supported (i.e Vista+)
   static HMODULE library = LoadLibrary(TEXT("Kernel32.dll"));
@@ -88,8 +86,9 @@ bool RWLockWin::LoadModule() {
       release_srw_lock_exclusive && acquire_srw_lock_shared &&
       release_srw_lock_shared) {
     //[-] FlylinkDC++ RTC_LOG(LS_VERBOSE) << "Loaded Native RW Lock";
-    native_rw_locks_supported = true;
+    return true;
   }
+  return false;
 #else
   // On WinUWP the symbols loaded from this library are directly present
   // in the headers and thus loading the library is not required (and
@@ -100,8 +99,9 @@ bool RWLockWin::LoadModule() {
   acquire_srw_lock_shared = AcquireSRWLockShared;
   release_srw_lock_shared = ReleaseSRWLockShared;
 
-  native_rw_locks_supported = true;
+  return true;
 #endif  // !defined(WINUWP)
+  }();
   return native_rw_locks_supported;
 }
 

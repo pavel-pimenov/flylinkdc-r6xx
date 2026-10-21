@@ -92,8 +92,11 @@ class MerkleTree
 		{
 			uint64_t tmp = BASE_BLOCK_SIZE;
 			const uint64_t maxHashes = ((uint64_t)1) << (maxLevels - 1);
+			// the multiplication can overflow: the loop must be finite
 			while ((maxHashes * tmp) < aFileSize)
 			{
+				if (tmp > (std::numeric_limits<uint64_t>::max() / 2) / maxHashes)
+					break;
 				tmp *= 2;
 			}
 			return tmp;

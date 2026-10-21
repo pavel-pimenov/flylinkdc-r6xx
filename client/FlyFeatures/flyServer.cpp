@@ -190,7 +190,7 @@ const std::vector<CServerItem> CFlyServerConfig::getMirrorTestPortServerArray()
 	return g_mirror_test_port_servers;
 }
 //======================================================================================================
-const CServerItem& CFlyServerConfig::getRandomMirrorServer(bool p_is_set)
+CServerItem CFlyServerConfig::getRandomMirrorServer(bool p_is_set)
 {
 	if (p_is_set == false && !g_mirror_read_only_servers.empty())
 	{
@@ -409,6 +409,33 @@ void CFlyServerConfig::loadConfig()
 		{
 			SimpleXML l_xml;
 			l_xml.fromXML(l_data);
+			// The config is reloaded every 12 hours: the lists must be cleared before the
+			// filling, otherwise the data of the previous configs is accumulated and the
+			// values that were removed from the config are never removed here
+			g_spam_urls.clear();
+			g_mapping_hubs.clear();
+			g_block_hubs_mask.clear();
+			g_block_share_mask.clear();
+			g_exclude_tag_inform.clear();
+			g_hublist_url.clear();
+			g_promo_hub_url.clear();
+			g_promo_hubs[0].clear();
+			g_promo_hubs[1].clear();
+			g_mirror_read_only_servers.clear();
+			g_mirror_test_port_servers.clear();
+			g_torrent_dht_servers.clear();
+			g_include_tag.clear();
+			g_exclude_tag.clear();
+			g_mediainfo_ext.clear();
+			g_virus_ext.clear();
+			g_block_share_ext.clear();
+			g_video_ext.clear();
+			g_custom_compress_ext.clear();
+			g_block_share_name.clear();
+			g_parasitic_files.clear();
+			g_ignore_flood_command.clear();
+			g_block_hubs.clear();
+			g_detect_search_bot.clear();
 			if (l_xml.findChild("Bootstraps"))
 			{
 				{
@@ -2427,13 +2454,16 @@ string CFlyServerJSON::postQuery(bool p_is_set,
 									l_stream.avail_in = static_cast<uint32_t>(l_blob_size);
 									unsigned char l_buf[1 << 16];
 									int l_inflate_result = Z_OK;
+									// the size of the decompressed data is limited: a small compressed
+									// answer can be expanded to gigabytes (the server is not trusted)
+									const size_t l_max_decompress_size = 64 * 1024 * 1024;
 									do
 									{
 										l_stream.next_out = l_buf;
 										l_stream.avail_out = sizeof(l_buf);
 										l_inflate_result = zng_inflate(&l_stream, Z_NO_FLUSH);
 										l_decompress.insert(l_decompress.end(), l_buf, l_buf + (sizeof(l_buf) - l_stream.avail_out));
-									} while (l_stream.avail_out == 0 && l_inflate_result == Z_OK);
+									} while (l_stream.avail_out == 0 && l_inflate_result == Z_OK && l_decompress.size() < l_max_decompress_size);
 									zng_inflateEnd(&l_stream);
 									if (l_inflate_result != Z_STREAM_END)
 									{
@@ -3495,7 +3525,9 @@ bool getMediaInfo(const string& p_name, CFlyMediaInfo& p_media, int64_t p_size, 
 		Util::deleteRegistryValue(FLYLINKDC_REGISTRY_MEDIAINFO_FREEZE_KEY);
 		char l_buf[4000];
 		l_buf[0] = 0;
-		sprintf_s(l_buf, _countof(l_buf), CSTRING(ERROR_MEDIAINFO_SCAN), p_name.c_str(), e.what());
+		// the name of the file comes from the protocol - the buffer can be too small
+		// for it and the invalid parameter handler of the CRT would kill the client
+		_snprintf_s(l_buf, _countof(l_buf), _TRUNCATE, CSTRING(ERROR_MEDIAINFO_SCAN), p_name.c_str(), e.what());
 		::MessageBox(nullptr, Text::toT(l_buf).c_str(), getFlylinkDCAppCaptionWithVersionT().c_str(), MB_ICONERROR);
 		return false;
 	}

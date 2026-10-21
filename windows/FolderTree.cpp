@@ -112,7 +112,8 @@ ShareEnumerator::ShareEnumerator()
 
 ShareEnumerator::~ShareEnumerator()
 {
-	if (m_pNTShareInfo)
+	// the function can be not found (the module of the system is not loaded)
+	if (m_pNTShareInfo && m_pNTBufferFree)
 		m_pNTBufferFree(m_pNTShareInfo);
 		
 	//Free the dll now that we are finished with it
@@ -128,7 +129,8 @@ void ShareEnumerator::Refresh()
 	m_dwShares = 0;
 	if (m_pNTShareInfo)
 	{
-		m_pNTBufferFree(m_pNTShareInfo);
+		if (m_pNTBufferFree)
+			m_pNTBufferFree(m_pNTShareInfo);
 		// the pointer must be reset: a failed enumeration below would leave it
 		// dangling and the destructor would free it twice
 		m_pNTShareInfo = NULL;
@@ -960,6 +962,9 @@ bool FolderTree::IsMediaValid(const tstring &sDrive)
 	//Return FALSE if the drive is empty (::GetVolumeInformation fails)
 	DWORD dwSerialNumber = 0;
 	int nDrive = sDrive[0] - _T('A');
+	// the letter of the drive must be in the range of the array
+	if (nDrive < 0 || nDrive >= static_cast<int>(_countof(m_dwMediaID)))
+		return true;
 	if (GetSerialNumber(sDrive, dwSerialNumber))
 		m_dwMediaID[nDrive] = dwSerialNumber;
 	else
@@ -1188,7 +1193,9 @@ LRESULT FolderTree::OnSelChanged(int /*idCtrl*/, LPNMHDR pnmh, BOOL &bHandled)
 	if (IsDrive(sPath))
 	{
 		int nDrive = sPath[0] - _T('A');
-		GetSerialNumber(sPath, m_dwMediaID[nDrive]);
+		// the letter of the drive must be in the range of the array
+		if (nDrive >= 0 && nDrive < static_cast<int>(_countof(m_dwMediaID)))
+			GetSerialNumber(sPath, m_dwMediaID[nDrive]);
 	}
 	
 	bHandled = FALSE; //Allow the message to be reflected again
@@ -1261,6 +1268,8 @@ LRESULT FolderTree::onKeyDown(int /*idCtrl*/, LPNMHDR pnmh, BOOL& bHandled)
 	{
 		case VK_SPACE:
 			HTREEITEM htItem = GetSelectedItem();
+			if (!htItem)
+				return 0; // there is no selected item
 			
 			if (!GetChecked(htItem))
 				return OnChecked(htItem, bHandled);
@@ -1412,6 +1421,8 @@ LRESULT FolderTree::OnUnChecked(HTREEITEM hItem, BOOL& /*bHandled*/)
 {
 	CWaitCursor l_cursor_wait; //-V808
 	FolderTreeItemInfo* pItem = (FolderTreeItemInfo*) GetItemData(hItem);
+	if (!pItem)
+		return 0; // there is no item with the data
 	
 	HTREEITEM hSharedParent = HasSharedParent(hItem);
 	// if no parent is checked remove this root folder from share
@@ -1572,7 +1583,9 @@ void FolderTree::ShareParentButNotSiblings(HTREEITEM hItem)
 				if (hChild != hItem)
 				{
 					string l_path = Text::fromT(pItem->m_sFQPath);
-					AppendPathSeparator(path);
+					// the path of the excluded folder must have the separator: without it the
+					// folder cannot be excluded and cannot be unexcluded later
+					AppendPathSeparator(l_path);
 					m_nShareSizeDiff -= ShareManager::addExcludeFolder(l_path);
 				}
 			}

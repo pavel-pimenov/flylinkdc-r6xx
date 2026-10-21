@@ -57,7 +57,11 @@ class Singleton
 				dcassert(!isValidInstance());
 			}
 #endif
-			delete instance;
+			// the pointer is reset before the deletion: the new object can throw the
+			// exception and the pointer must not point to the deleted object
+			T* l_old = instance;
+			instance = nullptr;
+			delete l_old;
 			instance = new T();
 		}
 		

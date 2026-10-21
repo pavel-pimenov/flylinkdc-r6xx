@@ -31,22 +31,30 @@ class MappingManager
 		MappingManager();
 		
 		static string getPortmapInfo(bool p_show_public_ip);
+		// the values are changed by the thread of the alerts of the libtorrent and
+		// are read by the threads of the hubs: the access must be protected
 		static string getExternaIP()
 		{
+			CFlyFastLock(m_cs);
 			return g_externalIP;
 		}
 		static void setExternaIP(const string& p_ip)
 		{
+			CFlyFastLock(m_cs);
 			g_externalIP = p_ip;
 		}
 		static string getDefaultGatewayIP()
 		{
+			CFlyFastLock(m_cs);
 			return g_defaultGatewayIP;
 		}
 		static string setDefaultGatewayIP(const string& p_ip)
 		{
-			return g_defaultGatewayIP = p_ip;
+			CFlyFastLock(m_cs);
+			g_defaultGatewayIP = p_ip;
+			return g_defaultGatewayIP;
 		}
+		static FastCriticalSection m_cs;
 		static bool isRouter()
 		{
 			return g_is_wifi_router.value == boost::logic::tribool::true_value;

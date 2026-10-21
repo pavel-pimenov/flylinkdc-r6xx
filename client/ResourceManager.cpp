@@ -56,8 +56,9 @@ bool ResourceManager::loadLanguage(const string& aFile)
 					
 					if (j != l_handler.end())
 					{
+						// the shrink_to_fit() is not used here: the strings are read by the
+						// other threads and the release of the buffer damages them
 						g_strings[j->second] = StringNode.getTextOrDefault();
-						g_strings[j->second].shrink_to_fit();
 					}
 					
 					StringNode = StringsNode.getChildNode("String", &i);
@@ -77,8 +78,9 @@ void ResourceManager::createWide()
 		g_wstrings[i].clear();
 		if (!g_strings[i].empty())
 		{
+			// the shrink_to_fit() is not used here: the strings are read by the
+			// other threads and the release of the buffer damages them
 			Text::toT(g_strings[i], g_wstrings[i]);
-			g_wstrings[i].shrink_to_fit();
 		}
 	}
 }

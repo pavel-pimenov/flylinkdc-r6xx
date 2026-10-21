@@ -561,7 +561,9 @@ string File::read()
 	int64_t sz = getSize();
 	if (sz <= 0)
 		return string();
-	return read((uint32_t)sz);
+	// the size of the file is not limited by 4 GB - the truncation of the value
+	// silently cut off the tail of the file
+	return read(static_cast<size_t>(sz));
 }
 uint64_t File::calcFilesSize(const string& path, const string& pattern)
 {

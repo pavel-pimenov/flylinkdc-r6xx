@@ -6,11 +6,25 @@ bool DebugManager::g_isCMDDebug = false;
 
 void DebugManager::SendCommandMessage(const string& command, DebugTask::Type type, const string& ip) noexcept
 {
-	fly_fire1(DebugManagerListener::DebugEvent(), DebugTask(command, type, ip));
+	try
+	{
+		fly_fire1(DebugManagerListener::DebugEvent(), DebugTask(command, type, ip));
+	}
+	catch (...)
+	{
+		// the function is noexcept: the exception must not leave it
+	}
 }
 void DebugManager::SendDetectionMessage(const string& mess) noexcept
 {
-	fly_fire1(DebugManagerListener::DebugEvent(), DebugTask(mess, DebugTask::DETECTION));
+	try
+	{
+		fly_fire1(DebugManagerListener::DebugEvent(), DebugTask(mess, DebugTask::DETECTION));
+	}
+	catch (...)
+	{
+		// the function is noexcept: the exception must not leave it
+	}
 }
 DebugTask::DebugTask(const string& message, Type type, const string& p_ip_and_port /*= BaseUtil::emptyString */) :
 	m_message(message), m_ip_and_port(p_ip_and_port), m_time(GET_TIME()), m_type(type)

@@ -75,12 +75,9 @@ LRESULT Sounds::onInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/
 	if (ind < 0)
 	{
 		ctrlSNDTheme.SetCurSel(0);  // Если когда-то был выбран пакет, но его удалили физически, ставим по умолчанию
-		DefaultAllSounds();
 	}
 	else
 		ctrlSNDTheme.SetCurSel(ind);
-		
-	ctrlSNDTheme.Detach();
 	
 	
 	SetDlgItemText(IDC_SOUND_ENABLE, CTSTRING(ENABLE_SOUNDS));
@@ -105,6 +102,13 @@ LRESULT Sounds::onInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/
 		ctrlSounds.SetItemText(j, 1, Text::toT(g_sounds[i].value).c_str());
 	}
 	
+	if (ind < 0)
+	{
+		// the list of the sounds must be filled before the reset of the paths
+		DefaultAllSounds();
+	}
+
+	ctrlSNDTheme.Detach();
 	fixControls();
 	return TRUE;
 }
@@ -224,14 +228,17 @@ LRESULT Sounds::onDefault(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, 
 
 void Sounds::DefaultAllSounds()
 {
-	ctrlSNDTheme.Attach(GetDlgItem(IDC_SOUNDS_COMBO));
+	// the control is attached by the caller: the second attach of the same control
+	// is an error
 	const tstring l_themeName = Text::toT(WinUtil::getDataFromMap(ctrlSNDTheme.GetCurSel(), m_SNDThemeList));
-	ctrlSNDTheme.Detach();
 	
 	tstring l_themePath = Text::toT(Util::getSoundPath()) + l_themeName;
 	AppendPathSeparator(l_themePath);
 	
-	for (size_t i = 0; i < _countof(g_SoundsTable); ++i)
+	// the list of the sounds and the table of the paths can be of the different
+	// size: the list is the limiting one
+	const size_t l_count = (std::min)(_countof(g_SoundsTable), _countof(g_sounds));
+	for (size_t i = 0; i < l_count; ++i)
 	{
 		tstring l_currentSoundPath = l_themePath + g_SoundsTable[i];
 		ctrlSounds.SetItemText(i, 1, l_currentSoundPath.c_str());

@@ -27,6 +27,7 @@
 
 string MappingManager::g_externalIP;
 string MappingManager::g_defaultGatewayIP;
+FastCriticalSection MappingManager::m_cs;
 boost::logic::tribool MappingManager::g_is_wifi_router = boost::logic::indeterminate;
 
 MappingManager::MappingManager()

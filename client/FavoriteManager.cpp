@@ -144,7 +144,21 @@ bool FavoriteManager::moveUserCommand(int cid, int pos)
 	{
 		if (i->getId() == cid)
 		{
-			std::swap(*i, *(i + pos));
+			// the neighbour must exist: the swap with the element behind the last one
+			// damages the list
+			if (pos == -1)
+			{
+				if (i == g_userCommands.begin())
+					return false;
+				std::swap(*i, *std::prev(i));
+			}
+			else
+			{
+				auto l_next = std::next(i);
+				if (l_next == g_userCommands.end())
+					return false;
+				std::swap(*i, *l_next);
+			}
 			return true;
 		}
 	}
@@ -700,6 +714,10 @@ void FavoriteManager::updateRecent(const RecentHubEntry* entry)
 
 void FavoriteManager::save_favorites()
 {
+	// the file is written by the different threads: the temporary file is the same
+	// for all of them and the content is mixed without the lock
+	static FastCriticalSection l_cs_save;
+	CFlyFastLock(l_cs_save);
 	if (g_dontSave)
 		return;
 	CFlySafeGuard<uint16_t> l_satrt(g_dontSave);
@@ -861,8 +879,15 @@ void FavoriteManager::save_favorites()
 		{
 			SimpleXML xml_check;
 			xml_check.fromXML(File(l_tmp_file, File::READ, File::OPEN).read());
-			File::deleteFile(fname);
-			File::renameFile(l_tmp_file, fname);
+			// the file must be replaced atomically: delete + rename was not atomic and
+			// a crash in between left the client without the favorites at all
+			if (!::MoveFileEx(Text::toT(l_tmp_file).c_str(), Text::toT(fname).c_str(),
+			                   MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH))
+			{
+				const DWORD l_error = GetLastError();
+				LogManager::message("FavoriteManager::save error rename file: " + l_tmp_file + " error = " + Util::translateError(l_error));
+				CFlyServerJSON::pushError(14, "error rename favorites.xml file:" + l_tmp_file + " error = " + Util::translateError(l_error));
+			}
 		}
 		catch (SimpleXMLException& e)
 		{
@@ -1618,12 +1643,27 @@ void FavoriteManager::userUpdated(const OnlineUser& info)
 {
 	if (!ClientManager::isBeforeShutdown() && isNotEmpty())
 	{
-		CFlyReadLock(*g_csFavUsers);
+		// the data of the user is changed here: the write lock is needed
+		CFlyWriteLock(*g_csFavUsers);
 		auto i = g_fav_users_map.find(info.getUser()->getCID());
 		if (i == g_fav_users_map.end())
 			return;
 		i->second.update(info);
 	}
+}
+
+bool FavoriteManager::getFavoriteHubEntryCopy(const string& aServer, FavoriteHubEntry& p_out)
+{
+	CFlyReadLock(*g_csHubs);
+	for (auto i = g_favoriteHubs.cbegin(); i != g_favoriteHubs.cend(); ++i)
+	{
+		if ((*i)->getServer() == aServer)
+		{
+			p_out = *(*i);
+			return true;
+		}
+	}
+	return false;
 }
 
 FavoriteHubEntry* FavoriteManager::getFavoriteHubEntry(const string& aServer)
@@ -1755,7 +1795,8 @@ void FavoriteManager::setUserDescription(const UserPtr& aUser, const string& aDe
 	if (isNotEmpty())
 	{
 		{
-			CFlyReadLock(*g_csFavUsers);
+			// the data of the user is changed here: the write lock is needed
+			CFlyWriteLock(*g_csFavUsers);
 			auto i = g_fav_users_map.find(aUser->getCID());
 			if (i == g_fav_users_map.end())
 				return;

@@ -52,23 +52,32 @@ bool JAControl::isJAStopped()
 bool JAControl::ProcessCopyData(COPYDATASTRUCT* pCopyDataStruct)
 {
 	bool bProcessed = false;
+	// the data of the message is not necessarily a null terminated string
+	std::string l_data;
+	if (pCopyDataStruct->lpData && pCopyDataStruct->cbData > 0)
+	{
+		l_data.assign(static_cast<const char*>(pCopyDataStruct->lpData), pCopyDataStruct->cbData);
+		const auto l_pos = l_data.find('\0');
+		if (l_pos != std::string::npos)
+			l_data.resize(l_pos);
+	}
 	switch (pCopyDataStruct->dwData)
 	{
 		case JRC_COPYDATA_ID_TRACK_FILENAME:
 		{
-			m_trackFilename = (LPCSTR)pCopyDataStruct->lpData;
+			m_trackFilename = l_data;
 			bProcessed = true;
 		}
 		break;
 		case JRC_COPYDATA_ID_TRACK_TITLE:
 		{
-			m_trackTitle = (LPCSTR)pCopyDataStruct->lpData;
+			m_trackTitle = l_data;
 			bProcessed = true;
 		}
 		break;
 		case JRC_COPYDATA_ID_TRACK_ARTIST:
 		{
-			m_trackArtist = (LPCSTR)pCopyDataStruct->lpData;
+			m_trackArtist = l_data;
 			bProcessed = true;
 		}
 		break;

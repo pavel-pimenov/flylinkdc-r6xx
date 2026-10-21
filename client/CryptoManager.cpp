@@ -228,7 +228,10 @@ CryptoManager::~CryptoManager() {
 }
 
 string CryptoManager::keyprintToString(const ByteVector& aKP) noexcept {
-	return "SHA256/" + Encoder::toBase32(&aKP[0], aKP.size());
+	// the empty vector has no first element
+	if (aKP.empty())
+		return "SHA256/";
+	return "SHA256/" + Encoder::toBase32(aKP.data(), aKP.size());
 }
 
 ByteVector CryptoManager::calculateSha1(const string& aData) noexcept {
@@ -320,8 +323,15 @@ void CryptoManager::generateCertificate() {
 		if (!f) {
 			return;
 		}
-		PEM_write_RSAPrivateKey(f, rsa, NULL, NULL, 0, NULL, NULL);
+		// the result of the writing is checked: the file is truncated before the
+		// writing and the old key is lost without this check
+		const int l_res = PEM_write_RSAPrivateKey(f, rsa, NULL, NULL, 0, NULL, NULL);
 		fclose(f);
+		if (l_res != 1)
+		{
+			File::deleteFile(SETTING(TLS_PRIVATE_KEY_FILE));
+			return;
+		}
 	}
 	{
 		File::ensureDirectory(SETTING(TLS_CERTIFICATE_FILE));
@@ -330,8 +340,14 @@ void CryptoManager::generateCertificate() {
 			File::deleteFile(SETTING(TLS_PRIVATE_KEY_FILE));
 			return;
 		}
-		PEM_write_X509(f, x509ss);
+		const int l_res = PEM_write_X509(f, x509ss);
 		fclose(f);
+		if (l_res != 1)
+		{
+			File::deleteFile(SETTING(TLS_CERTIFICATE_FILE));
+			File::deleteFile(SETTING(TLS_PRIVATE_KEY_FILE));
+			return;
+		}
 	}
 }
 
@@ -476,7 +492,8 @@ RSA* CryptoManager::getTmpRSA(int keyLen) {
 	RSA* tmpRSA = RSA_new();
 	BIGNUM* bn = BN_new();
 	
-	if (!bn || !BN_set_word(bn, RSA_F4) || !RSA_generate_key_ex(tmpRSA, keyLen, bn, NULL)) {
+	// the objects can be not created (the memory is not enough)
+	if (!tmpRSA || !bn || !BN_set_word(bn, RSA_F4) || !RSA_generate_key_ex(tmpRSA, keyLen, bn, NULL)) {
 		if (bn) BN_free(bn);
 		RSA_free(tmpRSA);
 		return NULL;
@@ -583,6 +600,17 @@ bool CryptoManager::checkCertificate(int minValidityDays) noexcept {
 		if (X509_cmp_current_time(t) < 0) {
 			return false;
 		}
+		// the certificate must be valid during the specified time: the certificate
+		// which expires in an hour is not regenerated otherwise
+		if (minValidityDays > 0)
+		{
+			time_t l_limit = time(nullptr) + static_cast<time_t>(minValidityDays) * 24 * 60 * 60;
+			if (X509_cmp_time(t, &l_limit) < 0)
+			{
+				// the certificate expires before the limit
+				return false;
+			}
+		}
 	}
 	return true;
 }
@@ -654,8 +682,12 @@ RSA* CryptoManager::tmp_rsa_cb(SSL* /*ssl*/, int /*is_export*/, int keylength) {
 
 
 void CryptoManager::setCertPaths() {
-	//if (!SETTING(USE_DEFAULT_CERT_PATHS))
-	//  return;
+	// the paths chosen by the user are not overwritten: the choice of the
+	// certificate is lost otherwise (the setting is saved on the disk)
+	if (!SETTING(TLS_CERTIFICATE_FILE).empty() && !SETTING(TLS_PRIVATE_KEY_FILE).empty())
+	{
+		return;
+	}
 	
 	auto privPath = Util::getLocalPath() + "Certificates" PATH_SEPARATOR_STR "client.key";
 	auto certPath = Util::getLocalPath() + "Certificates" PATH_SEPARATOR_STR "client.crt";
@@ -696,7 +728,13 @@ int CryptoManager::verify_callback(int preverify_ok, X509_STORE_CTX *ctx) {
 			return allowUntrusted ? 1 : 0;
 			
 		ByteVector kp = ssl::X509_digest(cert, EVP_sha256());
-		string expected_keyp = "SHA256/" + Encoder::toBase32(&kp[0], kp.size());
+		// the digest can be empty (the error of the calculation): the element of the
+		// empty vector does not exist
+		if (kp.empty())
+		{
+			return allowUntrusted ? 1 : 0;
+		}
+		string expected_keyp = "SHA256/" + Encoder::toBase32(kp.data(), kp.size());
 		
 		// Do a full string comparison to avoid potential false positives caused by invalid inputs
 		if (keyp.compare(expected_keyp) == 0) {
@@ -796,11 +834,17 @@ string CryptoManager::formatError(X509_STORE_CTX *ctx, const string& message)
 		tmp = getNameEntryByNID(subject, NID_commonName);
 		if (!tmp.empty())
 		{
-			if (tmp.length() < 39)
-				tmp.append('x', 39 - tmp.length());
-			CID certCID(tmp);
-			if (tmp.length() == 39 && !certCID.isZero())
-				tmp = Util::toString(ClientManager::getNicks(certCID, BaseUtil::emptyString, false));
+			const string l_cn = tmp;
+			// the CID is searched by the exact value of the name: the padding of the
+			// name with the garbage gives the CID of another user
+			if (l_cn.length() == 39)
+			{
+				CID certCID(l_cn);
+				if (!certCID.isZero())
+				{
+					tmp = Util::toString(ClientManager::getNicks(certCID, BaseUtil::emptyString, false));
+				}
+			}
 			line += (!line.empty() ? ", " : "") + tmp;
 		}
 		else

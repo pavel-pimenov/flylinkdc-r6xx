@@ -65,7 +65,9 @@ class CFsTypeDetector
 		
 		typedef std::unordered_map<FsUtils_str, VOL_STRUCT> tCACHE;
 		
-		//FastCriticalSection m_cs;
+		// the cache is used from the thread of the hashing and from the thread of
+		// the window: it must be protected by the lock
+		FastCriticalSection m_cs;
 		tCACHE m_cache;
 		HWND m_hWnd;
 };

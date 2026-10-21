@@ -428,6 +428,13 @@ bool UploadManager::prepareFile(UserConnection* aSource, const string& aType, co
 		aSource->fileNotAvail();
 		return false;
 	}
+	catch (const std::bad_alloc&)
+	{
+		// not enough memory: the file is not sent
+		safe_delete(is);
+		aSource->fileNotAvail();
+		return false;
+	}
 	
 ok:
 
@@ -654,15 +661,22 @@ void UploadManager::removeUpload(UploadPtr& aUpload, bool delay)
 	//dcassert(!ClientManager::isBeforeShutdown());
 	CFlyWriteLock(*g_csUploadsDelay);
 	//dcassert(find(g_uploads.begin(), g_uploads.end(), aUpload) != g_uploads.end());
+	bool l_is_removed = false;
 	if (!g_uploads.empty())
 	{
 		auto i = find(g_uploads.begin(), g_uploads.end(), aUpload);
 		if (i != g_uploads.end())
 		{
 			g_uploads.erase(i);
+			l_is_removed = true;
 		}
 	}
-	decreaseUserConnectionAmountL(aUpload->getUser());
+	// the counter is decreased only if the upload was in the list: the upload can
+	// be removed twice (the connection is closed after the transmission)
+	if (l_is_removed)
+	{
+		decreaseUserConnectionAmountL(aUpload->getUser());
+	}
 	
 	if (delay)
 	{
@@ -1028,12 +1042,12 @@ void UploadManager::removeConnection(UserConnection* aSource, bool p_is_remove_l
 void UploadManager::notifyQueuedUsers(int64_t p_tick)
 {
 	dcassert(!ClientManager::isBeforeShutdown());
-	// Сверху лочится через m_csQueue
-	if (m_slotQueue.empty())
-		return; //no users to notify
 	vector<WaitingUser> l_notifyList;
 	{
 		CFlyLock(m_csQueue);
+		// m_slotQueue меняется другими потоками - его можно проверять только под локом
+		if (m_slotQueue.empty())
+			return; //no users to notify
 		int freeslots = getFreeSlots();
 		if (freeslots > 0)
 		{
@@ -1421,7 +1435,8 @@ void UploadManager::load()
 	{
 		auto user = ClientManager::createUser(CID(k->first), "", 0);
 		CFlyWriteLock(*g_csReservedSlots);
-		g_reservedSlots[user] = uint32_t(k->second.m_val_int64);
+		// the value is a 64 bit timer: the truncation breaks the timeout of the slot
+		g_reservedSlots[user] = static_cast<uint64_t>(k->second.m_val_int64);
 		g_is_reservedSlotEmpty = g_reservedSlots.empty();
 	}
 	testSlotTimeout();

@@ -100,7 +100,10 @@ void OMenu::CheckOwnerDrawn(UINT uItem, BOOL byPosition)
 		{
 			auto i = find(m_items.begin(), m_items.end(), mi);
 			dcassert(i != m_items.end());
-			m_items.erase(i);
+			if (i != m_items.end())
+			{
+				m_items.erase(i);
+			}
 		}
 		delete mi;
 	}

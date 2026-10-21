@@ -42,8 +42,7 @@ int PublicHubsFrame::columnIndexes[] =
 	COLUMN_ASN,
 	COLUMN_OPERATOR,
 	COLUMN_BOTS,
-	COLUMN_INFECTED,
-	COLUMN_LAST
+	COLUMN_INFECTED
 };
 
 int PublicHubsFrame::columnSizes[] = { 200, 290, 50, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 20, 20, 20 };
@@ -559,6 +558,9 @@ HTREEITEM PublicHubsFrame::LoadTreeItems(TStringSet& l_hubs, HTREEITEM hRoot)
 			{
 				buf.resize(1000);
 				m_ctrlTree.GetItemText(hRoot, &buf[0], buf.size());
+				// the string must be cut by the terminator: the tail of the buffer is
+				// filled with the zeros
+				buf.resize(wcslen(buf.c_str()));
 				l_hubs.insert(buf);
 			}
 		}

@@ -612,6 +612,8 @@ LRESULT WaitingUsersFrame::onCustomDraw(int /*idCtrl*/, LPNMHDR pnmh, BOOL& bHan
 	CRect rc;
 	LPNMLVCUSTOMDRAW cd = reinterpret_cast<LPNMLVCUSTOMDRAW>(pnmh);
 	UploadQueueItem *ii = (UploadQueueItem*)cd->nmcd.lItemlParam; // ??
+	if (!ii)
+		return CDRF_DODEFAULT;
 	
 	switch (cd->nmcd.dwDrawStage)
 	{

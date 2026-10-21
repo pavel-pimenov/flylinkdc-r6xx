@@ -158,7 +158,7 @@ LRESULT UsersFrame::onContextMenu(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, B
 		if (ctrlUsers.GetSelectedCount() == 1)
 		{
 			const auto user = ctrlUsers.getItemData(ctrlUsers.GetSelectedIndex())->getUser();
-			if (user->isOnline())
+			if (user && user->isOnline())
 			{
 				usersMenu.AppendMenu(MF_SEPARATOR);
 				x = user->getLastNickT();
@@ -254,9 +254,19 @@ LRESULT UsersFrame::onRemove(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*
 		UINT checkState = BOOLSETTING(CONFIRM_USER_REMOVAL) ? BST_UNCHECKED : BST_CHECKED;
 		if (checkState == BST_CHECKED || ::MessageBox(m_hWnd, CTSTRING(REALLY_REMOVE), getFlylinkDCAppCaptionWithVersionT().c_str(), CTSTRING(DONT_ASK_AGAIN), MB_YESNO | MB_ICONQUESTION | MB_DEFBUTTON1, checkState) == IDYES)
 		{
+			// the list of the indexes is collected before the removal: the removal
+			// can leave the row in the list and the loop would be infinite
+			std::vector<int> l_items;
 			while ((i = ctrlUsers.GetNextItem(-1, LVNI_SELECTED)) != -1)
 			{
-				ctrlUsers.getItemData(i)->remove();
+				l_items.push_back(i);
+			}
+			for (auto l_it = l_items.begin(); l_it != l_items.end(); ++l_it)
+			{
+				if (auto l_ui = ctrlUsers.getItemData(*l_it))
+				{
+					l_ui->remove();
+				}
 			}
 		}
 		// Let's update the setting unchecked box means we bug user again...
@@ -270,8 +280,11 @@ LRESULT UsersFrame::onEdit(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/,
 	if (ctrlUsers.GetSelectedCount() == 1)
 	{
 		int i = ctrlUsers.GetNextItem(-1, LVNI_SELECTED);
+		if (i == -1)
+			return 0;
 		UserInfo* ui = ctrlUsers.getItemData(i);
-		dcassert(i != -1);
+		if (!ui)
+			return 0;
 		LineDlg dlg;
 		dlg.description = TSTRING(DESCRIPTION);
 		dlg.title = ui->getText(COLUMN_NICK);

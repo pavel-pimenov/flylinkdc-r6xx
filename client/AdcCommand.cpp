@@ -311,9 +311,11 @@ bool AdcCommand::getParam(const char* name, size_t start, string& ret) const
 {
 	for (string::size_type i = start; i < getParameters().size(); ++i)
 	{
-		if (toCode(name) == toCode(getParameters()[i].c_str()))
+		const string& l_param = getParameters()[i];
+		// the parameter can be empty: the code is two bytes long
+		if (l_param.size() >= 2 && toCode(name) == toCode(l_param.c_str()))
 		{
-			ret = getParameters()[i].substr(2);
+			ret = l_param.substr(2);
 			return true;
 		}
 	}

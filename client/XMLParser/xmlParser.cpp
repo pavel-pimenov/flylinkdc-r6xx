@@ -830,7 +830,27 @@ typedef struct XML
 	XMLCSTR                lpNewElement;
 	int                    cbNewElement;
 	int                    nFirst;
+	// the depth of the nesting of the elements: the deeply nested document from
+	// the network overflows the stack of the thread
+	int                    nDepth;
 } XML;
+
+// the guard of the depth of the nesting: it decreases the counter when the
+// function returns (there are many exit points)
+class XMLDepthGuard
+{
+	public:
+		explicit XMLDepthGuard(XML* p_xml): m_pXML(p_xml)
+		{
+			m_pXML->nDepth++;
+		}
+		~XMLDepthGuard()
+		{
+			m_pXML->nDepth--;
+		}
+	private:
+		XML* m_pXML;
+};
 
 typedef struct
 {
@@ -1248,7 +1268,16 @@ static inline XMLCHAR getNextChar(XML *pXML)
 #ifdef _XMLWIDECHAR
 	if (ch != 0) pXML->nIndex++;
 #else
-	pXML->nIndex += XML_ByteTable[(unsigned char)ch];
+	if (ch != 0)
+	{
+		// the incomplete UTF-8 sequence at the end of the string: the index must not
+		// pass the terminator of the string (the read after it is out of the buffer)
+		size_t l_adv = 1;
+		const size_t l_max = XML_ByteTable[(unsigned char)ch];
+		while (l_adv < l_max && pXML->lpXML[pXML->nIndex + l_adv] != 0)
+			l_adv++;
+		pXML->nIndex += l_adv;
+	}
 #endif
 	return ch;
 }
@@ -1782,6 +1811,15 @@ int XMLNode::ParseXMLElement(void *pa)
 	
 	assert(pXML);
 	
+	// the depth of the nesting is limited: the deeply nested document from the
+	// network overflows the stack of the thread
+	if (pXML->nDepth >= 256)
+	{
+		pXML->error = eXMLErrorUnexpectedToken;
+		return FALSE;
+	}
+	XMLDepthGuard l_depth_guard(pXML);
+
 	// If this is the first call to the function
 	if (pXML->nFirst)
 	{
@@ -2193,7 +2231,7 @@ static void CountLinesAndColumns(XMLCSTR lpXML, int nUpto, XMLResults *pResults)
 	assert(lpXML);
 	assert(pResults);
 	
-	struct XML xml = { lpXML, lpXML, 0, 0, eXMLErrorNone, NULL, 0, NULL, 0, TRUE };
+	struct XML xml = { lpXML, lpXML, 0, 0, eXMLErrorNone, NULL, 0, NULL, 0, TRUE, 0 };
 	
 	pResults->nLine = 1;
 	pResults->nColumn = 1;
@@ -2224,7 +2262,7 @@ XMLNode XMLNode::parseString(XMLCSTR lpszXML, XMLCSTR tag, XMLResults *pResults)
 	}
 	
 	XMLNode xnode(NULL, NULL, FALSE);
-	struct XML xml = { lpszXML, lpszXML, 0, 0, eXMLErrorNone, NULL, 0, NULL, 0, TRUE };
+	struct XML xml = { lpszXML, lpszXML, 0, 0, eXMLErrorNone, NULL, 0, NULL, 0, TRUE, 0 };
 	
 	// Create header element
 	xnode.ParseXMLElement(&xml);
@@ -3199,7 +3237,10 @@ XMLElementPosition XMLNode::positionOfChildNode(XMLCSTR name, int count) const
 	int j = 0;
 	do
 	{
+		const int l_old_j = j;
 		getChildNode(name, &j);
+		// the child is not found: the counter is not changed and the loop is infinite
+		if (j == l_old_j) return -1;
 		if (j < 0) return -1;
 	}
 	while (count--);
@@ -3723,13 +3764,14 @@ unsigned int XMLParserBase64Tool::decodeSize(XMLCSTR data, XMLError *xe)
 	}
 	if (xe && (size % 4 != 0)) *xe = eXMLErrorBase64DataSizeIsNotMultipleOf4;
 	if (size == 0) return 0;
-	do
+	// the fill characters at the end of the data are not a part of the size: the
+	// loop must not go beyond the beginning of the string (the read of the memory
+	// before the string and the huge size of the buffer)
+	while (size > 0 && data[size - 1] == base64Fillchar)
 	{
-		data--;
 		size--;
 	}
-	while (*data == base64Fillchar);
-	size++;
+	if (size == 0) return 0;
 	return (unsigned int)((size * 3) / 4);
 }
 
@@ -3841,7 +3883,7 @@ unsigned char *XMLParserBase64Tool::decode(XMLCSTR data, int *outlen, XMLError *
 	if (xe) *xe = eXMLErrorNone;
 	if (!data)
 	{
-		*outlen = 0;
+		if (outlen) *outlen = 0;
 		return (unsigned char*)"";
 	}
 	unsigned int len = decodeSize(data, xe);

@@ -1600,7 +1600,8 @@ void AdcHub::info(bool p_force)
 	{
 		su += "," + AdcSupports::ADCS_FEATURE;
 		const auto &kp = CryptoManager::getKeyprint();
-		addParam(c, "KP", "SHA256/" + Encoder::toBase32(&kp[0], kp.size()));
+		// the keyprint can be empty: the element of the empty vector does not exist
+		addParam(c, "KP", kp.empty() ? string() : ("SHA256/" + Encoder::toBase32(kp.data(), kp.size())));
 	}
 	if (isActive() || BOOLSETTING(ALLOW_NAT_TRAVERSAL))
 	{

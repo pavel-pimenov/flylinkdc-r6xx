@@ -87,6 +87,10 @@ LRESULT AdvancedPage::onInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lP
 	ctrlPlayer.AddString(CTSTRING(MEDIA_MENU_WPC)); //_T("Media Player Classic"));
 	ctrlPlayer.AddString(CTSTRING(MEDIA_MENU_JA)); // _T("jetAudio Player"));
 	ctrlPlayer.AddString(CTSTRING(MEDIA_MENU_QCDQMP));
+	// the value of the setting can be out of the range (the file of the settings is
+	// edited by the user) - the index of the combo must be checked
+	if (CurSel < 0 || CurSel >= SettingsManager::PlayersCount)
+		CurSel = SettingsManager::WinAmp;
 	ctrlPlayer.SetCurSel(CurSel);
 	
 	switch (CurSel)

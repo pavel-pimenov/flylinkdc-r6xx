@@ -43,6 +43,8 @@ class FinishedFrame :
 	private:
 		void on(AddedDl, const FinishedItemPtr& p_entry, bool p_is_sqlite) noexcept override
 		{
+			// the object is deleted by the handler of the message: it is not deleted here
+			// when the window is destroyed and the message is not delivered
 			if (p_is_sqlite)
 				SendMessage(WM_SPEAKER, SPEAK_ADD_LINE, (WPARAM)new FinishedItemPtr(p_entry));
 			else

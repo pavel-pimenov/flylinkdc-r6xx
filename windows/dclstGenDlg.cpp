@@ -136,7 +136,9 @@ void DCLSTGenDlg::UpdateDialogItems()
 	// ::SendMessage( GetDlgItem(IDC_DCLSTGEN_PROGRESS), PBM_SETPOS, (int) ( _totalSize * 100.0 )/_totalSizeDir, 0L);
 	
 	_pBar.Attach(GetDlgItem(IDC_DCLSTGEN_PROGRESS));
-	_pBar.SetPos((int)(_totalFiles  / (double) _filesCount * 100.0));
+	// the count of the files can be zero - the division by zero is not allowed
+	const int l_pos = _filesCount ? (int)((double)_totalFiles / (double)_filesCount * 100.0) : 0;
+	_pBar.SetPos(l_pos);
 	_pBar.Detach();
 	if (_totalFiles == _filesCount)
 		SetDlgItemText(IDCANCEL, CTSTRING(OK));

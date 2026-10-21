@@ -744,9 +744,11 @@ class SearchFrame : public MDITabChildWindowImpl < SearchFrame, RGB(127, 127, 25
 #endif
 		void check_delete(SearchInfo*& p_ptr)
 		{
-			delete p_ptr;
+			// the object must be deleted under the lock: otherwise another thread can
+			// get the pointer to the released object from the set
 			CFlyFastLock(m_si_set_cs);
 			m_si_set.erase(p_ptr);
+			delete p_ptr;
 			p_ptr = nullptr;
 		}
 		

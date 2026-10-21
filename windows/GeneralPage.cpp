@@ -85,7 +85,12 @@ void GeneralPage::write()
 	}
 	ctrlLanguage.Detach();
 #ifdef FLYLINKDC_USE_XXX_ICON
-	g_settings->set(SettingsManager::FLY_GENDER, m_GenderTypeComboBox.GetCurSel());
+	// the selection can be absent (-1): the value must not be written to the setting
+	const int l_gender = m_GenderTypeComboBox.GetCurSel();
+	if (l_gender >= 0)
+	{
+		g_settings->set(SettingsManager::FLY_GENDER, l_gender);
+	}
 	ClientManager::resend_ext_json();
 #endif
 }
@@ -151,7 +156,9 @@ LRESULT GeneralPage::onInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lPa
 	desc.LimitText(100);
 	desc.Detach();
 	
-	desc.Attach(GetDlgItem(IDC_SETTINGS_EMAIL));
+	// the control of the e-mail is the edit box: the limit of the length is applied
+	// to the static label otherwise
+	desc.Attach(GetDlgItem(IDC_EMAIL));
 	desc.LimitText(64);
 	desc.Detach();
 	
@@ -196,7 +203,7 @@ LRESULT GeneralPage::onTextChanged(WORD /*wNotifyCode*/, WORD wID, HWND hWndCtl,
 		TCHAR *b = &buf[0], *f = &buf[0], c;
 		while ((c = *b++) != '\0')
 		{
-			if (c != '$' && c != '|' && (wID == IDC_DESCRIPTION || c != ' ') && ((wID != IDC_NICK && wID != IDC_DESCRIPTION && wID != IDC_SETTINGS_EMAIL) || (c != '<' && c != '>')))
+			if (c != '$' && c != '|' && (wID == IDC_DESCRIPTION || c != ' ') && ((wID != IDC_NICK && wID != IDC_DESCRIPTION && wID != IDC_EMAIL) || (c != '<' && c != '>')))
 				*f++ = c;
 		}
 		

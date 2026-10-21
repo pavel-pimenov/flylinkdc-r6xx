@@ -53,7 +53,9 @@ class TimerManager : public Speaker<TimerManagerListener>, public Singleton<Time
 			return time(nullptr);
 		}
 		static uint64_t getTick();
-		static bool g_isRun;
+		// the flag is changed by the thread of the timer and read by the other
+		// threads: the access must be atomic
+		static std::atomic<bool> g_isRun;
 	private:
 		friend class Singleton<TimerManager>;
 		boost::timed_mutex m_mtx;

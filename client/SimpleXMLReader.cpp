@@ -422,8 +422,15 @@ bool SimpleXMLReader::declEncodingValue()
 		}
 		else if (c == '&')
 		{
+			const size_t l_pos_before = bufPos;
 			if (!entref(encoding))
 			{
+				return false;
+			}
+			if (bufPos == l_pos_before)
+			{
+				// the entity is not recognized and nothing was consumed: the loop
+				// would be infinite (the document is from the network)
 				return false;
 			}
 		}
@@ -628,7 +635,9 @@ bool SimpleXMLReader::elementEnd()
 		return true;
 	}
 	
-	if (top.compare(0, top.size(), &buf[bufPos], top.size()) == 0)
+	// the index of the buffer can be equal to its size: the address is taken
+	// with the data() method
+	if (top.compare(0, top.size(), buf.data() + bufPos, top.size()) == 0)
 	{
 		state = STATE_ELEMENT_END_END;
 		advancePos(top.size());
@@ -697,6 +706,11 @@ void SimpleXMLReader::parse(InputStream& stream, size_t maxSize)
 		buf.resize(BUF_SIZE);
 		
 		size_t n = buf.size() - old;
+		// the size of the data is limited: the buffer must not grow beyond the limit
+		if (maxSize > 0 && (bytesRead + n) > maxSize)
+		{
+			n = (bytesRead < maxSize) ? (maxSize - bytesRead) : 0;
+		}
 		size_t len = stream.read(&buf[old], n);
 		
 		if (maxSize > 0 && (bytesRead + len) > maxSize)

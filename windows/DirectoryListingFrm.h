@@ -34,6 +34,14 @@
 
 class ThreadedDirectoryListing;
 
+// the state of the thread of the parsing of the list of the files: the frame is
+// not destroyed while the thread works with it (the use after free)
+struct CFlyDirectoryListingThreadState
+{
+	std::atomic<bool> l_is_frame_alive{true};
+	std::atomic<bool> l_is_thread_finished{false};
+};
+
 #define STATUS_MESSAGE_MAP 9
 #define CONTROL_MESSAGE_MAP 10
 class DirectoryListingFrame : public MDITabChildWindowImpl < DirectoryListingFrame, RGB(255, 0, 255), IDR_FILE_LIST
@@ -565,6 +573,9 @@ class DirectoryListingFrame : public MDITabChildWindowImpl < DirectoryListingFra
 		bool m_updating;
 		bool m_searching;
 		bool m_loading;
+		// the state of the thread of the parsing: the frame waits for the thread
+		// in the destructor
+		std::shared_ptr<CFlyDirectoryListingThreadState> m_thread_state;
 		
 		int statusSizes[STATUS_LAST];
 		
@@ -607,8 +618,9 @@ class ThreadedDirectoryListing : public Thread
 {
 	public:
 		ThreadedDirectoryListing(DirectoryListingFrame* pWindow,
-		                         const string& pFile, const string& pTxt, const tstring& aDir = BaseUtil::emptyStringT) : mWindow(pWindow),
-			mFile(pFile), mTxt(pTxt), mDir(aDir)
+		                         const string& pFile, const string& pTxt, const tstring& aDir = BaseUtil::emptyStringT,
+		                         const std::shared_ptr<CFlyDirectoryListingThreadState>& p_state = nullptr) : mWindow(pWindow),
+			mFile(pFile), mTxt(pTxt), mDir(aDir), m_state(p_state)
 		{ }
 		
 	protected:
@@ -616,12 +628,37 @@ class ThreadedDirectoryListing : public Thread
 		string mFile;
 		string mTxt;
 		tstring mDir;
+		std::shared_ptr<CFlyDirectoryListingThreadState> m_state;
 		
 	private:
+		// the frame can be destroyed while the thread is working: the access to it
+		// is not possible then
+		bool isFrameAlive() const
+		{
+			return m_state ? m_state->l_is_frame_alive.load() : (mWindow != nullptr);
+		}
+
 		int run()
 		{
+			// the copy of the state: the object deletes itself at the end of the
+			// function and the guard must not use the members of the object
+			const auto l_state = m_state;
+			// the guard releases the frame even if the function returns early
+			struct StateGuard
+			{
+				std::shared_ptr<CFlyDirectoryListingThreadState> l_state;
+				~StateGuard()
+				{
+					if (l_state)
+					{
+						l_state->l_is_thread_finished = true;
+					}
+				}
+			} l_state_guard{ l_state };
 			try
 			{
+				if (!isFrameAlive())
+					return 0;
 				if (!mFile.empty())
 				{
 					const string l_filename = Util::getFileName(mFile);
@@ -633,11 +670,21 @@ class ThreadedDirectoryListing : public Thread
 					                     
 					const bool l_own_list = _stricmp(l_filename.c_str(), Util::getFileName(ShareManager::getInstance()->getOwnListFile()).c_str()) == 0;
 					mWindow->dl->loadFile(mFile, l_own_list);
+					if (!isFrameAlive())
+						return 0;
 					mWindow->addToUserMap(mWindow->dl->getUser());
+					if (!isFrameAlive())
+						return 0;
 					mWindow->setWindowTitle();
+					if (!isFrameAlive())
+						return 0;
 					ADLSearchManager::getInstance()->matchListing(*mWindow->dl);
+					if (!isFrameAlive())
+						return 0;
 					if (l_list)
 						mWindow->dl->checkDupes();
+					if (!isFrameAlive())
+						return 0;
 					if (l_own_list)
 						mWindow->refreshTree(Text::toT(SETTING(NICK)));
 					else
@@ -648,19 +695,30 @@ class ThreadedDirectoryListing : public Thread
 					mWindow->refreshTree(Text::toT(Util::toNmdcFile(mWindow->dl->updateXML(mTxt, false))));
 				}
 				
-				mWindow->PostMessage(WM_SPEAKER, DirectoryListingFrame::FINISHED);
+				if (isFrameAlive())
+				{
+					mWindow->PostMessage(WM_SPEAKER, DirectoryListingFrame::FINISHED);
+				}
 			}
 			catch (const AbortException&)
 			{
-				mWindow->PostMessage(WM_SPEAKER, DirectoryListingFrame::ABORTED);
+				if (isFrameAlive())
+				{
+					mWindow->PostMessage(WM_SPEAKER, DirectoryListingFrame::ABORTED);
+				}
 			}
 			catch (const Exception& e)
 			{
-				mWindow->m_error = Text::toT(ClientManager::getNicks(mWindow->dl->getUser()->getCID(),
-				                                                     mWindow->dl->getHintedUser().hint)[0] + ": " + e.getError());
-				const tstring l_email_message = Text::toT(string("\r\nSend the corrupted file '") + mFile + "' to e-mail ppa74@ya.ru for analyze and correct the error!");
-				::MessageBox(NULL, (mWindow->m_error + l_email_message).c_str(), getFlylinkDCAppCaptionWithVersionT().c_str(), MB_OK | MB_ICONERROR);
-				mWindow->PostMessage(WM_SPEAKER, DirectoryListingFrame::ABORTED);
+				// the frame can be destroyed while the thread is working: the error is
+				// shown only if the frame is alive still
+				if (isFrameAlive())
+				{
+					mWindow->m_error = Text::toT(ClientManager::getNicks(mWindow->dl->getUser()->getCID(),
+					                                                     mWindow->dl->getHintedUser().hint)[0] + ": " + e.getError());
+					const tstring l_email_message = Text::toT(string("\r\nSend the corrupted file '") + mFile + "' to e-mail ppa74@ya.ru for analyze and correct the error!");
+					::MessageBox(NULL, (mWindow->m_error + l_email_message).c_str(), getFlylinkDCAppCaptionWithVersionT().c_str(), MB_OK | MB_ICONERROR);
+					mWindow->PostMessage(WM_SPEAKER, DirectoryListingFrame::ABORTED);
+				}
 			}
 			
 			//cleanup the thread object

@@ -115,18 +115,16 @@ void User::setLastNick(const string& p_nick)
 			l_is_nick_changed = true;
 		}
 	}
+	// the object of the ratio is used by the threads of the hubs and by the
+	// thread of the interface: the access must be protected by the lock
+	CFlyFastLock(m_ratio_cs);
 	if (!l_is_nick_changed || m_ratio_ptr == nullptr)
 	{
 		return;
 	}
 	if (l_is_change_nick)
 	{
-		{
-#ifdef FLYLINKDC_USE_RATIO_CS
-			CFlyFastLock(m_ratio_cs);
-#endif
-			safe_delete(m_ratio_ptr);
-		}
+		safe_delete(m_ratio_ptr);
 		initRatio();
 	}
 	if (m_ratio_ptr)
@@ -156,6 +154,8 @@ void User::setIP(const string& p_ip, bool p_is_set_only_ip)
 
 void User::setIP(const boost::asio::ip::address_v4& p_last_ip, bool p_is_set_only_ip)
 {
+	// the object of the ratio is deleted here and used by the other threads
+	CFlyFastLock(m_ratio_cs);
 	if (m_ratio_ptr && p_is_set_only_ip == false)
 	{
 		dcassert(!p_last_ip.is_unspecified());
@@ -172,9 +172,6 @@ void User::setIP(const boost::asio::ip::address_v4& p_last_ip, bool p_is_set_onl
 			{
 				if (m_ratio_ptr)
 				{
-#ifdef FLYLINKDC_USE_RATIO_CS
-					CFlyFastLock(m_ratio_cs);
-#endif
 					safe_delete(m_ratio_ptr);
 					initRatioL(p_last_ip);
 				}
@@ -343,9 +340,7 @@ bool User::flushRatio()
 {
 	bool l_result = false;
 	{
-#ifdef FLYLINKDC_USE_RATIO_CS
 		CFlyFastLock(m_ratio_cs);
-#endif
 		if (m_ratio_ptr)
 		{
 			l_result = m_ratio_ptr->flushRatioL();
@@ -377,6 +372,8 @@ bool User::flushRatio()
 }
 void User::initRatioL(const boost::asio::ip::address_v4& p_ip)
 {
+	// the object of the ratio is created here and deleted by the other threads
+	CFlyFastLock(m_ratio_cs);
 	if (BOOLSETTING(ENABLE_RATIO_USER_LIST))
 	{
 		if (m_ratio_ptr == nullptr && !getLastNick().empty() && m_hub_id)
@@ -781,6 +778,11 @@ string Identity::getDicVal(uint16_t p_index)
 	if (p_index > 0)
 	{
 		CFlyReadLock(*g_rw_cs);
+		// the index can be out of the range: the check must be in the release too
+		if (p_index > g_infoDic.size())
+		{
+			return BaseUtil::emptyString;
+		}
 		return g_infoDic[p_index - 1];
 	}
 	else

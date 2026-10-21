@@ -1356,7 +1356,9 @@ void SearchFrame::on(SearchManagerListener::SR, const std::unique_ptr<SearchResu
 			return;
 			
 		m_needsUpdateStats = true;
-		if (!aResult->getToken() && m_search_param.m_token != aResult->getToken())
+		// the result of another search must be dropped: the token of the result is
+		// never zero
+		if (aResult->getToken() != m_search_param.m_token)
 		{
 			m_droppedResults++;
 			return;
@@ -3615,7 +3617,22 @@ LRESULT SearchFrame::onSpeaker(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, BOOL
 {
 	//dcassert(!isClosedOrShutdown());
 	if (isClosedOrShutdown())
+	{
+		// the object of the message is not passed to the handler - it must be released
+		switch (wParam)
+		{
+			case QUEUE_STATS:
+				delete reinterpret_cast<const tstring*>(lParam);
+				break;
+			case PREPARE_RESULT_TOP_TORRENT:
+			case PREPARE_RESULT_TORRENT:
+				delete reinterpret_cast<SearchResult*>(lParam);
+				break;
+			default:
+				break;
+		}
 		return 0;
+	}
 	switch (wParam)
 	{
 		case ADD_RESULT:
@@ -3625,7 +3642,10 @@ LRESULT SearchFrame::onSpeaker(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, BOOL
 		{
 			dcassert(BOOLSETTING(USE_TORRENT_RSS));
 			if (isClosedOrShutdown())
+			{
+				delete reinterpret_cast<SearchResult*>(lParam);
 				return 0;
+			}
 			SearchResult* l_sr = (SearchResult*)(lParam);
 			auto l_ptr = new SearchInfo(*l_sr);
 			delete l_sr;
@@ -3643,7 +3663,10 @@ LRESULT SearchFrame::onSpeaker(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, BOOL
 			dcassert(BOOLSETTING(USE_TORRENT_SEARCH));
 			
 			if (isClosedOrShutdown())
+			{
+				delete reinterpret_cast<SearchResult*>(lParam);
 				return 0;
+			}
 			SearchResult* l_sr = (SearchResult*)(lParam);
 			auto l_ptr = new SearchInfo(*l_sr);
 			{

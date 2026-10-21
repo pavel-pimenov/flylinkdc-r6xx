@@ -1140,7 +1140,7 @@ LRESULT HubFrame::onCopyUserInfo(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*
 				break;
 #ifdef FLYLINKDC_USE_ANTIVIRUS_DB
 			case IDC_COPY_ANTIVIRUS_DB_INFO:
-				sCopy += id.getVirusDesc();
+				sCopy += su->getIdentity().getVirusDesc();
 				break;
 #endif
 			case IDC_COPY_EXACT_SHARE:
@@ -2545,7 +2545,9 @@ LRESULT HubFrame::onLButton(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, BOOL& b
 		
 		int count_char = ctrlClient.CharFromPos(pt);
 		int line = ctrlClient.LineFromChar(count_char);
-		int c = LOWORD(count_char) - ctrlClient.LineIndex(line);
+		// the index of the character is not truncated: the chat can be longer than
+		// 65535 characters
+		int c = count_char - ctrlClient.LineIndex(line);
 		int len = ctrlClient.LineLength(count_char) + 1;
 		if (len < 3)
 		{
@@ -3773,6 +3775,10 @@ void HubFrame::on(ClientListener::NickTaken) noexcept
 	auto l_max_len = m_client->getMaxLenNick();
 	if (l_max_len == 0)
 		l_max_len = 15;
+	// the limit comes from the hub: the value must be not less than the length of
+	// the suffix (the subtraction must not be negative)
+	if (l_max_len <= 5)
+		l_max_len = 5;
 	if (l_fly_user.length() > l_max_len)
 	{
 		l_fly_user = l_nick.substr(0, l_max_len - 5);

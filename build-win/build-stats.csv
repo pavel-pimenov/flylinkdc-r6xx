@@ -129,3 +129,100 @@
 2026-10-20 05:58:18,Release,Build,FlyLinkDC_2022.sln,0,80,0,0,20762624,0,util toint saturation (final)
 2026-10-20 05:58:47,Debug,Build,FlyLinkDC_2022.sln,0,02,0,0,54910464,0,final
 2026-10-20 05:58:48,Release,Build,FlyLinkDC_2022.sln,0,02,0,0,20762624,0,final
+2026-10-20 18:55:56,Debug,Build,FlyLinkDC_2022.sln,1,40,0,0,54919168,0,r6 batch1-2 fixes
+2026-10-20 19:03:35,Debug,Build,FlyLinkDC_2022.sln,0,15,7,21,54919168,1,r6 batch3 fixes
+2026-10-20 19:05:13,Debug,Build,FlyLinkDC_2022.sln,0,88,0,0,54920704,0,r6 batch3 fixes (retry)
+2026-10-20 19:58:28,Debug,Build,FlyLinkDC_2022.sln,0,26,0,2,54920704,1,r6 batch4-5 windows fixes
+2026-10-20 19:58:50,Debug,Build,FlyLinkDC_2022.sln,0,06,0,0,54921216,0,r6 batch4-5 windows fixes (retry)
+2026-10-20 20:04:20,Debug,Build,FlyLinkDC_2022.sln,0,65,0,0,54923264,0,r6 batch6 windows fixes
+2026-10-20 20:13:17,Debug,Build,FlyLinkDC_2022.sln,1,06,12,0,54926848,0,r6 batch7 client fixes
+2026-10-20 20:16:09,Debug,Build,FlyLinkDC_2022.sln,1,05,0,0,54926848,0,r6 batch7 warnings fix (2)
+2026-10-20 20:23:21,Debug,Build,FlyLinkDC_2022.sln,0,45,0,0,54930944,0,r6 batch8 flyfeatures fixes
+2026-10-20 20:27:44,Debug,Build,FlyLinkDC_2022.sln,0,52,0,0,54931968,0,r6 batch9 flyserver fixes
+2026-10-20 20:32:10,Debug,Build,FlyLinkDC_2022.sln,1,06,0,0,54932480,0,r6 batch10 fixes (4)
+2026-10-20 20:33:15,Debug,Build,FlyLinkDC_2022.sln,0,22,0,2,54932480,1,r6 batch11 windows fixes
+2026-10-20 20:33:38,Debug,Build,FlyLinkDC_2022.sln,0,08,0,0,54933504,0,r6 batch11 fix
+2026-10-20 20:36:40,Release,Build,FlyLinkDC_2022.sln,1,02,0,0,20779008,0,r6 release check
+2026-10-20 21:24:28,Debug,Build,FlyLinkDC_2022.sln,1,09,0,0,54936064,0,r6 batch12 fixes (2)
+2026-10-20 21:28:56,Debug,Build,FlyLinkDC_2022.sln,0,51,0,0,54942720,0,r6 batch13 fixes (2)
+2026-10-20 21:50:43,Debug,Build,FlyLinkDC_2022.sln,1,06,0,0,54947328,0,r6 batch14 fixes (2)
+2026-10-20 21:54:08,Debug,Build,FlyLinkDC_2022.sln,0,05,0,2,54947328,1,r6 batch15 fixes (2)
+2026-10-20 21:54:19,Debug,Build,FlyLinkDC_2022.sln,0,02,0,2,54947328,1,r6 batch15 fixes (3)
+2026-10-20 21:54:47,Debug,Build,FlyLinkDC_2022.sln,0,31,0,0,54950912,0,r6 batch15 fixes (4)
+2026-10-20 21:56:07,Debug,Build,FlyLinkDC_2022.sln,0,09,0,0,54952448,0,r6 batch16 fixes
+2026-10-20 21:57:07,Release,Build,FlyLinkDC_2022.sln,0,90,0,0,20785664,0,r6 release check 2
+2026-10-20 21:59:45,Debug,Build,FlyLinkDC_2022.sln,0,20,0,0,54953984,0,r6 batch17 fixes
+2026-10-20 22:04:07,Debug,Build,FlyLinkDC_2022.sln,0,09,0,0,54955520,0,r6 batch18 (tt_hdone try/catch)
+2026-10-20 22:04:24,Debug,Build,FlyLinkDC_2022.sln,0,09,0,0,54955520,0,r6 batch18 fixes
+2026-10-20 22:11:08,Debug,Build,FlyLinkDC_2022.sln,0,56,0,0,54956544,0,r6 batch19 fixes
+2026-10-20 22:12:35,Debug,Rebuild,FlyLinkDC_2022.sln,1,36,0,0,54956544,0,r6 final control rebuild
+2026-10-20 22:14:53,Release,Rebuild,FlyLinkDC_2022.sln,2,16,0,0,20787200,0,r6 final control rebuild
+2026-10-20 22:19:10,Debug,Build,FlyLinkDC_2022.sln,0,53,0,0,54956544,0,r6 batch20 fixes
+2026-10-20 22:21:42,Release,Build,FlyLinkDC_2022.sln,0,39,0,0,20787200,0,r6 final release check
+2026-10-20 22:24:00,Debug,Build,FlyLinkDC_2022.sln,0,07,0,3,54956544,1,r6 batch21 fixes
+2026-10-20 22:24:47,Debug,Build,FlyLinkDC_2022.sln,0,13,0,0,54961664,0,r6 batch21 fixes (2)
+2026-10-20 22:25:49,Debug,Build,FlyLinkDC_2022.sln,0,09,0,0,54962176,0,r6 batch22 (rehash check)
+2026-10-20 22:26:17,Debug,Build,FlyLinkDC_2022.sln,0,09,0,0,54961664,0,r6 batch22b
+2026-10-20 22:27:59,Debug,Rebuild,FlyLinkDC_2022.sln,1,38,0,0,54961664,0,r6 FINAL Debug rebuild
+2026-10-20 22:30:11,Release,Rebuild,FlyLinkDC_2022.sln,2,16,0,0,20788224,0,r6 FINAL Release rebuild
+2026-10-21 00:58:07,Debug,Build,FlyLinkDC_2022.sln,0,05,0,4,54961664,1,r6 b1 fixes
+2026-10-21 00:59:40,Debug,Build,FlyLinkDC_2022.sln,1,02,0,0,54964736,0,r6 b1 fixes (2)
+2026-10-21 01:00:39,Debug,Build,FlyLinkDC_2022.sln,0,09,0,10,54964736,1,r6 b2 fixes
+2026-10-21 01:02:00,Debug,Build,FlyLinkDC_2022.sln,0,31,0,0,54965248,0,r6 b2 fixes (3)
+2026-10-21 01:03:42,Debug,Build,FlyLinkDC_2022.sln,1,00,0,0,54967296,0,r6 b3 atomic flags
+2026-10-21 01:06:50,Debug,Build,FlyLinkDC_2022.sln,1,01,0,0,54970368,0,r6 b4 fixes
+2026-10-21 01:46:08,Debug,Build,FlyLinkDC_2022.sln,0,19,0,6,54970368,1,r6 c1 fixes
+2026-10-21 01:47:51,Debug,Build,FlyLinkDC_2022.sln,0,88,0,0,54971904,0,r6 c1 fixes (2)
+2026-10-21 01:49:33,Debug,Build,FlyLinkDC_2022.sln,0,27,0,5,54971904,1,r6 c2 fixes
+2026-10-21 01:50:41,Debug,Build,FlyLinkDC_2022.sln,0,23,0,1,54971904,1,r6 c2 fixes (2)
+2026-10-21 01:51:57,Debug,Build,FlyLinkDC_2022.sln,0,22,0,0,54972416,0,r6 c2 fixes (3)
+2026-10-21 01:52:56,Debug,Build,FlyLinkDC_2022.sln,0,09,0,0,54973440,0,r6 c3 fixes (rand/CID)
+2026-10-21 01:54:19,Debug,Build,FlyLinkDC_2022.sln,0,04,0,1,54973440,1,r6 c4 fixes (2)
+2026-10-21 01:55:51,Debug,Build,FlyLinkDC_2022.sln,0,08,0,0,54973952,0,r6 c4 fixes (3)
+2026-10-21 01:57:39,Debug,Build,FlyLinkDC_2022.sln,1,00,0,0,54957568,0,r6 c5 fixes
+2026-10-21 01:58:45,Release,Build,FlyLinkDC_2022.sln,0,94,0,0,20792832,0,r6 release check 3
+2026-10-21 02:00:17,Debug,Rebuild,FlyLinkDC_2022.sln,1,39,0,0,54957568,0,r6 FINAL Debug rebuild (round 2)
+2026-10-21 02:02:29,Release,Rebuild,FlyLinkDC_2022.sln,2,16,0,0,20792832,0,r6 FINAL Release rebuild (round 2)
+2026-10-21 02:07:43,Debug,Build,FlyLinkDC_2022.sln,0,53,0,0,54962176,0,r6 dl thread fix
+2026-10-21 02:10:32,Debug,Build,FlyLinkDC_2022.sln,1,01,0,0,54962688,0,r6 c6 fixes
+2026-10-21 02:12:08,Debug,Build,FlyLinkDC_2022.sln,0,24,0,0,54963200,0,r6 c7 fixes
+2026-10-21 02:13:39,Debug,Build,FlyLinkDC_2022.sln,0,02,0,2,54963200,1,r6 c8 fixes (2)
+2026-10-21 02:14:44,Debug,Build,FlyLinkDC_2022.sln,0,32,0,0,54963200,0,r6 c8 revert
+2026-10-21 02:15:50,Release,Build,FlyLinkDC_2022.sln,0,83,0,0,20793856,0,r6 release check 4
+2026-10-21 02:17:23,Debug,Rebuild,FlyLinkDC_2022.sln,1,39,0,0,54963200,0,r6 FINAL Debug rebuild (round 3)
+2026-10-21 02:19:37,Release,Rebuild,FlyLinkDC_2022.sln,2,19,0,0,20793856,0,r6 FINAL Release rebuild (round 3)
+2026-10-21 02:21:21,Debug,Build,FlyLinkDC_2022.sln,0,06,0,9,54963200,1,r6 c9 fixes (2)
+2026-10-21 02:22:40,Debug,Build,FlyLinkDC_2022.sln,0,54,0,0,54963712,0,r6 c9 fixes (4)
+2026-10-21 02:29:17,Debug,Build,FlyLinkDC_2022.sln,0,58,0,0,54963712,0,r6 seed fix
+2026-10-21 02:30:50,Debug,Rebuild,FlyLinkDC_2022.sln,1,38,0,0,54963712,0,r6 FINAL Debug rebuild (round 4)
+2026-10-21 02:33:02,Release,Rebuild,FlyLinkDC_2022.sln,2,19,0,0,20793856,0,r6 FINAL Release rebuild (round 4)
+2026-10-21 02:35:28,Debug,Build,FlyLinkDC_2022.sln,0,53,0,0,54965248,0,r6 download noexcept
+2026-10-21 02:36:05,Debug,Build,FlyLinkDC_2022.sln,0,08,0,0,54977536,0,r6 sector cache
+2026-10-21 02:36:42,Debug,Build,FlyLinkDC_2022.sln,0,09,0,0,54977536,0,r6 cache clear fix
+2026-10-21 02:38:35,Debug,Rebuild,FlyLinkDC_2022.sln,1,37,0,0,54977536,0,r6 FINAL Debug rebuild (round 5)
+2026-10-21 02:40:47,Release,Rebuild,FlyLinkDC_2022.sln,2,16,0,0,20795904,0,r6 FINAL Release rebuild (round 5)
+2026-10-21 02:58:16,Debug,Build,FlyLinkDC_2022.sln,0,58,0,0,54977536,0,r6 queue fixes (3)
+2026-10-21 02:58:42,Debug,Build,FlyLinkDC_2022.sln,0,09,0,0,54977536,0,r6 queue fixes (4)
+2026-10-21 02:59:16,Debug,Build,FlyLinkDC_2022.sln,0,02,0,6,54977536,1,r6 queue fixes (5)
+2026-10-21 03:00:18,Debug,Build,FlyLinkDC_2022.sln,0,09,0,0,54978560,0,r6 queue fixes (6)
+2026-10-21 03:00:56,Debug,Build,FlyLinkDC_2022.sln,0,09,0,0,54978560,0,r6 transfer fixes
+2026-10-21 03:01:33,Debug,Build,FlyLinkDC_2022.sln,0,10,0,0,54979072,0,r6 transfer fixes (2)
+2026-10-21 03:04:08,Debug,Rebuild,FlyLinkDC_2022.sln,1,38,0,0,54979072,0,r6 FINAL Debug rebuild (round 6)
+2026-10-21 03:06:20,Release,Rebuild,FlyLinkDC_2022.sln,2,17,0,0,20796416,0,r6 FINAL Release rebuild (round 6)
+2026-10-21 03:08:58,Debug,Build,FlyLinkDC_2022.sln,0,03,0,1,54979072,1,r6 fav fixes
+2026-10-21 03:09:39,Debug,Build,FlyLinkDC_2022.sln,0,16,0,2,54979072,1,r6 fav fixes (2)
+2026-10-21 03:11:10,Debug,Build,FlyLinkDC_2022.sln,1,03,0,0,54979584,0,r6 fav fixes (3)
+2026-10-21 03:13:09,Debug,Build,FlyLinkDC_2022.sln,1,03,0,0,54980096,0,r6 transfer atomic
+2026-10-21 03:13:38,Debug,Build,FlyLinkDC_2022.sln,0,02,0,22,54980096,1,r6 log/queue atomic
+2026-10-21 03:14:23,Debug,Build,FlyLinkDC_2022.sln,0,22,0,4,54980096,1,r6 log/queue atomic (2)
+2026-10-21 03:15:22,Debug,Build,FlyLinkDC_2022.sln,0,05,0,1,54980096,1,r6 log/queue atomic (3)
+2026-10-21 03:16:43,Debug,Build,FlyLinkDC_2022.sln,0,92,0,0,54981632,0,r6 log/queue atomic (4)
+2026-10-21 03:18:21,Debug,Rebuild,FlyLinkDC_2022.sln,1,46,0,0,54981632,0,r6 FINAL Debug rebuild (round 7)
+2026-10-21 03:20:35,Release,Rebuild,FlyLinkDC_2022.sln,2,20,0,0,20798464,0,r6 FINAL Release rebuild (round 7)
+2026-10-21 03:24:27,Debug,Build,FlyLinkDC_2022.sln,0,54,0,0,54981632,0,r6 torrent counters (3)
+2026-10-21 03:26:00,Debug,Rebuild,FlyLinkDC_2022.sln,1,39,0,0,54981632,0,r6 FINAL Debug rebuild (round 8)
+2026-10-21 03:28:16,Release,Rebuild,FlyLinkDC_2022.sln,2,23,0,0,20798464,0,r6 FINAL Release rebuild (round 8)
+2026-10-21 03:30:14,Debug,Build,FlyLinkDC_2022.sln,0,57,0,0,54982656,0,r6 dl thread guard
+2026-10-21 03:31:49,Debug,Rebuild,FlyLinkDC_2022.sln,1,39,0,0,54982656,0,r6 FINAL Debug rebuild (round 9)
+2026-10-21 03:34:04,Release,Rebuild,FlyLinkDC_2022.sln,2,21,0,0,20800000,0,r6 FINAL Release rebuild (round 9)
+2026-10-21 05:56:05,Debug,Build,FlyLinkDC_2022.sln,0,59,0,0,54982656,0,r6 whitespace trim check

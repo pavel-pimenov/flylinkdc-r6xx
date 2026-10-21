@@ -29,7 +29,7 @@ SharedFileStream::SharedFileHandleMap SharedFileStream::g_rwpool;
 
 SharedFileHandle::SharedFileHandle(const string& aPath, int aAccess, int aMode) :
 	m_ref_cnt(1), m_path(aPath), m_mode(aMode), m_access(aAccess), m_last_file_size(0),
-	m_map_file(INVALID_HANDLE_VALUE), m_map_file_ptr(nullptr), m_is_map_file_error(false)
+	m_map_file_size(0), m_map_file(INVALID_HANDLE_VALUE), m_map_file_ptr(nullptr), m_is_map_file_error(false)
 {
 }
 void SharedFileHandle::CloseMapFile()
@@ -49,6 +49,7 @@ void SharedFileHandle::CloseMapFile()
 		CloseHandle(m_map_file);
 		m_map_file = INVALID_HANDLE_VALUE;
 	}
+	m_map_file_size = 0;
 	dcassert(m_map_file_ptr == nullptr);
 }
 SharedFileHandle::~SharedFileHandle()
@@ -83,6 +84,10 @@ void SharedFileHandle::init(int64_t p_file_size)
 					}
 					dcassert(0);
 					CloseMapFile();
+				}
+				else
+				{
+					m_map_file_size = p_file_size;
 				}
 			}
 			else
@@ -249,6 +254,11 @@ size_t SharedFileStream::write(const void* p_buf, size_t p_len)
 #endif
 	if (m_sfh->m_map_file_ptr)
 	{
+		// the write outside of the mapped region damages the memory
+		if (m_pos < 0 || m_pos + static_cast<int64_t>(p_len) > m_sfh->m_map_file_size)
+		{
+			throw FileException("Write outside of the mapped file: " + m_sfh->m_path);
+		}
 		memcpy(m_sfh->m_map_file_ptr + m_pos, p_buf, p_len);
 		m_pos += p_len;
 	}

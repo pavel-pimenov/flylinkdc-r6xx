@@ -319,7 +319,10 @@ void ListLoader::startTag(const string& name, StringPairList& attribs, bool simp
 					const string l_sharedGL = getAttrib(attribs, g_SShared, 4);
 					if (!l_sharedGL.empty())
 					{
-						const int64_t tmp_ts = _atoi64(l_sharedGL.c_str()) - 116444736000000000L ;
+						// the value comes from the peer: the subtraction must not overflow
+						const int64_t l_raw_ts = Util::toInt64(l_sharedGL.c_str());
+						const int64_t tmp_ts = (l_raw_ts > (std::numeric_limits<int64_t>::min() + 116444736000000000LL))
+						                          ? (l_raw_ts - 116444736000000000LL) : 0;
 						if (tmp_ts <= 0L)
 							l_i_ts = 0;
 						else
@@ -342,7 +345,7 @@ void ListLoader::startTag(const string& name, StringPairList& attribs, bool simp
 				{
 					if (!l_ts.empty())
 					{
-						l_i_ts = atoi(l_ts.c_str());
+						l_i_ts = (uint32_t)std::max<int64_t>(0, Util::toInt64(l_ts.c_str()));
 					}
 					
 					if (attribs.size() > 4) // TODO - собрать комбинации всех случаев
@@ -354,7 +357,7 @@ void ListLoader::startTag(const string& name, StringPairList& attribs, bool simp
 						{
 							const string& l_br = getAttrib(attribs, g_SBR, 4);
 							l_mediaXY = std::make_shared<CFlyMediaInfo>(getAttrib(attribs, g_SWH, 3),
-							                                            atoi(l_br.c_str()),
+							                                            (int)Util::toInt64(l_br.c_str()),
 							                                            l_audio,
 							                                            l_video
 							                                           );
@@ -398,7 +401,7 @@ void ListLoader::startTag(const string& name, StringPairList& attribs, bool simp
 					}
 #endif
 				}
-				l_i_hit = l_hit.empty() ? 0 : atoi(l_hit.c_str());
+				l_i_hit = l_hit.empty() ? 0 : (uint32_t)std::max<int64_t>(0, Util::toInt64(l_hit.c_str()));
 			}
 			auto f = new DirectoryListing::File(m_cur, l_name, l_size, l_tth, l_i_hit, l_i_ts, l_mediaXY);
 			m_cur->m_virus_detect.add(l_name, l_size);
@@ -711,8 +714,10 @@ DirectoryListing::Directory::~Directory()
 		CFlyVirusFileList l_file_list;
 		l_file_list.m_virus_path = m_directory_list->getPath(this);
 		l_file_list.m_hub_url = m_directory_list->getHintedUser().hint;
-		l_file_list.m_nick = m_directory_list->getUser()->getLastNick();
-		l_file_list.m_ip = m_directory_list->getUser()->getIPAsString();
+		// the user can be empty (the list of the files is loaded from the peer)
+		const UserPtr l_user = m_directory_list->getUser();
+		l_file_list.m_nick = l_user ? l_user->getLastNick() : BaseUtil::emptyString;
+		l_file_list.m_ip = l_user ? l_user->getIPAsString() : BaseUtil::emptyString;
 		l_file_list.m_time = GET_TIME();
 		for (auto j = m_files.begin(); j != m_files.end(); ++j)
 		{
@@ -751,15 +756,16 @@ bool DirectoryListing::CFlyVirusDetector::is_virus_file(const string& p_file, in
 	{
 		// const auto l_Text::toLower(Util::getFileExt(name));
 		unsigned char l_ext[4];
-		l_ext[0] = tolower(p_file[l_len - 4]);
-		l_ext[1] = tolower(p_file[l_len - 3]);
-		l_ext[2] = tolower(p_file[l_len - 2]);
+		// the argument of tolower must be an unsigned char or EOF
+		l_ext[0] = (unsigned char)tolower((unsigned char)p_file[l_len - 4]);
+		l_ext[1] = (unsigned char)tolower((unsigned char)p_file[l_len - 3]);
+		l_ext[2] = (unsigned char)tolower((unsigned char)p_file[l_len - 2]);
 		l_ext[3] = p_file[l_len - 1];
 		
 		if (l_ext[0] == '.' &&
-		        (l_ext[1] == 'e' && l_ext[2] == 'x' && l_ext[3] == 'e') ||
-		        (l_ext[1] == 'z' && l_ext[2] == 'i' && l_ext[3] == 'p') ||
-		        (l_ext[1] == 'r' && l_ext[2] == 'a' && l_ext[3] == 'r'))
+		        ((l_ext[1] == 'e' && l_ext[2] == 'x' && l_ext[3] == 'e') ||
+		         (l_ext[1] == 'z' && l_ext[2] == 'i' && l_ext[3] == 'p') ||
+		         (l_ext[1] == 'r' && l_ext[2] == 'a' && l_ext[3] == 'r')))
 			return true;
 	}
 	return false;
@@ -929,7 +935,7 @@ uint64_t DirectoryListing::Directory::getTotalSize(bool adl) const
 	for (auto i = directories.cbegin(); i != directories.cend(); ++i)
 	{
 		if (!(adl && (*i)->getAdls()))
-			x += (*i)->getTotalSize(adls);
+			x += (*i)->getTotalSize(adl);
 	}
 	return x;
 }
@@ -940,7 +946,7 @@ size_t DirectoryListing::Directory::getTotalFileCount(bool adl) const
 	for (auto i = directories.cbegin(); i != directories.cend(); ++i)
 	{
 		if (!(adl && (*i)->getAdls()))
-			x += (*i)->getTotalFileCount(adls);
+			x += (*i)->getTotalFileCount(adl);
 	}
 	return x;
 }
