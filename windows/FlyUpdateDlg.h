@@ -25,13 +25,15 @@
 #include "ResourceLoader.h"
 #include "../client/FlyFeatures/AutoUpdate.h"
 #include "ExListViewCtrl.h"
+#include "FlyThemeDlg.h"
 
-class FlyUpdateDlg : public CDialogImpl<FlyUpdateDlg>, CFlyRichEditLoader
+class FlyUpdateDlg : public CDialogImpl<FlyUpdateDlg>, public CFlyThemeDlg, CFlyRichEditLoader
 {
 	public:
 		enum { IDD = IDD_UPDATE_DLG };
 		
 		BEGIN_MSG_MAP(FlyUpdateDlg)
+		CHAIN_MSG_MAP(CFlyThemeDlg)
 		MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
 		NOTIFY_CODE_HANDLER(EN_LINK, OnLink)
 		COMMAND_ID_HANDLER(IDOK, OnCloseCmd)

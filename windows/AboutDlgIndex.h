@@ -14,8 +14,9 @@
 #include "AboutLogDlg.h"
 #include "AboutStatDlg.h"
 #include "HIconWrapper.h"
+#include "FlyThemeDlg.h"
 
-class AboutDlgIndex : public CDialogImpl<AboutDlgIndex>
+class AboutDlgIndex : public CDialogImpl<AboutDlgIndex>, public CFlyThemeDlg
 {
 	public:
 		enum { IDD = IDD_ABOUTTABS };
@@ -34,6 +35,7 @@ class AboutDlgIndex : public CDialogImpl<AboutDlgIndex>
 		}
 		
 		BEGIN_MSG_MAP(AboutDlgIndex)
+		CHAIN_MSG_MAP(CFlyThemeDlg)
 		MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
 		COMMAND_ID_HANDLER(IDOK, OnCloseCmd)
 		COMMAND_ID_HANDLER(IDCANCEL, OnCloseCmd)

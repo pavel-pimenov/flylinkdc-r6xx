@@ -10,8 +10,9 @@
 #include <atlcrack.h>
 #include "wtl_flylinkdc.h"
 #include "../client/Util.h"
+#include "FlyThemeDlg.h"
 
-class FavDirDlg : public CDialogImpl<FavDirDlg>
+class FavDirDlg : public CDialogImpl<FavDirDlg>, public CFlyThemeDlg
 {
 	public:
 		FavDirDlg() { }
@@ -24,6 +25,7 @@ class FavDirDlg : public CDialogImpl<FavDirDlg>
 		enum { IDD = IDD_FAVORITEDIR };
 		
 		BEGIN_MSG_MAP_EX(FavDirDlg)
+		CHAIN_MSG_MAP(CFlyThemeDlg)
 		MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
 		COMMAND_ID_HANDLER(IDOK, OnCloseCmd)
 		COMMAND_ID_HANDLER(IDCANCEL, OnCloseCmd)

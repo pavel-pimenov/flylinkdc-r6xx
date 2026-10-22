@@ -98,6 +98,10 @@ LRESULT NetworkPage::OnCtlColorDlg(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL
 	     return (HRESULT)::GetCurrentObject( hdcStatic, OBJ_BRUSH);
 	}
 	*/
+	// the message is not handled here: the chain to PropPage must not be
+	// interrupted, otherwise the page is not painted with the theme of the
+	// application
+	bHandled = FALSE;
 	return 0;
 }
 

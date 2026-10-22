@@ -23,8 +23,9 @@
 
 #include "../client/Util.h"
 #include "WinUtil.h"
+#include "FlyThemeDlg.h"
 
-class LineDlg : public CDialogImpl<LineDlg>
+class LineDlg : public CDialogImpl<LineDlg>, public CFlyThemeDlg
 {
 		CEdit ctrlLine;
 		CStatic ctrlDescription;
@@ -43,6 +44,7 @@ class LineDlg : public CDialogImpl<LineDlg>
 		enum { IDD = IDD_LINE };
 		
 		BEGIN_MSG_MAP(LineDlg)
+		CHAIN_MSG_MAP(CFlyThemeDlg)
 		MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
 		MESSAGE_HANDLER(WM_SETFOCUS, onFocus)
 		COMMAND_ID_HANDLER(IDOK, OnCloseCmd)
@@ -107,7 +109,7 @@ class LineDlg : public CDialogImpl<LineDlg>
 		}
 };
 
-class KickDlg : public CDialogImpl<KickDlg>
+class KickDlg : public CDialogImpl<KickDlg>, public CFlyThemeDlg
 {
 		CComboBox ctrlLine;
 		CStatic ctrlDescription;
@@ -120,6 +122,7 @@ class KickDlg : public CDialogImpl<KickDlg>
 		enum { IDD = IDD_KICK };
 		
 		BEGIN_MSG_MAP(KickDlg)
+		CHAIN_MSG_MAP(CFlyThemeDlg)
 		MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
 		MESSAGE_HANDLER(WM_SETFOCUS, onFocus)
 		COMMAND_ID_HANDLER(IDOK, OnCloseCmd)

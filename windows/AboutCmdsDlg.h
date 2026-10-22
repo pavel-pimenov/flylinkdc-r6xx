@@ -8,8 +8,9 @@
 #pragma once
 
 #include "wtl_flylinkdc.h"
+#include "FlyThemeDlg.h"
 
-class AboutCmdsDlg : public CDialogImpl<AboutCmdsDlg>
+class AboutCmdsDlg : public CDialogImpl<AboutCmdsDlg>, public CFlyThemeDlg
 {
 	public:
 		enum { IDD = IDD_ABOUTCMDS };
@@ -18,6 +19,7 @@ class AboutCmdsDlg : public CDialogImpl<AboutCmdsDlg>
 		~AboutCmdsDlg() {}
 		
 		BEGIN_MSG_MAP(AboutCmdsDlg)
+		CHAIN_MSG_MAP(CFlyThemeDlg)
 		MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
 		END_MSG_MAP()
 		

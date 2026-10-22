@@ -538,6 +538,11 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
 	SettingsManager::newInstance();
 	SettingsManager::getInstance()->load();
 
+	// the dark mode of the OS must be enabled before the first window of the
+	// application is created, otherwise the menu and the toolbar are painted
+	// with the light theme
+	WinUtil::initDarkMode();
+
 	CrashReporter::init();
 	
 	LogManager::init();

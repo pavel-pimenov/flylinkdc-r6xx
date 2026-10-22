@@ -24,6 +24,7 @@
 
 #include "../client/QueueManager.h"
 #include "ResourceLoader.h"
+#include "FlyThemeDlg.h"
 
 // (Modders) Enjoy my liberally commented out source code.  The plan is to enable the
 // magnet link add an entry to the download queue, with just the hash (if that is the
@@ -31,7 +32,7 @@
 // and can take filename, size, etc. values from there.
 //                                                        - GargoyleMT
 
-class MagnetDlg : public CDialogImpl<MagnetDlg >
+class MagnetDlg : public CDialogImpl<MagnetDlg >, public CFlyThemeDlg
 {
 	public:
 		enum { IDD = IDD_MAGNET };
@@ -48,6 +49,7 @@ class MagnetDlg : public CDialogImpl<MagnetDlg >
 		~MagnetDlg() { }
 		
 		BEGIN_MSG_MAP(MagnetDlg)
+		CHAIN_MSG_MAP(CFlyThemeDlg)
 		MESSAGE_HANDLER(WM_INITDIALOG, onInitDialog)
 		COMMAND_ID_HANDLER(IDOK, onCloseCmd)
 		COMMAND_ID_HANDLER(IDCANCEL, onCloseCmd)

@@ -651,6 +651,10 @@ LRESULT MainFrame::OnCreate(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/,
 	
 	ctrlUpdateProgress.Create(m_ctrlStatus, &rect, L"Updating", WS_CHILD | PBS_SMOOTH, 0, IDC_STATUS_HASH_PROGRESS);
 	ctrlUpdateProgress.SetRange(0, 100);
+	
+	// the dark mode of the OS must be applied to the menu bar, the toolbars and
+	// the status bar: they are created after the theme of the application
+	WinUtil::applyDarkMode(m_hWnd);
 	ctrlUpdateProgress.SetStep(1);
 	
 	tabAWAYMenu.CreatePopupMenu();

@@ -20,6 +20,7 @@
 #define CFLY_SERVER_NAVIGATOR_DLG_H
 
 #include "PropertyList.h"
+#include "../../windows/FlyThemeDlg.h"
 
 #ifdef FLYLINKDC_USE_MEDIAINFO_SERVER
 
@@ -30,12 +31,14 @@ typedef std::vector< std::pair<tstring, tstring> > TStringPairArray;
 
 class CFlyServerDialogNavigator :
 #ifdef USE_FLY_SERVER_USE_IE_EXPLORER
-	public CAxDialogImpl<CFlyServerDialogNavigator>
+	public CAxDialogImpl<CFlyServerDialogNavigator>,
+	public CFlyThemeDlg
 	public CWinDataExchange<CFlyServerDialogNavigator>,
 	public IDispEventImpl<IDC_FLY_SERVER_EXPLORER, CFlyServerDialogNavigator>
 #else
 	public CDialogImpl<CFlyServerDialogNavigator>,
-	public CDialogResize<CFlyServerDialogNavigator>
+	public CDialogResize<CFlyServerDialogNavigator>,
+	public CFlyThemeDlg
 #endif
 {
 	public:
@@ -58,6 +61,7 @@ class CFlyServerDialogNavigator :
 		enum { IDD = IDD_FLY_SERVER_DIALOG };
 		
 		BEGIN_MSG_MAP(CFlyServerDialogNavigator)
+		CHAIN_MSG_MAP(CFlyThemeDlg)
 		MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
 		MESSAGE_HANDLER(WM_CLOSE, OnClose)
 		// NOTIFY_HANDLER(IDC_FLY_SERVER_LISTBOX, PIN_BROWSE, OnBrowse)

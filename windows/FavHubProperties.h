@@ -24,10 +24,11 @@
 
 
 #include <atlcrack.h>
+#include "FlyThemeDlg.h"
 
 class FavoriteHubEntry;
 
-class FavHubProperties : public CDialogImpl<FavHubProperties>
+class FavHubProperties : public CDialogImpl<FavHubProperties>, public CFlyThemeDlg
 {
 	public:
 		explicit FavHubProperties(FavoriteHubEntry *_entry) : entry(_entry) { }
@@ -36,6 +37,7 @@ class FavHubProperties : public CDialogImpl<FavHubProperties>
 		enum { IDD = IDD_FAVORITEHUB };
 		
 		BEGIN_MSG_MAP_EX(FavHubProperties)
+		CHAIN_MSG_MAP(CFlyThemeDlg)
 		MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
 		COMMAND_HANDLER(IDC_HUBNICK, EN_CHANGE, OnTextChanged)
 		COMMAND_HANDLER(IDC_HUBPASS, EN_CHANGE, OnTextChanged)

@@ -25,8 +25,9 @@
 
 #include "Resource.h"
 #include "../client/SimpleXML.h"
+#include "../FlyThemeDlg.h"
 
-class WzSetIP : public CPropertyPageImpl<WzSetIP>
+class WzSetIP : public CPropertyPageImpl<WzSetIP>, public CFlyThemeDlg
 {
 public:
     enum { IDD = IDD_WIZARD_NET_IP };
@@ -41,6 +42,7 @@ public:
 	}
     // Maps
     BEGIN_MSG_MAP(FlyWizard)
+    CHAIN_MSG_MAP(CFlyThemeDlg)
         MSG_WM_INITDIALOG(OnInitDialog)
 		COMMAND_ID_HANDLER(IDC_WIZARD_NET_IP_DETECT_IP, onGetIP)
         CHAIN_MSG_MAP(CPropertyPageImpl<WzSetIP>)

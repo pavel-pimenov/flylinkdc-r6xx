@@ -24,8 +24,9 @@
 #ifdef SSA_WIZARD_FEATURE
 
 #include "Resource.h"
+#include "../FlyThemeDlg.h"
 
-class WzNick : public CPropertyPageImpl<WzNick>
+class WzNick : public CPropertyPageImpl<WzNick>, public CFlyThemeDlg
 {
 public:
     enum { IDD = IDD_WIZARD_NICK };
@@ -37,6 +38,7 @@ public:
 
     // Maps
     BEGIN_MSG_MAP(WzNick)
+    CHAIN_MSG_MAP(CFlyThemeDlg)
         MSG_WM_INITDIALOG(OnInitDialog)
 		COMMAND_ID_HANDLER(IDC_WIZARD_NICK_RND, onRandomNick)
         CHAIN_MSG_MAP(CPropertyPageImpl<WzNick>)

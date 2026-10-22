@@ -218,7 +218,14 @@ void PropPage::translate(HWND page, TextItem* textItems)
 #ifdef SCALOLAZ_PROPPAGE_COLOR
 LRESULT PropPage::OnCtlColorDlg(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
-	if (BOOLSETTING(SETTINGS_WINDOW_COLORIZE) || SettingsManager::isDarkTheme())
+	if (SettingsManager::isDarkTheme())
+	{
+		// the dark theme: the background of the dialog is dark and the text of
+		// the controls is light (the system color COLOR_WINDOWTEXT is black and
+		// it is not readable on the dark background)
+		return FlyTheme::handleCtlColor(uMsg, wParam, lParam);
+	}
+	if (BOOLSETTING(SETTINGS_WINDOW_COLORIZE))
 	{
 		// the brush is reused for every WM_CTLCOLOR* message: create it only once
 		// (and re-create it when the theme color changes), otherwise every repaint
@@ -239,7 +246,11 @@ LRESULT PropPage::OnCtlColorDlg(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& b
 }
 LRESULT PropPage::OnCtlColorStatic(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
-	if (BOOLSETTING(SETTINGS_WINDOW_COLORIZE) || SettingsManager::isDarkTheme())
+	if (SettingsManager::isDarkTheme())
+	{
+		return FlyTheme::handleCtlColor(uMsg, wParam, lParam);
+	}
+	if (BOOLSETTING(SETTINGS_WINDOW_COLORIZE))
 	{
 		HDC hdc = (HDC)wParam;
 		SetBkMode(hdc, TRANSPARENT);

@@ -26,11 +26,12 @@
 #include "../client/DirectoryListing.h"
 #include "../client/Util.h"
 #include "ResourceLoader.h"
+#include "FlyThemeDlg.h"
 
 #define WM_UPDATE_WINDOW WM_USER + 101
 #define WM_FINISHED  WM_USER+102
 
-class DCLSTGenDlg : public CDialogImpl< DCLSTGenDlg >, public Thread
+class DCLSTGenDlg : public CDialogImpl< DCLSTGenDlg >, public CFlyThemeDlg, public Thread
 {
 	public:
 		enum { IDD = IDD_DCLS_GENERATOR };
@@ -39,6 +40,7 @@ class DCLSTGenDlg : public CDialogImpl< DCLSTGenDlg >, public Thread
 		~DCLSTGenDlg() { }
 		
 		BEGIN_MSG_MAP(DCLSTGenDlg)
+		CHAIN_MSG_MAP(CFlyThemeDlg)
 		MESSAGE_HANDLER(WM_INITDIALOG, onInitDialog)
 		COMMAND_ID_HANDLER(IDCANCEL, onCloseCmd)
 		COMMAND_ID_HANDLER(IDC_DCLSTGEN_COPYMAGNET, onCopyMagnet)

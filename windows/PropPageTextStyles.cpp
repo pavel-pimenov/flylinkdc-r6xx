@@ -651,7 +651,7 @@ LRESULT PropPageTextStyles::onClickedText(WORD /*wNotifyCode*/, WORD /*wID*/, HW
 	return TRUE;
 }
 
-LRESULT PropPageTextStyles::onCtlColor(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, BOOL& /*bHandled*/)
+LRESULT PropPageTextStyles::onCtlColor(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
 	HWND hWnd = (HWND)lParam;
 	if (hWnd == ctrlTabExample.m_hWnd)
@@ -667,6 +667,10 @@ LRESULT PropPageTextStyles::onCtlColor(UINT /*uMsg*/, WPARAM wParam, LPARAM lPar
 	}
 	else
 	{
+		// the message is not handled here: the chain to PropPage must not be
+		// interrupted, otherwise the page is not painted with the theme of the
+		// application
+		bHandled = FALSE;
 		return FALSE;
 	}
 }

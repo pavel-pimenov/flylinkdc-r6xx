@@ -22,8 +22,9 @@
 #include <atlcrack.h>
 #include "wtl_flylinkdc.h"
 #include "../client/Util.h"
+#include "FlyThemeDlg.h"
 
-class PreviewDlg : public CDialogImpl<PreviewDlg>
+class PreviewDlg : public CDialogImpl<PreviewDlg>, public CFlyThemeDlg
 {
 		CEdit ctrlName;
 		CEdit ctrlApplication;
@@ -41,6 +42,7 @@ class PreviewDlg : public CDialogImpl<PreviewDlg>
 		enum { IDD = IDD_PREVIEW };
 		
 		BEGIN_MSG_MAP_EX(CommandDlg)
+		CHAIN_MSG_MAP(CFlyThemeDlg)
 		MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
 		MESSAGE_HANDLER(WM_SETFOCUS, onFocus)
 		COMMAND_ID_HANDLER(IDOK, OnCloseCmd)

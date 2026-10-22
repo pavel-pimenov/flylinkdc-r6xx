@@ -6,6 +6,7 @@
 
 #include "../GdiOle/GDIImage.h"
 #include "wtl_flylinkdc.h"
+#include "FlyThemeDlg.h"
 
 class CAnimatedButton: public CWindowImpl<CAnimatedButton, CButton>
 {
@@ -44,13 +45,14 @@ class CAnimatedButton: public CWindowImpl<CAnimatedButton, CButton>
 		void Update();
 };
 
-class EmoticonsDlg : public CDialogImpl<EmoticonsDlg>
+class EmoticonsDlg : public CDialogImpl<EmoticonsDlg>, public CFlyThemeDlg
 {
 	public:
 		enum { IDD = IDD_EMOTICONS_DLG };
 		
 		
 		BEGIN_MSG_MAP(EmoticonsDlg)
+		CHAIN_MSG_MAP(CFlyThemeDlg)
 		MESSAGE_HANDLER(WM_INITDIALOG, onInitDialog)
 		MESSAGE_HANDLER(WM_RBUTTONUP, onClose)
 		MESSAGE_HANDLER(WM_LBUTTONUP, onClose)

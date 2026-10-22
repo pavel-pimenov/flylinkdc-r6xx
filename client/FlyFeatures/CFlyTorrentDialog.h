@@ -24,6 +24,7 @@
 #include "libtorrent/announce_entry.hpp"
 #include "libtorrent/hex.hpp"
 #include "../windows/WinUtil.h"
+#include "../../windows/FlyThemeDlg.h"
 
 #define WM_INIT_TORRENT_TREE WM_USER + 100
 
@@ -31,7 +32,8 @@ typedef std::vector< std::pair<tstring, tstring> > TStringPairArray;
 
 #define FLYLINKDC_USE_RESIZE_DLG
 class CFlyTorrentDialog :
-	public CDialogImpl<CFlyTorrentDialog>
+	public CDialogImpl<CFlyTorrentDialog>,
+	public CFlyThemeDlg
 #ifdef FLYLINKDC_USE_RESIZE_DLG
     ,public CDialogResize<CFlyTorrentDialog>
 #endif
@@ -67,6 +69,7 @@ private:
 		}
 
 		BEGIN_MSG_MAP(CFlyTorrentDialog)
+		CHAIN_MSG_MAP(CFlyThemeDlg)
 		MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
 		MESSAGE_HANDLER(WM_CLOSE, OnClose)
         MESSAGE_HANDLER(WM_INIT_TORRENT_TREE, onInitTorrentTree)

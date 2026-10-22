@@ -24,13 +24,15 @@
 
 #include "Resource.h"
 #include "ExListViewCtrl.h"
+#include "FlyThemeDlg.h"
 
-class FavHubGroupsDlg : public CDialogImpl<FavHubGroupsDlg>
+class FavHubGroupsDlg : public CDialogImpl<FavHubGroupsDlg>, public CFlyThemeDlg
 {
 	public:
 		enum { IDD = IDD_FAVHUBGROUPS };
 		
 		BEGIN_MSG_MAP(FavHubGroupsDlg)
+		CHAIN_MSG_MAP(CFlyThemeDlg)
 		MESSAGE_HANDLER(WM_INITDIALOG, onInitDialog)
 		NOTIFY_HANDLER(IDC_GROUPS, LVN_ITEMCHANGED, onItemChanged)
 		NOTIFY_HANDLER(IDC_GROUPS, NM_CUSTOMDRAW, ctrlGroups.onCustomDraw)

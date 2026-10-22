@@ -22,7 +22,8 @@
 #pragma once
 
 
-class RebuildMediainfoProgressDlg : public CDialogImpl<RebuildMediainfoProgressDlg>, private CFlyTimerAdapter
+#include "FlyThemeDlg.h"
+class RebuildMediainfoProgressDlg : public CDialogImpl<RebuildMediainfoProgressDlg>, public CFlyThemeDlg, private CFlyTimerAdapter
 {
 	public:
 		enum { IDD = IDD_REBUILD_MEDIAINFO_PROGRESS };
@@ -33,6 +34,7 @@ class RebuildMediainfoProgressDlg : public CDialogImpl<RebuildMediainfoProgressD
 		~RebuildMediainfoProgressDlg() { }
 		
 		BEGIN_MSG_MAP(RebuildMediainfoProgressDlg)
+		CHAIN_MSG_MAP(CFlyThemeDlg)
 		MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
 		MESSAGE_HANDLER(WM_TIMER, onTimer)
 		MESSAGE_HANDLER(WM_DESTROY, onDestroy)

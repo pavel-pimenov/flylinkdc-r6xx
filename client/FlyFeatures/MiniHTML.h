@@ -534,7 +534,7 @@ class CMiniHTML
 				else if (::lstrcmp(pstrValue, _T("WINDOWTEXT")) == 0) clr = Colors::getSysColor(COLOR_WINDOWTEXT);
 				else if (::lstrcmp(pstrValue, _T("BUTTONFACE")) == 0) clr = Colors::getSysColor(COLOR_BTNFACE);
 				else if (::lstrcmp(pstrValue, _T("BUTTONTEXT")) == 0) clr = Colors::getSysColor(COLOR_BTNTEXT);
-				else clr = RGB(0, 0, 0);
+				else clr = Colors::getSysColor(COLOR_WINDOWTEXT);
 			}
 			return clr;
 		}

@@ -24,8 +24,9 @@
 #ifdef SSA_WIZARD_FEATURE
 
 #include "Resource.h"
+#include "../FlyThemeDlg.h"
 
-class WzStartup : public CPropertyPageImpl<WzStartup>
+class WzStartup : public CPropertyPageImpl<WzStartup>, public CFlyThemeDlg
 {
 public:
     enum { IDD = IDD_WIZARD_STARTUP };
@@ -37,6 +38,7 @@ public:
 
     // Maps
     BEGIN_MSG_MAP(FlyWizard)
+    CHAIN_MSG_MAP(CFlyThemeDlg)
         MSG_WM_INITDIALOG(OnInitDialog)
         CHAIN_MSG_MAP(CPropertyPageImpl<WzStartup>)
     END_MSG_MAP()

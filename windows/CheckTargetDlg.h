@@ -24,8 +24,9 @@
 
 
 #include "../client/QueueManager.h"
+#include "FlyThemeDlg.h"
 
-class CheckTargetDlg : public CDialogImpl< CheckTargetDlg >
+class CheckTargetDlg : public CDialogImpl< CheckTargetDlg >, public CFlyThemeDlg
 {
 	public:
 		enum { IDD = IDD_CHECKTARGETDLG };
@@ -35,6 +36,7 @@ class CheckTargetDlg : public CDialogImpl< CheckTargetDlg >
 		~CheckTargetDlg() { }
 		
 		BEGIN_MSG_MAP(CheckTargetDlg)
+		CHAIN_MSG_MAP(CFlyThemeDlg)
 		MESSAGE_HANDLER(WM_INITDIALOG, onInitDialog)
 		COMMAND_ID_HANDLER(IDOK, onCloseCmd)
 		COMMAND_ID_HANDLER(IDCANCEL, onCloseCmd)

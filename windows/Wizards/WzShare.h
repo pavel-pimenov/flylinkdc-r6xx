@@ -26,9 +26,10 @@
 #include "Resource.h"
 #include "../client/SearchManager.h"
 #include "../LineDlg.h"
+#include "../FlyThemeDlg.h"
 
 
-class WzShare : public CPropertyPageImpl<WzShare>
+class WzShare : public CPropertyPageImpl<WzShare>, public CFlyThemeDlg
 {
 public:
     enum { IDD = IDD_WIZARD_SHARE };
@@ -41,6 +42,7 @@ public:
 
     // Maps
     BEGIN_MSG_MAP(WzShare)
+    CHAIN_MSG_MAP(CFlyThemeDlg)
         MSG_WM_INITDIALOG(OnInitDialog)
 		COMMAND_ID_HANDLER(IDC_WIZARD_SHARE_ADD, OnAdd)
 		COMMAND_ID_HANDLER(IDC_WIZARD_SHARE_REMOVE, OnRemove)

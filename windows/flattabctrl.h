@@ -1335,7 +1335,8 @@ class ATL_NO_VTABLE FlatTabCtrlImpl : public CWindowImpl< T, TBase, TWinTraits>
 				}
 				else
 				{
-					Gdiplus::Pen l_pen(Gdiplus::Color(160, 160, 160), 1);
+					const COLORREF l_rgb_shadow = Colors::getSysColor(COLOR_BTNSHADOW);
+					Gdiplus::Pen l_pen(Gdiplus::Color(GetRValue(l_rgb_shadow), GetGValue(l_rgb_shadow), GetBValue(l_rgb_shadow), 160), 1);
 					l_pen.SetDashStyle(Gdiplus::DashStyleSolid); //DashDot, Dot
 					graphics->DrawPath(&l_pen, l_tabsPath.get());
 				}

@@ -9,8 +9,9 @@
 
 #include "wtl_flylinkdc.h"
 #include "../client/NmdcHub.h"
+#include "FlyThemeDlg.h"
 
-class AboutStatDlg : public CDialogImpl<AboutStatDlg>
+class AboutStatDlg : public CDialogImpl<AboutStatDlg>, public CFlyThemeDlg
 {
 	public:
 		enum { IDD = IDD_ABOUTSTAT };
@@ -19,6 +20,7 @@ class AboutStatDlg : public CDialogImpl<AboutStatDlg>
 		~AboutStatDlg() {}
 		
 		BEGIN_MSG_MAP(AboutStatDlg)
+		CHAIN_MSG_MAP(CFlyThemeDlg)
 		MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
 		END_MSG_MAP()
 		

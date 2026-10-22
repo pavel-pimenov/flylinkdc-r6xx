@@ -30,8 +30,9 @@
 #include "leveldb/db.h"
 #include "libtorrent/version.hpp"
 #include "../lua/lua.h"
+#include "FlyThemeDlg.h"
 
-class AboutDlg : public CDialogImpl<AboutDlg>
+class AboutDlg : public CDialogImpl<AboutDlg>, public CFlyThemeDlg
 {
 	public:
 		enum { IDD = IDD_ABOUTBOX };
@@ -40,6 +41,7 @@ class AboutDlg : public CDialogImpl<AboutDlg>
 		~AboutDlg() {}
 		
 		BEGIN_MSG_MAP(AboutDlg)
+		CHAIN_MSG_MAP(CFlyThemeDlg)
 		MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
 		COMMAND_ID_HANDLER(IDC_LINK, onLink)
 		COMMAND_ID_HANDLER(IDC_SUPPORT_MAIL, onMailLink)

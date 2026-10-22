@@ -673,7 +673,7 @@ void SettingsManager::setDefaults()
 	//setDefault(BANDWIDTH_LIMIT_END, 0);
 	//setDefault(THROTTLE_ENABLE, false);
 	setDefault(EXTRA_DOWNLOAD_SLOTS, 3);
-	setDefault(THEME, THEME_LIGHT);
+	setDefault(THEME, THEME_DARK);
 	
 	setDefault(BACKGROUND_COLOR, RGB(255, 255, 255));
 	setDefault(TEXT_COLOR, RGB(67, 98, 154));

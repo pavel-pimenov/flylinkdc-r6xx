@@ -24,8 +24,9 @@
 
 
 #include "WinUtil.h"
+#include "FlyThemeDlg.h"
 
-class CommandDlg : public CDialogImpl<CommandDlg>
+class CommandDlg : public CDialogImpl<CommandDlg>, public CFlyThemeDlg
 {
 		CEdit ctrlName;
 		CEdit ctrlCommand;
@@ -52,6 +53,7 @@ class CommandDlg : public CDialogImpl<CommandDlg>
 		enum { IDD = IDD_USER_COMMAND };
 		
 		BEGIN_MSG_MAP(CommandDlg)
+		CHAIN_MSG_MAP(CFlyThemeDlg)
 		MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
 		MESSAGE_HANDLER(WM_SETFOCUS, onFocus)
 		MESSAGE_HANDLER(WM_HELP, onHelp)

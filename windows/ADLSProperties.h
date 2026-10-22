@@ -22,6 +22,7 @@
 #pragma once
 
 
+#include "FlyThemeDlg.h"
 class ADLSearch;
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -29,7 +30,7 @@ class ADLSearch;
 //  Dialog for new/edit ADL searches
 //
 ///////////////////////////////////////////////////////////////////////////////
-class ADLSProperties : public CDialogImpl<ADLSProperties>
+class ADLSProperties : public CDialogImpl<ADLSProperties>, public CFlyThemeDlg
 {
 	public:
 	
@@ -42,6 +43,7 @@ class ADLSProperties : public CDialogImpl<ADLSProperties>
 		
 		// Inline message map
 		BEGIN_MSG_MAP(ADLSProperties)
+		CHAIN_MSG_MAP(CFlyThemeDlg)
 		MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
 		COMMAND_ID_HANDLER(IDOK, OnCloseCmd)
 		COMMAND_ID_HANDLER(IDCANCEL, OnCloseCmd)

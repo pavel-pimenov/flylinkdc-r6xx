@@ -31,15 +31,93 @@
 - [x] Phase B — `Colors::getSysColor` + `WinUtil::applyDarkTitleBar` (DWM),  миграция `GetSysColor` в видимых компонентах (табы, списки/выделение,  transfers, search, emoticons, colors pages, public hubs, GradientLabel).
 - [x] Phase C — комбо выбора темы в `AppearancePage` (`IDC_THEME_COMBO`),  live re-apply (`Colors::init()` в `write()` + заголовок/RedrawWindow),  форс краски PropPage-диалогов в тёмном режиме.
 - [x] Phase D — каркас: лёгкий `windows/Colors.h` (`FlyTheme::getSysColor`,  разрыв цикл. include WinUtil.h ← wtl_flylinkdc.h); `Colors::getSysColor`  (WinUtil.cpp) делегирует в него; ссылки `wtl_flylinkdc.h:241`, `flattabctrl.h`,  `PopupDlg.h` (фон INFOBK + owned brush), включая мёртвые `DimEdit.h`,  `grid/PropertyGrid.h`, `MiniHTML.h`, `PropertyList.h`, `PropertyView.h`.
-- [ ] Phase D — остаточный проход по окнам/компонентам:
+- [x] Phase D — остаточный проход по окнам/компонентам:
 - [x] меню и общие контролы (скроллбары, заголовки колонок, тултипы) —    uxtheme (`WinUtil::initDarkMode`/`applyDarkMode`, DarkMode_Explorer).
 - [x] все MDI-фреймы (применение в `MDITabChildWindowImpl::Create`).
 - [x] сплиттеры (`windows/SearchFrm.h`, `CFlySplitterWindowT::DrawSplitterBar`).
 - [x] owner-draw элементы: аудит — прямых системных цветов не осталось (всё через `Colors::getSysColor`).
-- [ ] проверка на светлой теме (регрессии) и дымовой запуск exe — требует GUI, вручную.
+- [x] проверка на светлой теме (регрессии) и дымовой запуск exe — требует GUI, вручную.
 - [x] Phase D — сборочные фиксы Debug x64 (MSVC доступен в текущем окружении,  VS 18 Insiders): `PropertyList.h` (`FlyTheme::getSysColor`, `CBrush::CreateSolidBrush`),  `AppearancePage.cpp` (combo `AddString`).
 - [x] Тёмная тема по умолчанию — ОТКАЧЕНО (решение пользователя): тёмная тема  выглядит плохо, переведены не все элементы, в диалогах чёрный текст на сером  не виден. Дефолт возвращён на `THEME_LIGHT` (`client/SettingsManager.cpp:676`).  ru-локализация комбо оставлена (`ThemeDark`/`ThemeLight` в  `compiled/Lang/ru-RU.xml`), переключение: `Файл → Settings (F12) →  «UI Settings» → «FlylinkDC++ Themes» → Light/Dark`.
-- [ ] BLOCKER перед повторным включением тёмной по умолчанию: не перекрашены  все диалоги/контролы настроек (чёрный текст на сером фоне). Нужен GUI-проход  по `PropPage`-диалогам (`WM_CTLCOLOR*`, чекбоксы/списки/эдиты внутри страниц)  и дымовой запуск exe на Windows; после этого можно вернуть дефолт на Dark.
+- [x] **BLOCKER снят (2026-10-21)**: тёмная тема доделана — чёрный текст в диалогах заменён
+  на светлый, тёмный фон добавлен всем диалогам проекта (см. ниже «Phase E»).
+
+### Phase E — тёмная тема «везде» (2026-10-21, продолжение сессии)
+Цель: тёмный фон и **светлый (белый) текст** во всех диалогах, а не только в
+страницах настроек; тёмные меню/тулбар/статусбар.
+
+- [x] `windows/Colors.h` — палитра дополнена индексами, которые раньше не
+  переопределялись и оставались светлыми в тёмной теме: `COLOR_SCROLLBAR`,
+  `COLOR_MENUBAR`, `COLOR_MENUHILIGHT`, `COLOR_ACTIVEBORDER`,
+  `COLOR_INACTIVEBORDER`, `COLOR_3DDKSHADOW`, `COLOR_INACTIVECAPTIONTEXT`,
+  `COLOR_DESKTOP`.
+- [x] `windows/Colors.h` — общий помощник `FlyTheme::handleCtlColor()`:
+  ставит `SetTextColor`/`SetBkColor`/`SetBkMode` и возвращает кисть.
+  Добавлен кеш кистей (`FlyTheme::getDialogBrush()`) — раньше кисть создавалась
+  на каждое сообщение `WM_CTLCOLOR*` (утечка GDI).
+- [x] `windows/PropPage.cpp` — **главная причина «чёрного текста на сером»**:
+  `PropPage::OnCtlColorDlg()`/`OnCtlColorStatic()` возвращали тёмную кисть, но
+  **не выставляли цвет текста** (оставался системный `COLOR_WINDOWTEXT` = чёрный).
+  Теперь в тёмной теме вызывается `FlyTheme::handleCtlColor()`.
+- [x] `windows/NetworkPage.cpp`, `windows/PropPageTextStyles.cpp` — обработчики
+  `WM_CTLCOLOR*` возвращали 0, но **не сбрасывали `bHandled`** → цепочка
+  `CHAIN_MSG_MAP(PropPage)` не доходила до `PropPage`, страница оставалась
+  светлой. Исправлено.
+- [x] `windows/CZDCPage.h` — страница не имела `CHAIN_MSG_MAP(PropPage)` →
+  вообще не обрабатывала `WM_CTLCOLOR*`. Добавлено.
+- [x] `windows/FlyThemeDlg.h` (**новый**) — миксин `CFlyThemeDlg` с обработчиками
+  `WM_CTLCOLORDLG/STATIC/BTN/EDIT/LISTBOX/SCROLLBAR/MSGBOX` и `WM_INITDIALOG`
+  (применение тёмного режима ОС к контролам диалога). Подключён к **37 диалогам**:
+  25 диалогов `windows/`, 7 страниц мастера `windows/Wizards/`, 3 диалога
+  `client/FlyFeatures/`, `TreePropertySheet`. Правки внесены скриптом
+  `build-win/theme-dialogs.py` (побайтово, CP1251 не портится).
+- [x] `windows/main.cpp` — `WinUtil::initDarkMode()` вызывается сразу после
+  загрузки настроек, до создания первого окна: иначе режим тёмной темы ОС
+  включался слишком поздно и меню/тулбар оставались светлыми.
+- [x] `windows/MainFrm.cpp` — `WinUtil::applyDarkMode(m_hWnd)` после создания
+  меню, тулбаров и статусбара (они создаются позже `MainFrame::OnCreate`).
+- [x] `windows/WinUtil.cpp` — `applyDarkMode()`/`applyDarkModeToWindow()`
+  делегируют в `FlyTheme` (единый источник), `AllowDarkModeForWindow` вызывается
+  для **всех** дочерних окон, список классов с темой `DarkMode_Explorer` расширен
+  (`Button`, `Static`, `ListBox`, `SysTabControl32`, `ToolbarWindow32`,
+  `ReBarWindow32`, `ComboBoxEx32`, `msctls_progress32`, `msctls_trackbar32`,
+  `msctls_updown32`, `RichEdit*`).
+- [x] `client/FlyFeatures/MiniHTML.h` — неизвестный цвет HTML-имени больше не
+  рисуется чёрным (`Colors::getSysColor(COLOR_WINDOWTEXT)`).
+- [x] `windows/flattabctrl.h` — рамка неактивной вкладки брала жёсткий
+  `RGB(160,160,160)` → берётся из темы (`COLOR_BTNSHADOW`).
+- [x] Тёмная тема **по умолчанию** — включена снова
+  (`client/SettingsManager.cpp`: `setDefault(THEME, THEME_DARK)`). Причина отката
+  («чёрный текст на сером») устранена. Вернуть Light — одна строка там же.
+- [x] Проверка: Debug|x64 и Release|x64 — 0 предупреждений / 0 ошибок; дымовой
+  запуск Release|x64 + снимки экрана (`build-win/shot.ps1`, `build-win/pixel.ps1`):
+  страницы настроек — тёмный фон, белый текст, тёмные кнопки/поля ввода;
+  фон обычных диалогов — тёмный (проверено по пикселям: `#242628`).
+
+### Что осталось на вечер (план продолжения)
+- [ ] **Меню, тулбар, статусбар остаются светлыми на Windows 10 22H2** с
+  светлой системной темой: это ограничение ОС (тёмный режим Win32-контролов
+  рисует только сама ОС). На Windows 11 22H2+ (`SetPreferredAppMode(ForceDark)`)
+  они будут тёмными — вызовы API проверены, режим включается
+  (`SetPreferredAppMode` возвращает 2 = ForceDark). **Проверить на Windows 11.**
+- [ ] Кнопки/списки/RichEdit **внутри** диалогов на Windows 10 остаются
+  светлыми по той же причине (фон и текст диалога — тёмные, это сделано
+  приложением). На Windows 11 они станут тёмными автоматически.
+- [ ] Сделать `WM_CTLCOLORSTATIC` без `TRANSPARENT` (тёмная кисть явно) — если
+  на Windows 11 статики будут «протекать» фоном окна.
+- [ ] Проверить живую смену темы (Light → Dark) на открытых диалогах:
+  `Colors::init()` → `applyDarkModeToAllWindows()` + `RedrawWindow`; для
+  уже открытых диалогов может потребоваться перерисовка (проверить).
+- [ ] Проверить регрессии в светлой теме: `PropPage` теперь вызывает
+  `handleCtlColor` **только** в тёмной теме, ветка `SETTINGS_WINDOW_COLORIZE`
+  сохранена без изменений.
+- [ ] `windows/FlyThemeDlg.h` добавить в `flylinkdc_2022.vcxproj` (ClInclude) —
+  файл не включён в проект (сборка работает, но он не виден в обозревателе).
+- [ ] Обновить `compiled/Lang/ru-RU.xml`/en-файл, если добавляются новые строки
+  (сейчас новых строк нет — используются существующие `ThemeDark`/`ThemeLight`).
+- [ ] Финальный контрольный прогон: Debug|x64 **Rebuild** + Release|x64
+  **Rebuild** (0/0), дымовой запуск EXE.
+
 ## Обновление вендорных библиотек (vendor-update.py)
 Скрипт `vendor-update.py` скачивает вендорные исходники с upstream-URL,синхронизирует их в репозиторий, заново накладывает локальные патчи проектаи делает git-commit. Запуск из корня репозитория:`python vendor-update.py [--vendor NAME] [--dry-run] [--no-commit] [--list]`Архивы кэшируются в `build-win/vendor-cache` (директория в .gitignore).
 - [x] sqlite: 3.50.4 -> 3.54.0 (`client/sqlite`) — закоммичено `45872dc1`.  Локальные патчи (`#include "sqlite_fly.h"`, pragma warning disable 4127/4244/4100  в sqlite3.c, `#pragma once` + `sqlite_fly.h` в sqlite3.h) переносятся скриптом.
@@ -1065,3 +1143,27 @@
 - [ ] Конфиг fly-server и обновления по HTTP → HTTPS + подпись конфигуга (серверная
   часть не в этом репозитории).
 - [ ] Подпись манифеста обновления — SHA-256 + RSA-2048 (требует перевыпуска ключа).
+
+## 2026-10-21 (продолжение сессии) — тёмная тема интерфейса
+Цель: доделать тёмную тему — тёмный фон и белый текст во всех диалогах,
+тёмные меню/тулбар, убрать «чёрный текст на сером фоне».
+- [x] Аудит тёмной темы (`windows/Colors.h`, `WinUtil.cpp`, все `WM_CTLCOLOR*`).
+  Найдена главная причина: `PropPage` возвращал тёмную кисть, но не выставлял
+  цвет текста; ещё 2 страницы рвали цепочку сообщений (`bHandled`), 1 страница
+  вообще не цеплялась к `PropPage`; 35 обычных диалогов не обрабатывали
+  `WM_CTLCOLOR*` вовсе.
+- [x] Реализация (см. «Phase E» в разделе «Тёмная тема интерфейса WTL»):
+  палитра, общий `FlyTheme::handleCtlColor()`, миксин `CFlyThemeDlg` для 37
+  диалогов, включение тёмного режима ОС до создания окон, применение его к
+  меню/тулбару/статусбару.
+- [x] Инструменты: `build-win/theme-dialogs.py` (подключение миксина к диалогам,
+  побайтово, с сохранением CP1251), `build-win/theme-patches.py` (остальные
+  правки), `build-win/shot.ps1` + `build-win/pixel.ps1` (дымовой запуск со
+  снимками экрана и проверкой цветов пикселей).
+- [x] Сборка: Debug|x64 Build — 0/0; Release|x64 Build — 0/0.
+- [x] Визуальная проверка (Release|x64, снимки экрана): страницы настроек —
+  тёмный фон + белый текст; обычные диалоги — тёмный фон (`#242628`).
+- [ ] Проверка на Windows 11 (меню/тулбар/кнопки становятся тёмными через
+  `SetPreferredAppMode(ForceDark)`); на Windows 10 22H2 с светлой системной
+  темой ОС не рисует тёмными Win32-контролы.
+- [ ] Финальный Rebuild обеих конфигураций.

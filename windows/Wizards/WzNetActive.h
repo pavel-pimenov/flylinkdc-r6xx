@@ -28,8 +28,9 @@
 //#include "UPNPCheckDlg.h"
 #include "WinUtil.h"
 #include "../client/ConnectionManager.h"
+#include "../FlyThemeDlg.h"
 
-class WzNetActive : public CPropertyPageImpl<WzNetActive>
+class WzNetActive : public CPropertyPageImpl<WzNetActive>, public CFlyThemeDlg
 {
 public:
     enum { IDD = IDD_WIZARD_NET_ACTIVE };
@@ -51,6 +52,7 @@ public:
 
     // Maps
     BEGIN_MSG_MAP(WzNetActive)
+    CHAIN_MSG_MAP(CFlyThemeDlg)
         MSG_WM_INITDIALOG(OnInitDialog)
         CHAIN_MSG_MAP(CPropertyPageImpl<WzNetActive>)
 		COMMAND_ID_HANDLER(IDC_WIZARD_NETA_BTN_RAND, OnBnClickedWizardNetaBtnRand)

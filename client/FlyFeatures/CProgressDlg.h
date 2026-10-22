@@ -13,6 +13,7 @@
 #include <atlctrls.h>
 
 #include <process.h>
+#include "../../windows/FlyThemeDlg.h"
 
 // Чтобы поток мог делать только то, что здесь разрешим
 class IProgress
@@ -36,6 +37,7 @@ template<class T> struct ProgressParam
 
 template<class T, int idd, int time> class CProgressDlg :
 	public CDialogImpl<CProgressDlg<T, idd, time> >,
+	public CFlyThemeDlg,
 	public IProgress
 {
 	private:
@@ -81,6 +83,7 @@ template<class T, int idd, int time> class CProgressDlg :
 		};
 
 		BEGIN_MSG_MAP_EX(CAboutDlg)
+		CHAIN_MSG_MAP(CFlyThemeDlg)
 		MSG_WM_INITDIALOG(OnInitDialog)
 		MSG_WM_TIMER(OnTimer)
 		END_MSG_MAP()

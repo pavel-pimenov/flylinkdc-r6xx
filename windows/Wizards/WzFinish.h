@@ -24,8 +24,9 @@
 
 #if 0
 #include "Resource.h"
+#include "../FlyThemeDlg.h"
 
-class WzFinish : public CPropertyPageImpl<WzFinish>
+class WzFinish : public CPropertyPageImpl<WzFinish>, public CFlyThemeDlg
 {
 public:
     enum { IDD = IDD_WIZARD_FINISH };
@@ -36,6 +37,7 @@ public:
 
     // Maps
     BEGIN_MSG_MAP(WzFinish)
+    CHAIN_MSG_MAP(CFlyThemeDlg)
 		MSG_WM_INITDIALOG(OnInitDialog)
         CHAIN_MSG_MAP(CPropertyPageImpl<WzFinish>)
     END_MSG_MAP()

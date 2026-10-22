@@ -29,6 +29,7 @@
 #endif
 
 #include "wtl_flylinkdc.h"
+#include "FlyThemeDlg.h"
 
 //#define SCALOLAZ_PROPPAGE_CAMSHOOT
 
@@ -38,6 +39,7 @@
 #endif
 
 class TreePropertySheet : public CPropertySheetImpl<TreePropertySheet>,
+	public CFlyThemeDlg,
 	protected CFlyTimerAdapter
 {
 	public:
@@ -65,6 +67,7 @@ class TreePropertySheet : public CPropertySheetImpl<TreePropertySheet>,
 		}
 		typedef CPropertySheetImpl<TreePropertySheet> baseClass;
 		BEGIN_MSG_MAP(TreePropertySheet)
+		CHAIN_MSG_MAP(CFlyThemeDlg)
 		MESSAGE_HANDLER(WM_TIMER, onTimer)
 		MESSAGE_HANDLER(WM_DESTROY, onDestroy)
 		MESSAGE_HANDLER(WM_COMMAND, baseClass::OnCommand)

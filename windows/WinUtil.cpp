@@ -3816,40 +3816,6 @@ namespace
 		return s_uxtheme ? ::GetProcAddress(s_uxtheme, p_name) : nullptr;
 	}
 
-	bool isDarkThemeWindowClass(const wchar_t* p_class)
-	{
-		static const wchar_t* const g_classes[] =
-		{
-			L"SysListView32", L"SysTreeView32", L"SysHeader32", L"ScrollBar",
-			L"Edit", L"ComboBox", L"msctls_statusbar32", L"tooltips_class32"
-		};
-		for (const wchar_t* l_name : g_classes)
-		{
-			if (wcscmp(p_class, l_name) == 0)
-			{
-				return true;
-			}
-		}
-		return false;
-	}
-
-	void applyDarkModeToWindow(HWND p_hWnd, bool p_dark)
-	{
-		if (!p_hWnd)
-		{
-			return;
-		}
-		wchar_t l_class[64] = { 0 };
-		if (::GetClassName(p_hWnd, l_class, _countof(l_class)) && isDarkThemeWindowClass(l_class))
-		{
-			SetWindowTheme(p_hWnd, p_dark ? L"DarkMode_Explorer" : nullptr, nullptr);
-		}
-		for (HWND l_child = ::GetWindow(p_hWnd, GW_CHILD); l_child; l_child = ::GetWindow(l_child, GW_HWNDNEXT))
-		{
-			applyDarkModeToWindow(l_child, p_dark);
-		}
-	}
-
 	BOOL CALLBACK applyDarkModeEnumProc(HWND p_hWnd, LPARAM p_lParam)
 	{
 		DWORD l_pid = 0;
@@ -3885,20 +3851,14 @@ void WinUtil::initDarkMode()
 
 void WinUtil::applyDarkMode(HWND p_hWnd)
 {
-	typedef BOOL (WINAPI *AllowDarkModeForWindowFn)(HWND, BOOL);
-
 	applyDarkTitleBar(p_hWnd);
 	if (!isDarkModeSupported())
 	{
 		return;
 	}
 	const bool l_dark = SettingsManager::isDarkTheme();
-	static const AllowDarkModeForWindowFn s_allowDarkModeForWindow = reinterpret_cast<AllowDarkModeForWindowFn>(getUxThemeProc(MAKEINTRESOURCEA(133)));
-	if (s_allowDarkModeForWindow && p_hWnd)
-	{
-		s_allowDarkModeForWindow(p_hWnd, l_dark ? TRUE : FALSE);
-	}
-	applyDarkModeToWindow(p_hWnd, l_dark);
+	FlyTheme::allowDarkModeForWindow(p_hWnd, l_dark);
+	FlyTheme::applyDarkModeToWindow(p_hWnd, l_dark);
 }
 
 void WinUtil::applyDarkModeToAllWindows()

@@ -24,8 +24,9 @@
 #ifdef SSA_WIZARD_FEATURE
 
 #include "Resource.h"
+#include "../FlyThemeDlg.h"
 
-class WzDownload : public CPropertyPageImpl<WzDownload>
+class WzDownload : public CPropertyPageImpl<WzDownload>, public CFlyThemeDlg
 {
 public:
     enum { IDD = IDD_WIZARD_DOWNLOAD };
@@ -37,6 +38,7 @@ public:
 
     // Maps
     BEGIN_MSG_MAP(WzDownload)
+    CHAIN_MSG_MAP(CFlyThemeDlg)
         MSG_WM_INITDIALOG(OnInitDialog)
 		COMMAND_ID_HANDLER(IDC_WIZARD_BROWSEDIR, onClickedBrowseDir)
 		COMMAND_ID_HANDLER(IDC_WIZARD_BROWSETEMPDIR, onClickedBrowseTempDir)

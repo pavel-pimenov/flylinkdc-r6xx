@@ -20,9 +20,10 @@
 
 #include "WinUtil.h"
 #include "wtl_flylinkdc.h"
+#include "FlyThemeDlg.h"
 
 class HIconWrapper;
-class AddMagnet : public CDialogImpl<AddMagnet>
+class AddMagnet : public CDialogImpl<AddMagnet>, public CFlyThemeDlg
 {
 		CEdit m_ctrlMagnet;
 		CStatic m_ctrlDescription;
@@ -35,6 +36,7 @@ class AddMagnet : public CDialogImpl<AddMagnet>
 		enum { IDD = IDD_ADD_MAGNET };
 		
 		BEGIN_MSG_MAP(AddMagnet)
+		CHAIN_MSG_MAP(CFlyThemeDlg)
 		MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
 		MESSAGE_HANDLER(WM_SETFOCUS, onFocus)
 		COMMAND_ID_HANDLER(IDOK, OnCloseCmd)

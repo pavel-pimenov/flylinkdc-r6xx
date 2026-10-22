@@ -9,8 +9,9 @@
 
 #include "wtl_flylinkdc.h"
 #include "ExListViewCtrl.h"
+#include "FlyThemeDlg.h"
 
-class AboutLogDlg : public CDialogImpl<AboutLogDlg>, CFlyRichEditLoader
+class AboutLogDlg : public CDialogImpl<AboutLogDlg>, public CFlyThemeDlg, CFlyRichEditLoader
 {
 	public:
 		enum { IDD = IDD_ABOUTCMDS };
@@ -23,6 +24,7 @@ class AboutLogDlg : public CDialogImpl<AboutLogDlg>, CFlyRichEditLoader
 		}
 		
 		BEGIN_MSG_MAP(AboutLogDlg)
+		CHAIN_MSG_MAP(CFlyThemeDlg)
 		MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
 		NOTIFY_CODE_HANDLER(EN_LINK, OnLink)
 		END_MSG_MAP()

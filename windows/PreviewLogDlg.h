@@ -26,8 +26,9 @@
 #ifdef SSA_VIDEO_PREVIEW_FEATURE
 
 #include "../client/FlyFeatures/VideoPreview.h"
+#include "FlyThemeDlg.h"
 
-class PreviewLogDlg : public CDialogImpl<PreviewLogDlg>
+class PreviewLogDlg : public CDialogImpl<PreviewLogDlg>, public CFlyThemeDlg
 {
 
 	public:
@@ -35,6 +36,7 @@ class PreviewLogDlg : public CDialogImpl<PreviewLogDlg>
 		enum { IDD = IDD_PREVIEW_LOG_DLG };
 		
 		BEGIN_MSG_MAP(PreviewLogDlg)
+		CHAIN_MSG_MAP(CFlyThemeDlg)
 		MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
 		MESSAGE_HANDLER(WM_PREVIEW_SERVER_LOG, onReceiveLogItem)
 		COMMAND_ID_HANDLER(IDC_PRV_DLG_SERVER_STATE_BTN, onStartStop)

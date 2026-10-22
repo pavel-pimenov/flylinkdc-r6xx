@@ -22,13 +22,15 @@
 #pragma once
 
 #include <commctrl.h>
+#include "FlyThemeDlg.h"
 
-class SpeedVolDlg: public CDialogImpl<SpeedVolDlg>
+class SpeedVolDlg: public CDialogImpl<SpeedVolDlg>, public CFlyThemeDlg
 {
 	public:
 		enum { IDD = IDD_SPEEDLIMIT_DLG };
 		
 		BEGIN_MSG_MAP(SpeedVolDlg)
+		CHAIN_MSG_MAP(CFlyThemeDlg)
 		MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
 		COMMAND_ID_HANDLER(IDOK, OnCloseCmd)
 		COMMAND_ID_HANDLER(IDCANCEL, OnCloseCmd)

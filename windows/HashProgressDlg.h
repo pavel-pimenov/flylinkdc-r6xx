@@ -25,8 +25,9 @@
 #include "../client/HashManager.h"
 #ifdef SCALOLAZ_HASH_HELPLINK
 #include "wtl_flylinkdc.h"
+#include "FlyThemeDlg.h"
 #endif
-class HashProgressDlg : public CDialogImpl<HashProgressDlg>, private CFlyTimerAdapter
+class HashProgressDlg : public CDialogImpl<HashProgressDlg>, public CFlyThemeDlg, private CFlyTimerAdapter
 {
 	public:
 		enum { IDD = IDD_HASH_PROGRESS };
@@ -42,6 +43,7 @@ class HashProgressDlg : public CDialogImpl<HashProgressDlg>, private CFlyTimerAd
 		}
 		
 		BEGIN_MSG_MAP(HashProgressDlg)
+		CHAIN_MSG_MAP(CFlyThemeDlg)
 		MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
 		MESSAGE_HANDLER(WM_TIMER, onTimer)
 		MESSAGE_HANDLER(WM_DESTROY, onDestroy)

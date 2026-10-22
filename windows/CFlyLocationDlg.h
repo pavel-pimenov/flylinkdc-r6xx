@@ -9,15 +9,17 @@
 
 #include "../client/Util.h"
 #include "WinUtil.h"
+#include "FlyThemeDlg.h"
 
 #ifdef FLYLINKDC_USE_LOCATION_DIALOG
-class CFlyLocationDlg : public CDialogImpl<CFlyLocationDlg>
+class CFlyLocationDlg : public CDialogImpl<CFlyLocationDlg>, public CFlyThemeDlg
 {
 	public:
 	
 		enum { IDD = IDD_LOCATION_DIALOG };
 		
 		BEGIN_MSG_MAP(CFlyLocationDlg)
+		CHAIN_MSG_MAP(CFlyThemeDlg)
 		MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
 		MESSAGE_HANDLER(WM_SETFOCUS, onFocus)
 		COMMAND_ID_HANDLER(IDOK, OnCloseCmd)
